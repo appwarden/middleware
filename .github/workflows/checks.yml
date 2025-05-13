@@ -1,0 +1,101 @@
+name: Checks
+on:
+  push:
+    branches: [main, release]
+  pull_request:
+    types: [opened, synchronize]
+
+# Explicitly define permissions following the principle of least privilege
+permissions:
+  contents: write # Needed to update README with coverage badge
+  checks: write # Needed to report check results
+  pull-requests: read
+  security-events: write # Needed for dependency scanning
+
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Run checks and tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.1.1
+        with:
+          fetch-depth: 1
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4.0.0
+        with:
+          version: 10.4.1
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4.0.2
+        with:
+          node-version: lts/iron
+          registry-url: https://registry.npmjs.org
+          cache: pnpm
+
+      - name: Verify lockfile integrity
+        run: |
+          # Check if lockfile has been tampered with
+          echo "Verifying lockfile integrity..."
+          pnpm dedupe --check
+
+      - name: Install dependencies
+        run: |
+          # Set safer npm config
+          npm config set ignore-scripts true
+          npm config set audit true
+
+          # Install dependencies with frozen lockfile for reproducibility
+          pnpm install --frozen-lockfile
+        env:
+          # Disable progress bars for cleaner logs
+          NPM_CONFIG_PROGRESS: "false"
+
+      - name: Run security checks
+        run: |
+          # Audit dependencies for security vulnerabilities
+          pnpm audit --audit-level high
+
+          # Check for unpinned dependencies (using ^ or ~)
+          echo "Checking for unpinned dependencies..."
+          if grep -E '"[^"]+": "\^[^"]+"|"[^"]+": "~[^"]+"' package.json; then
+            echo "Warning: Found unpinned dependencies in package.json."
+            # Not failing the build, just warning
+          fi
+
+      - name: Build
+        run: pnpm build
+
+      - name: Checks
+        run: pnpm check
+
+      - name: Run tests
+        run: pnpm test run
+
+      - name: Generate coverage badge
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/release'
+        run: |
+          node scripts/generate-coverage-badge.cjs
+
+      - name: Commit and push updated README with coverage badge
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/release'
+        run: |
+          # Configure git
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+          # Check if README was modified
+          if [[ -n $(git status --porcelain README.md) ]]; then
+            git add README.md
+            git commit -m "docs: update coverage badge [skip ci]"
+            git push
+          else
+            echo "No changes to README.md, skipping commit"
+          fi

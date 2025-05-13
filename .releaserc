@@ -1,0 +1,43 @@
+{
+  "branches": [
+    "release"
+  ],
+  "debug": true,
+  "tagFormat": "@appwarden/middleware@${version}",
+  "plugins": [
+    [
+      "@semantic-release/commit-analyzer",
+      {
+        "releaseRules": [
+          {
+            "type": "patch",
+            "release": "patch"
+          },
+          {
+            "type": "minor",
+            "release": "minor"
+          },
+          {
+            "type": "major",
+            "release": "major"
+          }
+        ]
+      }
+    ],
+    "@semantic-release/release-notes-generator",
+    [
+      "@semantic-release/changelog",
+      {
+        "changelogTitle": "# Changelog\n\nAll notable changes to this project will be documented in this file. See\n[Conventional Commits](https://conventionalcommits.org) for commit guidelines."
+      }
+    ],
+    [
+      "@semantic-release/npm",
+      {
+        "npmPublish": true,
+        "pkgRoot": "build",
+        "provenance": true
+      }
+    ]
+  ]
+}
