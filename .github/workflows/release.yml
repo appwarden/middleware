@@ -1,0 +1,86 @@
+name: Release @appwarden/middleware
+on:
+  push:
+    branches:
+      - release-middleware
+
+# Explicitly define permissions following the principle of least privilege
+permissions:
+  contents: write # for semantic-release to create releases and tags
+  issues: write # for semantic-release to comment on issues
+  pull-requests: write # for semantic-release to comment on PRs
+  id-token: write # for npm provenance
+
+jobs:
+  release:
+    name: Release a new @appwarden/middleware version 🚀
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.1.1
+        with:
+          ref: release-middleware
+          fetch-depth: 0 # Needed for semantic-release to generate correct version numbers
+          persist-credentials: false # Don't persist credentials to avoid potential security issues
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4.0.2
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.APPWARDEN_NPM_TOKEN }}
+        with:
+          node-version: lts/jod
+          registry-url: https://registry.npmjs.org
+          cache: "pnpm"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4.0.0
+        with:
+          version: 10.4.1
+          run_install: false
+
+      - name: Install dependencies
+        run: |
+          # Set safer npm config
+          npm config set ignore-scripts true
+          npm config set audit true
+
+          # Install dependencies with frozen lockfile for reproducibility
+          pnpm install --ignore-scripts --frozen-lockfile
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run post-install scripts
+        run: |
+          pnpm prepare
+          pnpm build
+
+      - name: Run checks
+        run: |
+          pnpm check:types
+          pnpm test:vitest
+
+      - name: Release 🚀
+        run: pnpm release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.APPWARDEN_NPM_TOKEN }}
+
+      # Use GitHub CLI instead of third-party action for merging
+      - name: Merge release-middleware -> main
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+          # Fetch the target branch
+          git fetch origin main:main
+
+          # Attempt to merge
+          echo "Attempting to merge release-middleware into main..."
+          git checkout main
+          git merge --no-ff release-middleware -m "chore: merge release-middleware into main [skip ci]"
+
+          # Push the merge commit
+          git push origin main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

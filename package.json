@@ -22,11 +22,10 @@
     "dev": "pnpm build --watch",
     "deploy:worker": "pnpm build && wrangler deploy",
     "deploy:staging": "pnpm deploy:worker -e staging",
-    "deploy:production": "NODE_ENV=production pnpm deploy:worker -e production",
     "release": "NODE_ENV=production pnpm build && node scripts/prepare-package.cjs && semantic-release",
     "build": "tsup",
     "check:types": "tsc --noEmit",
-    "test:vitest": "vitest"
+    "test": "vitest"
   },
   "dependencies": {
     "@cloudflare/next-on-pages": "1.13.5",
@@ -58,6 +57,7 @@
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org",
-    "access": "public"
+    "access": "public",
+    "provenance": true
   }
 }

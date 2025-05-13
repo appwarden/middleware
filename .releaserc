@@ -35,7 +35,8 @@
       "@semantic-release/npm",
       {
         "npmPublish": true,
-        "pkgRoot": "build"
+        "pkgRoot": "build",
+        "provenance": true
       }
     ]
   ]
