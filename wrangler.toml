@@ -1,0 +1,28 @@
+#:schema ../../node_modules/wrangler/config-schema.json
+name = "appwarden-middleware-test"
+compatibility_date = "2025-02-20"
+account_id = "a471265d3d8e91f3a15e3d889027823c"
+
+send_metrics = false
+workers_dev = false
+compatibility_flags = ["nodejs_compat"]
+
+main = "build/test-cloudflare.js"
+
+routes = [{ pattern = "*appwarden.cc/*", zone_id = "f43ad237ff38259f9babd699bd1c42b6"}]
+
+[env.staging.vars]
+DEBUG = true
+APP_ENV = "staging"
+LOCK_PAGE_SLUG = "/maintenance"
+CSP_MODE = "report-only"
+CSP_DIRECTIVES = "{\"script-src\":[\"self\",\"unsafe-inline\",\"unsafe-eval\",\"https://cdn.jsdelivr.net\"]}"
+APPWARDEN_API_TOKEN = "bF9tMmRjVU53YWw1amd6YzE5czVWS1NiOjI1ODU4Mjg"
+
+[env.production.vars]
+DEBUG = true
+APP_ENV = "production"
+LOCK_PAGE_SLUG = "/maintenance"
+CSP_MODE = "disabled"
+CSP_DIRECTIVES = "{\"script-src\":[\"self\",\"unsafe-inline\",\"unsafe-eval\",\"https://cdn.jsdelivr.net\"]}"
+APPWARDEN_API_TOKEN = "WWRzcUZCcmJjR3dmMUE4c29iZERJSkFlOjI1ODU4Mjg"
