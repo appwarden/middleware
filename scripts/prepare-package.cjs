@@ -6,11 +6,20 @@ const path = require("path")
 // on the copied file, remove the `/build` substring from the from the main field
 // on the copied file, remove the `/build` substring from the from the types field
 const main = () => {
-  const packageJson = { ...require("../package.json") }
+  // Load the package.json file
+  const packageJsonPath = path.join(__dirname, "../package.json")
+  const packageJsonContent = fs.readFileSync(packageJsonPath, "utf8")
+  const packageJson = JSON.parse(packageJsonContent)
 
+  // Fix main and types fields
   packageJson.main = packageJson.main.replace("/build", "")
   packageJson.types = packageJson.types.replace("/build", "")
 
+  // Remove the files field to avoid confusion
+  // When publishing from the build directory, we want to include all files in that directory
+  delete packageJson.files
+
+  // Remove unnecessary fields
   delete packageJson.scripts
   delete packageJson.private
   delete packageJson.sideEffects
@@ -21,9 +30,19 @@ const main = () => {
     JSON.stringify(packageJson, null, 2),
   )
 
+  // Verify the changes
+  console.log("Final package.json content:")
+  console.log(fs.readFileSync(buildPackageJsonPath, "utf8"))
+
+  // Copy README.md to the build directory
   fs.copyFileSync(
     path.join(__dirname, "../README.md"),
     path.join(__dirname, "../build/README.md"),
+  )
+
+  fs.copyFileSync(
+    path.join(__dirname, "../LICENSE"),
+    path.join(__dirname, "../build/LICENSE"),
   )
 }
 

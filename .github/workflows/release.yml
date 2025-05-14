@@ -1,8 +1,8 @@
-name: Release @appwarden/middleware
+name: 🚀 Release @appwarden/middleware
 on:
   push:
     branches:
-      - release-middleware
+      - release
 
 # Explicitly define permissions following the principle of least privilege
 permissions:
@@ -13,14 +13,14 @@ permissions:
 
 jobs:
   release:
-    name: Release a new @appwarden/middleware version 🚀
+    name: 🚀 Release @appwarden/middleware
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4.1.1
         with:
-          ref: release-middleware
+          ref: release
           fetch-depth: 0 # Needed for semantic-release to generate correct version numbers
           persist-credentials: false # Don't persist credentials to avoid potential security issues
 
@@ -29,9 +29,15 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.APPWARDEN_NPM_TOKEN }}
         with:
+<<<<<<< HEAD
           node-version: lts/jod
           registry-url: https://registry.npmjs.org
           cache: "pnpm"
+=======
+          node-version: lts/iron
+          registry-url: https://registry.npmjs.org
+          cache: pnpm
+>>>>>>> 6a2f92b (Move middleware to public repo)
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4.0.0
@@ -39,6 +45,15 @@ jobs:
           version: 10.4.1
           run_install: false
 
+<<<<<<< HEAD
+=======
+      - name: Verify lockfile integrity
+        run: |
+          # Check if lockfile has been tampered with
+          echo "Verifying lockfile integrity..."
+          pnpm dedupe --check
+
+>>>>>>> 6a2f92b (Move middleware to public repo)
       - name: Install dependencies
         run: |
           # Set safer npm config
@@ -49,25 +64,52 @@ jobs:
           pnpm install --ignore-scripts --frozen-lockfile
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+<<<<<<< HEAD
+=======
+          # Disable progress bars for cleaner logs
+          NPM_CONFIG_PROGRESS: "false"
+>>>>>>> 6a2f92b (Move middleware to public repo)
 
       - name: Run post-install scripts
         run: |
           pnpm prepare
           pnpm build
 
+<<<<<<< HEAD
       - name: Run checks
         run: |
-          pnpm check:types
-          pnpm test:vitest
+          pnpm check
+          pnpm test -- --coverage
+
+      - name: Generate coverage badge
+        run: pnpm coverage:badge
+=======
+      - name: Run security checks
+        run: |
+          # Audit dependencies for security vulnerabilities
+          pnpm audit --audit-level high
+
+          # Check for unpinned dependencies (using ^ or ~)
+          echo "Checking for unpinned dependencies..."
+          if grep -E '"[^"]+": "\^[^"]+"|"[^"]+": "~[^"]+"' package.json; then
+            echo "Warning: Found unpinned dependencies in package.json. Consider pinning them for better security."
+            # Not failing the build, just warning
+          fi
+
+      - name: Run code quality checks
+        run: |
+          pnpm check
+          pnpm test
+>>>>>>> 6a2f92b (Move middleware to public repo)
 
       - name: Release 🚀
         run: pnpm release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.APPWARDEN_NPM_TOKEN }}
+<<<<<<< HEAD
 
-      # Use GitHub CLI instead of third-party action for merging
-      - name: Merge release-middleware -> main
+      - name: Merge release -> main
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
@@ -76,9 +118,38 @@ jobs:
           git fetch origin main:main
 
           # Attempt to merge
-          echo "Attempting to merge release-middleware into main..."
+          echo "Attempting to merge release into main..."
           git checkout main
-          git merge --no-ff release-middleware -m "chore: merge release-middleware into main [skip ci]"
+=======
+          NPM_CONFIG_PROVENANCE: "true"
+
+      - name: Merge release -> main
+        run: |
+          # Use local git config instead of global
+          git config --local user.name "GitHub Actions"
+          git config --local user.email "actions@github.com"
+
+          # Verify branch integrity before merging
+          echo "Verifying branch integrity..."
+          git fetch origin main:main
+
+          # Verify signatures if enabled in your repository
+          if git config --get merge.verifySignatures; then
+            echo "Signature verification is enabled"
+          fi
+
+          # Attempt to merge with security checks
+          echo "Attempting to merge release into main..."
+          git checkout main
+
+          # Check for unexpected changes
+          if git diff --name-only origin/main | grep -v "package.json\|package-lock.json\|CHANGELOG.md\|.version"; then
+            echo "Warning: Unexpected files changed in main branch. Proceeding with caution."
+          fi
+
+          # Use --no-ff to ensure merge commit and clear audit trail
+>>>>>>> 6a2f92b (Move middleware to public repo)
+          git merge --no-ff release -m "chore: merge release into main [skip ci]"
 
           # Push the merge commit
           git push origin main

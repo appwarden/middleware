@@ -1,6 +1,6 @@
 import { defineConfig } from "tsup"
 
-declare var process: {
+declare let process: {
   env: {
     NODE_ENV?: "production" | "test"
   }

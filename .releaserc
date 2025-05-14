@@ -1,6 +1,6 @@
 {
   "branches": [
-    "release-middleware"
+    "release"
   ],
   "debug": true,
   "tagFormat": "@appwarden/middleware@${version}",

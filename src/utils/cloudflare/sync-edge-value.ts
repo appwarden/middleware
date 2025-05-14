@@ -66,8 +66,8 @@ export const syncEdgeValue = async (context: CloudflareProviderContext) => {
         e instanceof APIError
           ? e.message
           : e instanceof Error
-          ? `${message} - ${e.message}`
-          : message,
+            ? `${message} - ${e.message}`
+            : message,
       ),
     )
   }

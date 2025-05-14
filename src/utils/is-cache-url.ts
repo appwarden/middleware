@@ -4,15 +4,31 @@ export const getEdgeConfigId = (value = "") =>
     : undefined
 
 export const isCacheUrl = {
-  edgeConfig: (value = "") => value.includes("edge-config.vercel.com"),
-  upstash: (value = "") => value.includes(".upstash.io"),
+  edgeConfig: (value = "") => {
+    try {
+      const url = new URL(value)
+      return url.hostname === "edge-config.vercel.com"
+    } catch {
+      // If it's not a valid URL, fall back to a more strict check
+      return /^https:\/\/edge-config\.vercel\.com\//.test(value)
+    }
+  },
+  upstash: (value = "") => {
+    try {
+      const url = new URL(value)
+      return url.hostname.endsWith(".upstash.io")
+    } catch {
+      // If it's not a valid URL, fall back to a more lenient check
+      return /\.upstash\.io/.test(value || "")
+    }
+  },
 }
 
 export const isValidCacheUrl = {
   edgeConfig: (value = "") => {
     // example valid connection string
     // URL {
-    //   href: 'https://edge-config.vercel.com/ecfg_yaa9pmoquhmf29cnfott3jhbsfdz?token=5010d9a6-04e1-4219-a8b7-f8ecfd3e10d6',
+    //   href: 'https://edge-config.vercel.com/ecfg_yaa9pmoquhmf29cnfott3jhbsfdz?token=123',
     //   origin: 'https://edge-config.vercel.com',
     //   protocol: 'https:',
     //   username: '',
@@ -21,8 +37,8 @@ export const isValidCacheUrl = {
     //   hostname: 'edge-config.vercel.com',
     //   port: '',
     //   pathname: '/ecfg_yaa9pmoquhmf29cnfott3jhbsfdz',
-    //   search: '?token=5010d9a6-04e1-4219-a8b7-f8ecfd3e10d6',
-    //   searchParams: URLSearchParams { 'token' => '5010d9a6-04e1-4219-a8b7-f8ecfd3e10d6' },
+    //   search: '?token=123',
+    //   searchParams: URLSearchParams { 'token' => '123' },
     //   hash: ''
     // }
     try {
@@ -32,7 +48,7 @@ export const isValidCacheUrl = {
         url.pathname.startsWith("/ecfg_") &&
         url.searchParams.has("token")
       )
-    } catch (error) {
+    } catch {
       return false
     }
   },
@@ -59,7 +75,7 @@ export const isValidCacheUrl = {
         url.hostname.endsWith("upstash.io") &&
         url.password
       )
-    } catch (error) {
+    } catch {
       return false
     }
   },

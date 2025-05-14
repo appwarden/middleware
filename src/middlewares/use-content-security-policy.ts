@@ -1,4 +1,3 @@
-import { removedHeaders } from "../constants"
 import { UseCSPInput, UseCSPInputSchema } from "../schemas"
 import { Middleware } from "../types"
 import { debug, printMessage } from "../utils"
@@ -53,10 +52,6 @@ export const useContentSecurityPolicy: (input: UseCSPInput) => Middleware = (
 
     nextResponse.headers.set(cspHeaderName, cspHeaderValue)
     nextResponse.headers.set("content-type", "text/html; charset=utf-8")
-
-    removedHeaders.forEach((name) => {
-      nextResponse.headers.delete(name)
-    })
 
     context.response = new HTMLRewriter()
       .on("style", AppendAttribute("nonce", cspNonce))

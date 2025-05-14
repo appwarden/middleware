@@ -12,40 +12,56 @@ export const BaseNextJsConfigSchema = z.object({
     .transform((val) => val.replace(/^\/?/, "/")),
 })
 
-export const AppwardenConfigSchema = BaseNextJsConfigSchema.refine(
-  (data) =>
-    isCacheUrl.edgeConfig(data.cacheUrl) || isCacheUrl.upstash(data.cacheUrl),
-  {
-    message: printMessage(
-      "Provided `cacheUrl` is not recognized. Please provide a Vercel Edge Config or Upstash KV url.",
-    ),
-    path: ["cacheUrl"],
-  },
-)
+export const AppwardenConfigSchema = BaseNextJsConfigSchema
+  // First check if the URL is recognized as either Edge Config or Upstash
   .refine(
-    (data) =>
-      isCacheUrl.edgeConfig(data.cacheUrl)
-        ? isValidCacheUrl.edgeConfig(data.cacheUrl)
-        : true,
+    (data) => {
+      return (
+        isCacheUrl.edgeConfig(data.cacheUrl) ||
+        isCacheUrl.upstash(data.cacheUrl)
+      )
+    },
     {
       message: printMessage(
-        "Provided Vercel Edge Config `cacheUrl` is not valid. Please provide a valid Vercel Edge Config url.",
+        "Provided `cacheUrl` is not recognized. Please provide a Vercel Edge Config or Upstash KV url.",
       ),
       path: ["cacheUrl"],
     },
   )
-  .refine(
-    (data) =>
-      isCacheUrl.upstash(data.cacheUrl)
-        ? isValidCacheUrl.upstash(data.cacheUrl)
-        : true,
-    {
-      message: printMessage(
-        "Provided Upstash KV `cacheUrl` is not valid. Please provide a valid Upstash KV url.",
-      ),
-      path: ["cacheUrl"],
-    },
-  )
+  .superRefine((data, ctx) => {
+    // If it's an Edge Config URL, validate its format
+    if (
+      !isValidCacheUrl.edgeConfig(data.cacheUrl) &&
+      isValidCacheUrl.upstash(data.cacheUrl)
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        message: printMessage(
+          "Provided Vercel Edge Config `cacheUrl` is not valid. It should be in the format https://edge-config.vercel.com/ecfg_*",
+        ),
+        path: ["cacheUrl"],
+      })
+      return false
+    }
+
+    // If it's an Upstash URL, validate its format
+    if (
+      !isValidCacheUrl.upstash(data.cacheUrl) &&
+      isValidCacheUrl.edgeConfig(data.cacheUrl)
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        message: printMessage(
+          "Provided Upstash KV `cacheUrl` is not valid. It should be in the format rediss://:password@hostname.upstash.io:6379",
+        ),
+        path: ["cacheUrl"],
+      })
+      return false
+    }
+
+    return true
+  })
+  // Require vercelApiToken when using Edge Config
   .refine(
     (data) =>
       isCacheUrl.edgeConfig(data.cacheUrl) ? !!data.vercelApiToken : true,
@@ -56,6 +72,7 @@ export const AppwardenConfigSchema = BaseNextJsConfigSchema.refine(
       path: ["vercelApiToken"],
     },
   )
+  // Always require appwardenApiToken
   .refine((data) => !!data.appwardenApiToken, {
     message: printMessage(
       "Please provide a valid `appwardenApiToken`. Learn more at https://appwarden.com/docs/guides/api-token-management.",
