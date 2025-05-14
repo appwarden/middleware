@@ -16,10 +16,8 @@ export const validBindings = {
 export const getBindings = (bindings: Partial<Bindings> = validBindings) =>
   bindings
 
-export const init = (fetchMock: MockAgent, bindings: Record<string, any>) => {
-  // We need to cast to any because the Miniflare types don't include globals
-  // but the actual implementation accepts it
-  const options = {
+export const init = (fetchMock: MockAgent, bindings: Record<string, any>) =>
+  new Miniflare({
     modules: true,
     scriptPath: `${projectPath}/build/test-cloudflare.js`,
     bindings,
@@ -28,10 +26,7 @@ export const init = (fetchMock: MockAgent, bindings: Record<string, any>) => {
       // @ts-expect-error - MockAgent types don't include fetch but it works
       fetch: fetchMock.fetch,
     },
-  } as any as MiniflareOptions
-
-  return new Miniflare(options)
-}
+  } as MiniflareOptions)
 
 export const getRequest = (mf: Miniflare) =>
   mf.dispatchFetch("https://appwarden.io", {
