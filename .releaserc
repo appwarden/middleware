@@ -1,6 +1,6 @@
 {
   "branches": [
-    "release-middleware"
+    "release"
   ],
   "debug": true,
   "tagFormat": "@appwarden/middleware@${version}",
@@ -35,7 +35,8 @@
       "@semantic-release/npm",
       {
         "npmPublish": true,
-        "pkgRoot": "build"
+        "pkgRoot": "build",
+        "provenance": true
       }
     ]
   ]

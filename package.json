@@ -2,11 +2,22 @@
   "name": "@appwarden/middleware",
   "version": "1.1.5",
   "description": "Instantly shut off access your app deployed on Cloudflare or Vercel",
-  "private": false,
-  "sideEffects": true,
+  "sideEffects": false,
   "type": "module",
   "license": "MIT",
   "author": "Appwarden <support@appwarden.io>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/appwarden/appwarden-middleware.git"
+  },
+  "homepage": "https://appwarden.io/docs",
+  "bugs": {
+    "url": "https://github.com/appwarden/appwarden-middleware/issues"
+  },
+  "funding": {
+    "type": "url",
+    "url": "https://appwarden.io"
+  },
   "main": "./build/index.js",
   "types": "./build/index.d.ts",
   "keywords": [
@@ -24,7 +35,15 @@
     "release": "NODE_ENV=production pnpm build && node scripts/prepare-package.cjs && semantic-release",
     "build": "tsup",
     "check": "tsc --noEmit",
-    "test": "vitest"
+    "test": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "format": "prettier --write \"**/*.{ts,js,json,md}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,js,json,md}\"",
+    "prepack": "pnpm build",
+    "check:all": "pnpm lint && pnpm format && pnpm check && pnpm test"
+  },
+  "engines": {
+    "node": ">=18"
   },
   "dependencies": {
     "@cloudflare/next-on-pages": "1.13.5",
@@ -45,8 +64,11 @@
     "@semantic-release/changelog": "6.0.3",
     "@semantic-release/exec": "7.1.0",
     "@semantic-release/npm": "12.0.1",
+    "@typescript-eslint/eslint-plugin": "^8.32.1",
+    "@typescript-eslint/parser": "^8.32.1",
     "cheerio": "1.0.0",
     "miniflare": "4.20250508.0",
+    "prettier": "^3.5.3",
     "semantic-release": "24.2.3",
     "tsup": "8.4.0",
     "typescript": "5.8.2",
@@ -56,6 +78,26 @@
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org",
-    "access": "public"
+    "access": "public",
+    "provenance": true
+  },
+  "files": [
+    "build",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "types": "./build/index.d.ts",
+      "default": "./build/index.js"
+    },
+    "./vercel": {
+      "types": "./build/bundles/vercel.d.ts",
+      "default": "./build/vercel.js"
+    },
+    "./cloudflare": {
+      "types": "./build/bundles/cloudflare.d.ts",
+      "default": "./build/cloudflare.js"
+    }
   }
 }
