@@ -25,7 +25,7 @@ jobs:
           persist-credentials: false # Don't persist credentials to avoid potential security issues
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4.0.2
+        uses: actions/setup-node@v4.4.0
         env:
           NODE_AUTH_TOKEN: ${{ secrets.APPWARDEN_NPM_TOKEN }}
         with:
