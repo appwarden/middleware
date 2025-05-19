@@ -43,7 +43,7 @@ export const isCacheUrl = {
       return url.hostname.endsWith(".upstash.io")
     } catch {
       // If it's not a valid URL, fall back to a more lenient check
-      return /\.upstash\.io/.test(value || "")
+      return /^.*\.upstash\.io$/.test(value || "")
     }
   },
 }
