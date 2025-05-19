@@ -24,6 +24,12 @@ jobs:
           fetch-depth: 0 # Needed for semantic-release to generate correct version numbers
           persist-credentials: false # Don't persist credentials to avoid potential security issues
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4.0.0
+        with:
+          version: 10.4.1
+          run_install: false
+
       - name: Setup Node.js
         uses: actions/setup-node@v4.0.2
         env:
@@ -32,12 +38,6 @@ jobs:
           node-version: lts/iron
           registry-url: https://registry.npmjs.org
           cache: pnpm
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4.0.0
-        with:
-          version: 10.4.1
-          run_install: false
 
       - name: Verify lockfile integrity
         run: |
