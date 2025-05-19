@@ -24,22 +24,22 @@ const main = () => {
   delete packageJson.private
   delete packageJson.sideEffects
   delete packageJson.devDependencies
-
+  // Write the modified package.json to the build directory
   fs.writeFileSync(
     path.join(__dirname, "../build/package.json"),
     JSON.stringify(packageJson, null, 2),
   )
-
   // Verify the changes
   console.log("Final package.json content:")
-  console.log(fs.readFileSync(buildPackageJsonPath, "utf8"))
-
+  console.log(
+    fs.readFileSync(path.join(__dirname, "../build/package.json"), "utf8"),
+  )
   // Copy README.md to the build directory
   fs.copyFileSync(
     path.join(__dirname, "../README.md"),
     path.join(__dirname, "../build/README.md"),
   )
-
+  // Copy LICENSE to the build directory
   fs.copyFileSync(
     path.join(__dirname, "../LICENSE"),
     path.join(__dirname, "../build/LICENSE"),
