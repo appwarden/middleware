@@ -7,11 +7,11 @@
   "author": "Appwarden <support@appwarden.io>",
   "homepage": "https://appwarden.io/docs",
   "bugs": {
-    "url": "https://github.com/appwarden/appwarden-middleware/issues"
+    "url": "https://github.com/appwarden/middleware/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/appwarden/appwarden-middleware.git"
+    "url": "https://github.com/appwarden/middleware.git"
   },
   "keywords": [
     "appwarden",
