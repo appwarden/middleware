@@ -2,9 +2,8 @@
 
 ![Test Coverage](https://img.shields.io/badge/coverage-97.58%25-brightgreen)
 [![npm version](https://img.shields.io/npm/v/@appwarden/middleware.svg)](https://www.npmjs.com/package/@appwarden/middleware)
-[![npm downloads](https://img.shields.io/npm/dm/@appwarden/middleware.svg)](https://www.npmjs.com/package/@appwarden/middleware)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![npm provenance](https://img.shields.io/badge/npm-provenance-green)](https://docs.npmjs.com/generating-provenance-statements)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 > Read the docs [to learn more](https://appwarden.io/docs)
 
@@ -14,8 +13,9 @@
 
 - **Instant Quarantine**: Immediately redirects all visitors to a maintenance page when activated
 - **Discord Integration**: Trigger lockdowns via Discord commands (`/quarantine lock your.app.io`)
+- **Nonce-based Content Security Policy**: On Cloudflare, deploy a nonce-based Content Security Policy to supercharge your website security
 
-### 3. Performance Optimizations
+### Performance Optimizations
 
 - **Background Synchronization**: Uses `waitUntil()` to update cache state without blocking responses
 - **Minimal Runtime Overhead**: Lightweight implementation with negligible performance impact
@@ -29,8 +29,6 @@ For detailed usage instructions, please refer to our [documentation](https://app
 ### Cloudflare
 
 We recommend using the [`@appwarden/build-cloudflare-action`](https://github.com/appwarden/build-cloudflare-action) Github Action to deploy automatically on Cloudflare.
-
-- Comes with nonce-based Content Security Policy support
 
 > Read the docs [to get started](https://appwarden.io/docs/guides/cloudflare-integration)
 
