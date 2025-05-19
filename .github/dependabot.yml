@@ -1,0 +1,48 @@
+version: 2
+updates:
+  # Enable version updates for npm
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    # Limit to security updates only
+    open-pull-requests-limit: 10
+    versioning-strategy: increase
+    groups:
+      dev-dependencies:
+        patterns:
+          - "*eslint*"
+          - "*prettier*"
+          - "*test*"
+        update-types:
+          - "minor"
+          - "patch"
+      production-dependencies:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "*eslint*"
+          - "*prettier*"
+          - "*test*"
+        update-types:
+          - "patch"
+    # Specify labels for npm pull requests
+    labels:
+      - "npm"
+      - "dependencies"
+    # Add reviewers
+    reviewers:
+      - "appwarden/maintainers"
+
+  # Enable version updates for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    # Specify labels for GitHub Actions pull requests
+    labels:
+      - "github-actions"
+      - "dependencies"
+    # Add reviewers
+    reviewers:
+      - "appwarden/maintainers"
