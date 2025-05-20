@@ -22,7 +22,6 @@ jobs:
         with:
           ref: release
           fetch-depth: 0 # Needed for semantic-release to generate correct version numbers
-          persist-credentials: false # Don't persist credentials to avoid potential security issues
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4.0.0
@@ -92,6 +91,10 @@ jobs:
           # Use local git config instead of global
           git config --local user.name "GitHub Actions"
           git config --local user.email "actions@github.com"
+
+          # Configure Git to use the GitHub token for authentication
+          # This is needed because we set persist-credentials: false in the checkout step
+          git config --local http.https://github.com/.extraheader "AUTHORIZATION: basic $(echo -n "x-access-token:${GITHUB_TOKEN}" | base64)"
 
           # Verify branch integrity before merging
           echo "Verifying branch integrity..."
