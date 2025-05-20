@@ -49,7 +49,8 @@
     "check": "tsc --noEmit",
     "test": "vitest",
     "prepack": "pnpm build",
-    "commitlint": "commitlint --edit"
+    "commitlint": "commitlint --edit",
+    "analyze-release": "node scripts/analyze-pr.cjs"
   },
   "dependencies": {
     "@cloudflare/next-on-pages": "1.13.12",

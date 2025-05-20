@@ -1,0 +1,56 @@
+name: 📊 PR Release Analysis
+on:
+  pull_request:
+    branches:
+      - main
+
+# Explicitly define permissions following the principle of least privilege
+permissions:
+  contents: read
+  pull-requests: write # needed to comment on PRs
+
+jobs:
+  analyze:
+    name: 📊 Analyze potential release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.1.1
+        with:
+          fetch-depth: 0 # Needed for semantic-release to analyze all commits
+          persist-credentials: false # Don't persist credentials to avoid potential security issues
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4.0.0
+        with:
+          version: 10.4.1
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4.0.2
+        with:
+          node-version: lts/iron
+          registry-url: https://registry.npmjs.org
+          cache: pnpm
+
+      - name: Install dependencies
+        run: |
+          # Set safer npm config
+          npm config set ignore-scripts true
+          npm config set audit true
+
+          # Install dependencies with frozen lockfile for reproducibility
+          pnpm install --frozen-lockfile
+        env:
+          # Disable progress bars for cleaner logs
+          NPM_CONFIG_PROGRESS: "false"
+
+      - name: Analyze PR for release
+        run: |
+          # Run semantic-release in dry-run mode with PR analysis
+          git checkout main
+          pnpm run analyze-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_NPM_TOKEN }}
