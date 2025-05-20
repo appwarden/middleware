@@ -9,7 +9,7 @@ on:
 permissions:
   contents: write # Needed to update README with coverage badge
   checks: write # Needed to report check results
-  pull-requests: read
+  pull-requests: write # Needed to create pull requests
   security-events: write # Needed for dependency scanning
 
 concurrency:
@@ -85,7 +85,7 @@ jobs:
         run: |
           node scripts/generate-coverage-badge.cjs
 
-      - name: Commit and push updated README with coverage badge
+      - name: Create PR for updated README with coverage badge
         if: github.ref == 'refs/heads/main'
         run: |
           # Configure git
@@ -98,11 +98,27 @@ jobs:
 
           # Check if README was modified
           if [[ -n $(git status --porcelain README.md) ]]; then
+            # Create a new branch with timestamp to ensure uniqueness
+            BRANCH_NAME="update-coverage-badge-$(date +%Y%m%d%H%M%S)"
+            git checkout -b $BRANCH_NAME
+
+            # Add, commit and push changes to the new branch
             git add README.md
             git commit -m "docs: update coverage badge [skip ci]"
-            git push
+            git push origin $BRANCH_NAME
+
+            # Create a pull request using GitHub CLI
+            # Authenticate with GitHub CLI using the GITHUB_TOKEN
+            echo "$GITHUB_TOKEN" | gh auth login --with-token
+
+            gh pr create \
+              --base main \
+              --head $BRANCH_NAME \
+              --title "docs: update coverage badge" \
+              --body "Automatically generated PR to update the coverage badge in README.md" \
+              --label "documentation"
           else
-            echo "No changes to README.md, skipping commit"
+            echo "No changes to README.md, skipping PR creation"
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
