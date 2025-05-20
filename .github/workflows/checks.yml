@@ -26,6 +26,7 @@ jobs:
         uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 1
+          persist-credentials: false # Don't persist credentials to avoid potential security issues
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4.0.0
@@ -80,16 +81,20 @@ jobs:
         run: pnpm test -- --coverage
 
       - name: Generate coverage badge
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/release'
+        if: github.ref == 'refs/heads/main'
         run: |
           node scripts/generate-coverage-badge.cjs
 
       - name: Commit and push updated README with coverage badge
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/release'
+        if: github.ref == 'refs/heads/main'
         run: |
           # Configure git
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
+
+          # Configure Git to use the GitHub token for authentication
+          # This is needed because we set persist-credentials: false in the checkout step
+          git config --local http.https://github.com/.extraheader "AUTHORIZATION: basic $(echo -n "x-access-token:${GITHUB_TOKEN}" | base64)"
 
           # Check if README was modified
           if [[ -n $(git status --porcelain README.md) ]]; then
@@ -99,3 +104,5 @@ jobs:
           else
             echo "No changes to README.md, skipping commit"
           fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
