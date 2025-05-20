@@ -85,10 +85,6 @@ jobs:
         run: |
           node scripts/generate-coverage-badge.cjs
 
-      - name: Setup GitHub CLI
-        if: github.ref == 'refs/heads/main'
-        uses: cli/setup-gh-cli@v1
-
       - name: Create PR for updated README with coverage badge
         if: github.ref == 'refs/heads/main'
         run: |

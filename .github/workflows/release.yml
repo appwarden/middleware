@@ -83,9 +83,6 @@ jobs:
           pnpm check
           pnpm test
 
-      - name: Setup GitHub CLI
-        uses: cli/setup-gh-cli@v1
-
       - name: Release 🚀
         run: |
           # Create dist directory for tarball files
