@@ -25,6 +25,7 @@ jobs:
         uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0 # Needed for semantic-release to generate correct version numbers
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4.0.0
@@ -82,8 +83,14 @@ jobs:
           pnpm check
           pnpm test
 
+      - name: Setup GitHub CLI
+        uses: cli/setup-gh-cli@v1
+
       - name: Release 🚀
-        run: pnpm release
+        run: |
+          # Create dist directory for tarball files
+          mkdir -p dist
+          pnpm release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_NPM_TOKEN }}

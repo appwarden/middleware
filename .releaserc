@@ -36,7 +36,22 @@
       {
         "npmPublish": true,
         "pkgRoot": "build",
-        "provenance": true
+        "provenance": true,
+        "tarballDir": "dist"
+      }
+    ],
+    [
+      "@semantic-release/github",
+      {
+        "assets": [
+          {"path": "dist/*.tgz", "label": "npm package"}
+        ]
+      }
+    ],
+    [
+      "@semantic-release/exec",
+      {
+        "successCmd": "node scripts/create-version-pr.cjs ${nextRelease.version}"
       }
     ]
   ]
