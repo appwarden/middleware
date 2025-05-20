@@ -3,10 +3,6 @@ on:
   pull_request:
     branches:
       - main
-    paths-ignore:
-      - "**.md"
-      - ".github/workflows/**"
-      - "!.github/workflows/pr-analysis.yml"
 
 # Explicitly define permissions following the principle of least privilege
 permissions:
@@ -53,7 +49,8 @@ jobs:
       - name: Analyze PR for release
         run: |
           # Run semantic-release in dry-run mode with PR analysis
-          pnpm semantic-release-github-pr
+          git checkout main
+          pnpm run analyze-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_NPM_TOKEN }}

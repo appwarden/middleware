@@ -45,12 +45,12 @@
     "dev": "pnpm build --watch",
     "deploy:staging": "pnpm build && wrangler deploy -e staging",
     "release": "NODE_ENV=production pnpm build && node scripts/prepare-package.cjs && semantic-release",
-    "analyze-release": "node scripts/analyze-pr.cjs",
     "build": "tsup",
     "check": "tsc --noEmit",
     "test": "vitest",
     "prepack": "pnpm build",
-    "commitlint": "commitlint --edit"
+    "commitlint": "commitlint --edit",
+    "analyze-release": "node scripts/analyze-pr.cjs"
   },
   "dependencies": {
     "@cloudflare/next-on-pages": "1.13.12",
@@ -81,7 +81,6 @@
     "miniflare": "4.20250508.2",
     "prettier": "^3.5.3",
     "semantic-release": "24.2.4",
-    "semantic-release-github-pr": "^6.0.3",
     "tsup": "8.5.0",
     "typescript": "5.8.3",
     "undici": "7.9.0",
