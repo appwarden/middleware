@@ -80,7 +80,7 @@ jobs:
         run: pnpm test -- --coverage
 
       - name: Generate coverage badge
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/release'
+        if: github.ref == 'refs/heads/main'
         run: |
           node scripts/generate-coverage-badge.cjs
 
