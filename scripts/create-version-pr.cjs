@@ -18,7 +18,8 @@ if (!newVersion) {
 // Function to execute shell commands and return output
 function exec(command) {
   try {
-    return execSync(command, { encoding: "utf8" }).trim()
+    const result = execSync(command, { encoding: "utf8" })
+    return result?.trim() ?? ""
   } catch (error) {
     console.error(`Error executing command: ${command}`)
     console.error(error.message)
