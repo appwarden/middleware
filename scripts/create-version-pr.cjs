@@ -18,11 +18,19 @@ if (!newVersion) {
 // Function to execute shell commands and return output
 function exec(command) {
   try {
-    const result = execSync(command, { encoding: "utf8" })
-    return result?.trim() ?? ""
+    console.log(`Executing: ${command}`)
+    const result = execSync(command, {
+      encoding: "utf8",
+      stdio: ["pipe", "pipe", "pipe"],
+    })
+
+    // Handle null or undefined result
+    return typeof result === "string" ? result.trim() : ""
   } catch (error) {
     console.error(`Error executing command: ${command}`)
     console.error(error.message)
+    if (error.stdout) console.log(`Command stdout: ${error.stdout}`)
+    if (error.stderr) console.error(`Command stderr: ${error.stderr}`)
     process.exit(1)
   }
 }
@@ -32,6 +40,7 @@ async function createVersionPR() {
   try {
     // Create a unique branch name for the version update
     const branchName = `version-update-${newVersion}-${Date.now()}`
+    console.log(`Creating branch: ${branchName} for version ${newVersion}`)
 
     // Configure git
     exec(
@@ -58,10 +67,12 @@ async function createVersionPR() {
     if (fs.existsSync(changelogPath)) {
       // Check if the file was modified
       try {
-        exec(`git diff --quiet -- "${changelogPath}"`)
+        // Using execSync directly here to handle the exit code properly
+        execSync(`git diff --quiet -- "${changelogPath}"`, { stdio: "pipe" })
       } catch (error) {
         // If the command exits with non-zero status, the file was modified
         changelogUpdated = true
+        console.log("CHANGELOG.md was modified, will include it in the commit")
       }
     }
 
@@ -78,9 +89,6 @@ async function createVersionPR() {
 
     // Push the branch
     exec(`git push origin ${branchName}`)
-
-    // Create a PR using GitHub CLI
-    // The GitHub CLI is already authenticated in GitHub Actions
 
     // Create the PR
     const prTitle = `chore(release): update version to ${newVersion}`
