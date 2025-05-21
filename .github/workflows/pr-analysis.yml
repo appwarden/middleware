@@ -48,8 +48,15 @@ jobs:
 
       - name: Analyze PR for release
         run: |
-          # Run semantic-release in dry-run mode with PR analysis
+          # Get the PR branch and create a temporary merge branch
+          PR_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+          echo "Current branch: $PR_BRANCH"
+
+          # Create a temporary branch that simulates the merge
           git checkout main
+          git checkout -b temp-merge-branch
+          git merge --no-commit --no-ff $PR_BRANCH
+
           pnpm run analyze-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
