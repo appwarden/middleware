@@ -108,9 +108,6 @@ jobs:
             git push origin $BRANCH_NAME
 
             # Create a pull request using GitHub CLI
-            # Authenticate with GitHub CLI using the GITHUB_TOKEN
-            echo "$GITHUB_TOKEN" | gh auth login --with-token
-
             gh pr create \
               --base main \
               --head $BRANCH_NAME \
