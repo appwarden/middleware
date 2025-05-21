@@ -18,16 +18,11 @@ if (!newVersion) {
 // Function to execute shell commands and return output
 function exec(command) {
   try {
-    console.log(`Executing: ${command}`)
-    return execSync(command, {
-      encoding: "utf8",
-      stdio: ["pipe", "pipe", "pipe"],
-    }).trim()
+    const result = execSync(command, { encoding: "utf8" })
+    return result?.trim() ?? ""
   } catch (error) {
     console.error(`Error executing command: ${command}`)
     console.error(error.message)
-    if (error.stdout) console.log(`Command stdout: ${error.stdout}`)
-    if (error.stderr) console.error(`Command stderr: ${error.stderr}`)
     process.exit(1)
   }
 }
@@ -63,12 +58,10 @@ async function createVersionPR() {
     if (fs.existsSync(changelogPath)) {
       // Check if the file was modified
       try {
-        // Using execSync directly here to handle the exit code properly
-        execSync(`git diff --quiet -- "${changelogPath}"`, { stdio: "pipe" })
+        exec(`git diff --quiet -- "${changelogPath}"`)
       } catch (error) {
         // If the command exits with non-zero status, the file was modified
         changelogUpdated = true
-        console.log("CHANGELOG.md was modified, will include it in the commit")
       }
     }
 
