@@ -48,6 +48,7 @@
     "build": "tsup",
     "check": "tsc --noEmit",
     "test": "vitest",
+    "test:coverage": "vitest --coverage",
     "prepack": "pnpm build",
     "commitlint": "commitlint --edit"
   },

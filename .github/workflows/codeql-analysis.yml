@@ -3,8 +3,12 @@ name: CodeQL Analysis
 on:
   push:
     branches: ["main", "release"]
+    paths:
+      - "src/**"
   pull_request:
     branches: ["main"]
+    paths:
+      - "src/**"
   schedule:
     - cron: "0 0 * * 0" # Run once a week on Sunday
 
