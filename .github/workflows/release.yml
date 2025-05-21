@@ -3,10 +3,6 @@ on:
   push:
     branches:
       - main
-    paths-ignore:
-      - "**.md"
-      - ".github/workflows/**"
-      - "!.github/workflows/release.yml"
 
 # Explicitly define permissions following the principle of least privilege
 permissions:
