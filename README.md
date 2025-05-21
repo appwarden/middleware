@@ -1,6 +1,6 @@
 # @appwarden/middleware
 
-![Test Coverage](https://img.shields.io/badge/coverage-97.58%25-brightgreen)
+![Test Coverage](https://img.shields.io/badge/coverage-90.01%25-brightgreen)
 [![npm version](https://img.shields.io/npm/v/@appwarden/middleware.svg)](https://www.npmjs.com/package/@appwarden/middleware)
 [![npm provenance](https://img.shields.io/badge/npm-provenance-green)](https://docs.npmjs.com/generating-provenance-statements)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
