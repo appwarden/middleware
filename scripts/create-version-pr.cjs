@@ -95,7 +95,7 @@ async function createVersionPR() {
     const prBody = `This PR updates the package version to ${newVersion} after a successful release.\n\nThis PR was automatically created by the semantic-release process.`
 
     exec(
-      `gh pr create --base main --head ${branchName} --title "${prTitle}" --body "${prBody}" --label "dependencies"`,
+      `gh pr create --base main --head ${branchName} --title "${prTitle}" --body "${prBody}"`,
     )
 
     console.log(`Successfully created PR for version ${newVersion}`)
