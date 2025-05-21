@@ -84,7 +84,7 @@ async function createVersionPR() {
 
     // Commit the changes
     exec(
-      `git commit -m "chore(release): update version to ${newVersion} [skip ci]"`,
+      `git commit --no-verify -m "chore(release): update version to ${newVersion} [skip ci]"`,
     )
 
     // Push the branch
