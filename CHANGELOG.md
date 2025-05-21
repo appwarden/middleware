@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.2.0](https://github.com/appwarden/middleware/compare/@appwarden/middleware@1.1.11...@appwarden/middleware@1.2.0) (2025-05-21)
+
+
+### Bug Fixes
+
+* remove gh auth line since we are already authed in ci ([cfae7d8](https://github.com/appwarden/middleware/commit/cfae7d8b57a9007e03b07ad3e4a5bfc0e2de66f9))
+* remove paths from codeql analysis ([62ddf4b](https://github.com/appwarden/middleware/commit/62ddf4b8a559145625ca9a7b9683fca779ad6a00))
+
 ## [1.1.11](https://github.com/appwarden/middleware/compare/@appwarden/middleware@1.1.10...@appwarden/middleware@1.1.11) (2025-05-21)
 
 
