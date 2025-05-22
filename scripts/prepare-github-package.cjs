@@ -14,10 +14,10 @@ const main = () => {
   // Read the current package.json
   const packageJsonContent = fs.readFileSync(packageJsonPath, "utf8")
   const packageJson = JSON.parse(packageJsonContent)
-
   // Add or update publishConfig for GitHub Packages
   // Using 'restricted' access to make the package private on GitHub Packages
   // for testing while keeping it public on npm registry
+  packageJson.private = true
   packageJson.publishConfig = {
     ...packageJson.publishConfig,
     registry: "https://npm.pkg.github.com",
