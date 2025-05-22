@@ -43,7 +43,7 @@
     [
       "@semantic-release/exec",
       {
-        "prepareCmd": "node scripts/prepare-github-package.cjs"
+        "prepareCmd": "node scripts/cleanup-build.cjs && node scripts/prepare-github-package.cjs"
       }
     ],
     [
