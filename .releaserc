@@ -35,8 +35,8 @@
       "@semantic-release/npm",
       {
         "npmPublish": true,
-        "pkgRoot": "build",
         "provenance": true,
+        "pkgRoot": "build",
         "tarballDir": "dist"
       }
     ],
@@ -47,13 +47,12 @@
       }
     ],
     [
-      "@semantic-release/npm",
+      "@semantic-release/exec",
       {
-        "npmPublish": true,
-        "pkgRoot": "build",
-        "provenance": true,
-        "tarballDir": "dist",
-        "npmPublishRegistry": "https://npm.pkg.github.com"
+        "verifyConditionsCmd": "echo //npm.pkg.github.com/:_authToken=${process.env.GITHUB_TOKEN} > /tmp/github.npmrc && npm whoami --userconfig /tmp/github.npmrc --registry https://npm.pkg.github.com/",
+        "publishCmd": "npm publish --userconfig /tmp/github.npmrc --tag ${nextRelease.channel} --registry https://npm.pkg.github.com/ --no-git-tag-version",
+        "successCmd": "rm /tmp/github.npmrc",
+        "failCmd": "rm /tmp/github.npmrc"
       }
     ],
     [
