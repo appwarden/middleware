@@ -31,8 +31,6 @@ jobs:
 
       - name: Setup Node.js
         uses: actions/setup-node@v4.0.2
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_NPM_TOKEN }}
         with:
           node-version: lts/iron
           registry-url: https://registry.npmjs.org
@@ -79,10 +77,24 @@ jobs:
           pnpm check
           pnpm test
 
+      # Setup for GitHub Packages
+      - name: Setup Node.js for GitHub Packages
+        uses: actions/setup-node@v4.0.2
+        with:
+          node-version: lts/iron
+          registry-url: https://npm.pkg.github.com
+          scope: "@appwarden"
+
       - name: Release 🚀
         run: |
           # Create dist directory for tarball files
           mkdir -p dist
+
+          # Create .npmrc file for multiple registry support
+          echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" > .npmrc
+          echo "//npm.pkg.github.com/:_authToken=\${GITHUB_TOKEN}" >> .npmrc
+
+          # Run release process
           pnpm release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

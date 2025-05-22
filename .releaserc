@@ -41,10 +41,29 @@
       }
     ],
     [
+      "@semantic-release/exec",
+      {
+        "prepareCmd": "node scripts/prepare-github-package.cjs"
+      }
+    ],
+    [
+      "@semantic-release/npm",
+      {
+        "npmPublish": true,
+        "pkgRoot": "build",
+        "provenance": true,
+        "tarballDir": "dist",
+        "npmPublishRegistry": "https://npm.pkg.github.com"
+      }
+    ],
+    [
       "@semantic-release/github",
       {
         "assets": [
-          {"path": "dist/*.tgz", "label": "npm package"}
+          {
+            "path": "dist/*.tgz",
+            "label": "npm package"
+          }
         ]
       }
     ],
