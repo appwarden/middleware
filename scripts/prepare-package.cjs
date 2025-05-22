@@ -21,7 +21,6 @@ const main = () => {
 
   // Remove unnecessary fields
   delete packageJson.scripts
-  delete packageJson.private
   delete packageJson.sideEffects
   delete packageJson.devDependencies
   // Write the modified package.json to the build directory
