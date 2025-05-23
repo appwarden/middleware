@@ -91,8 +91,8 @@ jobs:
           # Test npm authentication for GitHub Packages (without exposing tokens)
           echo "always-auth=true" > .npmrc
           echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" >> .npmrc
-          echo "//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}" >> .npmrc
-          echo "//npm.pkg.github.com/appwarden/:_authToken=${GITHUB_TOKEN}" >> .npmrc
+          echo "//npm.pkg.github.com/:_authToken=\${GITHUB_TOKEN}" >> .npmrc
+          echo "//npm.pkg.github.com/appwarden/:_authToken=\${GITHUB_TOKEN}" >> .npmrc
 
           # Print token permissions (without exposing the token)
           echo "GitHub token permissions:"
@@ -109,8 +109,8 @@ jobs:
           # Create .npmrc file for multiple registry support
           echo "always-auth=true" > .npmrc
           echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" >> .npmrc
-          echo "//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}" >> .npmrc
-          echo "//npm.pkg.github.com/appwarden/:_authToken=${GITHUB_TOKEN}" >> .npmrc
+          echo "//npm.pkg.github.com/:_authToken=\${GITHUB_TOKEN}" >> .npmrc
+          echo "//npm.pkg.github.com/appwarden/:_authToken=\${GITHUB_TOKEN}" >> .npmrc
 
           # Run release process
           pnpm release
