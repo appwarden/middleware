@@ -10,6 +10,7 @@ permissions:
   issues: write # for semantic-release to comment on issues
   pull-requests: write # for semantic-release to comment on PRs
   id-token: write # for npm provenance
+  packages: write # for publishing to GitHub Packages
 
 jobs:
   release:
