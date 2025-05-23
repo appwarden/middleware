@@ -17,6 +17,7 @@ const main = () => {
 
   packageJson.publishConfig = {
     registry: "https://npm.pkg.github.com",
+    access: "public",
     provenance: true,
   }
 
