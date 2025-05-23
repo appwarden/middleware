@@ -95,18 +95,12 @@ jobs:
           echo "//npm.pkg.github.com/appwarden/:_authToken=\${GITHUB_TOKEN}" >> .npmrc
           echo "@appwarden:registry=https://npm.pkg.github.com" >> .npmrc
 
-          # Print token permissions (without exposing the token)
-          echo "GitHub token permissions:"
-          echo "GITHUB_TOKEN permissions: ${{ toJson(github.token_permissions) }}"
-
           npm whoami --registry=https://npm.pkg.github.com/ || echo "Authentication failed, but continuing..."
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_NPM_TOKEN }}
-          NPM_CONFIG_PROVENANCE: "true"
 
       - name: Release 🚀
-        if: false
         run: |
           # Create dist directory for tarball files
           mkdir -p dist
