@@ -93,6 +93,7 @@ jobs:
           echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" >> .npmrc
           echo "//npm.pkg.github.com/:_authToken=\${GITHUB_TOKEN}" >> .npmrc
           echo "//npm.pkg.github.com/appwarden/:_authToken=\${GITHUB_TOKEN}" >> .npmrc
+          echo "@appwarden:registry=https://npm.pkg.github.com" >> .npmrc
 
           # Print token permissions (without exposing the token)
           echo "GitHub token permissions:"
@@ -105,14 +106,6 @@ jobs:
         run: |
           # Create dist directory for tarball files
           mkdir -p dist
-
-          # Create .npmrc file for multiple registry support
-          echo "always-auth=true" > .npmrc
-          echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" >> .npmrc
-          echo "//npm.pkg.github.com/:_authToken=\${GITHUB_TOKEN}" >> .npmrc
-          echo "//npm.pkg.github.com/appwarden/:_authToken=\${GITHUB_TOKEN}" >> .npmrc
-
-          # Run release process
           pnpm release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
