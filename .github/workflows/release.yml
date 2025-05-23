@@ -42,13 +42,11 @@ jobs:
           # Check if lockfile has been tampered with
           echo "Verifying lockfile integrity..."
           pnpm dedupe --check
-
       - name: Install dependencies
         run: |
           # Set safer npm config
           npm config set ignore-scripts true
           npm config set audit true
-
           # Install dependencies with frozen lockfile for reproducibility
           pnpm install --ignore-scripts --frozen-lockfile
         env:
@@ -60,24 +58,20 @@ jobs:
         run: |
           pnpm prepare
           pnpm build
-
       - name: Run security checks
         run: |
           # Audit dependencies for security vulnerabilities
           pnpm audit --audit-level high
-
           # Check for unpinned dependencies (using ^ or ~)
           echo "Checking for unpinned dependencies..."
           if grep -E '"[^"]+": "\^[^"]+"|"[^"]+": "~[^"]+"' package.json; then
             echo "Warning: Found unpinned dependencies in package.json. Consider pinning them for better security."
             # Not failing the build, just warning
           fi
-
       - name: Run code quality checks
         run: |
           pnpm check
           pnpm test
-
       # Setup for GitHub Packages
       - name: Setup Node.js for GitHub Packages
         uses: actions/setup-node@v4.0.2
@@ -92,11 +86,12 @@ jobs:
           echo "always-auth=true" > .npmrc
           echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" >> .npmrc
           echo "//npm.pkg.github.com/:_authToken=\${GITHUB_TOKEN}" >> .npmrc
+          # Make sure to use the correct scope format
           echo "@appwarden:registry=https://npm.pkg.github.com" >> .npmrc
-
           # Verify authentication works
           npm whoami --registry=https://npm.pkg.github.com/ || echo "Authentication failed, but continuing..."
-
+          # Make .npmrc available to all subsequent steps
+          cp .npmrc ~/.npmrc
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_NPM_TOKEN }}
@@ -105,7 +100,8 @@ jobs:
         run: |
           # Create dist directory for tarball files
           mkdir -p dist
-
+          # Ensure npm can access the .npmrc file
+          cp ~/.npmrc .npmrc
           # Run the release process
           pnpm release
         env:
