@@ -93,7 +93,7 @@ jobs:
           # Make .npmrc available to all subsequent steps
           cp .npmrc ~/.npmrc
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_NPM_TOKEN }}
 
       - name: Release 🚀
@@ -105,8 +105,6 @@ jobs:
           # Run the release process
           pnpm release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: "true"
-          # Explicitly set NODE_AUTH_TOKEN for GitHub Packages
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
