@@ -86,6 +86,14 @@ jobs:
           registry-url: https://npm.pkg.github.com
           scope: "@appwarden"
 
+      - name: Debug npm authentication
+        run: |
+          # Test npm authentication for GitHub Packages (without exposing tokens)
+          echo "Testing npm authentication for GitHub Packages..."
+          echo "//npm.pkg.github.com/:_authToken=\${GITHUB_TOKEN}" > .npmrc
+          echo "@appwarden:registry=https://npm.pkg.github.com" >> .npmrc
+          npm whoami --registry=https://npm.pkg.github.com/ || echo "Authentication failed, but continuing..."
+
       - name: Release 🚀
         run: |
           # Create dist directory for tarball files
@@ -94,6 +102,7 @@ jobs:
           # Create .npmrc file for multiple registry support
           echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" > .npmrc
           echo "//npm.pkg.github.com/:_authToken=\${GITHUB_TOKEN}" >> .npmrc
+          echo "@appwarden:registry=https://npm.pkg.github.com" >> .npmrc
 
           # Run release process
           pnpm release
