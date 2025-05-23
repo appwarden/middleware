@@ -78,31 +78,31 @@ jobs:
           pnpm check
           pnpm test
 
-      # Setup for GitHub Packages
-      - name: Setup Node.js for GitHub Packages
-        uses: actions/setup-node@v4.0.2
-        with:
-          node-version: lts/iron
-          registry-url: https://npm.pkg.github.com
-          scope: "@appwarden"
-
       - name: Debug npm authentication
         run: |
           # Test npm authentication for GitHub Packages (without exposing tokens)
-          echo "Testing npm authentication for GitHub Packages..."
-          echo "//npm.pkg.github.com/:_authToken=\${GITHUB_TOKEN}" > .npmrc
-          echo "@appwarden:registry=https://npm.pkg.github.com" >> .npmrc
+          echo "always-auth=true" > .npmrc
+          echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" >> .npmrc
+          echo "//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}" >> .npmrc
+          echo "//npm.pkg.github.com/appwarden/:_authToken=${GITHUB_TOKEN}" >> .npmrc
+
+          # Print token permissions (without exposing the token)
+          echo "GitHub token permissions:"
+          echo "GITHUB_TOKEN permissions: ${{ toJson(github.token_permissions) }}"
+
           npm whoami --registry=https://npm.pkg.github.com/ || echo "Authentication failed, but continuing..."
 
       - name: Release 🚀
+        if: false
         run: |
           # Create dist directory for tarball files
           mkdir -p dist
 
           # Create .npmrc file for multiple registry support
-          echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" > .npmrc
-          echo "//npm.pkg.github.com/:_authToken=\${GITHUB_TOKEN}" >> .npmrc
-          echo "@appwarden:registry=https://npm.pkg.github.com" >> .npmrc
+          echo "always-auth=true" > .npmrc
+          echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" >> .npmrc
+          echo "//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}" >> .npmrc
+          echo "//npm.pkg.github.com/appwarden/:_authToken=${GITHUB_TOKEN}" >> .npmrc
 
           # Run release process
           pnpm release
