@@ -15,10 +15,25 @@ const main = () => {
   const packageJsonContent = fs.readFileSync(packageJsonPath, "utf8")
   const packageJson = JSON.parse(packageJsonContent)
 
+  // Update package.json for GitHub Packages
   packageJson.publishConfig = {
     registry: "https://npm.pkg.github.com",
     access: "public",
     provenance: true,
+  }
+
+  // Ensure the package name is correctly scoped for GitHub Packages
+  if (!packageJson.name.startsWith("@appwarden/")) {
+    packageJson.name =
+      "@appwarden/" + packageJson.name.replace("@appwarden/", "")
+  }
+
+  // Add repository information if not present
+  if (!packageJson.repository) {
+    packageJson.repository = {
+      type: "git",
+      url: "https://github.com/appwarden/middleware.git",
+    }
   }
 
   // Write the modified package.json back to the build directory

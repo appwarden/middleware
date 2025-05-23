@@ -86,16 +86,20 @@ jobs:
           registry-url: https://npm.pkg.github.com
           scope: "@appwarden"
 
-      - name: Debug npm authentication
+      - name: Setup npm authentication
         run: |
-          # Test npm authentication for GitHub Packages (without exposing tokens)
+          # Create .npmrc with proper authentication tokens
           echo "always-auth=true" > .npmrc
           echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" >> .npmrc
           echo "//npm.pkg.github.com/:_authToken=\${GITHUB_TOKEN}" >> .npmrc
-          echo "//npm.pkg.github.com/appwarden/:_authToken=\${GITHUB_TOKEN}" >> .npmrc
+          # Make sure to use the correct scope format
           echo "@appwarden:registry=https://npm.pkg.github.com" >> .npmrc
 
+          # Verify authentication works
           npm whoami --registry=https://npm.pkg.github.com/ || echo "Authentication failed, but continuing..."
+
+          # Make .npmrc available to all subsequent steps
+          cp .npmrc ~/.npmrc
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_NPM_TOKEN }}
@@ -104,8 +108,15 @@ jobs:
         run: |
           # Create dist directory for tarball files
           mkdir -p dist
+
+          # Ensure npm can access the .npmrc file
+          cp ~/.npmrc .npmrc
+
+          # Run the release process
           pnpm release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: "true"
+          # Explicitly set NODE_AUTH_TOKEN for GitHub Packages
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
