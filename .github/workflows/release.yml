@@ -112,3 +112,5 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: "true"
+          # Explicitly set NODE_AUTH_TOKEN for GitHub Packages
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
