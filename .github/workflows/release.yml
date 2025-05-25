@@ -72,13 +72,6 @@ jobs:
         run: |
           pnpm check
           pnpm test
-      # Setup for GitHub Packages
-      - name: Setup Node.js for GitHub Packages
-        uses: actions/setup-node@v4.0.2
-        with:
-          node-version: lts/iron
-          registry-url: https://npm.pkg.github.com
-          scope: "@appwarden"
 
       - name: Setup npm authentication
         run: |
@@ -86,6 +79,7 @@ jobs:
           echo "always-auth=true" > .npmrc
           echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" >> .npmrc
           echo "//npm.pkg.github.com/:_authToken=\${GITHUB_TOKEN}" >> .npmrc
+          # Make sure to use the correct scope format
           echo "@appwarden:registry=https://npm.pkg.github.com" >> .npmrc
           # Verify authentication works
           npm whoami --registry=https://npm.pkg.github.com/ || echo "Authentication failed, but continuing..."
