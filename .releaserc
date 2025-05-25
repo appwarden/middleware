@@ -1,7 +1,7 @@
 {
   "branches": [
     {
-      "name": "main",
+      "name": "test-release",
       "channel": "latest"
     }
   ],
@@ -46,7 +46,7 @@
     [
       "@semantic-release/exec",
       {
-        "publishCmd": "node scripts/prepare-github-package.cjs && npm publish --tag ${nextRelease.channel} --registry https://npm.pkg.github.com/ --no-git-tag-version --access public --provenance"
+        "publishCmd": "node scripts/prepare-github-npmrc.cjs && node scripts/prepare-github-package.cjs && npm publish --tag ${nextRelease.channel} --registry https://npm.pkg.github.com/ --userconfig .npmrc-github --no-git-tag-version --access public --provenance"
       }
     ],
     [
