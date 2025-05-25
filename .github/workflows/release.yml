@@ -86,6 +86,7 @@ jobs:
           echo "always-auth=true" > .npmrc
           echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" >> .npmrc
           echo "//npm.pkg.github.com/:_authToken=\${GITHUB_TOKEN}" >> .npmrc
+          echo "@appwarden:registry=https://npm.pkg.github.com" >> .npmrc
           # Verify authentication works
           npm whoami --registry=https://npm.pkg.github.com/ || echo "Authentication failed, but continuing..."
           # Make .npmrc available to all subsequent steps
