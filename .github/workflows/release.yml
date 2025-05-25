@@ -73,21 +73,18 @@ jobs:
           pnpm check
           pnpm test
 
-      - name: Setup npm authentication
-        run: |
-          # Create .npmrc with proper authentication tokens
-          echo "always-auth=true" > .npmrc
-          echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" >> .npmrc
-          echo "//npm.pkg.github.com/:_authToken=\${GITHUB_TOKEN}" >> .npmrc
-          # Make sure to use the correct scope format
-          echo "@appwarden:registry=https://npm.pkg.github.com" >> .npmrc
-          # Verify authentication works
-          npm whoami --registry=https://npm.pkg.github.com/ || echo "Authentication failed, but continuing..."
-          # Make .npmrc available to all subsequent steps
-          cp .npmrc ~/.npmrc
-        env:
-          GITHUB_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_NPM_TOKEN }}
+      # - name: Setup npm authentication
+      #   run: |
+      #     # Create .npmrc with proper authentication tokens
+      #     echo "always-auth=true" > .npmrc
+      #     echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" >> .npmrc
+      #     # Verify authentication works
+      #     npm whoami --registry=https://npm.pkg.github.com/ || echo "Authentication failed, but continuing..."
+      #     # Make .npmrc available to all subsequent steps
+      #     cp .npmrc ~/.npmrc
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_GITHUB_TOKEN }}
+      #     NPM_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_NPM_TOKEN }}
 
       - name: Release 🚀
         run: |
