@@ -93,7 +93,7 @@ jobs:
           mkdir -p dist
 
           # Run the release process
-          pnpm release
+          NODE_AUTH_TOKEN=${NODE_AUTH_TOKEN} GITHUB_TOKEN=${GITHUB_TOKEN} NPM_TOKEN=${NPM_TOKEN} pnpm release
         env:
           NPM_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_NPM_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_GITHUB_TOKEN }}
