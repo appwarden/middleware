@@ -85,7 +85,8 @@ jobs:
           # Make sure to use the correct scope format
           echo "@appwarden:registry=https://npm.pkg.github.com" >> .npmrc
           # Verify authentication works
-          npm whoami --registry=https://npm.pkg.github.com/ || echo "Authentication failed, but continuing..."
+          npm whoami --registry=https://registry.npmjs.org/ || echo "NPM authentication failed, but continuing..."
+          npm whoami --registry=https://npm.pkg.github.com/ || echo "Github authentication failed, but continuing..."
           # Make .npmrc available to all subsequent steps
           cp .npmrc ~/.npmrc
         env:
