@@ -100,6 +100,8 @@ jobs:
           npm whoami --registry=https://npm.pkg.github.com/ --userconfig=.npmrc-github || echo "Github authentication failed, but continuing..."
 
           # Make .npmrc available to all subsequent steps
+          pwd
+          cp .npmrc ~/.npmrc
           cp .npmrc-public ~/.npmrc-public
           cp .npmrc-github ~/.npmrc-github
         env:
