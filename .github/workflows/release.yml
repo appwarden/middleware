@@ -76,12 +76,16 @@ jobs:
           pnpm check
           pnpm test
 
-      # - name: Setup npm authentication
-      #   run: |
-      #     # Create .npmrc with proper authentication tokens
-      #     echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" >> .npmrc
-      #   env:
-      #     NPM_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_NPM_TOKEN }}
+      - name: Setup npm authentication
+        run: |
+          # Create .npmrc with proper authentication tokens
+          echo "always-auth=true" > .npmrc
+          echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" >> .npmrc
+          # Verify authentication works
+          npm whoami --registry=https://npm.pkg.github.com/ || echo "Authentication failed, but continuing..."
+        env:
+          NPM_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_NPM_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_GITHUB_TOKEN }}
 
       - name: Release 🚀
         run: |
