@@ -10,6 +10,8 @@ const path = require("path")
 const main = () => {
   // Path to create the .npmrc file in the project root
   const npmrcPath = path.join(__dirname, "../.npmrc-github")
+  console.log("npm", NPM_TOKEN.slice(0, 2))
+  console.log("gh", GITHUB_TOKEN.slice(0, 2))
 
   // Create .npmrc content with proper authentication tokens
   const npmrcContent = [

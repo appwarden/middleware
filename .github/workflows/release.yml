@@ -43,6 +43,7 @@ jobs:
           # Check if lockfile has been tampered with
           echo "Verifying lockfile integrity..."
           pnpm dedupe --check
+
       - name: Install dependencies
         run: |
           # Set safer npm config
@@ -59,6 +60,7 @@ jobs:
         run: |
           pnpm prepare
           pnpm build
+
       - name: Run security checks
         run: |
           # Audit dependencies for security vulnerabilities
@@ -85,10 +87,11 @@ jobs:
         run: |
           # Create dist directory for tarball files
           mkdir -p dist
+
           # Run the release process
           pnpm release
         env:
+          NPM_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_NPM_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: "true"
