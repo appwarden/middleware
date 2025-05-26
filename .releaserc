@@ -41,21 +41,9 @@
           "github": {
             "npmPublish": true,
             "provenance": true,
-            "pkgRoot": "build",
-            "tarballDir": "dist-github"
+            "pkgRoot": "build"
           }
         }
-      }
-    ],
-    [
-      "@semantic-release/github",
-      {
-        "assets": [
-          {
-            "path": "dist-github/*.tgz",
-            "label": "npm package"
-          }
-        ]
       }
     ],
     [

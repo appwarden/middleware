@@ -103,7 +103,7 @@ jobs:
       - name: Release 🚀
         run: |
           # Create dist directory for tarball files
-          mkdir -p dist-github
+          mkdir -p dist
 
           # Run the release process
           pnpm release
