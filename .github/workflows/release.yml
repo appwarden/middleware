@@ -11,6 +11,10 @@ permissions:
   pull-requests: write # for semantic-release to comment on PRs
   id-token: write # for npm provenance
 
+env:
+  NPM_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_NPM_TOKEN }}
+  GITHUB_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_GITHUB_TOKEN }}
+
 jobs:
   release:
     name: 🚀 Release @appwarden/middleware
@@ -35,8 +39,6 @@ jobs:
           node-version: lts/iron
           registry-url: https://registry.npmjs.org
           cache: pnpm
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_NPM_TOKEN }}
 
       - name: Verify lockfile integrity
         run: |
@@ -79,19 +81,21 @@ jobs:
       - name: Setup npm authentication
         run: |
           # Create .npmrc with proper authentication tokens
-          echo "always-auth=true" > .npmrc
-          echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" >> .npmrc
-          echo "//npm.pkg.github.com/:_authToken=\${GITHUB_TOKEN}" >> .npmrc
-          # Make sure to use the correct scope format
-          echo "@appwarden:registry=https://npm.pkg.github.com" >> .npmrc
+          echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" > .npmrc-public
+
+          echo "always-auth=true" > .npmrc-github
+          echo "//npm.pkg.github.com/:_authToken=\${GITHUB_TOKEN}" >> .npmrc-github
+          echo "@appwarden:registry=https://npm.pkg.github.com" >> .npmrc-github
           # Verify authentication works
-          npm whoami --registry=https://registry.npmjs.org/ || echo "NPM authentication failed, but continuing..."
-          npm whoami --registry=https://npm.pkg.github.com/ || echo "Github authentication failed, but continuing..."
+
+          npm whoami --registry=https://registry.npmjs.org/ --userconfig=.npmrc-public || echo "NPM authentication failed, but continuing..."
+          npm whoami --registry=https://npm.pkg.github.com/ --userconfig=.npmrc-github || echo "Github authentication failed, but continuing..."
+
           # Make .npmrc available to all subsequent steps
           cp .npmrc ~/.npmrc
         env:
-          GITHUB_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_NPM_TOKEN }}
+          NPM_TOKEN: ${{ env.NPM_TOKEN }}
+          GITHUB_TOKEN: ${{ env.GITHUB_TOKEN }}
 
       - name: Release 🚀
         run: |
@@ -101,10 +105,12 @@ jobs:
           # Run the release process
           pnpm release
         env:
-          NPM_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_NPM_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_GITHUB_TOKEN }}
-          NODE_AUTH_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_GITHUB_TOKEN }}
-          GITHUB_NPM_CONFIG_REGISTRY: https://npm.pkg.github.com/
-          GITHUB_NPM_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ env.NPM_TOKEN }}
+          GITHUB_TOKEN: ${{ env.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ env.GITHUB_TOKEN }}
+          GITHUB_NPM_CONFIG_REGISTRY: https://npm.pkg.github.com
+          GITHUB_NPM_CONFIG_USERCONFIG: "~/.npmrc-github"
+          GITHUB_NPM_TOKEN: ${{ env.GITHUB_TOKEN }}
           PUBLIC_NPM_CONFIG_REGISTRY: https://registry.npmjs.org
-          PUBLIC_NPM_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_NPM_TOKEN }}
+          PUBLIC_NPM_CONFIG_USERCONFIG: "~/.npmrc-public"
+          PUBLIC_NPM_TOKEN: ${{ env.NPM_TOKEN }}
