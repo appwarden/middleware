@@ -10,7 +10,6 @@ permissions:
   issues: write # for semantic-release to comment on issues
   pull-requests: write # for semantic-release to comment on PRs
   id-token: write # for npm provenance
-  packages: write # for publishing to GitHub Packages
 
 jobs:
   release:
@@ -36,6 +35,8 @@ jobs:
           node-version: lts/iron
           registry-url: https://registry.npmjs.org
           cache: pnpm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_GITHUB_TOKEN }}
 
       - name: Verify lockfile integrity
         run: |
@@ -73,12 +74,12 @@ jobs:
           pnpm check
           pnpm test
 
-      - name: Setup npm authentication
-        run: |
-          # Create .npmrc with proper authentication tokens
-          echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" >> .npmrc
-        env:
-          NPM_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_NPM_TOKEN }}
+      # - name: Setup npm authentication
+      #   run: |
+      #     # Create .npmrc with proper authentication tokens
+      #     echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" >> .npmrc
+      #   env:
+      #     NPM_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_NPM_TOKEN }}
 
       - name: Release 🚀
         run: |
