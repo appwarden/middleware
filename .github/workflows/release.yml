@@ -90,6 +90,12 @@ jobs:
           echo "//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}" >> .npmrc-github
           echo "@appwarden:registry=https://npm.pkg.github.com" >> .npmrc-github
 
+          # Create github .npmrc with proper authentication tokens
+          echo "registry=https://npm.pkg.github.com/" > .npmrc
+          echo "always-auth=true" >> .npmrc
+          echo "//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}" >> .npmrc
+          echo "@appwarden:registry=https://npm.pkg.github.com" >> .npmrc
+
           npm whoami --registry=https://registry.npmjs.org/ --userconfig=.npmrc-public || echo "NPM authentication failed, but continuing..."
           npm whoami --registry=https://npm.pkg.github.com/ --userconfig=.npmrc-github || echo "Github authentication failed, but continuing..."
 
