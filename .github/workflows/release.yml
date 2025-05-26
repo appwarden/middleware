@@ -37,7 +37,7 @@ jobs:
         uses: actions/setup-node@v4.0.2
         with:
           node-version: lts/jod
-          registry-url: https://registry.npmjs.org
+          registry-url: https://npm.pkg.github.com
           cache: pnpm
 
       - name: Verify lockfile integrity
