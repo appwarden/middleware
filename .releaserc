@@ -44,12 +44,6 @@
       }
     ],
     [
-      "@semantic-release/exec",
-      {
-        "publishCmd": "node scripts/prepare-github-npmrc.cjs && node scripts/prepare-github-package.cjs && NODE_AUTH_TOKEN=${NODE_AUTH_TOKEN} npm publish --tag ${nextRelease.channel} --registry https://npm.pkg.github.com/ --userconfig ./.npmrc-github --no-git-tag-version --access public --provenance"
-      }
-    ],
-    [
       "@semantic-release/github",
       {
         "assets": [
