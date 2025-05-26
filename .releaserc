@@ -35,12 +35,22 @@
       }
     ],
     [
-      "@semantic-release/npm",
+      "@amanda-mitchell/semantic-release-npm-multiple",
       {
-        "npmPublish": true,
-        "provenance": true,
-        "pkgRoot": "build",
-        "tarballDir": "dist"
+        "registries": {
+          "public": {
+            "npmPublish": true,
+            "provenance": true,
+            "pkgRoot": "build",
+            "tarballDir": "dist"
+          },
+          "github": {
+            "npmPublish": true,
+            "provenance": true,
+            "pkgRoot": "build",
+            "tarballDir": "dist-github"
+          }
+        }
       }
     ],
     [
@@ -48,7 +58,7 @@
       {
         "assets": [
           {
-            "path": "dist/*.tgz",
+            "path": "dist-github/*.tgz",
             "label": "npm package"
           }
         ]

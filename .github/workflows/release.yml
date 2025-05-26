@@ -90,12 +90,15 @@ jobs:
       - name: Release 🚀
         run: |
           # Create dist directory for tarball files
-          mkdir -p dist
+          mkdir -p dist-github
 
           # Run the release process
-          NODE_AUTH_TOKEN=${NODE_AUTH_TOKEN} GITHUB_TOKEN=${GITHUB_TOKEN} NPM_TOKEN=${NPM_TOKEN} pnpm release
+          pnpm release
         env:
           NPM_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_NPM_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_GITHUB_TOKEN }}
-          NPM_CONFIG_PROVENANCE: "true"
+          GITHUB_NPM_CONFIG_REGISTRY: https://npm.pkg.github.com/
+          GITHUB_NPM_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_GITHUB_TOKEN }}
+          PUBLIC_NPM_CONFIG_REGISTRY: https://registry.npmjs.org
+          PUBLIC_NPM_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_NPM_TOKEN }}
