@@ -36,7 +36,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4.0.2
         with:
-          node-version: lts/iron
+          node-version: lts/jod
           registry-url: https://registry.npmjs.org
           cache: pnpm
 
@@ -109,9 +109,9 @@ jobs:
           NPM_TOKEN: ${{ env.NPM_TOKEN }}
           GITHUB_TOKEN: ${{ env.GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ env.GITHUB_TOKEN }}
-          GITHUB_NPM_CONFIG_REGISTRY: https://npm.pkg.github.com
-          GITHUB_NPM_CONFIG_USERCONFIG: "~/.npmrc-github"
-          GITHUB_NPM_TOKEN: ${{ env.GITHUB_TOKEN }}
           PUBLIC_NPM_CONFIG_REGISTRY: https://registry.npmjs.org
           PUBLIC_NPM_CONFIG_USERCONFIG: "~/.npmrc-public"
           PUBLIC_NPM_TOKEN: ${{ env.NPM_TOKEN }}
+          GITHUB_NPM_CONFIG_REGISTRY: https://npm.pkg.github.com
+          GITHUB_NPM_CONFIG_USERCONFIG: "~/.npmrc-github"
+          GITHUB_NPM_TOKEN: ${{ env.GITHUB_TOKEN }}

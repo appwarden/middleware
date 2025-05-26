@@ -37,7 +37,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4.0.2
         with:
-          node-version: lts/iron
+          node-version: lts/jod
           registry-url: https://registry.npmjs.org
           cache: pnpm
 
