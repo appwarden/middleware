@@ -43,12 +43,6 @@
             "provenance": true,
             "pkgRoot": "build",
             "tarballDir": "dist"
-          },
-          "github": {
-            "npmPublish": true,
-            "provenance": true,
-            "pkgRoot": "build",
-            "tarballDir": "dist-github"
           }
         }
       }
