@@ -89,11 +89,6 @@
     "vitest": "^3.1.3"
   },
   "sideEffects": false,
-  "publishConfig": {
-    "registry": "https://registry.npmjs.org",
-    "access": "public",
-    "provenance": true
-  },
   "pnpm": {
     "overrides": {
       "undici@>=4.5.0 <5.28.5": ">=5.28.5",
