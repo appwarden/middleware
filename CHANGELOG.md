@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.2.36](https://github.com/appwarden/middleware/compare/@appwarden/middleware@1.2.35...@appwarden/middleware@1.2.36) (2025-05-27)
+
+
+### Bug Fixes
+
+* testing release ([62860db](https://github.com/appwarden/middleware/commit/62860dbd40198923e5b53243ed905d1da0af7284))
+
 # [1.2.0](https://github.com/appwarden/middleware/compare/@appwarden/middleware@1.1.11...@appwarden/middleware@1.2.0) (2025-05-21)
 
 
