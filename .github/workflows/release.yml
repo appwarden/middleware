@@ -115,10 +115,8 @@ jobs:
           mkdir -p dist
 
           # Run the release process
-          unset NPM_TOKEN
           pnpm release
         env:
-          NPM_TOKEN: ""
           # NPM_TOKEN: ${{ env.MIDDLEWARE_NPM_TOKEN }}
           # GITHUB_TOKEN: ${{ env.MIDDLEWARE_GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ env.MIDDLEWARE_NPM_TOKEN }}
