@@ -38,10 +38,17 @@
       "@amanda-mitchell/semantic-release-npm-multiple",
       {
         "registries": {
+          "public": {
+            "npmPublish": true,
+            "provenance": true,
+            "pkgRoot": "build",
+            "tarballDir": "dist"
+          },
           "github": {
             "npmPublish": true,
             "provenance": true,
-            "pkgRoot": "build"
+            "pkgRoot": "build",
+            "tarballDir": "dist-github"
           }
         }
       }
