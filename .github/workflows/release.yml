@@ -118,9 +118,10 @@ jobs:
           unset NPM_TOKEN
           pnpm release
         env:
+          NPM_TOKEN: ""
           # NPM_TOKEN: ${{ env.MIDDLEWARE_NPM_TOKEN }}
           # GITHUB_TOKEN: ${{ env.MIDDLEWARE_GITHUB_TOKEN }}
-          # NODE_AUTH_TOKEN: ${{ env.MIDDLEWARE_GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ env.MIDDLEWARE_NPM_TOKEN }}
           PUBLIC_NPM_CONFIG_REGISTRY: https://registry.npmjs.org
           PUBLIC_NPM_CONFIG_USERCONFIG: "~/.npmrc-public"
           PUBLIC_NPM_TOKEN: ${{ env.MIDDLEWARE_NPM_TOKEN }}
