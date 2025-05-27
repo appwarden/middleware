@@ -80,7 +80,7 @@ jobs:
 
       - name: Setup npm authentication
         run: |
-          Create npm .npmrc with proper authentication tokens
+          # Create npm .npmrc with proper authentication tokens
           echo "registry=https://registry.npmjs.org/" > .npmrc-public
           echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" >> .npmrc-public
 
