@@ -39,6 +39,7 @@
       {
         "registries": {
           "github": {
+            "npmPublish": true,
             "provenance": true,
             "pkgRoot": "build"
           }
