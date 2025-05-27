@@ -81,29 +81,29 @@ jobs:
       - name: Setup npm authentication
         run: |
           # Create npm .npmrc with proper authentication tokens
-          echo "registry=https://registry.npmjs.org/" > .npmrc-public
-          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" >> .npmrc-public
+          # echo "registry=https://registry.npmjs.org/" > .npmrc-public
+          # echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" >> .npmrc-public
 
-          # Create github .npmrc with proper authentication tokens
-          echo "registry=https://npm.pkg.github.com/" > .npmrc-github
-          echo "always-auth=true" >> .npmrc-github
-          echo "//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}" >> .npmrc-github
-          echo "@appwarden:registry=https://npm.pkg.github.com" >> .npmrc-github
+          # # Create github .npmrc with proper authentication tokens
+          # echo "registry=https://npm.pkg.github.com/" > .npmrc-github
+          # echo "always-auth=true" >> .npmrc-github
+          # echo "//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}" >> .npmrc-github
+          # echo "@appwarden:registry=https://npm.pkg.github.com" >> .npmrc-github
 
-          # Create github .npmrc with proper authentication tokens
-          echo "registry=https://npm.pkg.github.com/" > .npmrc
-          echo "always-auth=true" >> .npmrc
-          echo "//npm.pkg.github.com/:_authToken=${NPM_TOKEN}" >> .npmrc
-          echo "@appwarden:registry=https://npm.pkg.github.com" >> .npmrc
+          # # Create github .npmrc with proper authentication tokens
+          # echo "registry=https://npm.pkg.github.com/" > .npmrc
+          # echo "always-auth=true" >> .npmrc
+          # echo "//npm.pkg.github.com/:_authToken=${NPM_TOKEN}" >> .npmrc
+          # echo "@appwarden:registry=https://npm.pkg.github.com" >> .npmrc
 
           npm whoami --registry=https://registry.npmjs.org/ --userconfig=.npmrc-public || echo "NPM authentication failed, but continuing..."
           npm whoami --registry=https://npm.pkg.github.com/ --userconfig=.npmrc-github || echo "Github authentication failed, but continuing..."
 
           # Make .npmrc available to all subsequent steps
           pwd
-          cp .npmrc ~/.npmrc
-          cp .npmrc-public ~/.npmrc-public
-          cp .npmrc-github ~/.npmrc-github
+          # cp .npmrc ~/.npmrc
+          # cp .npmrc-public ~/.npmrc-public
+          # cp .npmrc-github ~/.npmrc-github
         env:
           NPM_TOKEN: ${{ env.MIDDLEWARE_NPM_TOKEN }}
           GITHUB_TOKEN: ${{ env.MIDDLEWARE_GITHUB_TOKEN }}
