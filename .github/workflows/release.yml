@@ -73,6 +73,7 @@ jobs:
             echo "Warning: Found unpinned dependencies in package.json. Consider pinning them for better security."
             # Not failing the build, just warning
           fi
+
       - name: Run code quality checks
         run: |
           pnpm check
@@ -114,13 +115,3 @@ jobs:
           GITHUB_NPM_CONFIG_REGISTRY: https://npm.pkg.github.com
           GITHUB_NPM_CONFIG_USERCONFIG: ".npmrc-github"
           GITHUB_NPM_TOKEN: ${{ env.MIDDLEWARE_GITHUB_TOKEN }}
-
-      - name: Read npmrc file
-        run: |
-          NPMRC_FILE=$(find /tmp -name ".npmrc" -type f 2>/dev/null | head -1)
-          if [ -n "$NPMRC_FILE" ]; then
-            echo "Found .npmrc at: $NPMRC_FILE"
-            cat "$NPMRC_FILE"
-          else
-            echo "No .npmrc file found in /tmp"
-          fi
