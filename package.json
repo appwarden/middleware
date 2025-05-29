@@ -67,6 +67,7 @@
     }
   },
   "devDependencies": {
+    "@amanda-mitchell/semantic-release-npm-multiple": "3.15.0",
     "@cloudflare/workers-types": "4.20250525.0",
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
@@ -88,11 +89,6 @@
     "vitest": "^3.1.4"
   },
   "sideEffects": false,
-  "publishConfig": {
-    "registry": "https://registry.npmjs.org",
-    "access": "public",
-    "provenance": true
-  },
   "pnpm": {
     "overrides": {
       "undici@>=4.5.0 <5.28.5": ">=5.28.5",

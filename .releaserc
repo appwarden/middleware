@@ -35,18 +35,21 @@
       }
     ],
     [
-      "@semantic-release/npm",
+      "@amanda-mitchell/semantic-release-npm-multiple",
       {
-        "npmPublish": true,
-        "provenance": true,
-        "pkgRoot": "build",
-        "tarballDir": "dist"
-      }
-    ],
-    [
-      "@semantic-release/exec",
-      {
-        "publishCmd": "node scripts/prepare-github-package.cjs && npm publish --tag ${nextRelease.channel} --registry https://npm.pkg.github.com/ --no-git-tag-version --access public --provenance"
+        "registries": {
+          "public": {
+            "npmPublish": true,
+            "provenance": true,
+            "pkgRoot": "build",
+            "tarballDir": "dist"
+          },
+          "github": {
+            "npmPublish": true,
+            "provenance": true,
+            "pkgRoot": "build"
+          }
+        }
       }
     ],
     [
@@ -54,7 +57,7 @@
       {
         "assets": [
           {
-            "path": "dist/*.tgz",
+            "path": "github/*.tgz",
             "label": "npm package"
           }
         ]
