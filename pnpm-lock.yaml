@@ -27,8 +27,8 @@ importers:
         specifier: '>=13'
         version: 15.3.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       zod:
-        specifier: ^3.25.30
-        version: 3.25.47
+        specifier: ^3.25.56
+        version: 3.25.56
     devDependencies:
       '@amanda-mitchell/semantic-release-npm-multiple':
         specifier: 3.15.0
@@ -67,8 +67,8 @@ importers:
         specifier: ^9.1.7
         version: 9.1.7
       miniflare:
-        specifier: 4.20250525.0
-        version: 4.20250525.0
+        specifier: 4.20250525.1
+        version: 4.20250525.1
       prettier:
         specifier: ^3.5.3
         version: 3.5.3
@@ -2328,8 +2328,8 @@ packages:
     engines: {node: '>=16.13'}
     hasBin: true
 
-  miniflare@4.20250525.0:
-    resolution: {integrity: sha512-F5XRDn9WqxUaHphUT8qwy5WXC/3UwbBRJTdjjP5uwHX82vypxIlHNyHziZnplPLhQa1kbSdIY7wfuP1XJyyYZw==}
+  miniflare@4.20250525.1:
+    resolution: {integrity: sha512-4PJlT5WA+hfclFU5Q7xnpG1G1VGYTXaf/3iu6iKQ8IsbSi9QvPTA2bSZ5goCFxmJXDjV4cxttVxB0Wl1CLuQ0w==}
     engines: {node: '>=18.0.0'}
     hasBin: true
 
@@ -3606,8 +3606,8 @@ packages:
   zod@3.22.3:
     resolution: {integrity: sha512-EjIevzuJRiRPbVH4mGc8nApb/lVLKVpmUhAaR5R5doKGfAnGJ6Gr3CViAVjP+4FWSxCsybeWQdcgCtbX+7oZug==}
 
-  zod@3.25.47:
-    resolution: {integrity: sha512-+f8+agSYoT9niC0VUL60IuXnr81FJeJ27Lf5YPrmcxTWmygcpGBeEuAAovDDEjkyQ36KyqNswwbhISZ1Z7yY+A==}
+  zod@3.25.56:
+    resolution: {integrity: sha512-rd6eEF3BTNvQnR2e2wwolfTmUTnp70aUTqr0oaGbHifzC3BKJsoV+Gat8vxUMR1hwOKBs6El+qWehrHbCpW6SQ==}
 
 snapshots:
 
@@ -5810,7 +5810,7 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  miniflare@4.20250525.0:
+  miniflare@4.20250525.1:
     dependencies:
       '@cspotcode/source-map-support': 0.8.1
       acorn: 8.14.0
@@ -7037,4 +7037,4 @@ snapshots:
 
   zod@3.22.3: {}
 
-  zod@3.25.47: {}
+  zod@3.25.56: {}
