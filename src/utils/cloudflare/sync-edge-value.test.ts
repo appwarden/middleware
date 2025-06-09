@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { LockValue, LockValueType } from "../../schemas"
+import { LockValue } from "../../schemas"
 import { CloudflareProviderContext } from "../../types/cloudflare"
 import { debug } from "../debug"
 import { syncEdgeValue } from "./sync-edge-value"
@@ -110,16 +110,15 @@ describe("syncEdgeValue", () => {
   })
 
   it("should update the edge cache with the API response", async () => {
-    const mockContent: LockValueType = {
+    const mockApiContent = {
       isLocked: 0,
       isLockedTest: 0,
       code: "test-code",
-      lastCheck: expect.any(Number),
     }
 
     mockFetchResponse = new Response(
       JSON.stringify({
-        content: mockContent,
+        content: mockApiContent,
       }),
       {
         status: 200,
@@ -130,7 +129,7 @@ describe("syncEdgeValue", () => {
     await syncEdgeValue(mockContext)
 
     expect(mockContext.edgeCache.updateValue).toHaveBeenCalledWith({
-      ...mockContent,
+      ...mockApiContent,
       lastCheck: expect.any(Number),
     })
 
