@@ -56,7 +56,7 @@
     "@cloudflare/next-on-pages": "1.13.12",
     "@upstash/redis": "^1.34.0",
     "@vercel/edge-config": "^1.4.0",
-    "zod": "^3.25.56"
+    "zod": "^3.25.64"
   },
   "peerDependencies": {
     "next": ">=13"
