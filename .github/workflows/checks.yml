@@ -35,7 +35,7 @@ jobs:
           run_install: false
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4.0.2
+        uses: actions/setup-node@v6.0.0
         with:
           node-version: lts/jod
           registry-url: https://registry.npmjs.org
