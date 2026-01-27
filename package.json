@@ -41,7 +41,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "prepare": "node scripts/prepare-semantic-release.cjs && husky",
+    "prepare": "node scripts/prepare-semantic-release.cjs && husky init",
     "dev": "pnpm build --watch",
     "deploy:staging": "pnpm build && wrangler deploy -e staging",
     "release": "NODE_ENV=production pnpm build && node scripts/prepare-package.cjs && semantic-release",
