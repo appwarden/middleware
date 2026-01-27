@@ -59,7 +59,7 @@
     "zod": "^3.25.76"
   },
   "peerDependencies": {
-    "next": ">=13"
+    "next": ">=14"
   },
   "peerDependenciesMeta": {
     "next": {
