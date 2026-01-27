@@ -23,7 +23,6 @@ export default defineConfig({
     index: "src/index.ts",
     vercel: "src/bundles/vercel.ts",
     cloudflare: "src/bundles/cloudflare.ts",
-    ...(!isProd && { "test-cloudflare": "src/test/cloudflare-app.ts" }),
   },
   define: isProd
     ? {

@@ -23,16 +23,16 @@ const mockFetch = vi.fn()
 
 describe("deleteEdgeValue", () => {
   // Mock console.error
-  const originalConsoleError = console.error
+  let consoleErrorSpy: ReturnType<typeof vi.spyOn>
 
   beforeEach(() => {
-    console.error = vi.fn()
+    consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {})
     global.fetch = mockFetch
     vi.clearAllMocks()
   })
 
   afterEach(() => {
-    console.error = originalConsoleError
+    consoleErrorSpy.mockRestore()
     global.fetch = originalFetch
   })
 
@@ -79,7 +79,7 @@ describe("deleteEdgeValue", () => {
     )
 
     // Verify console.error was not called
-    expect(console.error).not.toHaveBeenCalled()
+    expect(consoleErrorSpy).not.toHaveBeenCalled()
   })
 
   it("should handle edge-config API error", async () => {
@@ -107,7 +107,7 @@ describe("deleteEdgeValue", () => {
     await deleteEdgeValue(mockContext)
 
     // Verify error was logged
-    expect(console.error).toHaveBeenCalledWith(
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
       expect.stringContaining("Failed to delete edge value"),
     )
     expect(printMessage).toHaveBeenCalled()
@@ -129,7 +129,7 @@ describe("deleteEdgeValue", () => {
     await deleteEdgeValue(mockContext)
 
     // Verify error was logged
-    expect(console.error).toHaveBeenCalledWith(
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
       expect.stringContaining(
         "Failed to delete edge value - Failed to parse `edgeConfigId`",
       ),

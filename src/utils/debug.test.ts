@@ -2,14 +2,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { debug } from "./debug"
 
 describe("debug", () => {
-  const originalConsoleLog = console.log
+  let consoleLogSpy: ReturnType<typeof vi.spyOn>
 
   beforeEach(() => {
-    console.log = vi.fn()
+    consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {})
   })
 
   afterEach(() => {
-    console.log = originalConsoleLog
+    consoleLogSpy.mockRestore()
     vi.resetAllMocks()
   })
 
@@ -19,7 +19,7 @@ describe("debug", () => {
 
     debug("test message")
 
-    expect(console.log).toHaveBeenCalledWith("test message")
+    expect(consoleLogSpy).toHaveBeenCalledWith("test message")
   })
 
   it("should not log messages when DEBUG is false", () => {
@@ -28,7 +28,7 @@ describe("debug", () => {
 
     debug("test message")
 
-    expect(console.log).not.toHaveBeenCalled()
+    expect(consoleLogSpy).not.toHaveBeenCalled()
   })
 
   it("should handle multiple arguments", () => {
@@ -37,7 +37,7 @@ describe("debug", () => {
 
     debug("message 1", "message 2", { key: "value" })
 
-    expect(console.log).toHaveBeenCalledWith("message 1", "message 2", {
+    expect(consoleLogSpy).toHaveBeenCalledWith("message 1", "message 2", {
       key: "value",
     })
   })

@@ -1,18 +1,22 @@
-import inspector from "inspector"
+import { defineWorkersProject } from "@cloudflare/vitest-pool-workers/config"
 import tsconfigPaths from "vite-tsconfig-paths"
-import { defaultExclude, defineConfig } from "vitest/config"
+import { defaultExclude } from "vitest/config"
 
-export default defineConfig({
+export default defineWorkersProject(() => ({
   plugins: [tsconfigPaths({ root: __dirname })],
   test: {
     globals: true,
-    pool: "threads",
-    poolOptions: { threads: { singleThread: true } },
-    testTimeout: inspector.url() ? 2 ** 30 : 15000,
-    setupFiles: [`${__dirname}/src/test/setup.ts`],
+    poolOptions: {
+      workers: {
+        singleWorker: true,
+        wrangler: {
+          configPath: "./wrangler.jsonc",
+        },
+      },
+    },
     exclude: [...defaultExclude, "./build/**"],
     coverage: {
-      provider: "v8",
+      provider: "istanbul", // V8 is not supported in Cloudflare Workers environment
       reporter: ["text", "json", "json-summary", "html", "lcov"],
       exclude: [
         ...defaultExclude,
@@ -29,4 +33,4 @@ export default defineConfig({
       },
     },
   },
-})
+}))

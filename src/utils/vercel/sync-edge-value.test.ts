@@ -19,11 +19,11 @@ let mockFetchResponse: Response
 
 describe("syncEdgeValue", () => {
   // Mock console.error
-  const originalConsoleError = console.error
+  let consoleErrorSpy: ReturnType<typeof vi.spyOn>
   let mockContext: VercelProviderContext
 
   beforeEach(() => {
-    console.error = vi.fn()
+    consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {})
 
     // Setup mock fetch
     mockFetchResponse = new Response(JSON.stringify({}), {
@@ -55,7 +55,7 @@ describe("syncEdgeValue", () => {
   })
 
   afterEach(() => {
-    console.error = originalConsoleError
+    consoleErrorSpy.mockRestore()
     global.fetch = originalFetch
   })
 
@@ -94,7 +94,7 @@ describe("syncEdgeValue", () => {
 
     await syncEdgeValue(mockContext)
 
-    expect(console.error).toHaveBeenCalledWith(
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
       expect.stringContaining("Failed to fetch from check endpoint - 422"),
     )
     expect(printMessage).toHaveBeenCalled()
@@ -106,7 +106,7 @@ describe("syncEdgeValue", () => {
 
     await syncEdgeValue(mockContext)
 
-    expect(console.error).toHaveBeenCalledWith(
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
       expect.stringContaining(
         "Failed to fetch from check endpoint - Network error",
       ),
@@ -128,7 +128,7 @@ describe("syncEdgeValue", () => {
 
     await syncEdgeValue(mockContext)
 
-    expect(console.error).toHaveBeenCalledWith(
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
       expect.stringContaining("Invalid token"),
     )
     expect(printMessage).toHaveBeenCalled()
