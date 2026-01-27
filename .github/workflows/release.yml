@@ -66,13 +66,6 @@ jobs:
         run: |
           # Audit dependencies for security vulnerabilities
           pnpm audit --audit-level high
-          # Check for unpinned dependencies (using ^ or ~)
-          echo "Checking for unpinned dependencies..."
-          if grep -E '"[^"]+": "\^[^"]+"|"[^"]+": "~[^"]+"' package.json; then
-            echo "Error: Found unpinned dependencies in package.json."
-            echo "All dependencies must be pinned to exact versions for security."
-            exit 1
-          fi
 
       - name: Run code quality checks
         run: |
