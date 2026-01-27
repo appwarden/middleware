@@ -14,10 +14,6 @@
 - **Instant Quarantine**: Immediately redirects all visitors to a maintenance page when activated
 - **Discord Integration**: Trigger lockdowns via Discord commands (`/quarantine lock your.app.io`)
 - **Nonce-based Content Security Policy**: On Cloudflare, deploy a nonce-based Content Security Policy to supercharge your website security
-
-### Performance Optimizations
-
-- **Background Synchronization**: Uses `waitUntil()` to update cache state without blocking responses
 - **Minimal Runtime Overhead**: Lightweight implementation with negligible performance impact
 
 ## Installation
