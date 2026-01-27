@@ -23,19 +23,19 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4.1.1
+        uses: actions/checkout@v6.0.1
         with:
           fetch-depth: 1
           persist-credentials: false # Don't persist credentials to avoid potential security issues
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4.0.0
+        uses: pnpm/action-setup@v4.2.0
         with:
           version: 10.4.1
           run_install: false
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4.0.2
+        uses: actions/setup-node@v6.2.0
         with:
           node-version: lts/jod
           registry-url: https://registry.npmjs.org
@@ -67,8 +67,9 @@ jobs:
           # Check for unpinned dependencies (using ^ or ~)
           echo "Checking for unpinned dependencies..."
           if grep -E '"[^"]+": "\^[^"]+"|"[^"]+": "~[^"]+"' package.json; then
-            echo "Warning: Found unpinned dependencies in package.json."
-            # Not failing the build, just warning
+            echo "Error: Found unpinned dependencies in package.json."
+            echo "All dependencies must be pinned to exact versions for security."
+            exit 1
           fi
 
       - name: Build
