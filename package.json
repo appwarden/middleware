@@ -86,7 +86,8 @@
     "typescript": "5.9.3",
     "undici": "7.19.1",
     "vite-tsconfig-paths": "5.1.4",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "wrangler": "^4.61.0"
   },
   "sideEffects": false,
   "pnpm": {
@@ -98,7 +99,7 @@
       "undici@<5.29.0": ">=5.29.0",
       "undici@<6.23.0": ">=6.23.0",
       "undici@>=4.5.0 <5.28.5": ">=5.28.5",
-      "wrangler@>=2.0.15 <3.114.17": ">=3.114.17"
+      "path-to-regexp@>=4.0.0 <6.3.0": ">=6.3.0"
     }
   }
 }

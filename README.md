@@ -18,7 +18,7 @@
 
 ## Installation
 
-Compatible with websites powered by [Cloudflare](https://developers.cloudflare.com/pages/) or [Vercel](https://vercel.com).
+Compatible with websites powered by [Cloudflare](https://developers.cloudflare.com/workers/static-assets/) or [Vercel](https://vercel.com).
 
 For detailed usage instructions, please refer to our [documentation](https://appwarden.io/docs).
 
