@@ -12,7 +12,6 @@ permissions:
   id-token: write # for npm provenance
 
 env:
-  MIDDLEWARE_NPM_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_NPM_TOKEN }}
   MIDDLEWARE_GITHUB_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_GITHUB_TOKEN }}
 
 jobs:
@@ -22,22 +21,22 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout
-        uses: actions/checkout@v4.1.1
+        uses: actions/checkout@v6.0.1
         with:
           fetch-depth: 0 # Needed for semantic-release to generate correct version numbers
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4.0.0
+        uses: pnpm/action-setup@v4.2.0
         with:
           version: 10.4.1
           run_install: false
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4.0.2
+        uses: actions/setup-node@v6.2.0
         with:
-          node-version: lts/jod
-          registry-url: https://npm.pkg.github.com
+          node-version: 'lts/*'
+          registry-url: https://registry.npmjs.org
           cache: pnpm
 
       - name: Verify lockfile integrity
@@ -67,12 +66,6 @@ jobs:
         run: |
           # Audit dependencies for security vulnerabilities
           pnpm audit --audit-level high
-          # Check for unpinned dependencies (using ^ or ~)
-          echo "Checking for unpinned dependencies..."
-          if grep -E '"[^"]+": "\^[^"]+"|"[^"]+": "~[^"]+"' package.json; then
-            echo "Warning: Found unpinned dependencies in package.json. Consider pinning them for better security."
-            # Not failing the build, just warning
-          fi
 
       - name: Run code quality checks
         run: |
@@ -81,10 +74,6 @@ jobs:
 
       - name: Setup npm authentication
         run: |
-          # Create npm .npmrc with proper authentication tokens
-          echo "registry=https://registry.npmjs.org/" > .npmrc-public
-          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" >> .npmrc-public
-
           # Create github .npmrc with proper authentication tokens
           echo "registry=https://npm.pkg.github.com/" > .npmrc-github
           echo "always-auth=true" >> .npmrc-github
@@ -92,7 +81,6 @@ jobs:
           echo "@appwarden:registry=https://npm.pkg.github.com" >> .npmrc-github
 
         env:
-          NPM_TOKEN: ${{ env.MIDDLEWARE_NPM_TOKEN }}
           GITHUB_TOKEN: ${{ env.MIDDLEWARE_GITHUB_TOKEN }}
 
       - name: Release 🚀
@@ -103,12 +91,10 @@ jobs:
           # Run the release process
           pnpm release
         env:
-          # used by semantic-release/github
-          GITHUB_TOKEN: ${{ env.MIDDLEWARE_GITHUB_TOKEN }}
           # used by @amanda-mitchell/semantic-release-npm-multiple
           PUBLIC_NPM_CONFIG_REGISTRY: https://registry.npmjs.org
-          PUBLIC_NPM_CONFIG_USERCONFIG: ".npmrc-public"
-          PUBLIC_NPM_TOKEN: ${{ env.MIDDLEWARE_NPM_TOKEN }}
           GITHUB_NPM_CONFIG_REGISTRY: https://npm.pkg.github.com
           GITHUB_NPM_CONFIG_USERCONFIG: ".npmrc-github"
           GITHUB_NPM_TOKEN: ${{ env.MIDDLEWARE_GITHUB_TOKEN }}
+          # used by semantic-release/github
+          GITHUB_TOKEN: ${{ env.MIDDLEWARE_GITHUB_TOKEN }}

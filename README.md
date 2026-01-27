@@ -14,15 +14,11 @@
 - **Instant Quarantine**: Immediately redirects all visitors to a maintenance page when activated
 - **Discord Integration**: Trigger lockdowns via Discord commands (`/quarantine lock your.app.io`)
 - **Nonce-based Content Security Policy**: On Cloudflare, deploy a nonce-based Content Security Policy to supercharge your website security
-
-### Performance Optimizations
-
-- **Background Synchronization**: Uses `waitUntil()` to update cache state without blocking responses
 - **Minimal Runtime Overhead**: Lightweight implementation with negligible performance impact
 
 ## Installation
 
-Compatible with websites powered by [Cloudflare](https://developers.cloudflare.com/pages/) or [Vercel](https://vercel.com).
+Compatible with websites powered by [Cloudflare](https://developers.cloudflare.com/workers/static-assets/) or [Vercel](https://vercel.com).
 
 For detailed usage instructions, please refer to our [documentation](https://appwarden.io/docs).
 
