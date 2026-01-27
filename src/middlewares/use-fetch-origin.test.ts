@@ -38,13 +38,13 @@ describe("useFetchOrigin", () => {
     // Execute middleware
     await middleware(context, next)
 
-    // Verify fetch was called with correct parameters
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.objectContaining({
-        url: "https://example.com/",
-        redirect: "follow",
-      }),
-    )
+    // Verify fetch was called with a Request object
+    expect(mockFetch).toHaveBeenCalledWith(expect.any(Request))
+
+    // Verify the Request object has the correct properties
+    const fetchedRequest = mockFetch.mock.calls[0][0] as Request
+    expect(fetchedRequest.url).toBe("https://example.com")
+    expect(fetchedRequest.redirect).toBe("follow")
 
     // Verify response was set in context
     expect(context.response).toBe(mockResponse)

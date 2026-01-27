@@ -37,12 +37,12 @@ afterEach(() => {
 })
 
 // Mock console.error
-const originalConsoleError = console.error
+let consoleErrorSpy: ReturnType<typeof vi.spyOn>
 beforeEach(() => {
-  console.error = vi.fn()
+  consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {})
 })
 afterEach(() => {
-  console.error = originalConsoleError
+  consoleErrorSpy.mockRestore()
 })
 
 // Define API constants that are normally injected at build time
@@ -151,7 +151,7 @@ describe("syncEdgeValue", () => {
 
     await syncEdgeValue(mockContext)
 
-    expect(console.error).toHaveBeenCalledWith(
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
       "[@appwarden/middleware] API error message",
     )
     expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
@@ -166,7 +166,7 @@ describe("syncEdgeValue", () => {
 
     await syncEdgeValue(mockContext)
 
-    expect(console.error).toHaveBeenCalledWith(
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
       "[@appwarden/middleware] Failed to fetch from check endpoint - 422 Unprocessable Entity",
     )
     expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
@@ -180,7 +180,7 @@ describe("syncEdgeValue", () => {
 
     await syncEdgeValue(mockContext)
 
-    expect(console.error).toHaveBeenCalledWith(
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
       "[@appwarden/middleware] no content from api",
     )
     expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
@@ -201,7 +201,7 @@ describe("syncEdgeValue", () => {
 
     await syncEdgeValue(mockContext)
 
-    expect(console.error).toHaveBeenCalledWith(
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
       "[@appwarden/middleware] Failed to parse check endpoint result - Error: Parse error",
     )
     expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
@@ -212,7 +212,7 @@ describe("syncEdgeValue", () => {
 
     await syncEdgeValue(mockContext)
 
-    expect(console.error).toHaveBeenCalledWith(
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
       "[@appwarden/middleware] Failed to fetch from check endpoint - Network error",
     )
     expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()

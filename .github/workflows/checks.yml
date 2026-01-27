@@ -75,7 +75,7 @@ jobs:
       - name: Generate coverage badge
         if: github.ref == 'refs/heads/main'
         run: |
-          node scripts/generate-coverage-badge.cjs
+          pnpm coverage:badge
 
       - name: Create PR for updated README with coverage badge
         if: github.ref == 'refs/heads/main'

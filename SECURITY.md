@@ -31,6 +31,34 @@ This package implements several security measures:
 
 5. **Secure Development Practices**: We follow secure coding practices and conduct code reviews with security in mind.
 
-## Third-Party Libraries
 
-This project depends on third-party libraries that may have their own security policies. We make an effort to keep these dependencies up to date, but we recommend reviewing the security policies of these libraries as well.
+## npm Provenance
+
+Package provenance is a security feature that provides verifiable supply chain metadata that links a published npm package to its source code and build process. It helps users verify the authenticity and integrity of the package they're installing.
+
+When a package is published with provenance, it includes cryptographically signed metadata that verifies:
+- The source repository where the code was built from
+- The specific commit that triggered the build
+- The CI/CD workflow that built and published the package
+
+This helps prevent supply chain attacks where malicious actors might try to publish compromised versions of popular packages.
+
+### How We've Implemented Provenance
+
+We've implemented package provenance in several ways to ensure the integrity of our published packages:
+
+1. **Package.json Configuration**: We've added a `publishConfig.provenance` setting in our package.json file to enable provenance by default.
+
+2. **GitHub Actions Workflow**: We've created a dedicated GitHub Actions workflow (`.github/workflows/publish.yml`) that properly configures the necessary permissions and settings for publishing with provenance.
+
+3. **Semantic Release Configuration**: We've updated the `.releaserc` file to ensure semantic-release also respects the provenance settings.
+
+### Verifying Provenance
+
+Users of our package can verify its provenance using:
+
+```bash
+npm audit signatures
+```
+
+This command will show the count of verified registry signatures and verified attestations for all packages in their project.

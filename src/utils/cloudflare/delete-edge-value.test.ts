@@ -10,15 +10,15 @@ vi.mock("../print-message", () => ({
 
 describe("deleteEdgeValue", () => {
   // Mock console.error
-  const originalConsoleError = console.error
+  let consoleErrorSpy: ReturnType<typeof vi.spyOn>
 
   beforeEach(() => {
-    console.error = vi.fn()
+    consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {})
     vi.clearAllMocks()
   })
 
   afterEach(() => {
-    console.error = originalConsoleError
+    consoleErrorSpy.mockRestore()
   })
 
   it("should delete edge value for cloudflare-cache provider", async () => {
@@ -37,7 +37,7 @@ describe("deleteEdgeValue", () => {
     expect(mockContext.edgeCache.deleteValue).toHaveBeenCalled()
 
     // Verify console.error was not called
-    expect(console.error).not.toHaveBeenCalled()
+    expect(consoleErrorSpy).not.toHaveBeenCalled()
   })
 
   it("should handle deletion failure", async () => {
@@ -56,7 +56,7 @@ describe("deleteEdgeValue", () => {
     expect(mockContext.edgeCache.deleteValue).toHaveBeenCalled()
 
     // Verify error was logged
-    expect(console.error).toHaveBeenCalledWith(
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
       expect.stringContaining("Failed to delete edge value"),
     )
     expect(printMessage).toHaveBeenCalled()
@@ -78,7 +78,7 @@ describe("deleteEdgeValue", () => {
     expect(mockContext.edgeCache.deleteValue).toHaveBeenCalled()
 
     // Verify error was logged with the error message
-    expect(console.error).toHaveBeenCalledWith(
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
       expect.stringContaining("Failed to delete edge value - Test error"),
     )
     expect(printMessage).toHaveBeenCalled()
@@ -94,7 +94,7 @@ describe("deleteEdgeValue", () => {
     await deleteEdgeValue(mockContext)
 
     // Verify error was logged
-    expect(console.error).toHaveBeenCalledWith(
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
       expect.stringContaining("Unsupported provider: unsupported-provider"),
     )
     expect(printMessage).toHaveBeenCalled()

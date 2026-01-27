@@ -32,15 +32,15 @@ vi.mock("@upstash/redis", () => ({
 
 describe("getLockValue", () => {
   // Mock console.error
-  const originalConsoleError = console.error
+  let consoleErrorSpy: ReturnType<typeof vi.spyOn>
 
   beforeEach(() => {
-    console.error = vi.fn()
+    consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {})
     vi.clearAllMocks()
   })
 
   afterEach(() => {
-    console.error = originalConsoleError
+    consoleErrorSpy.mockRestore()
   })
 
   it("should get lock value for edge-config provider", async () => {
@@ -104,7 +104,7 @@ describe("getLockValue", () => {
     expect(LockValue.parse).toHaveBeenCalledWith(mockLockValue)
 
     // Verify console.error was not called
-    expect(console.error).not.toHaveBeenCalled()
+    expect(consoleErrorSpy).not.toHaveBeenCalled()
   })
 
   it("should return undefined when no cache value", async () => {
@@ -150,7 +150,7 @@ describe("getLockValue", () => {
     expect(LockValue.parse).not.toHaveBeenCalled()
 
     // Verify console.error was not called
-    expect(console.error).not.toHaveBeenCalled()
+    expect(consoleErrorSpy).not.toHaveBeenCalled()
   })
 
   it("should handle parse errors", async () => {
@@ -199,7 +199,7 @@ describe("getLockValue", () => {
     })
 
     // Verify error was logged
-    expect(console.error).toHaveBeenCalledWith(
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
       expect.stringContaining("Failed to parse appwarden-lock from edge cache"),
     )
     expect(printMessage).toHaveBeenCalled()
@@ -232,7 +232,7 @@ describe("getLockValue", () => {
     })
 
     // Verify error was logged
-    expect(console.error).toHaveBeenCalledWith(
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
       expect.stringContaining("Failed to retrieve edge value - Test error"),
     )
     expect(printMessage).toHaveBeenCalled()
@@ -263,7 +263,7 @@ describe("getLockValue", () => {
     )
 
     // Verify error was logged
-    expect(console.error).toHaveBeenCalledWith(
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
       expect.stringContaining(
         "Failed to retrieve edge value - Invalid connection string provided",
       ),

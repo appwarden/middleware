@@ -10,7 +10,7 @@
     "allowSyntheticDefaultImports": true,
     "outDir": "./build",
     "moduleResolution": "Bundler",
-    "types": ["@cloudflare/workers-types"]
+    "types": ["@cloudflare/workers-types", "@cloudflare/vitest-pool-workers"]
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "build"]

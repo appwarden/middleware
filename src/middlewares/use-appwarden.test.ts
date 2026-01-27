@@ -30,12 +30,12 @@ vi.mock("../utils/cloudflare", () => ({
 }))
 
 // Mock console.error
-const originalConsoleError = console.error
+let consoleErrorSpy: ReturnType<typeof vi.spyOn>
 beforeEach(() => {
-  console.error = vi.fn()
+  consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {})
 })
 afterEach(() => {
-  console.error = originalConsoleError
+  consoleErrorSpy.mockRestore()
 })
 
 describe("useAppwarden", () => {
@@ -212,7 +212,7 @@ describe("useAppwarden", () => {
     const middleware = useAppwarden(mockInput)
     await middleware(mockContext, mockNext)
 
-    expect(console.error).toHaveBeenCalledWith(
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
       expect.stringContaining("Appwarden encountered an unknown error"),
     )
   })

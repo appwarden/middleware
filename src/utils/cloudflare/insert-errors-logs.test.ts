@@ -15,19 +15,19 @@ vi.mock("../print-message", () => ({
 
 describe("insertErrorLogs", () => {
   // Mock console.log
-  const originalConsoleLog = console.log
+  let consoleLogSpy: ReturnType<typeof vi.spyOn>
 
   // Mock fetch
   const originalFetch = global.fetch
 
   beforeEach(() => {
-    console.log = vi.fn()
+    consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {})
     global.fetch = vi.fn()
     vi.clearAllMocks()
   })
 
   afterEach(() => {
-    console.log = originalConsoleLog
+    consoleLogSpy.mockRestore()
     global.fetch = originalFetch
   })
 
@@ -85,9 +85,9 @@ describe("insertErrorLogs", () => {
     expect(mockTransform).toHaveBeenCalledWith(mockResponse)
 
     // Verify errors were logged
-    expect(console.log).toHaveBeenCalledTimes(2)
-    expect(console.log).toHaveBeenCalledWith("[MOCK] Error 1")
-    expect(console.log).toHaveBeenCalledWith("[MOCK] Error 2")
+    expect(consoleLogSpy).toHaveBeenCalledTimes(2)
+    expect(consoleLogSpy).toHaveBeenCalledWith("[MOCK] Error 1")
+    expect(consoleLogSpy).toHaveBeenCalledWith("[MOCK] Error 2")
 
     // Verify result is the transformed response
     expect(result).toBeDefined()

@@ -58,12 +58,12 @@ vi.mock("next/server", () => ({
 }))
 
 // Mock console.error
-const originalConsoleError = console.error
+let consoleErrorSpy: ReturnType<typeof vi.spyOn>
 beforeEach(() => {
-  console.error = vi.fn()
+  consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {})
 })
 afterEach(() => {
-  console.error = originalConsoleError
+  consoleErrorSpy.mockRestore()
 })
 
 describe("appwardenOnPagesNextJs", () => {
@@ -173,7 +173,7 @@ describe("appwardenOnPagesNextJs", () => {
     const middleware = appwardenOnPagesNextJs(mockInputFn)
     const result = await middleware(mockRequest, mockEvent)
 
-    expect(console.error).toHaveBeenCalled()
+    expect(consoleErrorSpy).toHaveBeenCalled()
     expect(result).toBeNull()
   })
 
@@ -251,7 +251,7 @@ describe("appwardenOnPagesNextJs", () => {
     const middleware = appwardenOnPagesNextJs(mockInputFn)
     await middleware(mockRequest, mockEvent)
 
-    expect(console.error).toHaveBeenCalledWith(
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
       expect.stringContaining("Test error"),
     )
   })

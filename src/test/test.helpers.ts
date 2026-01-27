@@ -1,36 +1,32 @@
 import * as cheerio from "cheerio"
-import { Miniflare, type MiniflareOptions } from "miniflare"
-import { MockAgent } from "undici"
 import { Bindings } from "../types"
 
-// Use absolute path to avoid path resolution issues
-export const projectPath = process.cwd()
-
-export const validBindings = {
+export const validBindings: Bindings = {
   LOCK_PAGE_SLUG: "/maintenance",
   APPWARDEN_API_TOKEN: "123",
   CSP_MODE: "report-only",
   CSP_DIRECTIVES: `{ "defaultSrc": ["{{nonce}}"] }`,
-} as const
+  DEBUG: true,
+}
 
-export const getBindings = (bindings: Partial<Bindings> = validBindings) =>
-  bindings
-
-export const init = (fetchMock: MockAgent, bindings: Record<string, any>) =>
-  new Miniflare({
-    modules: true,
-    scriptPath: `${projectPath}/build/test-cloudflare.js`,
-    bindings,
-    // Set up the global dispatcher for fetch requests
-    globals: {
-      // @ts-expect-error - MockAgent types don't include fetch but it works
-      fetch: fetchMock.fetch,
-    },
-  } as MiniflareOptions)
-
-export const getRequest = (mf: Miniflare) =>
-  mf.dispatchFetch("https://appwarden.io", {
-    headers: { "content-type": "text/html" },
-  })
+export const getBindings = (
+  bindings: Partial<Bindings> = {}
+): Bindings => ({
+  ...validBindings,
+  ...bindings,
+})
 
 export const getNonce = ($: cheerio.CheerioAPI, el: any) => $(el).attr("nonce")
+
+// HTML response for testing CSP nonce injection
+export const mockOriginResponse = `
+<html>
+  <!--
+    This is a mock response from appwarden.io homepage.
+    It tests that the nonce attribute is being added to script tags.
+  -->
+  <script src="a.com"></script>
+  <script src="b.com"></script>
+  <script src="c.com"></script>
+  <script src="d.com"></script>
+</html>`
