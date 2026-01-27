@@ -45,11 +45,14 @@ describe("insertErrorLogs", () => {
     const mockAppend = vi.fn()
     const mockOn = vi.fn().mockReturnThis()
 
+    // Create a mock class for HTMLRewriter
+    class MockHTMLRewriter {
+      on = mockOn
+      transform = mockTransform
+    }
+
     // @ts-ignore - mocking HTMLRewriter
-    global.HTMLRewriter = vi.fn().mockImplementation(() => ({
-      on: mockOn,
-      transform: mockTransform,
-    }))
+    global.HTMLRewriter = MockHTMLRewriter
 
     // Mock element
     const mockElement = {

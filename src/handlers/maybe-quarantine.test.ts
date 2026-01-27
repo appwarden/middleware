@@ -33,10 +33,10 @@ describe("maybeQuarantine", () => {
     vi.clearAllMocks()
 
     // Setup test data
-    onLockedSpy = vi.fn()
+    onLockedSpy = vi.fn(() => {})
     mockOptions = {
       onLocked: vi.fn().mockImplementation(async () => {
-        onLockedSpy()
+        ;(onLockedSpy as any)()
       }),
     }
 
