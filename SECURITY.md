@@ -23,11 +23,13 @@ This package implements several security measures:
 
 1. **npm Provenance**: All published packages include npm provenance, providing a verifiable link between the published package and its source code.
 
-2. **Dependency Scanning**: We regularly scan dependencies for vulnerabilities and update them as needed.
+2. **npm Trusted Publishing**: We use npm's Trusted Publishing with OIDC authentication, eliminating the need for long-lived access tokens and providing secure, automated publishing directly from GitHub Actions.
 
-3. **Code Scanning**: We use GitHub CodeQL to scan for potential security issues in our codebase.
+3. **Dependency Scanning**: We regularly scan dependencies for vulnerabilities and update them as needed.
 
-4. **Secure Development Practices**: We follow secure coding practices and conduct code reviews with security in mind.
+4. **Code Scanning**: We use GitHub CodeQL to scan for potential security issues in our codebase.
+
+5. **Secure Development Practices**: We follow secure coding practices and conduct code reviews with security in mind.
 
 ## Third-Party Libraries
 
