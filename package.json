@@ -46,8 +46,10 @@
     "deploy:staging": "pnpm build && wrangler deploy -e staging",
     "release": "NODE_ENV=production pnpm build && node scripts/prepare-package.cjs && semantic-release",
     "build": "tsup",
-    "check": "tsc --noEmit",
-    "test": "vitest",
+    "check:types": "tsc --noEmit",
+    "check:prettier": "prettier --check .",
+    "check:ci": "pnpm check:types && pnpm check:prettier",
+    "test": "vitest --run",
     "test:coverage": "vitest --coverage",
     "coverage:badge": "node scripts/generate-coverage-badge.cjs",
     "prepack": "pnpm build",
@@ -81,12 +83,29 @@
     "@vitest/coverage-istanbul": "^3.2.4",
     "cheerio": "^1.2.0",
     "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
     "prettier": "^3.8.1",
+    "prettier-plugin-organize-imports": "^4.3.0",
     "semantic-release": "^25.0.2",
     "tsup": "^8.5.0",
     "typescript": "^5.9.3",
     "vite-tsconfig-paths": "^6.0.5",
     "vitest": "^3.2.4",
     "wrangler": "^4.61.0"
-  }
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,json,md,yml,yaml}": [
+      "prettier --write"
+    ]
+  },
+  "pnpm": {
+    "overrides": {
+      "cookie@<0.7.0": ">=0.7.0",
+      "esbuild@<=0.24.2": ">=0.25.0",
+      "path-to-regexp@>=4.0.0 <6.3.0": ">=6.3.0",
+      "tar@<7.5.7": ">=7.5.7",
+      "undici@<6.23.0": ">=6.23.0"
+    }
+  },
+  "sideEffects": false
 }

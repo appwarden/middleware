@@ -29,10 +29,10 @@ export const AppwardenConfigSchema = BaseNextJsConfigSchema
     },
   )
   .superRefine((data, ctx) => {
-    // If it's an Edge Config URL, validate its format
+    // If it looks like an Edge Config URL (by hostname), validate its strict format
     if (
-      !isValidCacheUrl.edgeConfig(data.cacheUrl) &&
-      isValidCacheUrl.upstash(data.cacheUrl)
+      isCacheUrl.edgeConfig(data.cacheUrl) &&
+      !isValidCacheUrl.edgeConfig(data.cacheUrl)
     ) {
       ctx.addIssue({
         code: "custom",
@@ -44,10 +44,10 @@ export const AppwardenConfigSchema = BaseNextJsConfigSchema
       return false
     }
 
-    // If it's an Upstash URL, validate its format
+    // If it looks like an Upstash URL (by hostname), validate its strict format
     if (
-      !isValidCacheUrl.upstash(data.cacheUrl) &&
-      isValidCacheUrl.edgeConfig(data.cacheUrl)
+      isCacheUrl.upstash(data.cacheUrl) &&
+      !isValidCacheUrl.upstash(data.cacheUrl)
     ) {
       ctx.addIssue({
         code: "custom",

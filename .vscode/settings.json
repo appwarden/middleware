@@ -1,0 +1,34 @@
+{
+  // Enable format on save
+  "editor.formatOnSave": true,
+
+  // Set Prettier as the default formatter
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+
+  // Configure Prettier for specific languages
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+
+  // Organize imports on save (this works with prettier-plugin-organize-imports)
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "never"
+  },
+
+  // TypeScript/JavaScript specific settings
+  "typescript.preferences.organizeImportsOnSave": false,
+  "javascript.preferences.organizeImportsOnSave": false
+}

@@ -6,6 +6,9 @@ export default defineWorkersProject(() => ({
   plugins: [tsconfigPaths({ root: __dirname })],
   test: {
     globals: true,
+    // Define build-time globals that are normally injected by tsup
+    // These match the values in tsup.config.ts for non-production builds
+    setupFiles: ["./vitest.setup.ts"],
     poolOptions: {
       workers: {
         singleWorker: true,

@@ -1,14 +1,13 @@
 {
   "name": "appwarden-middleware-test",
   "main": "src/test/cloudflare-app.ts",
-  "compatibility_date": "2024-01-01",
+  "compatibility_date": "2026-01-01",
   "compatibility_flags": ["nodejs_compat"],
   "vars": {
     "LOCK_PAGE_SLUG": "/maintenance",
     "APPWARDEN_API_TOKEN": "123",
     "CSP_MODE": "report-only",
     "CSP_DIRECTIVES": "{ \"defaultSrc\": [\"{{nonce}}\"] }",
-    "DEBUG": true
-  }
+    "DEBUG": true,
+  },
 }
-
