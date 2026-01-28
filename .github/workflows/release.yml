@@ -60,7 +60,6 @@ jobs:
       - name: Run post-install scripts
         run: |
           pnpm prepare
-          pnpm build
 
       - name: Run security checks
         run: |

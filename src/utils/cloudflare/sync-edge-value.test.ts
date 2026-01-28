@@ -46,7 +46,7 @@ afterEach(() => {
 })
 
 // Define API constants that are normally injected at build time
-vi.stubGlobal("API_HOSTNAME", "https://staging-bot-gateway.appwarden.io")
+vi.stubGlobal("API_HOSTNAME", "https://staging-api.appwarden.io")
 vi.stubGlobal("API_PATHNAME", "/v1/status/check")
 
 describe("syncEdgeValue", () => {
@@ -93,7 +93,7 @@ describe("syncEdgeValue", () => {
     await syncEdgeValue(mockContext)
 
     expect(fetch).toHaveBeenCalledWith(
-      new URL("/v1/status/check", "https://staging-bot-gateway.appwarden.io"),
+      new URL("/v1/status/check", "https://staging-api.appwarden.io"),
       {
         method: "POST",
         headers: { "content-type": "application/json" },

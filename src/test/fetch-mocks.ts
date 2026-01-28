@@ -29,7 +29,7 @@ export const fetchMocks = {
       fetchMock: MockAgent,
       response: (opts: any) => Promise<Partial<any>> = async () => ({}),
     ) => {
-      const mockPool = fetchMock.get("https://staging-bot-gateway.appwarden.io")
+      const mockPool = fetchMock.get("https://staging-api.appwarden.io")
       mockPool
         .intercept({
           method: "POST",

@@ -28,13 +28,13 @@ export default defineConfig({
   define: isProd
     ? {
         DEBUG: v(true),
-        API_HOSTNAME: v("https://bot-gateway.appwarden.io"),
+        API_HOSTNAME: v("https://api.appwarden.io"),
         API_PATHNAME: v("/v1/status/check"),
         CACHE_EXPIRY_MS: v(30_000),
       }
     : {
         DEBUG: v(true),
-        API_HOSTNAME: v("https://staging-bot-gateway.appwarden.io"),
+        API_HOSTNAME: v("https://staging-api.appwarden.io"),
         API_PATHNAME: v("/v1/status/check"),
         CACHE_EXPIRY_MS: v(30_000),
       },
