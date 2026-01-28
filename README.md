@@ -14,7 +14,7 @@
 - **Instant Quarantine**: Immediately redirects all visitors to a maintenance page when activated
 - **Discord Integration**: Trigger lockdowns via Discord commands (`/quarantine lock your.app.io`)
 - **Nonce-based Content Security Policy**: On Cloudflare, deploy a nonce-based Content Security Policy to supercharge your website security
-- **Minimal Runtime Overhead**: Lightweight implementation with negligible performance impact
+- **Minimal Runtime Overhead**: Negligible performance impact by using `event.waitUntil` for status checks
 
 ## Installation
 
@@ -107,7 +107,7 @@ pnpm test
 
 ## Security
 
-This package is published with npm provenance enabled, which provides a verifiable link between the published package and its source code. For more information, see [npm provenance documentation](https://docs.npmjs.com/generating-provenance-statements).
+This package is published with npm trusted publishers, to prevent npm token exfiltration, and provenance enabled, which provides a verifiable link between the published package and its source code. For more information, see [npm provenance documentation](https://docs.npmjs.com/generating-provenance-statements).
 
 ## License
 
