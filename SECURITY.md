@@ -31,12 +31,12 @@ This package implements several security measures:
 
 5. **Secure Development Practices**: We follow secure coding practices and conduct code reviews with security in mind.
 
-
 ## npm Provenance
 
 Package provenance is a security feature that provides verifiable supply chain metadata that links a published npm package to its source code and build process. It helps users verify the authenticity and integrity of the package they're installing.
 
 When a package is published with provenance, it includes cryptographically signed metadata that verifies:
+
 - The source repository where the code was built from
 - The specific commit that triggered the build
 - The CI/CD workflow that built and published the package

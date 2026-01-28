@@ -9,9 +9,7 @@ export const validBindings: Bindings = {
   DEBUG: true,
 }
 
-export const getBindings = (
-  bindings: Partial<Bindings> = {}
-): Bindings => ({
+export const getBindings = (bindings: Partial<Bindings> = {}): Bindings => ({
   ...validBindings,
   ...bindings,
 })

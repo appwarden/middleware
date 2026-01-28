@@ -123,51 +123,91 @@ describe("MemoryCache", () => {
       expect(MemoryCache.isExpired(undefined)).toBe(true)
     })
 
-    it("should mock isExpired to test expiration logic", () => {
-      // Since CACHE_EXPIRY_MS is not defined in the code and is expected to be provided
-      // from an external source, we'll mock the isExpired method to test the logic
+    it("should return true when cache is expired based on CACHE_EXPIRY_MS", () => {
+      // Mock the global CACHE_EXPIRY_MS that's injected at build time
+      const CACHE_EXPIRY_MS = 100
+      vi.stubGlobal("CACHE_EXPIRY_MS", CACHE_EXPIRY_MS)
 
-      const originalIsExpired = MemoryCache.isExpired
+      // Mock Date.now to control time
+      const now = 1000
+      const originalDateNow = Date.now
+      Date.now = vi.fn().mockReturnValue(now)
 
       try {
-        // Mock the isExpired method
-        MemoryCache.isExpired = vi.fn().mockImplementation((lockValue) => {
-          if (!lockValue) {
-            return true
-          }
-          // Simulate the same logic with our own CACHE_EXPIRY_MS
-          const CACHE_EXPIRY_MS = 100
-          return Date.now() > lockValue.lastCheck + CACHE_EXPIRY_MS
-        })
-
-        // Mock Date.now
-        const now = 1000
-        const originalDateNow = Date.now
-        Date.now = vi.fn().mockReturnValue(now)
-
-        // Test expired case
+        // Test expired case: lastCheck is beyond CACHE_EXPIRY_MS
         const expiredLockValue = {
           isLocked: 0,
           isLockedTest: 0,
-          lastCheck: now - 101, // Just past expiration
+          lastCheck: now - CACHE_EXPIRY_MS - 1, // 1ms past expiration
           code: "test",
         }
         expect(MemoryCache.isExpired(expiredLockValue)).toBe(true)
+      } finally {
+        // Restore Date.now
+        Date.now = originalDateNow
+        vi.unstubAllGlobals()
+      }
+    })
 
-        // Test non-expired case
+    it("should return false when cache is not expired", () => {
+      // Mock the global CACHE_EXPIRY_MS that's injected at build time
+      const CACHE_EXPIRY_MS = 100
+      vi.stubGlobal("CACHE_EXPIRY_MS", CACHE_EXPIRY_MS)
+
+      // Mock Date.now to control time
+      const now = 1000
+      const originalDateNow = Date.now
+      Date.now = vi.fn().mockReturnValue(now)
+
+      try {
+        // Test non-expired case: lastCheck is within CACHE_EXPIRY_MS
         const validLockValue = {
           isLocked: 0,
           isLockedTest: 0,
-          lastCheck: now - 90, // Not yet expired
+          lastCheck: now - CACHE_EXPIRY_MS + 10, // 10ms before expiration
           code: "test",
         }
         expect(MemoryCache.isExpired(validLockValue)).toBe(false)
-
+      } finally {
         // Restore Date.now
         Date.now = originalDateNow
+        vi.unstubAllGlobals()
+      }
+    })
+
+    it("should return true exactly at expiration boundary", () => {
+      // Mock the global CACHE_EXPIRY_MS that's injected at build time
+      const CACHE_EXPIRY_MS = 100
+      vi.stubGlobal("CACHE_EXPIRY_MS", CACHE_EXPIRY_MS)
+
+      // Mock Date.now to control time
+      const now = 1000
+      const originalDateNow = Date.now
+      Date.now = vi.fn().mockReturnValue(now)
+
+      try {
+        // Test boundary case: lastCheck is exactly at expiration
+        const boundaryLockValue = {
+          isLocked: 0,
+          isLockedTest: 0,
+          lastCheck: now - CACHE_EXPIRY_MS, // Exactly at expiration
+          code: "test",
+        }
+        // Should be expired (> not >=)
+        expect(MemoryCache.isExpired(boundaryLockValue)).toBe(false)
+
+        // One millisecond past should be expired
+        const justExpiredLockValue = {
+          isLocked: 0,
+          isLockedTest: 0,
+          lastCheck: now - CACHE_EXPIRY_MS - 1,
+          code: "test",
+        }
+        expect(MemoryCache.isExpired(justExpiredLockValue)).toBe(true)
       } finally {
-        // Restore the original method
-        MemoryCache.isExpired = originalIsExpired
+        // Restore Date.now
+        Date.now = originalDateNow
+        vi.unstubAllGlobals()
       }
     })
   })

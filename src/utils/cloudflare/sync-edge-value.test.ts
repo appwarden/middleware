@@ -217,4 +217,189 @@ describe("syncEdgeValue", () => {
     )
     expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
   })
+
+  describe("HTTP Error Code Handling", () => {
+    it("should handle 401 Unauthorized (invalid API token)", async () => {
+      mockFetchResponse = new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        {
+          status: 401,
+          statusText: "Unauthorized",
+          headers: { "content-type": "application/json" },
+        },
+      )
+
+      await syncEdgeValue(mockContext)
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "[@appwarden/middleware] Failed to fetch from check endpoint - 401 Unauthorized",
+      )
+      expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
+    })
+
+    it("should handle 403 Forbidden", async () => {
+      mockFetchResponse = new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
+        statusText: "Forbidden",
+        headers: { "content-type": "application/json" },
+      })
+
+      await syncEdgeValue(mockContext)
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "[@appwarden/middleware] Failed to fetch from check endpoint - 403 Forbidden",
+      )
+      expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
+    })
+
+    it("should handle 429 Rate Limiting", async () => {
+      mockFetchResponse = new Response(
+        JSON.stringify({ error: "Too Many Requests" }),
+        {
+          status: 429,
+          statusText: "Too Many Requests",
+          headers: { "content-type": "application/json" },
+        },
+      )
+
+      await syncEdgeValue(mockContext)
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "[@appwarden/middleware] Failed to fetch from check endpoint - 429 Too Many Requests",
+      )
+      expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
+    })
+
+    it("should handle 500 Internal Server Error", async () => {
+      mockFetchResponse = new Response(
+        JSON.stringify({ error: "Internal Server Error" }),
+        {
+          status: 500,
+          statusText: "Internal Server Error",
+          headers: { "content-type": "application/json" },
+        },
+      )
+
+      await syncEdgeValue(mockContext)
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "[@appwarden/middleware] Failed to fetch from check endpoint - 500 Internal Server Error",
+      )
+      expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
+    })
+
+    it("should handle 502 Bad Gateway", async () => {
+      mockFetchResponse = new Response(
+        JSON.stringify({ error: "Bad Gateway" }),
+        {
+          status: 502,
+          statusText: "Bad Gateway",
+          headers: { "content-type": "application/json" },
+        },
+      )
+
+      await syncEdgeValue(mockContext)
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "[@appwarden/middleware] Failed to fetch from check endpoint - 502 Bad Gateway",
+      )
+      expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
+    })
+
+    it("should handle 503 Service Unavailable", async () => {
+      mockFetchResponse = new Response(
+        JSON.stringify({ error: "Service Unavailable" }),
+        {
+          status: 503,
+          statusText: "Service Unavailable",
+          headers: { "content-type": "application/json" },
+        },
+      )
+
+      await syncEdgeValue(mockContext)
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "[@appwarden/middleware] Failed to fetch from check endpoint - 503 Service Unavailable",
+      )
+      expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
+    })
+
+    it("should handle 504 Gateway Timeout", async () => {
+      mockFetchResponse = new Response(
+        JSON.stringify({ error: "Gateway Timeout" }),
+        {
+          status: 504,
+          statusText: "Gateway Timeout",
+          headers: { "content-type": "application/json" },
+        },
+      )
+
+      await syncEdgeValue(mockContext)
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "[@appwarden/middleware] Failed to fetch from check endpoint - 504 Gateway Timeout",
+      )
+      expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
+    })
+
+    it("should handle network timeout errors", async () => {
+      global.fetch = vi.fn().mockRejectedValueOnce(new Error("Request timeout"))
+
+      await syncEdgeValue(mockContext)
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "[@appwarden/middleware] Failed to fetch from check endpoint - Request timeout",
+      )
+      expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
+    })
+
+    it("should handle DNS resolution failures", async () => {
+      global.fetch = vi
+        .fn()
+        .mockRejectedValueOnce(new Error("getaddrinfo ENOTFOUND"))
+
+      await syncEdgeValue(mockContext)
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "[@appwarden/middleware] Failed to fetch from check endpoint - getaddrinfo ENOTFOUND",
+      )
+      expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
+    })
+
+    it("should handle malformed JSON response", async () => {
+      mockFetchResponse = new Response("Not valid JSON", {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      })
+
+      await syncEdgeValue(mockContext)
+
+      expect(consoleErrorSpy).toHaveBeenCalled()
+      expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
+    })
+
+    it("should handle empty response body", async () => {
+      mockFetchResponse = new Response("", {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      })
+
+      await syncEdgeValue(mockContext)
+
+      expect(consoleErrorSpy).toHaveBeenCalled()
+      expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
+    })
+
+    it("should handle non-JSON content-type", async () => {
+      mockFetchResponse = new Response("<html>Error</html>", {
+        status: 200,
+        headers: { "content-type": "text/html" },
+      })
+
+      await syncEdgeValue(mockContext)
+
+      // Should not attempt to parse non-JSON response
+      expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
+    })
+  })
 })

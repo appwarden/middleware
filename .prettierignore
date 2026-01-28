@@ -1,1 +1,18 @@
+# Dependencies
+node_modules
+pnpm-lock.yaml
 
+# Build outputs
+dist
+.next
+.vercel
+.wrangler
+
+# Coverage
+coverage
+
+# Logs
+*.log
+
+# Generated files
+CHANGELOG.md
