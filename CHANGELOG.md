@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.4.1](https://github.com/appwarden/middleware/compare/@appwarden/middleware@1.4.0...@appwarden/middleware@1.4.1) (2026-01-28)
+
+
+### Bug Fixes
+
+* ensure release pipeline ([dd3915e](https://github.com/appwarden/middleware/commit/dd3915e00cf7fa52c38741cdc15bac34a9f35890))
+
 # [1.4.0](https://github.com/appwarden/middleware/compare/@appwarden/middleware@1.3.1...@appwarden/middleware@1.4.0) (2025-06-02)
 
 ## [1.3.1](https://github.com/appwarden/middleware/compare/@appwarden/middleware@1.3.0...@appwarden/middleware@1.3.1) (2025-05-29)
