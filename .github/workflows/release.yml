@@ -24,13 +24,10 @@ jobs:
         uses: actions/checkout@v6.0.1
         with:
           fetch-depth: 0 # Needed for semantic-release to generate correct version numbers
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ env.MIDDLEWARE_GITHUB_TOKEN }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4.2.0
-        with:
-          version: 10.4.1
-          run_install: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v6.2.0
@@ -53,7 +50,7 @@ jobs:
           # Install dependencies with frozen lockfile for reproducibility
           pnpm install --ignore-scripts --frozen-lockfile
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ env.MIDDLEWARE_GITHUB_TOKEN }}
           # Disable progress bars for cleaner logs
           NPM_CONFIG_PROGRESS: "false"
 
@@ -68,7 +65,7 @@ jobs:
 
       - name: Run code quality checks
         run: |
-          pnpm check
+          pnpm check:ci
           pnpm test
 
       - name: Setup npm authentication
@@ -81,6 +78,21 @@ jobs:
 
         env:
           GITHUB_TOKEN: ${{ env.MIDDLEWARE_GITHUB_TOKEN }}
+
+      - name: Generate SBOM
+        run: |
+          # Generate Software Bill of Materials using CycloneDX
+          pnpm dlx @cyclonedx/cyclonedx-npm --output-file sbom.json --output-format JSON
+          pnpm dlx @cyclonedx/cyclonedx-npm --output-file sbom.xml --output-format XML
+
+      - name: Upload SBOM as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: |
+            sbom.json
+            sbom.xml
+          retention-days: 90
 
       - name: Release 🚀
         run: |
@@ -96,4 +108,19 @@ jobs:
           GITHUB_NPM_CONFIG_USERCONFIG: ".npmrc-github"
           GITHUB_NPM_TOKEN: ${{ env.MIDDLEWARE_GITHUB_TOKEN }}
           # used by semantic-release/github
+          GITHUB_TOKEN: ${{ env.MIDDLEWARE_GITHUB_TOKEN }}
+
+      - name: Upload SBOM to release
+        if: success()
+        run: |
+          # Get the latest release tag
+          LATEST_TAG=$(gh release list --limit 1 --json tagName --jq '.[0].tagName')
+
+          if [[ -n "$LATEST_TAG" ]]; then
+            echo "Uploading SBOM to release $LATEST_TAG"
+            gh release upload "$LATEST_TAG" sbom.json sbom.xml --clobber
+          else
+            echo "No release found, skipping SBOM upload to release"
+          fi
+        env:
           GITHUB_TOKEN: ${{ env.MIDDLEWARE_GITHUB_TOKEN }}
