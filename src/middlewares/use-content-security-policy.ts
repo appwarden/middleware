@@ -40,7 +40,7 @@ export const useContentSecurityPolicy: (input: UseCSPInput) => Middleware = (
       return
     }
 
-    const cspNonce = btoa(crypto.getRandomValues(new Uint32Array(2)).toString())
+    const cspNonce = crypto.randomUUID()
 
     const [cspHeaderName, cspHeaderValue] = makeCSPHeader(
       cspNonce,
