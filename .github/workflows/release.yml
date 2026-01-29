@@ -81,9 +81,8 @@ jobs:
 
       - name: Generate SBOM
         run: |
-          # Generate Software Bill of Materials using CycloneDX
-          pnpm dlx @cyclonedx/cyclonedx-npm --output-file sbom.json --output-format JSON
-          pnpm dlx @cyclonedx/cyclonedx-npm --output-file sbom.xml --output-format XML
+          # Generate Software Bill of Materials using CycloneDX cdxgen (supports pnpm)
+          pnpm run sbom:generate
 
       - name: Upload SBOM as artifact
         uses: actions/upload-artifact@v4

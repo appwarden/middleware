@@ -4,3 +4,7 @@ node_modules
 build
 wrangler.toml
 coverage
+
+# SBOM files (generated artifacts)
+sbom.json
+sbom.xml
