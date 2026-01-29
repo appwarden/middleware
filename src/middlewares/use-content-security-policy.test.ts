@@ -371,8 +371,8 @@ describe("use-content-security-policy", () => {
           "content-security-policy",
         )
 
-        // Verify nonce format: 'nonce-<base64-string>'
-        expect(cspHeader).toMatch(/'nonce-[A-Za-z0-9+/=]+'/)
+        // Verify nonce format: 'nonce-<uuid>'
+        expect(cspHeader).toMatch(/'nonce-[a-f0-9-]+'/)
 
         // Verify nonce appears in both script-src and style-src
         const scriptSrcMatch = cspHeader?.match(
