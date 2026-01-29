@@ -5,15 +5,12 @@ on:
   pull_request:
     types: [opened, synchronize]
 
-# Explicitly define permissions following the principle of least privilege
+# Set default permissions to read-only
 permissions:
-  contents: write # Needed to update README with coverage badge
-  checks: write # Needed to report check results
-  pull-requests: write # Needed to create pull requests
-  security-events: write # Needed for dependency scanning
+  contents: read
 
 concurrency:
-  group: ${{ github.ref }}
+  group: checks-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -21,6 +18,10 @@ jobs:
     name: Run checks and tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # Job-level permissions following the principle of least privilege
+    permissions:
+      contents: write # Needed to push coverage badge updates
+      pull-requests: write # Needed to create pull requests for coverage badge
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6.0.1
@@ -30,9 +31,7 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4.2.0
-        with:
-          version: 10.4.1
-          run_install: false
+        # Version is automatically read from package.json packageManager field
 
       - name: Setup Node.js
         uses: actions/setup-node@v6.2.0
@@ -54,10 +53,14 @@ jobs:
           npm config set audit true
 
           # Install dependencies with frozen lockfile for reproducibility
-          pnpm install --frozen-lockfile
+          pnpm install --ignore-scripts --frozen-lockfile
         env:
           # Disable progress bars for cleaner logs
           NPM_CONFIG_PROGRESS: "false"
+
+      - name: Run post-install scripts
+        run: |
+          pnpm prepare
 
       - name: Run security checks
         run: |
@@ -66,12 +69,10 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - name: Checks
-        run: pnpm check
-
-      - name: Run tests
-        run: pnpm test:coverage
-
+      - name: Run code quality checks
+        run: |
+          pnpm check:ci
+          pnpm test:coverage
       - name: Generate coverage badge
         if: github.ref == 'refs/heads/main'
         run: |
@@ -80,29 +81,36 @@ jobs:
       - name: Create PR for updated README with coverage badge
         if: github.ref == 'refs/heads/main'
         run: |
-          # Configure git
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-
-          # Configure Git to use the GitHub token for authentication
-          # This is needed because we set persist-credentials: false in the checkout step
-          git config --local http.https://github.com/.extraheader "AUTHORIZATION: basic $(echo -n "x-access-token:${GITHUB_TOKEN}" | base64)"
-
           # Check if README was modified
           if [[ -n $(git status --porcelain README.md) ]]; then
+            # Check if there's already an open PR for coverage badge update
+            EXISTING_PR=$(gh pr list --base main --label "documentation" --search "update coverage badge" --state open --json number --jq '.[0].number')
+
+            if [[ -n "$EXISTING_PR" ]]; then
+              echo "An open PR (#$EXISTING_PR) already exists for coverage badge update. Skipping PR creation."
+              exit 0
+            fi
+
+            # Configure git
+            git config --local user.email "github-actions[bot]@users.noreply.github.com"
+            git config --local user.name "github-actions[bot]"
+
             # Create a new branch with timestamp to ensure uniqueness
             BRANCH_NAME="update-coverage-badge-$(date +%Y%m%d%H%M%S)"
             git checkout -b $BRANCH_NAME
 
-            # Add, commit and push changes to the new branch
+            # Add and commit changes to the new branch
             git add README.md
             git commit -m "docs: update coverage badge [skip ci]"
-            git push origin $BRANCH_NAME
+
+            # Push using GitHub CLI which handles authentication securely via GITHUB_TOKEN env var
+            gh repo set-default "${{ github.repository }}"
+            git push origin "$BRANCH_NAME"
 
             # Create a pull request using GitHub CLI
             gh pr create \
               --base main \
-              --head $BRANCH_NAME \
+              --head "$BRANCH_NAME" \
               --title "docs: update coverage badge" \
               --body "Automatically generated PR to update the coverage badge in README.md" \
               --label "documentation"
