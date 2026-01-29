@@ -4,15 +4,18 @@ All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
 ## [1.4.3](https://github.com/appwarden/middleware/compare/@appwarden/middleware@1.4.2...@appwarden/middleware@1.4.3) (2026-01-29)
-
+## [1.4.2](https://github.com/appwarden/middleware/compare/@appwarden/middleware@1.4.1...@appwarden/middleware@1.4.2) (2026-01-29)
 
 ### Bug Fixes
 
 * improve CSP nonce generation using crypto.randomUUID() ([74853ed](https://github.com/appwarden/middleware/commit/74853edb4281033a7466a5484515659ee5eca310))
 * improve escaping in error message insertion to prevent injection attacks ([431cb28](https://github.com/appwarden/middleware/commit/431cb28609151edbcc8948d885cf0f2710e8048c))
+* improve tests ([0fd4ce3](https://github.com/appwarden/middleware/commit/0fd4ce3497fbde091d042cb8bafbd6ecbd53ce96))
+* update check endpoints to point at the new service ([beff51f](https://github.com/appwarden/middleware/commit/beff51f3cd6e5a8d530aa37a56e753624a105172))
+* use pnpm compatible sbom generator ([f1acfe1](https://github.com/appwarden/middleware/commit/f1acfe1b28ce0af3f6b835549f966fdf9254e703))
+* workflow security improvements ([2ef5491](https://github.com/appwarden/middleware/commit/2ef549134bb828ec7b6e1fb45fca590cb43399f2))
 
 ## [1.4.1](https://github.com/appwarden/middleware/compare/@appwarden/middleware@1.4.0...@appwarden/middleware@1.4.1) (2026-01-28)
-
 
 ### Bug Fixes
 
