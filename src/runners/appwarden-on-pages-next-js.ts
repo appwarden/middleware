@@ -65,6 +65,16 @@ export const appwardenOnPagesNextJs =
 
       // ignore non-html requests
       if (isHTMLRequest) {
+        // Resolve lockPageSlug from multidomainConfig or root config
+        const lockPageSlug =
+          input.multidomainConfig?.[requestUrl.hostname]?.lockPageSlug ??
+          input.lockPageSlug
+
+        // If no lockPageSlug is resolved, skip lock logic for this domain
+        if (!lockPageSlug) {
+          return NextResponse.next()
+        }
+
         let appwardenResponse: Promise<Response> | undefined = undefined
 
         const context: CloudflareProviderContext = {
@@ -75,6 +85,7 @@ export const appwardenOnPagesNextJs =
           provider,
           waitUntil: (fn: any) => event.waitUntil(fn),
           ...input,
+          lockPageSlug,
         }
 
         await maybeQuarantine(context, {

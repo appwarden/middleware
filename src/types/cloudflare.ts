@@ -7,13 +7,17 @@ import { ContentSecurityPolicyType } from "./csp"
 
 export type RequestContext = ReturnType<typeof getRequestContext>
 
-export type CloudflareProviderContext = ReturnType<NextJsConfigFnType> & {
+export type CloudflareProviderContext = Omit<
+  ReturnType<NextJsConfigFnType>,
+  "lockPageSlug"
+> & {
   request: Request
   requestUrl: URL
   keyName: typeof APPWARDEN_CACHE_KEY
   provider: "cloudflare-cache"
   edgeCache: JSONStore<LockValueType>
   waitUntil: NextFetchEvent["waitUntil"]
+  lockPageSlug: string // Required - context is only created when lockPageSlug is resolved
 }
 
 export type RequestHandler<Env = any> = PagesFunction<Env>
