@@ -3,6 +3,7 @@
 node_modules
 build
 coverage
+examples
 
 # SBOM files (generated artifacts)
 sbom.json

@@ -21,6 +21,7 @@ export const CSPModeSchema = z
 
 export const UseCSPInputSchema = z
   .object({
+    hostname: z.string().optional(),
     mode: CSPModeSchema,
     directives: CSPDirectivesSchema.optional()
       .refine(

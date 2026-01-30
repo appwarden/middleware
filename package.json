@@ -49,7 +49,7 @@
     "build": "tsup",
     "check:types": "tsc --noEmit",
     "check:prettier": "prettier --check .",
-    "check:ci": "pnpm check:types && pnpm check:prettier",
+    "check:ci": "pnpm check:types && pnpm check:prettier && pnpm build",
     "test": "vitest --run",
     "test:coverage": "vitest --coverage",
     "coverage:badge": "node scripts/generate-coverage-badge.cjs",
