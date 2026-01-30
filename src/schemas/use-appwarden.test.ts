@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest"
-import { UseAppwardenInputSchema } from "./use-appwarden"
+import {
+  lockPageSlugRefinement,
+  UseAppwardenInputSchema,
+} from "./use-appwarden"
 
 // Instead of mocking, we'll test the behavior of the schema
 // This approach is more resilient to implementation changes
@@ -50,14 +53,71 @@ describe("UseAppwardenInputSchema", () => {
     }
   })
 
-  it("should require lockPageSlug", () => {
+  it("should allow lockPageSlug to be optional in base schema", () => {
+    const validInput = {
+      debug: true,
+      appwardenApiToken: "token123",
+    }
+
+    // Base schema allows optional lockPageSlug
+    const result = UseAppwardenInputSchema.safeParse(validInput)
+    expect(result.success).toBe(true)
+  })
+
+  it("should accept multidomainConfig instead of lockPageSlug", () => {
+    const validInput = {
+      debug: true,
+      appwardenApiToken: "token123",
+      multidomainConfig: {
+        "example.com": { lockPageSlug: "/maintenance-example" },
+        "other.com": { lockPageSlug: "/maintenance-other" },
+      },
+    }
+
+    const result = UseAppwardenInputSchema.safeParse(validInput)
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.multidomainConfig).toEqual(
+        validInput.multidomainConfig,
+      )
+    }
+  })
+
+  it("should require either lockPageSlug or multidomainConfig when using refinement", () => {
     const invalidInput = {
       debug: true,
       appwardenApiToken: "token123",
     }
 
-    const result = UseAppwardenInputSchema.safeParse(invalidInput)
+    const RefinedSchema = lockPageSlugRefinement(UseAppwardenInputSchema)
+    const result = RefinedSchema.safeParse(invalidInput)
     expect(result.success).toBe(false)
+  })
+
+  it("should pass refinement when lockPageSlug is provided", () => {
+    const validInput = {
+      debug: true,
+      lockPageSlug: "/maintenance",
+      appwardenApiToken: "token123",
+    }
+
+    const RefinedSchema = lockPageSlugRefinement(UseAppwardenInputSchema)
+    const result = RefinedSchema.safeParse(validInput)
+    expect(result.success).toBe(true)
+  })
+
+  it("should pass refinement when multidomainConfig is provided", () => {
+    const validInput = {
+      debug: true,
+      appwardenApiToken: "token123",
+      multidomainConfig: {
+        "example.com": { lockPageSlug: "/maintenance" },
+      },
+    }
+
+    const RefinedSchema = lockPageSlugRefinement(UseAppwardenInputSchema)
+    const result = RefinedSchema.safeParse(validInput)
+    expect(result.success).toBe(true)
   })
 
   it("should require appwardenApiToken", () => {

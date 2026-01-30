@@ -257,4 +257,133 @@ describe("useAppwarden", () => {
     // Verify that the original waitUntil was called with the same promise
     expect(mockContext.waitUntil).toHaveBeenCalledWith(testPromise)
   })
+
+  describe("multidomainConfig", () => {
+    it("should use lockPageSlug from multidomainConfig when hostname matches", async () => {
+      const inputWithMultidomain: CloudflareConfigType = {
+        debug: false,
+        appwardenApiToken: "test-token",
+        middleware: { before: [] },
+        multidomainConfig: {
+          "example.com": { lockPageSlug: "/maintenance-example" },
+          "other.com": { lockPageSlug: "/maintenance-other" },
+        },
+      }
+
+      mockContext.request = new Request("https://example.com/page")
+      mockContext.hostname = "example.com"
+
+      const middleware = useAppwarden(inputWithMultidomain)
+      await middleware(mockContext, mockNext)
+
+      expect(maybeQuarantine).toHaveBeenCalled()
+      const contextArg = vi.mocked(maybeQuarantine).mock.calls[0][0]
+      expect(contextArg.lockPageSlug).toBe("/maintenance-example")
+    })
+
+    it("should use lockPageSlug from different domain in multidomainConfig", async () => {
+      const inputWithMultidomain: CloudflareConfigType = {
+        debug: false,
+        appwardenApiToken: "test-token",
+        middleware: { before: [] },
+        multidomainConfig: {
+          "example.com": { lockPageSlug: "/maintenance-example" },
+          "other.com": { lockPageSlug: "/maintenance-other" },
+        },
+      }
+
+      mockContext.request = new Request("https://other.com/page")
+      mockContext.hostname = "other.com"
+
+      const middleware = useAppwarden(inputWithMultidomain)
+      await middleware(mockContext, mockNext)
+
+      expect(maybeQuarantine).toHaveBeenCalled()
+      const contextArg = vi.mocked(maybeQuarantine).mock.calls[0][0]
+      expect(contextArg.lockPageSlug).toBe("/maintenance-other")
+    })
+
+    it("should skip quarantine for unconfigured domains when using multidomainConfig", async () => {
+      const inputWithMultidomain: CloudflareConfigType = {
+        debug: false,
+        appwardenApiToken: "test-token",
+        middleware: { before: [] },
+        multidomainConfig: {
+          "example.com": { lockPageSlug: "/maintenance-example" },
+        },
+      }
+
+      mockContext.request = new Request("https://unknown-domain.com/page")
+      mockContext.hostname = "unknown-domain.com"
+
+      const middleware = useAppwarden(inputWithMultidomain)
+      await middleware(mockContext, mockNext)
+
+      // maybeQuarantine should NOT be called for unconfigured domains
+      expect(maybeQuarantine).not.toHaveBeenCalled()
+    })
+
+    it("should fall back to root lockPageSlug when multidomainConfig is not provided", async () => {
+      const inputWithRootOnly: CloudflareConfigType = {
+        debug: false,
+        lockPageSlug: "/root-maintenance",
+        appwardenApiToken: "test-token",
+        middleware: { before: [] },
+      }
+
+      mockContext.request = new Request("https://any-domain.com/page")
+      mockContext.hostname = "any-domain.com"
+
+      const middleware = useAppwarden(inputWithRootOnly)
+      await middleware(mockContext, mockNext)
+
+      expect(maybeQuarantine).toHaveBeenCalled()
+      const contextArg = vi.mocked(maybeQuarantine).mock.calls[0][0]
+      expect(contextArg.lockPageSlug).toBe("/root-maintenance")
+    })
+
+    it("should prefer multidomainConfig lockPageSlug over root lockPageSlug", async () => {
+      const inputWithBoth: CloudflareConfigType = {
+        debug: false,
+        lockPageSlug: "/root-maintenance",
+        appwardenApiToken: "test-token",
+        middleware: { before: [] },
+        multidomainConfig: {
+          "example.com": { lockPageSlug: "/domain-specific-maintenance" },
+        },
+      }
+
+      mockContext.request = new Request("https://example.com/page")
+      mockContext.hostname = "example.com"
+
+      const middleware = useAppwarden(inputWithBoth)
+      await middleware(mockContext, mockNext)
+
+      expect(maybeQuarantine).toHaveBeenCalled()
+      const contextArg = vi.mocked(maybeQuarantine).mock.calls[0][0]
+      expect(contextArg.lockPageSlug).toBe("/domain-specific-maintenance")
+    })
+
+    it("should fall back to root lockPageSlug for unconfigured domains when both are provided", async () => {
+      const inputWithBoth: CloudflareConfigType = {
+        debug: false,
+        lockPageSlug: "/root-maintenance",
+        appwardenApiToken: "test-token",
+        middleware: { before: [] },
+        multidomainConfig: {
+          "example.com": { lockPageSlug: "/domain-specific-maintenance" },
+        },
+      }
+
+      mockContext.request = new Request("https://other-domain.com/page")
+      mockContext.hostname = "other-domain.com"
+
+      const middleware = useAppwarden(inputWithBoth)
+      await middleware(mockContext, mockNext)
+
+      expect(maybeQuarantine).toHaveBeenCalled()
+      const contextArg = vi.mocked(maybeQuarantine).mock.calls[0][0]
+      expect(contextArg.lockPageSlug).toBe("/root-maintenance")
+    })
+  })
 })
