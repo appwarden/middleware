@@ -6,6 +6,7 @@
   "vars": {
     "LOCK_PAGE_SLUG": "/maintenance",
     "APPWARDEN_API_TOKEN": "123",
+    "APPWARDEN_API_HOSTNAME": "https://staging-api.appwarden.io",
     "CSP_MODE": "report-only",
     "CSP_DIRECTIVES": "{ \"defaultSrc\": [\"{{nonce}}\"] }",
     "DEBUG": true,
