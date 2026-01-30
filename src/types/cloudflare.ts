@@ -18,6 +18,7 @@ export type CloudflareProviderContext = Omit<
   edgeCache: JSONStore<LockValueType>
   waitUntil: NextFetchEvent["waitUntil"]
   lockPageSlug: string // Required - context is only created when lockPageSlug is resolved
+  appwardenApiHostname?: string
 }
 
 export type RequestHandler<Env = any> = PagesFunction<Env>
@@ -32,4 +33,5 @@ export type Bindings = {
   CSP_MODE: "disabled" | "report-only" | "enforced"
   CSP_DIRECTIVES: string | ContentSecurityPolicyType
   APPWARDEN_API_TOKEN: string
+  APPWARDEN_API_HOSTNAME?: string
 }

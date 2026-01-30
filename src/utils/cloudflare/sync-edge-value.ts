@@ -10,13 +10,17 @@ class APIError extends Error {
   }
 }
 
+const DEFAULT_API_HOSTNAME = "https://api.appwarden.io"
+
 export const syncEdgeValue = async (context: CloudflareProviderContext) => {
   // we use this log to search vercel logs during testing (see packages/appwarden-vercel/edge-cache-testing-results.md)
   debug(`syncing with api`)
 
   try {
-    // @ts-expect-error config variables
-    const response = await fetch(new URL(API_PATHNAME, API_HOSTNAME), {
+    // Use runtime-configured hostname if provided, otherwise fall back to default
+    const apiHostname = context.appwardenApiHostname ?? DEFAULT_API_HOSTNAME
+    // @ts-expect-error API_PATHNAME is a build-time config variable
+    const response = await fetch(new URL(API_PATHNAME, apiHostname), {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({

@@ -20,6 +20,7 @@ export const UseAppwardenInputSchema = z.object({
   appwardenApiToken: z
     .string()
     .refine((val) => !!val, { path: ["appwardenApiToken"] }),
+  appwardenApiHostname: z.string().optional(),
 })
 
 // Refinement to ensure either lockPageSlug or multidomainConfig is provided
@@ -30,6 +31,6 @@ export const lockPageSlugRefinement = <T extends z.ZodTypeAny>(schema: T) =>
       multidomainConfig?: AppwardenMultidomainConfig
     }) => data.lockPageSlug || data.multidomainConfig,
     {
-      message: "Either lockPageSlug or multidomainConfig must be provided",
+      message: "lockPageSlug must be provided",
     },
   )

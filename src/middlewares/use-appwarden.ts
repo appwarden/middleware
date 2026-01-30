@@ -61,6 +61,7 @@ export const useAppwarden: (input: CloudflareConfigType) => Middleware =
           debug: input.debug,
           lockPageSlug,
           appwardenApiToken: input.appwardenApiToken,
+          appwardenApiHostname: input.appwardenApiHostname,
           waitUntil: (fn: any) => context.waitUntil(fn),
         }
 
