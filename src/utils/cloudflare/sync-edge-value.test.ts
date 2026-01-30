@@ -61,6 +61,7 @@ describe("syncEdgeValue", () => {
       provider: "cloudflare-cache",
       requestUrl: new URL("https://example.com"),
       appwardenApiToken: "test-token",
+      appwardenApiHostname: "https://staging-api.appwarden.io",
       keyName: "appwarden-lock",
       edgeCache: {
         getValue: vi.fn(),
