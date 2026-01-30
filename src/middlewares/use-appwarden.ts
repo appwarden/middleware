@@ -43,11 +43,12 @@ export const useAppwarden: (input: CloudflareConfigType) => Middleware =
         request.headers.get("User-Agent") === APPWARDEN_USER_AGENT
 
       if (isHTMLRequest && !isMonitoringRequest) {
+        // Resolve lockPageSlug from multidomainConfig (if hostname exists) or fall back to top-level config.
+        // If neither provides a lockPageSlug, this domain is not protected and lock logic is skipped.
         const lockPageSlug =
           input.multidomainConfig?.[requestUrl.hostname]?.lockPageSlug ??
           input.lockPageSlug
 
-        // If no lockPageSlug is resolved, skip lock logic for this domain
         if (!lockPageSlug) {
           return
         }

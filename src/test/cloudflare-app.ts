@@ -23,6 +23,7 @@ export default {
       debug: context.env.DEBUG,
       lockPageSlug: context.env.LOCK_PAGE_SLUG,
       appwardenApiToken: context.env.APPWARDEN_API_TOKEN,
+      appwardenApiHostname: context.env.APPWARDEN_API_HOSTNAME,
       middleware: {
         before: [
           useHeader("test-appwarden-ran"),
