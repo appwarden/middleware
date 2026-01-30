@@ -1,0 +1,41 @@
+name: Trigger Build Cloudflare Action
+on:
+  release:
+    types: [published]
+
+# Minimal permissions - we only need to read release info
+# Cross-repo dispatch uses the PAT token directly
+permissions:
+  contents: read
+
+jobs:
+  trigger:
+    name: Trigger build-cloudflare-action workflow
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Trigger build-cloudflare-action workflow
+        run: |
+          # Extract version from release tag (remove @appwarden/middleware@ prefix)
+          RELEASE_TAG="${{ github.event.release.tag_name }}"
+          VERSION=$(echo "$RELEASE_TAG" | sed 's/@appwarden\/middleware@//')
+
+          echo "Middleware release detected: $RELEASE_TAG"
+          echo "Extracted version: $VERSION"
+          echo "Triggering build-cloudflare-action repository..."
+
+          # Trigger workflow in build-cloudflare-action repository using repository_dispatch
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            /repos/appwarden/build-cloudflare-action/dispatches \
+            -f event_type="middleware-release" \
+            -f "client_payload[middleware_version]=$VERSION" \
+            -f "client_payload[release_tag]=$RELEASE_TAG" \
+            -f "client_payload[release_url]=${{ github.event.release.html_url }}" \
+            -f "client_payload[triggered_by]=appwarden-middleware"
+
+          echo "Successfully triggered build-cloudflare-action workflow"
+        env:
+          GITHUB_TOKEN: ${{ secrets.APPWARDEN_MIDDLEWARE_GITHUB_TOKEN }}
