@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.5.1](https://github.com/appwarden/middleware/compare/@appwarden/middleware@1.5.0...@appwarden/middleware@1.5.1) (2026-01-30)
+
+
+### Bug Fixes
+
+* add APPWARDEN_API_HOSTNAME optional binding for runtime API hostname configuration ([c66afe8](https://github.com/appwarden/middleware/commit/c66afe8d5602b1a56673b8645b9e88c909c28b41))
+* pass APPWARDEN_API_HOSTNAME from env to test app context ([5f2a297](https://github.com/appwarden/middleware/commit/5f2a297aad893a911f245a21e15a777177f9d37d))
+
 # [1.5.0](https://github.com/appwarden/middleware/compare/@appwarden/middleware@1.4.3...@appwarden/middleware@1.5.0) (2026-01-30)
 
 

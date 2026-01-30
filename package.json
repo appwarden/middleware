@@ -1,6 +1,6 @@
 {
   "name": "@appwarden/middleware",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "Instantly shut off access your app deployed on Cloudflare or Vercel",
   "type": "module",
   "license": "MIT",
