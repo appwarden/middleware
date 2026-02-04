@@ -1,6 +1,7 @@
 import { checkLockStatus } from "../core"
 import { TanStackStartCloudflareConfigSchema } from "../schemas/tanstack-start-cloudflare"
 import {
+  buildLockPageUrl,
   createRedirect,
   isHTMLRequest,
   isMonitoringRequest,
@@ -137,12 +138,7 @@ export function createAppwardenMiddleware(
 
       // If locked, throw redirect to lock page
       if (result.isLocked) {
-        // Normalize the lock page slug to ensure it starts with /
-        const normalizedSlug = config.lockPageSlug.startsWith("/")
-          ? config.lockPageSlug
-          : `/${config.lockPageSlug}`
-
-        const lockPageUrl = new URL(normalizedSlug, request.url)
+        const lockPageUrl = buildLockPageUrl(config.lockPageSlug, request.url)
         throw createRedirect(lockPageUrl)
       }
 
