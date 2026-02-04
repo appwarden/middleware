@@ -11,6 +11,11 @@ export const BooleanSchema = BoolOrStringSchema.transform((val) => {
   throw new Error("Invalid value")
 })
 
+/** Schema for the Appwarden API token - validates it's a non-empty string */
+export const AppwardenApiTokenSchema = z
+  .string()
+  .refine((val) => !!val, { message: "appwardenApiToken is required" })
+
 export const LockValue = z.object({
   isLocked: z.number(),
   isLockedTest: z.number(),
