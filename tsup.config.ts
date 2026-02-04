@@ -23,6 +23,10 @@ export default defineConfig({
     index: "src/index.ts",
     vercel: "src/bundles/vercel.ts",
     cloudflare: "src/bundles/cloudflare.ts",
+    "cloudflare/astro": "src/bundles/astro-cloudflare.ts",
+    "cloudflare/react-router": "src/bundles/react-router-cloudflare.ts",
+    "cloudflare/tanstack-start": "src/bundles/tanstack-start-cloudflare.ts",
+    "cloudflare/nextjs": "src/bundles/nextjs-cloudflare.ts",
   },
   define: isProd
     ? {

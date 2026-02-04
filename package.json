@@ -35,6 +35,22 @@
     "./cloudflare": {
       "types": "./cloudflare.d.ts",
       "default": "./cloudflare.js"
+    },
+    "./cloudflare/astro": {
+      "types": "./cloudflare/astro.d.ts",
+      "default": "./cloudflare/astro.js"
+    },
+    "./cloudflare/react-router": {
+      "types": "./cloudflare/react-router.d.ts",
+      "default": "./cloudflare/react-router.js"
+    },
+    "./cloudflare/tanstack-start": {
+      "types": "./cloudflare/tanstack-start.d.ts",
+      "default": "./cloudflare/tanstack-start.js"
+    },
+    "./cloudflare/nextjs": {
+      "types": "./cloudflare/nextjs.d.ts",
+      "default": "./cloudflare/nextjs.js"
     }
   },
   "packageManager": "pnpm@10.4.1",
@@ -58,16 +74,24 @@
     "commitlint": "commitlint --edit"
   },
   "dependencies": {
-    "@cloudflare/next-on-pages": "1.13.12",
-    "@upstash/redis": "^1.36.1",
+    "@cloudflare/next-on-pages": "^1.13.16",
+    "@upstash/redis": "^1.36.2",
     "@vercel/edge-config": "^1.4.3",
     "zod": "^3.25.76"
   },
   "peerDependencies": {
+    "@opennextjs/cloudflare": ">=1.0.0",
+    "@vercel/functions": ">=1.0.0",
     "next": ">=14"
   },
   "peerDependenciesMeta": {
     "next": {
+      "optional": true
+    },
+    "@opennextjs/cloudflare": {
+      "optional": true
+    },
+    "@vercel/functions": {
       "optional": true
     }
   },
@@ -83,6 +107,7 @@
     "@semantic-release/git": "^10.0.1",
     "@semantic-release/github": "^12.0.2",
     "@semantic-release/npm": "^13.1.3",
+    "@vercel/functions": "^3.4.0",
     "@vitest/coverage-istanbul": "^3.2.4",
     "cheerio": "^1.2.0",
     "husky": "^9.1.7",
