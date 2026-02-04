@@ -1,5 +1,6 @@
-import { appwardenOnVercel } from "../runners/appwarden-on-vercel"
+import { createAppwardenMiddleware } from "../runners/appwarden-on-vercel"
 
-export { BaseNextJsConfigSchema } from "../schemas/vercel"
-
-export const withAppwarden = appwardenOnVercel
+export type { VercelMiddlewareFunction } from "../runners/appwarden-on-vercel"
+export { AppwardenConfigSchema } from "../schemas/vercel"
+export type { VercelAppwardenConfig } from "../schemas/vercel"
+export { createAppwardenMiddleware }

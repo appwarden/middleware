@@ -30,12 +30,12 @@ We recommend using the [`@appwarden/build-cloudflare-action`](https://github.com
 
 ```typescript
 import {
-  withAppwarden,
+  createAppwardenMiddleware,
   useContentSecurityPolicy,
 } from "@appwarden/middleware/cloudflare"
 
 export default {
-  fetch: withAppwarden((context) => ({
+  fetch: createAppwardenMiddleware((context) => ({
     debug: context.env.DEBUG,
     lockPageSlug: context.env.LOCK_PAGE_SLUG,
     appwardenApiToken: context.env.APPWARDEN_API_TOKEN,
@@ -59,9 +59,9 @@ export default {
 > Read the docs [to get started](https://appwarden.io/docs/guides/vercel-integration)
 
 ```typescript
-import { withAppwarden } from "@appwarden/middleware/vercel"
+import { createAppwardenMiddleware } from "@appwarden/middleware/vercel"
 
-export default withAppwarden({
+export default createAppwardenMiddleware({
   cacheUrl: process.env.EDGE_CONFIG_URL || process.env.UPSTASH_URL,
   appwardenApiToken: process.env.APPWARDEN_API_TOKEN,
   vercelApiToken: process.env.VERCEL_API_TOKEN,
