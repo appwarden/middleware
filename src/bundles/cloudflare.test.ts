@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest"
-import { useContentSecurityPolicy, withAppwarden } from "./cloudflare"
+import {
+  createAppwardenMiddleware,
+  useContentSecurityPolicy,
+} from "./cloudflare"
 
 describe("cloudflare bundle", () => {
-  describe("withAppwarden export", () => {
-    it("should export withAppwarden as a function", () => {
-      expect(typeof withAppwarden).toBe("function")
+  describe("createAppwardenMiddleware export", () => {
+    it("should export createAppwardenMiddleware as a function", () => {
+      expect(typeof createAppwardenMiddleware).toBe("function")
     })
 
     it("should return a fetch handler when called with config function", () => {
@@ -17,7 +20,7 @@ describe("cloudflare bundle", () => {
         },
       })
 
-      const handler = withAppwarden(configFn as any)
+      const handler = createAppwardenMiddleware(configFn as any)
       expect(typeof handler).toBe("function")
     })
 
@@ -31,7 +34,7 @@ describe("cloudflare bundle", () => {
         },
       })
 
-      const handler = withAppwarden(configFn as any)
+      const handler = createAppwardenMiddleware(configFn as any)
       // Handler should accept 3 parameters (request, env, ctx)
       expect(handler.length).toBe(3)
     })
