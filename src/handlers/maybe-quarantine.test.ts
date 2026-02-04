@@ -1,26 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { APPWARDEN_TEST_ROUTE } from "../constants"
+import { checkLockStatus } from "../core"
 import { CloudflareProviderContext } from "../types"
-import { MemoryCache } from "../utils"
-import {
-  deleteEdgeValue,
-  getLockValue,
-  syncEdgeValue,
-} from "../utils/cloudflare"
 import { maybeQuarantine } from "./maybe-quarantine"
 
-// Mock dependencies
-vi.mock("../utils/cloudflare", () => ({
-  getLockValue: vi.fn(),
-  deleteEdgeValue: vi.fn(),
-  syncEdgeValue: vi.fn(),
-}))
-
-vi.mock("../utils", () => ({
-  MemoryCache: {
-    isExpired: vi.fn(),
-    isTestExpired: vi.fn(),
-  },
+// Mock the core module
+vi.mock("../core", () => ({
+  checkLockStatus: vi.fn(),
 }))
 
 describe("maybeQuarantine", () => {
@@ -51,6 +36,10 @@ describe("maybeQuarantine", () => {
         deleteValue: vi.fn(),
       },
       waitUntil: vi.fn(),
+      appwardenApiToken: "test-token",
+      appwardenApiHostname: "https://api.appwarden.io",
+      debug: false,
+      lockPageSlug: "/maintenance",
     } as unknown as CloudflareProviderContext
   })
 
@@ -58,34 +47,11 @@ describe("maybeQuarantine", () => {
     vi.resetAllMocks()
   })
 
-  describe("resolveLockValue", () => {
-    it("should delete edge value when shouldDeleteEdgeValue is true", async () => {
-      // Mock getLockValue to return shouldDeleteEdgeValue: true
-      vi.mocked(getLockValue).mockResolvedValue({
-        lockValue: {
-          isLocked: 0,
-          isLockedTest: 0,
-          lastCheck: Date.now(),
-          code: "",
-        },
-        shouldDeleteEdgeValue: true,
-      })
-
-      await maybeQuarantine(mockContext, mockOptions)
-
-      expect(deleteEdgeValue).toHaveBeenCalledWith(mockContext)
-    })
-
-    it("should call onLocked when lockValue.isLocked is true", async () => {
-      // Mock getLockValue to return a locked value
-      vi.mocked(getLockValue).mockResolvedValue({
-        lockValue: {
-          isLocked: 1,
-          isLockedTest: 0,
-          lastCheck: Date.now(),
-          code: "",
-        },
-        shouldDeleteEdgeValue: false,
+  describe("lock status handling", () => {
+    it("should call onLocked when checkLockStatus returns isLocked: true", async () => {
+      vi.mocked(checkLockStatus).mockResolvedValue({
+        isLocked: true,
+        isTestLock: false,
       })
 
       await maybeQuarantine(mockContext, mockOptions)
@@ -94,25 +60,11 @@ describe("maybeQuarantine", () => {
       expect(onLockedSpy).toHaveBeenCalled()
     })
 
-    it("should call onLocked when request URL is test route and test lock is not expired", async () => {
-      // Set request URL to test route
-      mockContext.requestUrl = new URL(
-        `https://example.com${APPWARDEN_TEST_ROUTE}`,
-      )
-
-      // Mock getLockValue to return a value with test lock
-      vi.mocked(getLockValue).mockResolvedValue({
-        lockValue: {
-          isLocked: 0,
-          isLockedTest: Date.now(),
-          lastCheck: Date.now(),
-          code: "",
-        },
-        shouldDeleteEdgeValue: false,
+    it("should call onLocked when checkLockStatus returns isTestLock: true", async () => {
+      vi.mocked(checkLockStatus).mockResolvedValue({
+        isLocked: true,
+        isTestLock: true,
       })
-
-      // Mock isTestExpired to return false (test lock not expired)
-      vi.mocked(MemoryCache.isTestExpired).mockReturnValue(false)
 
       await maybeQuarantine(mockContext, mockOptions)
 
@@ -120,20 +72,11 @@ describe("maybeQuarantine", () => {
       expect(onLockedSpy).toHaveBeenCalled()
     })
 
-    it("should not call onLocked when none of the conditions are met", async () => {
-      // Mock getLockValue to return an unlocked value
-      vi.mocked(getLockValue).mockResolvedValue({
-        lockValue: {
-          isLocked: 0,
-          isLockedTest: 0,
-          lastCheck: Date.now(),
-          code: "",
-        },
-        shouldDeleteEdgeValue: false,
+    it("should not call onLocked when checkLockStatus returns isLocked: false", async () => {
+      vi.mocked(checkLockStatus).mockResolvedValue({
+        isLocked: false,
+        isTestLock: false,
       })
-
-      // Mock isTestExpired to return true (test lock expired)
-      vi.mocked(MemoryCache.isTestExpired).mockReturnValue(true)
 
       await maybeQuarantine(mockContext, mockOptions)
 
@@ -142,123 +85,64 @@ describe("maybeQuarantine", () => {
     })
   })
 
-  describe("maybeQuarantine", () => {
-    it("should sync edge value synchronously when cache is expired and there's no cached lock value", async () => {
-      // First call to getLockValue returns undefined
-      vi.mocked(getLockValue).mockResolvedValueOnce({
-        lockValue: undefined,
-      } as any)
-
-      // Second call to getLockValue after syncEdgeValue
-      vi.mocked(getLockValue).mockResolvedValueOnce({
-        lockValue: {
-          isLocked: 0,
-          isLockedTest: 0,
-          lastCheck: Date.now(),
-          code: "",
-        },
-        shouldDeleteEdgeValue: false,
+  describe("checkLockStatus configuration", () => {
+    it("should pass correct config to checkLockStatus", async () => {
+      vi.mocked(checkLockStatus).mockResolvedValue({
+        isLocked: false,
+        isTestLock: false,
       })
-
-      // Mock isExpired to return true (cache expired)
-      vi.mocked(MemoryCache.isExpired).mockReturnValue(true)
 
       await maybeQuarantine(mockContext, mockOptions)
 
-      // Should sync edge value synchronously
-      expect(syncEdgeValue).toHaveBeenCalledWith(mockContext)
-      // Should call getLockValue again after syncing
-      expect(getLockValue).toHaveBeenCalledTimes(2)
-      // Should not use waitUntil
-      expect(mockContext.waitUntil).not.toHaveBeenCalled()
+      expect(checkLockStatus).toHaveBeenCalledWith({
+        request: mockContext.request,
+        appwardenApiToken: "test-token",
+        appwardenApiHostname: "https://api.appwarden.io",
+        debug: false,
+        lockPageSlug: "/maintenance",
+        waitUntil: mockContext.waitUntil,
+      })
     })
 
-    it("should sync edge value synchronously when cache is expired and cached lock value is locked", async () => {
-      // First call to getLockValue returns a locked value
-      vi.mocked(getLockValue).mockResolvedValueOnce({
-        lockValue: {
-          isLocked: 1,
-          isLockedTest: 0,
-          lastCheck: Date.now(),
-          code: "",
-        },
-        shouldDeleteEdgeValue: false,
+    it("should pass undefined appwardenApiHostname when not provided", async () => {
+      // Remove appwardenApiHostname from context
+      const contextWithoutHostname = {
+        ...mockContext,
+        appwardenApiHostname: undefined,
+      } as unknown as CloudflareProviderContext
+
+      vi.mocked(checkLockStatus).mockResolvedValue({
+        isLocked: false,
+        isTestLock: false,
       })
 
-      // Second call to getLockValue after syncEdgeValue
-      vi.mocked(getLockValue).mockResolvedValueOnce({
-        lockValue: {
-          isLocked: 1,
-          isLockedTest: 0,
-          lastCheck: Date.now(),
-          code: "",
-        },
-        shouldDeleteEdgeValue: false,
-      })
+      await maybeQuarantine(contextWithoutHostname, mockOptions)
 
-      // Mock isExpired to return true (cache expired)
-      vi.mocked(MemoryCache.isExpired).mockReturnValue(true)
-
-      await maybeQuarantine(mockContext, mockOptions)
-
-      // Should sync edge value synchronously
-      expect(syncEdgeValue).toHaveBeenCalledWith(mockContext)
-      // Should call getLockValue again after syncing
-      expect(getLockValue).toHaveBeenCalledTimes(2)
-      // Should not use waitUntil
-      expect(mockContext.waitUntil).not.toHaveBeenCalled()
+      expect(checkLockStatus).toHaveBeenCalledWith(
+        expect.objectContaining({
+          appwardenApiHostname: undefined,
+        }),
+      )
     })
 
-    it("should sync edge value asynchronously when cache is expired but cached lock value is not locked", async () => {
-      // Mock getLockValue to return an unlocked value
-      vi.mocked(getLockValue).mockResolvedValue({
-        lockValue: {
-          isLocked: 0,
-          isLockedTest: 0,
-          lastCheck: Date.now(),
-          code: "",
-        },
-        shouldDeleteEdgeValue: false,
+    it("should pass debug: true when context has debug enabled", async () => {
+      const contextWithDebug = {
+        ...mockContext,
+        debug: true,
+      } as unknown as CloudflareProviderContext
+
+      vi.mocked(checkLockStatus).mockResolvedValue({
+        isLocked: false,
+        isTestLock: false,
       })
 
-      // Mock isExpired to return true (cache expired)
-      vi.mocked(MemoryCache.isExpired).mockReturnValue(true)
+      await maybeQuarantine(contextWithDebug, mockOptions)
 
-      // Create a mock for syncEdgeValue that we can capture the promise from
-      const syncPromise = Promise.resolve()
-      vi.mocked(syncEdgeValue).mockReturnValue(syncPromise)
-
-      await maybeQuarantine(mockContext, mockOptions)
-
-      // Should use waitUntil for asynchronous sync
-      expect(mockContext.waitUntil).toHaveBeenCalledWith(syncPromise)
-      // Should call getLockValue only once
-      expect(getLockValue).toHaveBeenCalledTimes(1)
-    })
-
-    it("should not sync edge value when cache is not expired", async () => {
-      // Mock getLockValue to return a value
-      vi.mocked(getLockValue).mockResolvedValue({
-        lockValue: {
-          isLocked: 0,
-          isLockedTest: 0,
-          lastCheck: Date.now(),
-          code: "",
-        },
-        shouldDeleteEdgeValue: false,
-      })
-
-      // Mock isExpired to return false (cache not expired)
-      vi.mocked(MemoryCache.isExpired).mockReturnValue(false)
-
-      await maybeQuarantine(mockContext, mockOptions)
-
-      // Should not sync edge value
-      expect(syncEdgeValue).not.toHaveBeenCalled()
-      // Should not use waitUntil
-      expect(mockContext.waitUntil).not.toHaveBeenCalled()
-      // Should call getLockValue only once
-      expect(getLockValue).toHaveBeenCalledTimes(1)
+      expect(checkLockStatus).toHaveBeenCalledWith(
+        expect.objectContaining({
+          debug: true,
+        }),
+      )
     })
   })
 })
