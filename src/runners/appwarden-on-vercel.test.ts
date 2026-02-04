@@ -8,15 +8,37 @@ import {
 import { LockValueType } from "../schemas"
 
 // Use vi.hoisted to define mocks before they're used in vi.mock (which is hoisted to top)
-const { mockMemoryCacheGet, mockIsExpired, mockWaitUntil } = vi.hoisted(() => ({
+const {
+  mockMemoryCacheGet,
+  mockIsExpired,
+  mockWaitUntil,
+  mockNextResponseNext,
+} = vi.hoisted(() => ({
   mockMemoryCacheGet: vi.fn(),
   mockIsExpired: vi.fn(),
   mockWaitUntil: vi.fn(),
+  mockNextResponseNext: vi.fn(),
 }))
 
 // Mock @vercel/functions
 vi.mock("@vercel/functions", () => ({
   waitUntil: (promise: Promise<unknown>) => mockWaitUntil(promise),
+}))
+
+// Create a marker object to identify NextResponse.next() calls
+const NEXT_RESPONSE_MARKER = Symbol("NextResponse.next")
+
+// Mock next/server
+vi.mock("next/server", () => ({
+  NextResponse: {
+    next: () => {
+      mockNextResponseNext()
+      // Return a Response with a custom header to identify it
+      const response = new Response(null, { status: 200 })
+      ;(response as any)[NEXT_RESPONSE_MARKER] = true
+      return response
+    },
+  },
 }))
 
 // Mock dependencies - we need to mock MemoryCache before it's instantiated
@@ -131,7 +153,7 @@ describe("createAppwardenMiddleware", () => {
     expect(typeof middleware).toBe("function")
   })
 
-  it("should return 200 Response when config validation fails", async () => {
+  it("should call NextResponse.next() when config validation fails (fail open)", async () => {
     const mockZodError = new ZodError([])
 
     vi.mocked(AppwardenConfigSchema.safeParse).mockReturnValue({
@@ -147,10 +169,11 @@ describe("createAppwardenMiddleware", () => {
 
     expect(getErrors).toHaveBeenCalled()
     expect(result.status).toBe(200)
+    expect(mockNextResponseNext).toHaveBeenCalled()
     expect(consoleErrorSpy).toHaveBeenCalled()
   })
 
-  it("should return 200 Response for non-HTML requests", async () => {
+  it("should call NextResponse.next() for non-HTML requests (pass through)", async () => {
     vi.mocked(AppwardenConfigSchema.safeParse).mockReturnValue({
       success: true,
       data: mockConfig,
@@ -164,9 +187,10 @@ describe("createAppwardenMiddleware", () => {
 
     expect(getLockValue).not.toHaveBeenCalled()
     expect(result.status).toBe(200)
+    expect(mockNextResponseNext).toHaveBeenCalled()
   })
 
-  it("should return 200 Response for monitoring requests from Appwarden", async () => {
+  it("should call NextResponse.next() for monitoring requests from Appwarden (pass through)", async () => {
     vi.mocked(AppwardenConfigSchema.safeParse).mockReturnValue({
       success: true,
       data: mockConfig,
@@ -180,9 +204,10 @@ describe("createAppwardenMiddleware", () => {
 
     expect(getLockValue).not.toHaveBeenCalled()
     expect(result.status).toBe(200)
+    expect(mockNextResponseNext).toHaveBeenCalled()
   })
 
-  it("should return 200 Response when no lock page slug is configured", async () => {
+  it("should call NextResponse.next() when no lock page slug is configured (pass through)", async () => {
     const configWithoutLockPage = { ...mockConfig, lockPageSlug: "" }
     vi.mocked(AppwardenConfigSchema.safeParse).mockReturnValue({
       success: true,
@@ -197,6 +222,7 @@ describe("createAppwardenMiddleware", () => {
 
     expect(getLockValue).not.toHaveBeenCalled()
     expect(result.status).toBe(200)
+    expect(mockNextResponseNext).toHaveBeenCalled()
   })
 
   it("should redirect to lock page when site is locked", async () => {
@@ -257,7 +283,7 @@ describe("createAppwardenMiddleware", () => {
     )
   })
 
-  it("should return 200 Response when site is not locked", async () => {
+  it("should call NextResponse.next() when site is not locked (pass through)", async () => {
     vi.mocked(AppwardenConfigSchema.safeParse).mockReturnValue({
       success: true,
       data: mockConfig,
@@ -280,6 +306,7 @@ describe("createAppwardenMiddleware", () => {
     const result = await middleware(request)
 
     expect(result.status).toBe(200)
+    expect(mockNextResponseNext).toHaveBeenCalled()
   })
 
   it("should call syncEdgeValue in background when cache is expired", async () => {
@@ -354,7 +381,7 @@ describe("createAppwardenMiddleware", () => {
     expect(getLockValue).not.toHaveBeenCalled()
   })
 
-  it("should handle errors gracefully and return 200 Response", async () => {
+  it("should call NextResponse.next() on errors (fail open)", async () => {
     vi.mocked(AppwardenConfigSchema.safeParse).mockReturnValue({
       success: true,
       data: mockConfig,
@@ -370,6 +397,7 @@ describe("createAppwardenMiddleware", () => {
 
     expect(consoleErrorSpy).toHaveBeenCalled()
     expect(result.status).toBe(200)
+    expect(mockNextResponseNext).toHaveBeenCalled()
   })
 
   it("should not log error if it's in globalErrors", async () => {

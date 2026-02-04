@@ -1,4 +1,5 @@
 import { waitUntil } from "@vercel/functions"
+import { NextResponse } from "next/server"
 import { APPWARDEN_CACHE_KEY, globalErrors } from "../constants"
 import { LockValueType } from "../schemas"
 import { AppwardenConfigSchema, VercelAppwardenConfig } from "../schemas/vercel"
@@ -41,7 +42,8 @@ export function createAppwardenMiddleware(
       for (const error of getErrors(parsedConfig.error)) {
         console.error(printMessage(error as string))
       }
-      return new Response(null, { status: 200 })
+      // Fail open - pass through to next middleware/handler
+      return NextResponse.next()
     }
 
     try {
@@ -51,12 +53,14 @@ export function createAppwardenMiddleware(
 
       debug({ isHTMLRequest: isHTML, url: requestUrl.pathname })
 
+      // Pass through non-HTML and monitoring requests to the next handler
       if (!isHTML || isMonitoring) {
-        return new Response(null, { status: 200 })
+        return NextResponse.next()
       }
 
+      // Pass through if no lock page is configured
       if (!parsedConfig.data.lockPageSlug) {
-        return new Response(null, { status: 200 })
+        return NextResponse.next()
       }
 
       const provider = isCacheUrl.edgeConfig(parsedConfig.data.cacheUrl)
@@ -95,7 +99,8 @@ export function createAppwardenMiddleware(
         return Response.redirect(lockPageUrl.toString(), 302)
       }
 
-      return new Response(null, { status: 200 })
+      // Site is not locked - pass through to the next handler
+      return NextResponse.next()
     } catch (e) {
       const message =
         "Appwarden encountered an unknown error. Please contact Appwarden support at https://appwarden.io/join-community."
@@ -108,8 +113,8 @@ export function createAppwardenMiddleware(
         console.error(printMessage(message))
       }
 
-      // Fail open - allow request to proceed
-      return new Response(null, { status: 200 })
+      // Fail open - pass through to the next handler
+      return NextResponse.next()
     }
   }
 }
