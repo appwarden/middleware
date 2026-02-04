@@ -1,106 +1,101 @@
-import { NextMiddlewareResult } from "next/dist/server/web/types"
-import { NextFetchEvent, NextRequest, NextResponse } from "next/server"
-import {
-  APPWARDEN_CACHE_KEY,
-  APPWARDEN_USER_AGENT,
-  globalErrors,
-} from "../constants"
+import { waitUntil } from "@vercel/functions"
+import { APPWARDEN_CACHE_KEY, globalErrors } from "../constants"
 import { LockValueType } from "../schemas"
-import {
-  AppwardenConfigSchema,
-  BaseNextJsConfigFnType,
-} from "../schemas/vercel"
-import { VercelProviderContext } from "../types"
+import { AppwardenConfigSchema, VercelAppwardenConfig } from "../schemas/vercel"
 import {
   debug,
   getErrors,
-  handleVercelRequest,
   isCacheUrl,
+  isHTMLRequest,
+  isMonitoringRequest,
   MemoryCache,
   printMessage,
 } from "../utils"
-import { syncEdgeValue } from "../utils/vercel"
+import { getLockValue, syncEdgeValue } from "../utils/vercel"
 
 // we use this log to search vercel logs during testing (see packages/appwarden-vercel/edge-cache-testing-results.md)
 debug("Instantiating isolate")
 
-const renderLockPage = (context: VercelProviderContext) => {
-  context.req.nextUrl.pathname = context.lockPageSlug
-  return NextResponse.rewrite(context.req.nextUrl, {
-    headers: {
-      // no browser caching, otherwise we need to hard refresh to disable lock screen
-      "Cache-Control": "no-store",
-    },
-  })
-}
-
 const memoryCache = new MemoryCache<string, LockValueType>({ maxSize: 1 })
 
-export const appwardenOnVercel =
-  (input: BaseNextJsConfigFnType) =>
-  async (
-    req: NextRequest,
-    event: NextFetchEvent,
-  ): Promise<NextMiddlewareResult> => {
-    event.passThroughOnException()
+/**
+ * Safely call waitUntil, falling back to fire-and-forget in non-Vercel environments
+ */
+function safeWaitUntil(promise: Promise<unknown>): void {
+  try {
+    waitUntil(promise)
+  } catch {
+    // In non-Vercel environments (e.g., local dev), fire-and-forget
+    promise.catch(console.error)
+  }
+}
 
-    const parsedConfig = AppwardenConfigSchema.safeParse(input)
+export type VercelMiddlewareFunction = (request: Request) => Promise<Response>
+
+export function createAppwardenMiddleware(
+  config: VercelAppwardenConfig,
+): VercelMiddlewareFunction {
+  return async (request: Request): Promise<Response> => {
+    const parsedConfig = AppwardenConfigSchema.safeParse(config)
     if (!parsedConfig.success) {
       for (const error of getErrors(parsedConfig.error)) {
         console.error(printMessage(error as string))
       }
-
-      return NextResponse.next()
+      return new Response(null, { status: 200 })
     }
 
     try {
-      const requestUrl = new URL(req.url)
+      const requestUrl = new URL(request.url)
+      const isHTML = isHTMLRequest(request)
+      const isMonitoring = isMonitoringRequest(request)
 
-      const isHTMLRequest = req.headers.get("accept")?.includes("text/html")
-      const isMonitoringRequest =
-        req.headers.get("User-Agent") === APPWARDEN_USER_AGENT
+      debug({ isHTMLRequest: isHTML, url: requestUrl.pathname })
 
-      debug({
-        isHTMLRequest,
-        url: requestUrl.pathname,
-      })
-
-      // ignore non-html requests
-      if (isHTMLRequest && !isMonitoringRequest) {
-        let appwardenResponse: NextResponse<unknown> | undefined = undefined
-        const context = {
-          req,
-          event,
-          requestUrl,
-          memoryCache,
-          waitUntil: (fn: any) => event.waitUntil(fn),
-          keyName: APPWARDEN_CACHE_KEY,
-          provider: isCacheUrl.edgeConfig(parsedConfig.data.cacheUrl)
-            ? ("edge-config" as const)
-            : ("upstash" as const),
-          ...parsedConfig.data,
-        }
-
-        const cacheValue = await handleVercelRequest(context, {
-          onLocked: () => {
-            appwardenResponse = renderLockPage(context)
-          },
-        })
-
-        const shouldRecheck = MemoryCache.isExpired(cacheValue)
-        // if the cache value is expired, sync it from the edge
-        // this runs in a waitUntil to reduce middleware execution time
-        // the waitUntil must be called from the top level function otherwise the api request gets canceled.
-        if (!cacheValue || shouldRecheck) {
-          event.waitUntil(syncEdgeValue(context))
-        }
-
-        // if the appwardenResponse is a NextResponse, return it immediately to avoid running the after middleware,
-        // which may override the rewrite when lock is enabled.
-        if (appwardenResponse) {
-          return appwardenResponse
-        }
+      if (!isHTML || isMonitoring) {
+        return new Response(null, { status: 200 })
       }
+
+      if (!parsedConfig.data.lockPageSlug) {
+        return new Response(null, { status: 200 })
+      }
+
+      const provider = isCacheUrl.edgeConfig(parsedConfig.data.cacheUrl)
+        ? ("edge-config" as const)
+        : ("upstash" as const)
+
+      // Check memory cache first
+      const cacheValue = memoryCache.get(APPWARDEN_CACHE_KEY)
+      const shouldRecheck = MemoryCache.isExpired(cacheValue)
+
+      // Sync from edge in background if cache is expired or missing
+      if (!cacheValue || shouldRecheck) {
+        safeWaitUntil(
+          syncEdgeValue({
+            requestUrl,
+            cacheUrl: parsedConfig.data.cacheUrl,
+            appwardenApiToken: parsedConfig.data.appwardenApiToken,
+            vercelApiToken: parsedConfig.data.vercelApiToken,
+          }),
+        )
+      }
+
+      // Use cached value or fetch directly
+      const lockValue =
+        cacheValue ??
+        (
+          await getLockValue({
+            cacheUrl: parsedConfig.data.cacheUrl,
+            keyName: APPWARDEN_CACHE_KEY,
+            provider,
+          })
+        ).lockValue
+
+      if (lockValue?.isLocked) {
+        const lockPageUrl = new URL(parsedConfig.data.lockPageSlug, request.url)
+        return Response.redirect(lockPageUrl.toString(), 302)
+      }
+
+      return new Response(null, { status: 200 })
     } catch (e) {
       const message =
         "Appwarden encountered an unknown error. Please contact Appwarden support at https://appwarden.io/join-community."
@@ -113,8 +108,8 @@ export const appwardenOnVercel =
         console.error(printMessage(message))
       }
 
-      throw e
+      // Fail open - allow request to proceed
+      return new Response(null, { status: 200 })
     }
-
-    return NextResponse.next()
   }
+}

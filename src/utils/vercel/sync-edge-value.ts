@@ -9,7 +9,12 @@ class APIError extends Error {
   }
 }
 
-export const syncEdgeValue = async (context: VercelProviderContext) => {
+export const syncEdgeValue = async (
+  context: Pick<
+    VercelProviderContext,
+    "cacheUrl" | "requestUrl" | "vercelApiToken" | "appwardenApiToken"
+  >,
+) => {
   // we use this log to search vercel logs during testing (see packages/appwarden-vercel/edge-cache-testing-results.md)
   debug(`syncing with api`)
 

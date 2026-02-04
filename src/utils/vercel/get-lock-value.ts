@@ -3,7 +3,9 @@ import { LockValue, LockValueType } from "../../schemas"
 import { VercelProviderContext } from "../../types"
 import { printMessage } from "../print-message"
 
-export const getLockValue = async (context: VercelProviderContext) => {
+export const getLockValue = async (
+  context: Pick<VercelProviderContext, "cacheUrl" | "keyName" | "provider">,
+) => {
   try {
     let shouldDeleteEdgeValue = false
     let serializedValue: LockValueType | string | undefined,
