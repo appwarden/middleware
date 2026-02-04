@@ -111,6 +111,22 @@ describe("createAppwardenMiddleware (OpenNext Cloudflare)", () => {
     expect(result.type).toBe("next")
   })
 
+  it("should return NextResponse.next() when config validation fails (fail open)", async () => {
+    const { validateConfig } = await import("../utils")
+    vi.mocked(validateConfig).mockReturnValue(true) // Config has errors
+
+    const middleware = createAppwardenMiddleware(() => ({
+      lockPageSlug: "/maintenance",
+      appwardenApiToken: "test-token",
+    }))
+
+    const result = await middleware(mockRequest as any)
+
+    expect(validateConfig).toHaveBeenCalled()
+    expect(checkLockStatus).not.toHaveBeenCalled()
+    expect(result.type).toBe("next")
+  })
+
   it("should redirect when site is locked", async () => {
     vi.mocked(checkLockStatus).mockResolvedValue({
       isLocked: true,

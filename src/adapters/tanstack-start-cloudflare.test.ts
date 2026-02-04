@@ -101,6 +101,23 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
     expect(result).toEqual({ status: 200 })
   })
 
+  it("should call next() when config validation fails (fail open)", async () => {
+    const { validateConfig } = await import("../utils")
+    vi.mocked(validateConfig).mockReturnValue(true) // Config has errors
+
+    const middleware = createAppwardenMiddleware(() => ({
+      lockPageSlug: "/maintenance",
+      appwardenApiToken: "test-token",
+    }))
+
+    const result = await middleware(mockArgs)
+
+    expect(validateConfig).toHaveBeenCalled()
+    expect(checkLockStatus).not.toHaveBeenCalled()
+    expect(mockNext).toHaveBeenCalled()
+    expect(result).toEqual({ status: 200 })
+  })
+
   it("should throw a redirect response when site is locked", async () => {
     vi.mocked(checkLockStatus).mockResolvedValue({
       isLocked: true,
