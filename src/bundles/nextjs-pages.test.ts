@@ -14,7 +14,7 @@ vi.mock("@cloudflare/next-on-pages", () => ({
   })),
 }))
 
-import { withAppwardenOnNextJs } from "./pages-nextjs"
+import { withAppwardenOnNextJs } from "./nextjs-pages"
 
 describe("pages-nextjs bundle", () => {
   describe("withAppwardenOnNextJs export", () => {
