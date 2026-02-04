@@ -4,7 +4,6 @@ import * as indexExports from "./index"
 describe("index exports", () => {
   it("should export constants with correct values", () => {
     expect(indexExports.APPWARDEN_CACHE_KEY).toBe("appwarden-lock")
-    expect(indexExports.APPWARDEN_USER_AGENT).toBe("Appwarden-Monitor")
     expect(indexExports.LOCKDOWN_TEST_EXPIRY_MS).toBe(5 * 60 * 1000) // 5 minutes
   })
 

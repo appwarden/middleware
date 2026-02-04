@@ -4,7 +4,6 @@ import {
   buildLockPageUrl,
   createRedirect,
   isHTMLRequest,
-  isMonitoringRequest,
   printMessage,
   validateConfig,
 } from "../utils"
@@ -106,11 +105,6 @@ export function createAppwardenMiddleware(
 
       // Get config from the config function
       const config = configFn(cloudflare)
-
-      // Skip monitoring requests from Appwarden
-      if (isMonitoringRequest(request)) {
-        return next()
-      }
 
       // Skip non-HTML requests (e.g., API calls, static assets)
       if (!isHTMLRequest(request)) {

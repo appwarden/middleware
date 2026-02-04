@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { APPWARDEN_CACHE_KEY, APPWARDEN_USER_AGENT } from "../constants"
+import { APPWARDEN_CACHE_KEY } from "../constants"
 import {
   handleResetCache,
   isResetCacheRequest,
@@ -24,10 +24,6 @@ vi.mock("../utils", () => ({
   isHTMLResponse: vi.fn(
     (response: Response) =>
       response.headers.get("Content-Type")?.includes("text/html") ?? false,
-  ),
-  isMonitoringRequest: vi.fn(
-    (request: Request) =>
-      request.headers.get("User-Agent") === APPWARDEN_USER_AGENT,
   ),
 }))
 
@@ -157,19 +153,7 @@ describe("useAppwarden", () => {
     expect(maybeQuarantine).not.toHaveBeenCalled()
   })
 
-  it("should not quarantine for monitoring requests", async () => {
-    // Set up a monitoring request
-    mockContext.request = new Request("https://example.com", {
-      headers: { "User-Agent": APPWARDEN_USER_AGENT },
-    })
-
-    const middleware = useAppwarden(mockInput)
-    await middleware(mockContext, mockNext)
-
-    expect(maybeQuarantine).not.toHaveBeenCalled()
-  })
-
-  it("should call maybeQuarantine for HTML requests that are not monitoring requests", async () => {
+  it("should call maybeQuarantine for HTML requests", async () => {
     const middleware = useAppwarden(mockInput)
     await middleware(mockContext, mockNext)
 

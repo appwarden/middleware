@@ -7,7 +7,6 @@ import {
   debug,
   isCacheUrl,
   isHTMLRequest,
-  isMonitoringRequest,
   MemoryCache,
   printMessage,
   validateConfig,
@@ -47,12 +46,11 @@ export function createAppwardenMiddleware(
     try {
       const requestUrl = new URL(request.url)
       const isHTML = isHTMLRequest(request)
-      const isMonitoring = isMonitoringRequest(request)
 
       debug({ isHTMLRequest: isHTML, url: requestUrl.pathname })
 
-      // Pass through non-HTML and monitoring requests to the next handler
-      if (!isHTML || isMonitoring) {
+      // Pass through non-HTML requests to the next handler
+      if (!isHTML) {
         return NextResponse.next()
       }
 

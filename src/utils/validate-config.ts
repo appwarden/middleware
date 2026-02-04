@@ -17,8 +17,15 @@ export function validateConfig<T>(
   const result = schema.safeParse(config)
   const hasErrors = !result.success
   if (hasErrors) {
-    for (const error of getErrors(result.error)) {
-      console.error(printMessage(error as string))
+    const mappedErrors = getErrors(result.error)
+    if (mappedErrors.length > 0) {
+      // Use user-friendly mapped error messages when available
+      for (const error of mappedErrors) {
+        console.error(printMessage(error as string))
+      }
+    } else {
+      // Fallback to Zod's built-in error message for unmapped errors
+      console.error(printMessage(result.error.message))
     }
   }
   return hasErrors

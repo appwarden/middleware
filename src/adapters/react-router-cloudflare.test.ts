@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { APPWARDEN_USER_AGENT } from "../constants"
 import { checkLockStatus } from "../core"
 import {
   CloudflareContext,
@@ -14,10 +13,6 @@ vi.mock("../core", () => ({
 
 vi.mock("../utils", () => ({
   printMessage: vi.fn((message) => `[@appwarden/middleware] ${message}`),
-  isMonitoringRequest: vi.fn(
-    (request: Request) =>
-      request.headers.get("User-Agent") === APPWARDEN_USER_AGENT,
-  ),
   isHTMLRequest: vi.fn(
     (request: Request) =>
       request.headers.get("accept")?.includes("text/html") ?? false,
@@ -164,22 +159,6 @@ describe("createAppwardenMiddleware", () => {
         "https://example.com/maintenance",
       )
     }
-  })
-
-  it("should skip monitoring requests from Appwarden", async () => {
-    mockArgs.request = new Request("https://example.com/page", {
-      headers: { "User-Agent": APPWARDEN_USER_AGENT },
-    })
-
-    const middleware = createAppwardenMiddleware(() => ({
-      lockPageSlug: "/maintenance",
-      appwardenApiToken: "test-token",
-    }))
-
-    await middleware(mockArgs, mockNext)
-
-    expect(checkLockStatus).not.toHaveBeenCalled()
-    expect(mockNext).toHaveBeenCalled()
   })
 
   it("should skip non-HTML requests", async () => {
