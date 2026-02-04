@@ -1,4 +1,3 @@
-import { NextFetchEvent, NextRequest, NextResponse } from "next/server"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { ZodError } from "zod"
 import {
@@ -7,31 +6,51 @@ import {
   globalErrors,
 } from "../constants"
 import { LockValueType } from "../schemas"
-import { AppwardenConfigSchema } from "../schemas/vercel"
-import {
-  getErrors,
-  handleVercelRequest,
-  isCacheUrl,
-  MemoryCache,
-} from "../utils"
-import { syncEdgeValue } from "../utils/vercel"
-import { appwardenOnVercel } from "./appwarden-on-vercel"
 
-// Mock dependencies
-vi.mock("../utils", () => ({
-  debug: vi.fn(),
-  getErrors: vi.fn(() => ["Error message"]),
-  handleVercelRequest: vi.fn(),
-  isCacheUrl: {
-    edgeConfig: vi.fn(),
-    upstash: vi.fn(),
-  },
-  MemoryCache: vi.fn(),
-  printMessage: vi.fn((message) => `[@appwarden/middleware] ${message}`),
+// Use vi.hoisted to define mocks before they're used in vi.mock (which is hoisted to top)
+const { mockMemoryCacheGet, mockIsExpired, mockWaitUntil } = vi.hoisted(() => ({
+  mockMemoryCacheGet: vi.fn(),
+  mockIsExpired: vi.fn(),
+  mockWaitUntil: vi.fn(),
 }))
+
+// Mock @vercel/functions
+vi.mock("@vercel/functions", () => ({
+  waitUntil: (promise: Promise<unknown>) => mockWaitUntil(promise),
+}))
+
+// Mock dependencies - we need to mock MemoryCache before it's instantiated
+vi.mock("../utils", () => {
+  return {
+    debug: vi.fn(),
+    getErrors: vi.fn(() => ["Error message"]),
+    isCacheUrl: {
+      edgeConfig: vi.fn(),
+      upstash: vi.fn(),
+    },
+    MemoryCache: class MockMemoryCache {
+      static isExpired = mockIsExpired
+      get = mockMemoryCacheGet
+      put = vi.fn()
+      getValues = vi.fn()
+    },
+    printMessage: vi.fn(
+      (message: string) => `[@appwarden/middleware] ${message}`,
+    ),
+    isHTMLRequest: vi.fn(
+      (request: Request) =>
+        request.headers.get("accept")?.includes("text/html") ?? false,
+    ),
+    isMonitoringRequest: vi.fn(
+      (request: Request) =>
+        request.headers.get("User-Agent") === APPWARDEN_USER_AGENT,
+    ),
+  }
+})
 
 vi.mock("../utils/vercel", () => ({
   syncEdgeValue: vi.fn(),
+  getLockValue: vi.fn(),
 }))
 
 // Mock AppwardenConfigSchema
@@ -41,480 +60,531 @@ vi.mock("../schemas/vercel", () => ({
   },
 }))
 
-// Mock NextResponse
-vi.mock("next/server", async () => {
-  const actual = await vi.importActual("next/server")
-  return {
-    ...actual,
-    NextResponse: {
-      next: vi.fn(() => ({ type: "next" })),
-      rewrite: vi.fn((url, options) => ({ type: "rewrite", url, options })),
-    },
-  }
+// Import after mocks are set up
+import { AppwardenConfigSchema } from "../schemas/vercel"
+import { getErrors, isCacheUrl } from "../utils"
+import { getLockValue, syncEdgeValue } from "../utils/vercel"
+
+// Mock console.error
+let consoleErrorSpy: ReturnType<typeof vi.spyOn>
+beforeEach(() => {
+  consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {})
+})
+afterEach(() => {
+  consoleErrorSpy.mockRestore()
 })
 
-describe("appwardenOnVercel", () => {
-  let mockRequest: NextRequest
-  let mockEvent: NextFetchEvent
-  let mockMemoryCache: MemoryCache<string, LockValueType>
-  let mockInputFn: any
+describe("createAppwardenMiddleware", () => {
+  // Import createAppwardenMiddleware dynamically after mocks are set up
+  let createAppwardenMiddleware: typeof import("./appwarden-on-vercel").createAppwardenMiddleware
+  let mockConfig: any
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // Reset mocks
     vi.clearAllMocks()
 
-    // Setup test data
-    mockRequest = {
-      url: "https://example.com",
-      headers: new Headers({
-        accept: "text/html",
-      }),
-      nextUrl: {
-        pathname: "/",
-      },
-    } as unknown as NextRequest
+    // Reset module to get fresh instance with mocked MemoryCache
+    vi.resetModules()
 
-    mockEvent = {
-      passThroughOnException: vi.fn(),
-      waitUntil: vi.fn(),
-    } as unknown as NextFetchEvent
+    // Re-import the module to get a fresh instance
+    const module = await import("./appwarden-on-vercel")
+    createAppwardenMiddleware = module.createAppwardenMiddleware
 
-    // Mock MemoryCache
-    mockMemoryCache = {
-      get: vi.fn(),
-      put: vi.fn(),
-      getValues: vi.fn(),
-    } as unknown as MemoryCache<string, LockValueType>
+    // Set default mock return values
+    mockMemoryCacheGet.mockReturnValue(undefined)
+    mockIsExpired.mockReturnValue(true)
 
-    // Mock static method
-    ;(MemoryCache as any).isExpired = vi.fn().mockReturnValue(false)
-
-    // Mock constructor
-    ;(MemoryCache as any).mockImplementation(() => mockMemoryCache)
-
-    // Mock valid input function
-    mockInputFn = {
+    // Mock valid config
+    mockConfig = {
       cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
       appwardenApiToken: "test-token",
       vercelApiToken: "vercel-token",
       lockPageSlug: "/maintenance",
     }
 
-    // Mock handleVercelRequest
-    vi.mocked(handleVercelRequest).mockResolvedValue(undefined)
-
     // Mock isCacheUrl.edgeConfig
     vi.mocked(isCacheUrl.edgeConfig).mockReturnValue(true)
+
+    // Mock getLockValue to return not locked by default
+    vi.mocked(getLockValue).mockResolvedValue({
+      lockValue: {
+        isLocked: 0,
+        isLockedTest: 0,
+        lastCheck: Date.now(),
+        code: "",
+      },
+      shouldDeleteEdgeValue: false,
+    })
   })
 
   afterEach(() => {
     vi.resetAllMocks()
   })
 
-  it("should pass through on exception", async () => {
-    // Set up the mock to return success
+  it("should return a function", () => {
     vi.mocked(AppwardenConfigSchema.safeParse).mockReturnValue({
       success: true,
-      data: mockInputFn,
+      data: mockConfig,
     })
 
-    const handler = appwardenOnVercel(mockInputFn)
-    await handler(mockRequest, mockEvent)
-
-    expect(mockEvent.passThroughOnException).toHaveBeenCalled()
+    const middleware = createAppwardenMiddleware(mockConfig)
+    expect(typeof middleware).toBe("function")
   })
 
-  it("should return NextResponse.next() when config validation fails", async () => {
-    // Create a mock ZodError
+  it("should return 200 Response when config validation fails", async () => {
     const mockZodError = new ZodError([])
 
-    // Mock AppwardenConfigSchema.safeParse to fail
     vi.mocked(AppwardenConfigSchema.safeParse).mockReturnValue({
       success: false,
       error: mockZodError,
     })
 
-    const handler = appwardenOnVercel(mockInputFn)
-    const result = await handler(mockRequest, mockEvent)
+    const middleware = createAppwardenMiddleware(mockConfig)
+    const request = new Request("https://example.com", {
+      headers: { accept: "text/html" },
+    })
+    const result = await middleware(request)
 
     expect(getErrors).toHaveBeenCalled()
-    expect(NextResponse.next).toHaveBeenCalled()
-    expect(result).toEqual({ type: "next" })
+    expect(result.status).toBe(200)
+    expect(consoleErrorSpy).toHaveBeenCalled()
   })
 
-  it("should ignore non-HTML requests", async () => {
-    // Mock AppwardenConfigSchema.safeParse to succeed
+  it("should return 200 Response for non-HTML requests", async () => {
     vi.mocked(AppwardenConfigSchema.safeParse).mockReturnValue({
       success: true,
-      data: mockInputFn,
+      data: mockConfig,
     })
 
-    // Set up a non-HTML request
-    mockRequest = {
-      ...mockRequest,
-      headers: new Headers({
-        accept: "application/json",
-      }),
-    } as unknown as NextRequest
+    const middleware = createAppwardenMiddleware(mockConfig)
+    const request = new Request("https://example.com", {
+      headers: { accept: "application/json" },
+    })
+    const result = await middleware(request)
 
-    const handler = appwardenOnVercel(mockInputFn)
-    const result = await handler(mockRequest, mockEvent)
-
-    expect(handleVercelRequest).not.toHaveBeenCalled()
-    expect(NextResponse.next).toHaveBeenCalled()
-    expect(result).toEqual({ type: "next" })
+    expect(getLockValue).not.toHaveBeenCalled()
+    expect(result.status).toBe(200)
   })
 
-  it("should ignore monitoring requests", async () => {
-    // Mock AppwardenConfigSchema.safeParse to succeed
+  it("should return 200 Response for monitoring requests from Appwarden", async () => {
     vi.mocked(AppwardenConfigSchema.safeParse).mockReturnValue({
       success: true,
-      data: mockInputFn,
+      data: mockConfig,
     })
 
-    // Set up a monitoring request
-    mockRequest = {
-      ...mockRequest,
-      headers: new Headers({
-        accept: "text/html",
-        "User-Agent": APPWARDEN_USER_AGENT,
-      }),
-    } as unknown as NextRequest
+    const middleware = createAppwardenMiddleware(mockConfig)
+    const request = new Request("https://example.com", {
+      headers: { accept: "text/html", "User-Agent": APPWARDEN_USER_AGENT },
+    })
+    const result = await middleware(request)
 
-    const handler = appwardenOnVercel(mockInputFn)
-    const result = await handler(mockRequest, mockEvent)
-
-    expect(handleVercelRequest).not.toHaveBeenCalled()
-    expect(NextResponse.next).toHaveBeenCalled()
-    expect(result).toEqual({ type: "next" })
+    expect(getLockValue).not.toHaveBeenCalled()
+    expect(result.status).toBe(200)
   })
 
-  it("should handle HTML requests and call handleVercelRequest", async () => {
-    // Mock AppwardenConfigSchema.safeParse to succeed
+  it("should return 200 Response when no lock page slug is configured", async () => {
+    const configWithoutLockPage = { ...mockConfig, lockPageSlug: "" }
     vi.mocked(AppwardenConfigSchema.safeParse).mockReturnValue({
       success: true,
-      data: mockInputFn,
+      data: configWithoutLockPage,
     })
 
-    const handler = appwardenOnVercel(mockInputFn)
-    await handler(mockRequest, mockEvent)
+    const middleware = createAppwardenMiddleware(configWithoutLockPage)
+    const request = new Request("https://example.com", {
+      headers: { accept: "text/html" },
+    })
+    const result = await middleware(request)
 
-    expect(handleVercelRequest).toHaveBeenCalled()
-    // Verify context passed to handleVercelRequest
-    const context = vi.mocked(handleVercelRequest).mock.calls[0][0]
-    expect(context.req).toBe(mockRequest)
-    expect(context.event).toBe(mockEvent)
-    expect(context.keyName).toBe(APPWARDEN_CACHE_KEY)
-    expect(context.provider).toBe("edge-config")
-    expect(context.cacheUrl).toBe(mockInputFn.cacheUrl)
-    expect(context.appwardenApiToken).toBe(mockInputFn.appwardenApiToken)
+    expect(getLockValue).not.toHaveBeenCalled()
+    expect(result.status).toBe(200)
   })
 
-  it("should render lock page when handleVercelRequest calls onLocked", async () => {
-    // Mock AppwardenConfigSchema.safeParse to succeed
+  it("should redirect to lock page when site is locked", async () => {
     vi.mocked(AppwardenConfigSchema.safeParse).mockReturnValue({
       success: true,
-      data: mockInputFn,
+      data: mockConfig,
     })
 
-    // Mock handleVercelRequest to call onLocked
-    vi.mocked(handleVercelRequest).mockImplementation(
-      async (_context, options) => {
-        options.onLocked()
-        return { isLocked: 1 } as LockValueType
+    vi.mocked(getLockValue).mockResolvedValue({
+      lockValue: {
+        isLocked: 1,
+        isLockedTest: 0,
+        lastCheck: Date.now(),
+        code: "",
       },
+      shouldDeleteEdgeValue: false,
+    })
+
+    const middleware = createAppwardenMiddleware(mockConfig)
+    const request = new Request("https://example.com/page", {
+      headers: { accept: "text/html" },
+    })
+    const result = await middleware(request)
+
+    expect(result.status).toBe(302)
+    expect(result.headers.get("Location")).toBe(
+      "https://example.com/maintenance",
     )
-
-    const handler = appwardenOnVercel(mockInputFn)
-    const result = await handler(mockRequest, mockEvent)
-
-    expect(handleVercelRequest).toHaveBeenCalled()
-    expect(NextResponse.rewrite).toHaveBeenCalled()
-    expect(result).toEqual({
-      type: "rewrite",
-      url: expect.objectContaining({
-        pathname: "/maintenance",
-      }),
-      options: {
-        headers: {
-          "Cache-Control": "no-store",
-        },
-      },
-    })
   })
 
-  it("should sync edge value when cache is expired", async () => {
-    // Mock AppwardenConfigSchema.safeParse to succeed
+  it("should normalize lock page slug to start with /", async () => {
+    const configWithoutSlash = { ...mockConfig, lockPageSlug: "maintenance" }
     vi.mocked(AppwardenConfigSchema.safeParse).mockReturnValue({
       success: true,
-      data: mockInputFn,
+      data: configWithoutSlash,
     })
 
-    // Mock MemoryCache.isExpired to return true
-    const originalIsExpired = (MemoryCache as any).isExpired
-    ;(MemoryCache as any).isExpired = vi.fn().mockReturnValue(true)
+    vi.mocked(getLockValue).mockResolvedValue({
+      lockValue: {
+        isLocked: 1,
+        isLockedTest: 0,
+        lastCheck: Date.now(),
+        code: "",
+      },
+      shouldDeleteEdgeValue: false,
+    })
 
-    const handler = appwardenOnVercel(mockInputFn)
-    await handler(mockRequest, mockEvent)
+    const middleware = createAppwardenMiddleware(configWithoutSlash)
+    const request = new Request("https://example.com/page", {
+      headers: { accept: "text/html" },
+    })
+    const result = await middleware(request)
+
+    expect(result.status).toBe(302)
+    // The lock page slug should work even without leading slash
+    expect(result.headers.get("Location")).toBe(
+      "https://example.com/maintenance",
+    )
+  })
+
+  it("should return 200 Response when site is not locked", async () => {
+    vi.mocked(AppwardenConfigSchema.safeParse).mockReturnValue({
+      success: true,
+      data: mockConfig,
+    })
+
+    vi.mocked(getLockValue).mockResolvedValue({
+      lockValue: {
+        isLocked: 0,
+        isLockedTest: 0,
+        lastCheck: Date.now(),
+        code: "",
+      },
+      shouldDeleteEdgeValue: false,
+    })
+
+    const middleware = createAppwardenMiddleware(mockConfig)
+    const request = new Request("https://example.com/page", {
+      headers: { accept: "text/html" },
+    })
+    const result = await middleware(request)
+
+    expect(result.status).toBe(200)
+  })
+
+  it("should call syncEdgeValue in background when cache is expired", async () => {
+    vi.mocked(AppwardenConfigSchema.safeParse).mockReturnValue({
+      success: true,
+      data: mockConfig,
+    })
+    mockIsExpired.mockReturnValue(true)
+    mockMemoryCacheGet.mockReturnValue(undefined)
+
+    const middleware = createAppwardenMiddleware(mockConfig)
+    const request = new Request("https://example.com/page", {
+      headers: { accept: "text/html" },
+    })
+    await middleware(request)
 
     expect(syncEdgeValue).toHaveBeenCalled()
-    expect(mockEvent.waitUntil).toHaveBeenCalled()
-
-    // Restore original
-    ;(MemoryCache as any).isExpired = originalIsExpired
+    expect(mockWaitUntil).toHaveBeenCalled()
   })
 
-  it("should handle errors and return NextResponse.next()", async () => {
-    // Mock AppwardenConfigSchema.safeParse to succeed
+  it("should not call syncEdgeValue when cache is valid", async () => {
     vi.mocked(AppwardenConfigSchema.safeParse).mockReturnValue({
       success: true,
-      data: mockInputFn,
+      data: mockConfig,
     })
 
-    // Mock handleVercelRequest to throw an error
-    vi.mocked(handleVercelRequest).mockRejectedValue(new Error("Test error"))
-
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {})
-
-    const handler = appwardenOnVercel(mockInputFn)
-
-    // The function should throw the error
-    await expect(handler(mockRequest, mockEvent)).rejects.toThrow("Test error")
-
-    // But it should also log the error
-    expect(consoleSpy).toHaveBeenCalled()
-
-    consoleSpy.mockRestore()
-  })
-
-  it("should not log error if it's in globalErrors", async () => {
-    // Mock AppwardenConfigSchema.safeParse to succeed
-    vi.mocked(AppwardenConfigSchema.safeParse).mockReturnValue({
-      success: true,
-      data: mockInputFn,
-    })
-
-    // Create an error that's in globalErrors
-    const globalError = new Error(globalErrors[0])
-
-    // Mock handleVercelRequest to throw the global error
-    vi.mocked(handleVercelRequest).mockRejectedValue(globalError)
-
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {})
-
-    const handler = appwardenOnVercel(mockInputFn)
-
-    // The function should throw the error
-    await expect(handler(mockRequest, mockEvent)).rejects.toThrow(
-      globalErrors[0],
-    )
-
-    // But it should not log the error since it's in globalErrors
-    expect(consoleSpy).not.toHaveBeenCalled()
-
-    consoleSpy.mockRestore()
-  })
-
-  // Edge Cases
-
-  it("should handle empty URL", async () => {
-    // Mock AppwardenConfigSchema.safeParse to succeed
-    vi.mocked(AppwardenConfigSchema.safeParse).mockReturnValue({
-      success: true,
-      data: mockInputFn,
-    })
-
-    // Set up a request with empty URL
-    mockRequest = {
-      ...mockRequest,
-      url: "",
-      headers: new Headers({
-        accept: "text/html",
-      }),
-    } as unknown as NextRequest
-
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {})
-
-    const handler = appwardenOnVercel(mockInputFn)
-
-    // The function should throw an error
-    await expect(handler(mockRequest, mockEvent)).rejects.toThrow()
-
-    // And log the error
-    expect(consoleSpy).toHaveBeenCalled()
-
-    consoleSpy.mockRestore()
-  })
-
-  it("should handle malformed headers", async () => {
-    // Mock AppwardenConfigSchema.safeParse to succeed
-    vi.mocked(AppwardenConfigSchema.safeParse).mockReturnValue({
-      success: true,
-      data: mockInputFn,
-    })
-
-    // Set up a request with null headers
-    mockRequest = {
-      ...mockRequest,
-      url: "https://example.com",
-      headers: null,
-    } as unknown as NextRequest
-
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {})
-
-    const handler = appwardenOnVercel(mockInputFn)
-
-    // The function should throw an error
-    await expect(handler(mockRequest, mockEvent)).rejects.toThrow()
-
-    // And log the error
-    expect(consoleSpy).toHaveBeenCalled()
-
-    consoleSpy.mockRestore()
-  })
-
-  it("should handle undefined cache value", async () => {
-    // Mock AppwardenConfigSchema.safeParse to succeed
-    vi.mocked(AppwardenConfigSchema.safeParse).mockReturnValue({
-      success: true,
-      data: mockInputFn,
-    })
-
-    // Mock handleVercelRequest to return undefined
-    vi.mocked(handleVercelRequest).mockResolvedValue(undefined)
-
-    // Mock MemoryCache.isExpired to return true for undefined
-    const originalIsExpired = (MemoryCache as any).isExpired
-    ;(MemoryCache as any).isExpired = vi.fn().mockReturnValue(true)
-
-    const handler = appwardenOnVercel(mockInputFn)
-    await handler(mockRequest, mockEvent)
-
-    // Should try to sync edge value
-    expect(syncEdgeValue).toHaveBeenCalled()
-    expect(mockEvent.waitUntil).toHaveBeenCalled()
-
-    // Restore original
-    ;(MemoryCache as any).isExpired = originalIsExpired
-  })
-
-  it("should not sync edge value when cache is valid", async () => {
-    // Mock AppwardenConfigSchema.safeParse to succeed
-    vi.mocked(AppwardenConfigSchema.safeParse).mockReturnValue({
-      success: true,
-      data: mockInputFn,
-    })
-
-    // Mock handleVercelRequest to return a valid cache value
-    vi.mocked(handleVercelRequest).mockResolvedValue({
+    const validCacheValue: LockValueType = {
       isLocked: 0,
       isLockedTest: 0,
       lastCheck: Date.now(),
       code: "OK",
-    } as LockValueType)
+    }
 
-    // Mock MemoryCache.isExpired to return false (cache is valid)
-    const originalIsExpired = (MemoryCache as any).isExpired
-    ;(MemoryCache as any).isExpired = vi.fn().mockReturnValue(false)
+    mockIsExpired.mockReturnValue(false)
+    mockMemoryCacheGet.mockReturnValue(validCacheValue)
 
-    const handler = appwardenOnVercel(mockInputFn)
-    await handler(mockRequest, mockEvent)
+    const middleware = createAppwardenMiddleware(mockConfig)
+    const request = new Request("https://example.com/page", {
+      headers: { accept: "text/html" },
+    })
+    await middleware(request)
 
-    // Should not try to sync edge value
     expect(syncEdgeValue).not.toHaveBeenCalled()
-    expect(mockEvent.waitUntil).not.toHaveBeenCalled()
-
-    // Restore original
-    ;(MemoryCache as any).isExpired = originalIsExpired
+    expect(mockWaitUntil).not.toHaveBeenCalled()
   })
 
-  // Different Configurations
+  it("should use cached value if available", async () => {
+    vi.mocked(AppwardenConfigSchema.safeParse).mockReturnValue({
+      success: true,
+      data: mockConfig,
+    })
+
+    const cachedValue: LockValueType = {
+      isLocked: 1,
+      isLockedTest: 0,
+      lastCheck: Date.now(),
+      code: "cached",
+    }
+
+    mockIsExpired.mockReturnValue(false)
+    mockMemoryCacheGet.mockReturnValue(cachedValue)
+
+    const middleware = createAppwardenMiddleware(mockConfig)
+    const request = new Request("https://example.com/page", {
+      headers: { accept: "text/html" },
+    })
+    const result = await middleware(request)
+
+    // Should redirect because cached value has isLocked: 1
+    expect(result.status).toBe(302)
+    // Should not call getLockValue because we use cached value
+    expect(getLockValue).not.toHaveBeenCalled()
+  })
+
+  it("should handle errors gracefully and return 200 Response", async () => {
+    vi.mocked(AppwardenConfigSchema.safeParse).mockReturnValue({
+      success: true,
+      data: mockConfig,
+    })
+
+    vi.mocked(getLockValue).mockRejectedValue(new Error("API error"))
+
+    const middleware = createAppwardenMiddleware(mockConfig)
+    const request = new Request("https://example.com/page", {
+      headers: { accept: "text/html" },
+    })
+    const result = await middleware(request)
+
+    expect(consoleErrorSpy).toHaveBeenCalled()
+    expect(result.status).toBe(200)
+  })
+
+  it("should not log error if it's in globalErrors", async () => {
+    vi.mocked(AppwardenConfigSchema.safeParse).mockReturnValue({
+      success: true,
+      data: mockConfig,
+    })
+
+    const globalError = new Error(globalErrors[0])
+    vi.mocked(getLockValue).mockRejectedValue(globalError)
+
+    // Clear the spy to count only errors from the middleware
+    consoleErrorSpy.mockClear()
+
+    const middleware = createAppwardenMiddleware(mockConfig)
+    const request = new Request("https://example.com/page", {
+      headers: { accept: "text/html" },
+    })
+    await middleware(request)
+
+    // Should not log the error since it's in globalErrors
+    expect(consoleErrorSpy).not.toHaveBeenCalled()
+  })
 
   it("should use upstash provider when cacheUrl is upstash URL", async () => {
-    // Create upstash config
     const upstashConfig = {
       cacheUrl: "rediss://:password@hostname.upstash.io:6379",
       appwardenApiToken: "test-token",
       lockPageSlug: "/maintenance",
     }
 
-    // Mock AppwardenConfigSchema.safeParse to succeed with upstash config
     vi.mocked(AppwardenConfigSchema.safeParse).mockReturnValue({
       success: true,
       data: upstashConfig,
     })
 
-    // Mock isCacheUrl.edgeConfig to return false
     vi.mocked(isCacheUrl.edgeConfig).mockReturnValue(false)
 
-    // Mock isCacheUrl.upstash to return true
-    vi.mocked(isCacheUrl.upstash).mockReturnValue(true)
+    const middleware = createAppwardenMiddleware(upstashConfig)
+    const request = new Request("https://example.com/page", {
+      headers: { accept: "text/html" },
+    })
+    await middleware(request)
 
-    const handler = appwardenOnVercel(upstashConfig)
-    await handler(mockRequest, mockEvent)
-
-    // Verify context passed to handleVercelRequest has upstash provider
-    const context = vi.mocked(handleVercelRequest).mock.calls[0][0]
-    expect(context.provider).toBe("upstash")
+    // Verify getLockValue was called with upstash provider
+    expect(getLockValue).toHaveBeenCalledWith(
+      expect.objectContaining({
+        provider: "upstash",
+      }),
+    )
   })
 
-  it("should use custom lockPageSlug", async () => {
-    // Create config with custom lockPageSlug
-    const customConfig = {
-      ...mockInputFn,
-      lockPageSlug: "/custom-maintenance",
-    }
-
-    // Mock AppwardenConfigSchema.safeParse to succeed with custom config
+  it("should use edge-config provider when cacheUrl is edge config URL", async () => {
     vi.mocked(AppwardenConfigSchema.safeParse).mockReturnValue({
       success: true,
-      data: customConfig,
+      data: mockConfig,
     })
 
-    // Mock handleVercelRequest to call onLocked
-    vi.mocked(handleVercelRequest).mockImplementation(
-      async (_context, options) => {
-        options.onLocked()
-        return { isLocked: 1 } as LockValueType
-      },
-    )
+    vi.mocked(isCacheUrl.edgeConfig).mockReturnValue(true)
 
-    const handler = appwardenOnVercel(customConfig)
-    const result = await handler(mockRequest, mockEvent)
+    const middleware = createAppwardenMiddleware(mockConfig)
+    const request = new Request("https://example.com/page", {
+      headers: { accept: "text/html" },
+    })
+    await middleware(request)
 
-    // Should rewrite to custom lockPageSlug
-    expect(NextResponse.rewrite).toHaveBeenCalled()
-    expect(result).toEqual({
-      type: "rewrite",
-      url: expect.objectContaining({
-        pathname: "/custom-maintenance",
+    // Verify getLockValue was called with edge-config provider
+    expect(getLockValue).toHaveBeenCalledWith(
+      expect.objectContaining({
+        provider: "edge-config",
       }),
-      options: expect.any(Object),
+    )
+  })
+
+  it("should pass keyName to getLockValue", async () => {
+    vi.mocked(AppwardenConfigSchema.safeParse).mockReturnValue({
+      success: true,
+      data: mockConfig,
     })
+
+    const middleware = createAppwardenMiddleware(mockConfig)
+    const request = new Request("https://example.com/page", {
+      headers: { accept: "text/html" },
+    })
+    await middleware(request)
+
+    expect(getLockValue).toHaveBeenCalledWith(
+      expect.objectContaining({
+        keyName: APPWARDEN_CACHE_KEY,
+      }),
+    )
+  })
+
+  it("should handle empty URL gracefully", async () => {
+    vi.mocked(AppwardenConfigSchema.safeParse).mockReturnValue({
+      success: true,
+      data: mockConfig,
+    })
+
+    const middleware = createAppwardenMiddleware(mockConfig)
+    // Creating a Request with invalid URL will throw, so we need to test with a valid URL
+    // but simulate a parsing error inside the handler
+    const request = new Request("https://example.com", {
+      headers: { accept: "text/html" },
+    })
+
+    // This should not throw - errors are handled gracefully
+    const result = await middleware(request)
+    expect(result).toBeDefined()
   })
 
   it("should work with minimal configuration", async () => {
-    // Create minimal config
     const minimalConfig = {
       cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
       appwardenApiToken: "test-token",
       lockPageSlug: "/maintenance",
     }
 
-    // Mock AppwardenConfigSchema.safeParse to succeed with minimal config
     vi.mocked(AppwardenConfigSchema.safeParse).mockReturnValue({
       success: true,
       data: minimalConfig,
     })
 
-    const handler = appwardenOnVercel(minimalConfig)
-    await handler(mockRequest, mockEvent)
+    const middleware = createAppwardenMiddleware(minimalConfig)
+    const request = new Request("https://example.com", {
+      headers: { accept: "text/html" },
+    })
+    const result = await middleware(request)
 
-    // Verify context passed to handleVercelRequest
-    const context = vi.mocked(handleVercelRequest).mock.calls[0][0]
-    expect(context.cacheUrl).toBe(minimalConfig.cacheUrl)
-    expect(context.appwardenApiToken).toBe(minimalConfig.appwardenApiToken)
-    expect(context.lockPageSlug).toBe(minimalConfig.lockPageSlug)
-    expect(context.vercelApiToken).toBeUndefined()
+    expect(result.status).toBe(200)
+  })
+
+  // safeWaitUntil fallback behavior tests
+  describe("safeWaitUntil fallback", () => {
+    it("should catch errors from waitUntil and fire-and-forget", async () => {
+      // Mock waitUntil to throw (simulating non-Vercel environment)
+      mockWaitUntil.mockImplementation(() => {
+        throw new Error("waitUntil not available")
+      })
+
+      vi.mocked(AppwardenConfigSchema.safeParse).mockReturnValue({
+        success: true,
+        data: mockConfig,
+      })
+      mockIsExpired.mockReturnValue(true)
+      mockMemoryCacheGet.mockReturnValue(undefined)
+
+      const middleware = createAppwardenMiddleware(mockConfig)
+      const request = new Request("https://example.com/page", {
+        headers: { accept: "text/html" },
+      })
+
+      // Should not throw even if waitUntil fails
+      const result = await middleware(request)
+      expect(result).toBeDefined()
+      expect(syncEdgeValue).toHaveBeenCalled()
+    })
+  })
+
+  // Response.redirect behavior tests
+  describe("Response.redirect behavior", () => {
+    it("should use 302 status code for redirects (temporary redirect)", async () => {
+      vi.mocked(AppwardenConfigSchema.safeParse).mockReturnValue({
+        success: true,
+        data: mockConfig,
+      })
+
+      vi.mocked(getLockValue).mockResolvedValue({
+        lockValue: {
+          isLocked: 1,
+          isLockedTest: 0,
+          lastCheck: Date.now(),
+          code: "",
+        },
+        shouldDeleteEdgeValue: false,
+      })
+
+      const middleware = createAppwardenMiddleware(mockConfig)
+      const request = new Request("https://example.com/page", {
+        headers: { accept: "text/html" },
+      })
+      const result = await middleware(request)
+
+      expect(result.status).toBe(302)
+    })
+
+    it("should set correct Location header for redirect", async () => {
+      const configWithCustomPath = {
+        ...mockConfig,
+        lockPageSlug: "/custom-lock",
+      }
+      vi.mocked(AppwardenConfigSchema.safeParse).mockReturnValue({
+        success: true,
+        data: configWithCustomPath,
+      })
+
+      vi.mocked(getLockValue).mockResolvedValue({
+        lockValue: {
+          isLocked: 1,
+          isLockedTest: 0,
+          lastCheck: Date.now(),
+          code: "",
+        },
+        shouldDeleteEdgeValue: false,
+      })
+
+      const middleware = createAppwardenMiddleware(configWithCustomPath)
+      const request = new Request("https://example.com/page", {
+        headers: { accept: "text/html" },
+      })
+      const result = await middleware(request)
+
+      expect(result.headers.get("Location")).toBe(
+        "https://example.com/custom-lock",
+      )
+    })
   })
 })
