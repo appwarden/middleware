@@ -8,7 +8,6 @@ import { NextJsCloudflareConfigSchema } from "../schemas/nextjs-cloudflare"
 import {
   buildLockPageUrl,
   isHTMLRequest,
-  isMonitoringRequest,
   printMessage,
   TEMPORARY_REDIRECT_STATUS,
   validateConfig,
@@ -88,11 +87,6 @@ export function createAppwardenMiddleware(
       const { env, ctx } = await getCloudflareContext()
 
       const config = configFn({ env, ctx })
-
-      // Skip monitoring requests from Appwarden
-      if (isMonitoringRequest(request)) {
-        return NextResponse.next()
-      }
 
       // Skip non-HTML requests (e.g., API calls, static assets)
       if (!isHTMLRequest(request)) {

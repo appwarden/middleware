@@ -1,9 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import {
-  APPWARDEN_CACHE_KEY,
-  APPWARDEN_USER_AGENT,
-  globalErrors,
-} from "../constants"
+import { APPWARDEN_CACHE_KEY, globalErrors } from "../constants"
 import { LockValueType } from "../schemas"
 
 // Use vi.hoisted to define mocks before they're used in vi.mock (which is hoisted to top)
@@ -63,10 +59,6 @@ vi.mock("../utils", () => {
     isHTMLRequest: vi.fn(
       (request: Request) =>
         request.headers.get("accept")?.includes("text/html") ?? false,
-    ),
-    isMonitoringRequest: vi.fn(
-      (request: Request) =>
-        request.headers.get("User-Agent") === APPWARDEN_USER_AGENT,
     ),
     validateConfig: mockValidateConfig,
   }
@@ -176,18 +168,6 @@ describe("createAppwardenMiddleware", () => {
     const middleware = createAppwardenMiddleware(mockConfig)
     const request = new Request("https://example.com", {
       headers: { accept: "application/json" },
-    })
-    const result = await middleware(request)
-
-    expect(getLockValue).not.toHaveBeenCalled()
-    expect(result.status).toBe(200)
-    expect(mockNextResponseNext).toHaveBeenCalled()
-  })
-
-  it("should call NextResponse.next() for monitoring requests from Appwarden (pass through)", async () => {
-    const middleware = createAppwardenMiddleware(mockConfig)
-    const request = new Request("https://example.com", {
-      headers: { accept: "text/html", "User-Agent": APPWARDEN_USER_AGENT },
     })
     const result = await middleware(request)
 
