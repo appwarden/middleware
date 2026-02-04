@@ -107,7 +107,6 @@ describe("checkLockStatus", () => {
       vi.mocked(getLockValue)
         .mockResolvedValueOnce({
           lockValue: undefined,
-          shouldDeleteEdgeValue: false,
         })
         .mockResolvedValueOnce({
           lockValue: createLockValue(),
