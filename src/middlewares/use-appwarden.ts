@@ -1,4 +1,4 @@
-import { APPWARDEN_CACHE_KEY, APPWARDEN_USER_AGENT } from "../constants"
+import { APPWARDEN_CACHE_KEY } from "../constants"
 import {
   handleResetCache,
   isResetCacheRequest,
@@ -6,7 +6,12 @@ import {
 } from "../handlers"
 import { CloudflareConfigType, LockValueType } from "../schemas"
 import { CloudflareProviderContext, Middleware } from "../types"
-import { printMessage, renderLockPage } from "../utils"
+import {
+  isHTMLResponse,
+  isMonitoringRequest,
+  printMessage,
+  renderLockPage,
+} from "../utils"
 import { store } from "../utils/cloudflare"
 
 export const useAppwarden: (input: CloudflareConfigType) => Middleware =
@@ -36,13 +41,7 @@ export const useAppwarden: (input: CloudflareConfigType) => Middleware =
         return
       }
 
-      const isHTMLRequest = response.headers
-        .get("Content-Type")
-        ?.includes("text/html")
-      const isMonitoringRequest =
-        request.headers.get("User-Agent") === APPWARDEN_USER_AGENT
-
-      if (isHTMLRequest && !isMonitoringRequest) {
+      if (isHTMLResponse(response) && !isMonitoringRequest(request)) {
         // Resolve lockPageSlug from multidomainConfig (if hostname exists) or fall back to top-level config.
         // If neither provides a lockPageSlug, this domain is not protected and lock logic is skipped.
         const lockPageSlug =
