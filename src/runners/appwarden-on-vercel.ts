@@ -5,12 +5,12 @@ import { LockValueType } from "../schemas"
 import { AppwardenConfigSchema, VercelAppwardenConfig } from "../schemas/vercel"
 import {
   debug,
-  getErrors,
   isCacheUrl,
   isHTMLRequest,
   isMonitoringRequest,
   MemoryCache,
   printMessage,
+  validateConfig,
 } from "../utils"
 import { getLockValue, syncEdgeValue } from "../utils/vercel"
 
@@ -37,14 +37,12 @@ export function createAppwardenMiddleware(
   config: VercelAppwardenConfig,
 ): VercelMiddlewareFunction {
   return async (request: Request): Promise<Response> => {
-    const parsedConfig = AppwardenConfigSchema.safeParse(config)
-    if (!parsedConfig.success) {
-      for (const error of getErrors(parsedConfig.error)) {
-        console.error(printMessage(error as string))
-      }
+    if (validateConfig(config, AppwardenConfigSchema)) {
       // Fail open - pass through to next middleware/handler
       return NextResponse.next()
     }
+
+    const parsedConfig = AppwardenConfigSchema.parse(config)
 
     try {
       const requestUrl = new URL(request.url)
@@ -59,11 +57,11 @@ export function createAppwardenMiddleware(
       }
 
       // Pass through if no lock page is configured
-      if (!parsedConfig.data.lockPageSlug) {
+      if (!parsedConfig.lockPageSlug) {
         return NextResponse.next()
       }
 
-      const provider = isCacheUrl.edgeConfig(parsedConfig.data.cacheUrl)
+      const provider = isCacheUrl.edgeConfig(parsedConfig.cacheUrl)
         ? ("edge-config" as const)
         : ("upstash" as const)
 
@@ -76,9 +74,9 @@ export function createAppwardenMiddleware(
         safeWaitUntil(
           syncEdgeValue({
             requestUrl,
-            cacheUrl: parsedConfig.data.cacheUrl,
-            appwardenApiToken: parsedConfig.data.appwardenApiToken,
-            vercelApiToken: parsedConfig.data.vercelApiToken,
+            cacheUrl: parsedConfig.cacheUrl,
+            appwardenApiToken: parsedConfig.appwardenApiToken,
+            vercelApiToken: parsedConfig.vercelApiToken,
           }),
         )
       }
@@ -88,14 +86,14 @@ export function createAppwardenMiddleware(
         cacheValue ??
         (
           await getLockValue({
-            cacheUrl: parsedConfig.data.cacheUrl,
+            cacheUrl: parsedConfig.cacheUrl,
             keyName: APPWARDEN_CACHE_KEY,
             provider,
           })
         ).lockValue
 
       if (lockValue?.isLocked) {
-        const lockPageUrl = new URL(parsedConfig.data.lockPageSlug, request.url)
+        const lockPageUrl = new URL(parsedConfig.lockPageSlug, request.url)
         return Response.redirect(lockPageUrl.toString(), 302)
       }
 
