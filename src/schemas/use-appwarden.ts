@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { BooleanSchema } from "./helpers"
+import { AppwardenApiTokenSchema, BooleanSchema } from "./helpers"
 
 export const AppwardenMultidomainConfigSchema = z.record(
   z.string(),
@@ -17,9 +17,7 @@ export const UseAppwardenInputSchema = z.object({
   debug: BooleanSchema.default(false),
   lockPageSlug: z.string().optional(),
   multidomainConfig: AppwardenMultidomainConfigSchema.optional(),
-  appwardenApiToken: z
-    .string()
-    .refine((val) => !!val, { path: ["appwardenApiToken"] }),
+  appwardenApiToken: AppwardenApiTokenSchema,
   appwardenApiHostname: z.string().optional(),
 })
 
