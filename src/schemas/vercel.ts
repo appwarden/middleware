@@ -81,3 +81,5 @@ export const AppwardenConfigSchema = BaseNextJsConfigSchema
   })
 
 export type BaseNextJsConfigFnType = z.infer<typeof BaseNextJsConfigSchema>
+
+export type VercelAppwardenConfig = z.input<typeof AppwardenConfigSchema>
