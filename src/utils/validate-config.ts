@@ -1,9 +1,10 @@
 import type { ZodSchema } from "zod"
+import { getErrors } from "./errors"
 import { printMessage } from "./print-message"
 
 /**
  * Validates a config object against a Zod schema.
- * Logs an error message if validation fails.
+ * Logs user-friendly error messages if validation fails.
  *
  * @param config - The config object to validate
  * @param schema - The Zod schema to validate against
@@ -16,11 +17,9 @@ export function validateConfig<T>(
   const result = schema.safeParse(config)
   const hasErrors = !result.success
   if (hasErrors) {
-    console.error(
-      printMessage(
-        `[appwarden] config validation failed: ${result.error.format()}`,
-      ),
-    )
+    for (const error of getErrors(result.error)) {
+      console.error(printMessage(error as string))
+    }
   }
   return hasErrors
 }
