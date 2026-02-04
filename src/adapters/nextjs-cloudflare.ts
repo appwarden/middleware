@@ -6,6 +6,7 @@ import {
 import { checkLockStatus } from "../core"
 import { NextJsCloudflareConfigSchema } from "../schemas/nextjs-cloudflare"
 import {
+  buildLockPageUrl,
   isHTMLRequest,
   isMonitoringRequest,
   printMessage,
@@ -116,12 +117,7 @@ export function createAppwardenMiddleware(
 
       // If locked, redirect to lock page
       if (result.isLocked) {
-        // Normalize the lock page slug to ensure it starts with /
-        const normalizedSlug = config.lockPageSlug.startsWith("/")
-          ? config.lockPageSlug
-          : `/${config.lockPageSlug}`
-
-        const lockPageUrl = new URL(normalizedSlug, request.url)
+        const lockPageUrl = buildLockPageUrl(config.lockPageSlug, request.url)
         return NextResponse.redirect(lockPageUrl, TEMPORARY_REDIRECT_STATUS)
       }
 
