@@ -1,6 +1,6 @@
 import { UseCSPInput, UseCSPInputSchema } from "../schemas"
 import { Middleware } from "../types"
-import { debug, printMessage } from "../utils"
+import { debug, isHTMLResponse, printMessage } from "../utils"
 import { makeCSPHeader } from "../utils/cloudflare"
 
 const AppendAttribute = (attribute: string, nonce: string) => ({
@@ -38,10 +38,7 @@ export const useContentSecurityPolicy: (input: UseCSPInput) => Middleware = (
       return
     }
     // or if content type is defined but its not html
-    if (
-      response.headers.has("Content-Type") &&
-      !response.headers.get("Content-Type")?.includes("text/html")
-    ) {
+    if (response.headers.has("Content-Type") && !isHTMLResponse(response)) {
       return
     }
 

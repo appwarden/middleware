@@ -21,6 +21,14 @@ vi.mock("../handlers", () => ({
 vi.mock("../utils", () => ({
   printMessage: vi.fn((message) => `[@appwarden/middleware] ${message}`),
   renderLockPage: vi.fn(() => new Response("Locked page")),
+  isHTMLResponse: vi.fn(
+    (response: Response) =>
+      response.headers.get("Content-Type")?.includes("text/html") ?? false,
+  ),
+  isMonitoringRequest: vi.fn(
+    (request: Request) =>
+      request.headers.get("User-Agent") === APPWARDEN_USER_AGENT,
+  ),
 }))
 
 vi.mock("../utils/cloudflare", () => ({
