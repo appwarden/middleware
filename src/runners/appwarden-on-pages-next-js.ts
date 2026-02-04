@@ -13,7 +13,7 @@ import {
   NextJsConfigFnType,
 } from "../schemas"
 import { CloudflareProviderContext } from "../types"
-import { debug, printMessage, renderLockPage } from "../utils"
+import { debug, isHTMLRequest, printMessage, renderLockPage } from "../utils"
 import { store } from "../utils/cloudflare"
 
 debug("Instantiating isolate")
@@ -21,7 +21,7 @@ debug("Instantiating isolate")
 /**
  *
  * @deprecated
- * Please use `import { withAppwarden } from "@appwarden/middleware/cloudflare"` instead
+ * Please use `import { createAppwardenMiddleware } from "@appwarden/middleware/cloudflare"` instead
  */
 export const appwardenOnPagesNextJs =
   (inputFn: NextJsConfigFnType): NextMiddleware =>
@@ -54,17 +54,16 @@ export const appwardenOnPagesNextJs =
         return NextResponse.next()
       }
 
-      const acceptHeader = request.headers.get("accept")
-      const isHTMLRequest = acceptHeader?.includes("text/html")
+      const isHTML = isHTMLRequest(request)
 
       debug({
-        acceptHeader,
-        isHTMLRequest,
+        acceptHeader: request.headers.get("accept"),
+        isHTMLRequest: isHTML,
         url: requestUrl.pathname,
       })
 
       // ignore non-html requests
-      if (isHTMLRequest) {
+      if (isHTML) {
         // Resolve lockPageSlug from multidomainConfig or root config
         const lockPageSlug =
           input.multidomainConfig?.[requestUrl.hostname]?.lockPageSlug ??

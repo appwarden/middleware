@@ -34,6 +34,10 @@ vi.mock("../utils", () => ({
   debug: vi.fn(),
   printMessage: vi.fn((message) => `[@appwarden/middleware] ${message}`),
   renderLockPage: vi.fn(() => new Response("Locked page")),
+  isHTMLRequest: vi.fn(
+    (request: Request) =>
+      request.headers.get("accept")?.includes("text/html") ?? false,
+  ),
 }))
 
 vi.mock("../utils/cloudflare", () => ({
