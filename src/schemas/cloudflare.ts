@@ -12,7 +12,10 @@ export const ConfigFnInputSchema = z
     lockPageSlugRefinement(
       UseAppwardenInputSchema.extend({
         middleware: z
-          .object({ before: z.custom<Middleware>().array().default([]) })
+          .object({
+            before: z.custom<Middleware>().array().default([]),
+            after: z.custom<Middleware>().array().default([]),
+          })
           .default({}),
       }),
     ),
