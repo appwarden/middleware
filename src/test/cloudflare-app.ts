@@ -1,4 +1,4 @@
-import { withAppwarden } from "../bundles/cloudflare"
+import { createAppwardenMiddleware } from "../bundles/cloudflare"
 import { useContentSecurityPolicy } from "../middlewares"
 import { Middleware } from "../types"
 
@@ -17,7 +17,7 @@ const useHeader: (headerName: string) => Middleware =
   }
 
 export default {
-  fetch: withAppwarden(
+  fetch: createAppwardenMiddleware(
     // @ts-expect-error todo types aren't making it here
     (context) => ({
       debug: context.env.DEBUG,
