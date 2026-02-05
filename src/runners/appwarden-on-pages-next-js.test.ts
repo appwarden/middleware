@@ -2,13 +2,9 @@ import { NextFetchEvent, NextRequest } from "next/server"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { ZodError } from "zod"
 import { APPWARDEN_CACHE_KEY } from "../constants"
-import {
-  handleResetCache,
-  isResetCacheRequest,
-  maybeQuarantine,
-} from "../handlers"
+import { checkLockStatus } from "../core"
+import { handleResetCache, isResetCacheRequest } from "../handlers"
 import { NextJsConfigFnOutputSchema } from "../schemas"
-import { CloudflareProviderContext } from "../types"
 import { renderLockPage } from "../utils"
 import { store } from "../utils/cloudflare"
 import { appwardenOnPagesNextJs } from "./appwarden-on-pages-next-js"
@@ -24,10 +20,13 @@ vi.mock("@cloudflare/next-on-pages", () => ({
   })),
 }))
 
+vi.mock("../core", () => ({
+  checkLockStatus: vi.fn(),
+}))
+
 vi.mock("../handlers", () => ({
   handleResetCache: vi.fn(),
   isResetCacheRequest: vi.fn(),
-  maybeQuarantine: vi.fn(),
 }))
 
 vi.mock("../utils", () => ({
@@ -154,7 +153,10 @@ describe("appwardenOnPagesNextJs", () => {
 
     // Default mock implementations
     vi.mocked(isResetCacheRequest).mockReturnValue(false)
-    vi.mocked(maybeQuarantine).mockImplementation(async () => {})
+    vi.mocked(checkLockStatus).mockResolvedValue({
+      isLocked: false,
+      isTestLock: false,
+    })
     vi.mocked(NextJsConfigFnOutputSchema.safeParse).mockReturnValue({
       success: true,
       data: mockInputFn,
@@ -206,37 +208,30 @@ describe("appwardenOnPagesNextJs", () => {
     const middleware = appwardenOnPagesNextJs(mockInputFn)
     await middleware(nonHtmlRequest, mockEvent)
 
-    // maybeQuarantine should not be called for non-HTML requests
-    expect(maybeQuarantine).not.toHaveBeenCalled()
+    // checkLockStatus should not be called for non-HTML requests
+    expect(checkLockStatus).not.toHaveBeenCalled()
   })
 
-  it("should call maybeQuarantine for HTML requests", async () => {
+  it("should call checkLockStatus for HTML requests", async () => {
     const middleware = appwardenOnPagesNextJs(mockInputFn)
     await middleware(mockRequest, mockEvent)
 
-    expect(maybeQuarantine).toHaveBeenCalledWith(
-      expect.objectContaining({
-        keyName: APPWARDEN_CACHE_KEY,
-        request: mockRequest,
-        edgeCache: mockEdgeCache,
-        provider: "cloudflare-cache",
-        debug: true,
-        lockPageSlug: "/maintenance",
-        appwardenApiToken: "test-token",
-      }),
-      expect.objectContaining({
-        onLocked: expect.any(Function),
-      }),
-    )
+    expect(checkLockStatus).toHaveBeenCalledWith({
+      request: mockRequest,
+      appwardenApiToken: "test-token",
+      appwardenApiHostname: undefined,
+      debug: true,
+      lockPageSlug: "/maintenance",
+      waitUntil: expect.any(Function),
+    })
   })
 
   it("should render lock page when site is locked", async () => {
-    // Mock maybeQuarantine to call onLocked
-    vi.mocked(maybeQuarantine).mockImplementationOnce(
-      async (context: CloudflareProviderContext, options) => {
-        await options.onLocked()
-      },
-    )
+    // Mock checkLockStatus to return locked
+    vi.mocked(checkLockStatus).mockResolvedValueOnce({
+      isLocked: true,
+      isTestLock: false,
+    })
 
     const middleware = appwardenOnPagesNextJs(mockInputFn)
     const result = await middleware(mockRequest, mockEvent)
@@ -247,10 +242,8 @@ describe("appwardenOnPagesNextJs", () => {
   })
 
   it("should handle errors gracefully", async () => {
-    // Mock maybeQuarantine to throw an error
-    vi.mocked(maybeQuarantine).mockImplementationOnce(() => {
-      throw new Error("Test error")
-    })
+    // Mock checkLockStatus to throw an error
+    vi.mocked(checkLockStatus).mockRejectedValueOnce(new Error("Test error"))
 
     const middleware = appwardenOnPagesNextJs(mockInputFn)
     await middleware(mockRequest, mockEvent)

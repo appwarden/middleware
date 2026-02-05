@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { CloudflareProviderContext } from "../types/cloudflare"
-import { renderLockPage } from "./render-lock-page"
+import { renderLockPage, RenderLockPageContext } from "./render-lock-page"
 
 describe("renderLockPage", () => {
   // Store the original fetch function
@@ -20,21 +19,10 @@ describe("renderLockPage", () => {
   })
 
   it("should fetch the lock page from the correct URL", async () => {
-    // Create a mock context
-    const mockContext: CloudflareProviderContext = {
-      provider: "cloudflare-cache",
+    // Create a mock context with only the required properties
+    const mockContext: RenderLockPageContext = {
       requestUrl: new URL("https://example.com/some-path"),
-      appwardenApiToken: "test-token",
-      keyName: "appwarden-lock",
-      edgeCache: {
-        getValue: vi.fn(),
-        updateValue: vi.fn(),
-        deleteValue: vi.fn(),
-      },
-      request: new Request("https://example.com/some-path"),
-      debug: false,
       lockPageSlug: "/maintenance",
-      waitUntil: vi.fn(),
     }
 
     // Call the function
@@ -53,20 +41,9 @@ describe("renderLockPage", () => {
 
   it("should use the lockPageSlug from the context", async () => {
     // Create a mock context with a custom lockPageSlug
-    const mockContext: CloudflareProviderContext = {
-      provider: "cloudflare-cache",
+    const mockContext: RenderLockPageContext = {
       requestUrl: new URL("https://example.com/some-path"),
-      appwardenApiToken: "test-token",
-      keyName: "appwarden-lock",
-      edgeCache: {
-        getValue: vi.fn(),
-        updateValue: vi.fn(),
-        deleteValue: vi.fn(),
-      },
-      request: new Request("https://example.com/some-path"),
-      debug: false,
       lockPageSlug: "/custom-maintenance",
-      waitUntil: vi.fn(),
     }
 
     // Call the function
@@ -81,20 +58,9 @@ describe("renderLockPage", () => {
 
   it("should return the response from fetch", async () => {
     // Create a mock context
-    const mockContext: CloudflareProviderContext = {
-      provider: "cloudflare-cache",
+    const mockContext: RenderLockPageContext = {
       requestUrl: new URL("https://example.com/some-path"),
-      appwardenApiToken: "test-token",
-      keyName: "appwarden-lock",
-      edgeCache: {
-        getValue: vi.fn(),
-        updateValue: vi.fn(),
-        deleteValue: vi.fn(),
-      },
-      request: new Request("https://example.com/some-path"),
-      debug: false,
       lockPageSlug: "/maintenance",
-      waitUntil: vi.fn(),
     }
 
     // Mock fetch to return a specific response

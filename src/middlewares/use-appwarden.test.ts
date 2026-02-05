@@ -1,10 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { APPWARDEN_CACHE_KEY } from "../constants"
-import {
-  handleResetCache,
-  isResetCacheRequest,
-  maybeQuarantine,
-} from "../handlers"
+import { checkLockStatus } from "../core"
+import { handleResetCache, isResetCacheRequest } from "../handlers"
 import { CloudflareConfigType } from "../schemas"
 import { MiddlewareContext } from "../types"
 import { renderLockPage } from "../utils"
@@ -12,10 +9,13 @@ import { store } from "../utils/cloudflare"
 import { useAppwarden } from "./use-appwarden"
 
 // Mock dependencies
+vi.mock("../core", () => ({
+  checkLockStatus: vi.fn(),
+}))
+
 vi.mock("../handlers", () => ({
   handleResetCache: vi.fn(),
   isResetCacheRequest: vi.fn(),
-  maybeQuarantine: vi.fn(),
 }))
 
 vi.mock("../utils", () => ({
@@ -69,7 +69,7 @@ describe("useAppwarden", () => {
       debug: false,
       lockPageSlug: "/maintenance",
       appwardenApiToken: "test-token",
-      middleware: { before: [] },
+      middleware: { before: [], after: [] },
     }
 
     mockEdgeCache = {
@@ -97,7 +97,11 @@ describe("useAppwarden", () => {
 
     // Default mock implementations
     vi.mocked(isResetCacheRequest).mockReturnValue(false)
-    vi.mocked(maybeQuarantine).mockImplementation(async () => {})
+    // Default: site is not locked
+    vi.mocked(checkLockStatus).mockResolvedValue({
+      isLocked: false,
+      isTestLock: false,
+    })
   })
 
   afterEach(() => {
@@ -138,10 +142,10 @@ describe("useAppwarden", () => {
       mockContext.request,
     )
     // Should return early and not process further
-    expect(maybeQuarantine).not.toHaveBeenCalled()
+    expect(checkLockStatus).not.toHaveBeenCalled()
   })
 
-  it("should not quarantine for non-HTML requests", async () => {
+  it("should not check lock status for non-HTML responses", async () => {
     // Set up a non-HTML response
     mockContext.response = new Response("Test response", {
       headers: { "Content-Type": "application/json" },
@@ -150,49 +154,55 @@ describe("useAppwarden", () => {
     const middleware = useAppwarden(mockInput)
     await middleware(mockContext, mockNext)
 
-    expect(maybeQuarantine).not.toHaveBeenCalled()
+    expect(checkLockStatus).not.toHaveBeenCalled()
   })
 
-  it("should call maybeQuarantine for HTML requests", async () => {
+  it("should call checkLockStatus for HTML responses", async () => {
     const middleware = useAppwarden(mockInput)
     await middleware(mockContext, mockNext)
 
-    expect(maybeQuarantine).toHaveBeenCalledWith(
+    expect(checkLockStatus).toHaveBeenCalledWith(
       expect.objectContaining({
-        keyName: APPWARDEN_CACHE_KEY,
         request: mockContext.request,
-        edgeCache: mockEdgeCache,
-        provider: "cloudflare-cache",
+        appwardenApiToken: mockInput.appwardenApiToken,
         debug: mockInput.debug,
         lockPageSlug: mockInput.lockPageSlug,
-        appwardenApiToken: mockInput.appwardenApiToken,
-      }),
-      expect.objectContaining({
-        onLocked: expect.any(Function),
+        waitUntil: expect.any(Function),
       }),
     )
   })
 
-  it("should set the response to the lock page when onLocked is called", async () => {
+  it("should set the response to the lock page when site is locked", async () => {
     // Create a mock response for renderLockPage
     const mockLockPageResponse = new Response("Locked page")
     vi.mocked(renderLockPage).mockResolvedValue(mockLockPageResponse)
 
-    // Capture the onLocked callback
-    let onLockedCallback: () => Promise<void> = async () => {}
-
-    vi.mocked(maybeQuarantine).mockImplementation(async (context, options) => {
-      onLockedCallback = options.onLocked
+    // Mock checkLockStatus to return locked state
+    vi.mocked(checkLockStatus).mockResolvedValue({
+      isLocked: true,
+      isTestLock: false,
     })
 
     const middleware = useAppwarden(mockInput)
     await middleware(mockContext, mockNext)
 
-    // Call the onLocked callback
-    await onLockedCallback()
-
-    expect(renderLockPage).toHaveBeenCalled()
+    expect(renderLockPage).toHaveBeenCalledWith({
+      lockPageSlug: mockInput.lockPageSlug,
+      requestUrl: new URL(mockContext.request.url),
+    })
     expect(mockContext.response).toBe(mockLockPageResponse)
+  })
+
+  it("should not render lock page when site is not locked", async () => {
+    vi.mocked(checkLockStatus).mockResolvedValue({
+      isLocked: false,
+      isTestLock: false,
+    })
+
+    const middleware = useAppwarden(mockInput)
+    await middleware(mockContext, mockNext)
+
+    expect(renderLockPage).not.toHaveBeenCalled()
   })
 
   it("should handle errors gracefully", async () => {
@@ -209,38 +219,28 @@ describe("useAppwarden", () => {
     )
   })
 
-  it("should pass the correct context to maybeQuarantine", async () => {
+  it("should pass the correct config to checkLockStatus", async () => {
     const middleware = useAppwarden(mockInput)
     await middleware(mockContext, mockNext)
 
-    // Verify maybeQuarantine was called
-    expect(maybeQuarantine).toHaveBeenCalled()
-
-    // Get the first argument passed to maybeQuarantine
-    const contextArg = vi.mocked(maybeQuarantine).mock.calls[0][0]
-
-    // Verify the context properties
-    expect(contextArg.keyName).toBe(APPWARDEN_CACHE_KEY)
-    expect(contextArg.request).toBe(mockContext.request)
-    expect(contextArg.edgeCache).toBe(mockEdgeCache)
-    expect(contextArg.provider).toBe("cloudflare-cache")
-    expect(contextArg.debug).toBe(mockInput.debug)
-    expect(contextArg.lockPageSlug).toBe(mockInput.lockPageSlug)
-    expect(contextArg.appwardenApiToken).toBe(mockInput.appwardenApiToken)
-
-    // Verify the second argument has an onLocked function
-    const optionsArg = vi.mocked(maybeQuarantine).mock.calls[0][1]
-    expect(optionsArg).toHaveProperty("onLocked")
-    expect(typeof optionsArg.onLocked).toBe("function")
+    // Verify checkLockStatus was called with expected parameters
+    expect(checkLockStatus).toHaveBeenCalledWith({
+      request: mockContext.request,
+      appwardenApiToken: mockInput.appwardenApiToken,
+      appwardenApiHostname: mockInput.appwardenApiHostname,
+      debug: mockInput.debug,
+      lockPageSlug: mockInput.lockPageSlug,
+      waitUntil: expect.any(Function),
+    })
   })
 
   it("should correctly wrap waitUntil in the context", async () => {
     const middleware = useAppwarden(mockInput)
     await middleware(mockContext, mockNext)
 
-    // Extract the waitUntil function that was passed to maybeQuarantine
-    const contextArg = vi.mocked(maybeQuarantine).mock.calls[0][0]
-    const waitUntilFn = contextArg.waitUntil
+    // Extract the waitUntil function that was passed to checkLockStatus
+    const callArgs = vi.mocked(checkLockStatus).mock.calls[0][0]
+    const waitUntilFn = callArgs.waitUntil
 
     // Call the waitUntil function
     const testPromise = Promise.resolve()
@@ -255,7 +255,7 @@ describe("useAppwarden", () => {
       const inputWithMultidomain: CloudflareConfigType = {
         debug: false,
         appwardenApiToken: "test-token",
-        middleware: { before: [] },
+        middleware: { before: [], after: [] },
         multidomainConfig: {
           "example.com": { lockPageSlug: "/maintenance-example" },
           "other.com": { lockPageSlug: "/maintenance-other" },
@@ -268,16 +268,16 @@ describe("useAppwarden", () => {
       const middleware = useAppwarden(inputWithMultidomain)
       await middleware(mockContext, mockNext)
 
-      expect(maybeQuarantine).toHaveBeenCalled()
-      const contextArg = vi.mocked(maybeQuarantine).mock.calls[0][0]
-      expect(contextArg.lockPageSlug).toBe("/maintenance-example")
+      expect(checkLockStatus).toHaveBeenCalled()
+      const callArgs = vi.mocked(checkLockStatus).mock.calls[0][0]
+      expect(callArgs.lockPageSlug).toBe("/maintenance-example")
     })
 
     it("should use lockPageSlug from different domain in multidomainConfig", async () => {
       const inputWithMultidomain: CloudflareConfigType = {
         debug: false,
         appwardenApiToken: "test-token",
-        middleware: { before: [] },
+        middleware: { before: [], after: [] },
         multidomainConfig: {
           "example.com": { lockPageSlug: "/maintenance-example" },
           "other.com": { lockPageSlug: "/maintenance-other" },
@@ -290,16 +290,16 @@ describe("useAppwarden", () => {
       const middleware = useAppwarden(inputWithMultidomain)
       await middleware(mockContext, mockNext)
 
-      expect(maybeQuarantine).toHaveBeenCalled()
-      const contextArg = vi.mocked(maybeQuarantine).mock.calls[0][0]
-      expect(contextArg.lockPageSlug).toBe("/maintenance-other")
+      expect(checkLockStatus).toHaveBeenCalled()
+      const callArgs = vi.mocked(checkLockStatus).mock.calls[0][0]
+      expect(callArgs.lockPageSlug).toBe("/maintenance-other")
     })
 
-    it("should skip quarantine for unconfigured domains when using multidomainConfig", async () => {
+    it("should skip lock check for unconfigured domains when using multidomainConfig", async () => {
       const inputWithMultidomain: CloudflareConfigType = {
         debug: false,
         appwardenApiToken: "test-token",
-        middleware: { before: [] },
+        middleware: { before: [], after: [] },
         multidomainConfig: {
           "example.com": { lockPageSlug: "/maintenance-example" },
         },
@@ -311,8 +311,8 @@ describe("useAppwarden", () => {
       const middleware = useAppwarden(inputWithMultidomain)
       await middleware(mockContext, mockNext)
 
-      // maybeQuarantine should NOT be called for unconfigured domains
-      expect(maybeQuarantine).not.toHaveBeenCalled()
+      // checkLockStatus should NOT be called for unconfigured domains
+      expect(checkLockStatus).not.toHaveBeenCalled()
     })
 
     it("should fall back to root lockPageSlug when multidomainConfig is not provided", async () => {
@@ -320,7 +320,7 @@ describe("useAppwarden", () => {
         debug: false,
         lockPageSlug: "/root-maintenance",
         appwardenApiToken: "test-token",
-        middleware: { before: [] },
+        middleware: { before: [], after: [] },
       }
 
       mockContext.request = new Request("https://any-domain.com/page")
@@ -329,9 +329,9 @@ describe("useAppwarden", () => {
       const middleware = useAppwarden(inputWithRootOnly)
       await middleware(mockContext, mockNext)
 
-      expect(maybeQuarantine).toHaveBeenCalled()
-      const contextArg = vi.mocked(maybeQuarantine).mock.calls[0][0]
-      expect(contextArg.lockPageSlug).toBe("/root-maintenance")
+      expect(checkLockStatus).toHaveBeenCalled()
+      const callArgs = vi.mocked(checkLockStatus).mock.calls[0][0]
+      expect(callArgs.lockPageSlug).toBe("/root-maintenance")
     })
 
     it("should prefer multidomainConfig lockPageSlug over root lockPageSlug", async () => {
@@ -339,7 +339,7 @@ describe("useAppwarden", () => {
         debug: false,
         lockPageSlug: "/root-maintenance",
         appwardenApiToken: "test-token",
-        middleware: { before: [] },
+        middleware: { before: [], after: [] },
         multidomainConfig: {
           "example.com": { lockPageSlug: "/domain-specific-maintenance" },
         },
@@ -351,9 +351,9 @@ describe("useAppwarden", () => {
       const middleware = useAppwarden(inputWithBoth)
       await middleware(mockContext, mockNext)
 
-      expect(maybeQuarantine).toHaveBeenCalled()
-      const contextArg = vi.mocked(maybeQuarantine).mock.calls[0][0]
-      expect(contextArg.lockPageSlug).toBe("/domain-specific-maintenance")
+      expect(checkLockStatus).toHaveBeenCalled()
+      const callArgs = vi.mocked(checkLockStatus).mock.calls[0][0]
+      expect(callArgs.lockPageSlug).toBe("/domain-specific-maintenance")
     })
 
     it("should fall back to root lockPageSlug for unconfigured domains when both are provided", async () => {
@@ -361,7 +361,7 @@ describe("useAppwarden", () => {
         debug: false,
         lockPageSlug: "/root-maintenance",
         appwardenApiToken: "test-token",
-        middleware: { before: [] },
+        middleware: { before: [], after: [] },
         multidomainConfig: {
           "example.com": { lockPageSlug: "/domain-specific-maintenance" },
         },
@@ -373,9 +373,9 @@ describe("useAppwarden", () => {
       const middleware = useAppwarden(inputWithBoth)
       await middleware(mockContext, mockNext)
 
-      expect(maybeQuarantine).toHaveBeenCalled()
-      const contextArg = vi.mocked(maybeQuarantine).mock.calls[0][0]
-      expect(contextArg.lockPageSlug).toBe("/root-maintenance")
+      expect(checkLockStatus).toHaveBeenCalled()
+      const callArgs = vi.mocked(checkLockStatus).mock.calls[0][0]
+      expect(callArgs.lockPageSlug).toBe("/root-maintenance")
     })
   })
 })
