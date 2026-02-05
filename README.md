@@ -13,7 +13,7 @@
 
 - **Instant Quarantine**: Immediately redirects all visitors to a maintenance page when activated
 - **Discord Integration**: Trigger lockdowns via Discord commands (`/quarantine lock your.app.io`)
-- **Nonce-based Content Security Policy**: On Cloudflare, deploy a nonce-based Content Security Policy to supercharge your website security
+- **Nonce-based Content Security Policy (Cloudflare only)**: Deploy a nonce-based Content Security Policy to supercharge your website security
 - **Minimal Runtime Overhead**: Negligible performance impact by using `event.waitUntil` for status checks
 
 ## Installation
@@ -22,57 +22,26 @@ Compatible with websites powered by [Cloudflare](https://developers.cloudflare.c
 
 For detailed usage instructions, please refer to our [documentation](https://appwarden.io/docs).
 
-### Cloudflare
+## Supported Frameworks
 
-We recommend using the [`@appwarden/build-cloudflare-action`](https://github.com/appwarden/build-cloudflare-action) Github Action to deploy automatically on Cloudflare.
+### On Cloudflare
 
-> Read the docs [to get started](https://appwarden.io/docs/guides/cloudflare-integration)
+Cloudflare has two deployment options: [pages.dev](https://pages.dev) and [Workers static assets](https://developers.cloudflare.com/workers/static-assets/). We support both.
 
-```typescript
-import {
-  createAppwardenMiddleware,
-  useContentSecurityPolicy,
-} from "@appwarden/middleware/cloudflare"
+#### On pages.dev
 
-export default {
-  fetch: createAppwardenMiddleware((context) => ({
-    debug: context.env.DEBUG,
-    lockPageSlug: context.env.LOCK_PAGE_SLUG,
-    appwardenApiToken: context.env.APPWARDEN_API_TOKEN,
-    middleware: {
-      before: [
-        useContentSecurityPolicy({
-          mode: "enforced",
-          directives: {
-            "script-src": ["self", "{{nonce}}"],
-            "style-src": ["self", "{{nonce}}"],
-          },
-        }),
-      ],
-    },
-  })),
-}
-```
+- [All websites on pages.dev](https://appwarden.io/docs/guides/cloudflare-integration)
 
-### Vercel
+#### On Workers static assets
 
-> Read the docs [to get started](https://appwarden.io/docs/guides/vercel-integration)
+- [Astro](https://appwarden.io/docs/guides/astro-cloudflare)
+- [React Router](https://appwarden.io/docs/guides/react-router-cloudflare)
+- [TanStack Start](https://appwarden.io/docs/guides/tanstack-start-cloudflare)
+- [Next.js](https://appwarden.io/docs/guides/nextjs-cloudflare)
 
-```typescript
-import { createAppwardenMiddleware } from "@appwarden/middleware/vercel"
+### On Vercel
 
-export default createAppwardenMiddleware({
-  cacheUrl: process.env.EDGE_CONFIG_URL || process.env.UPSTASH_URL,
-  appwardenApiToken: process.env.APPWARDEN_API_TOKEN,
-  vercelApiToken: process.env.VERCEL_API_TOKEN,
-  lockPageSlug: "/maintenance",
-})
-
-// Configures middleware to match all routes
-export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
-}
-```
+- [All websites on Vercel](https://appwarden.io/docs/guides/vercel-integration)
 
 ## Contributing
 
