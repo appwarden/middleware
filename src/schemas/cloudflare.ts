@@ -21,6 +21,11 @@ export const ConfigFnInputSchema = z
     ),
   )
 
-export type CloudflareConfigType = ReturnType<
-  z.infer<typeof ConfigFnInputSchema>
->
+// Define the return type explicitly since ZodEffects (from .refine())
+// loses type inference when used with ReturnType<z.infer<...>>
+export type CloudflareConfigType = z.infer<typeof UseAppwardenInputSchema> & {
+  middleware: {
+    before: Middleware[]
+    after: Middleware[]
+  }
+}

@@ -2,17 +2,13 @@ import { getRequestContext } from "@cloudflare/next-on-pages"
 import { Cache } from "@cloudflare/workers-types"
 import { NextResponse, type NextMiddleware } from "next/server"
 import { APPWARDEN_CACHE_KEY } from "../constants"
-import {
-  handleResetCache,
-  isResetCacheRequest,
-  maybeQuarantine,
-} from "../handlers"
+import { checkLockStatus } from "../core"
+import { handleResetCache, isResetCacheRequest } from "../handlers"
 import {
   LockValueType,
   NextJsConfigFnOutputSchema,
   NextJsConfigFnType,
 } from "../schemas"
-import { CloudflareProviderContext } from "../types"
 import { debug, isHTMLRequest, printMessage, renderLockPage } from "../utils"
 import { store } from "../utils/cloudflare"
 
@@ -74,27 +70,22 @@ export const appwardenOnPagesNextJs =
           return NextResponse.next()
         }
 
-        let appwardenResponse: Promise<Response> | undefined = undefined
-
-        const context: CloudflareProviderContext = {
-          keyName,
+        // Check lock status using the core function
+        const result = await checkLockStatus({
           request,
-          edgeCache,
-          requestUrl,
-          provider,
-          waitUntil: (fn: any) => event.waitUntil(fn),
-          ...input,
+          appwardenApiToken: input.appwardenApiToken,
+          appwardenApiHostname: input.appwardenApiHostname,
+          debug: input.debug,
           lockPageSlug,
-        }
-
-        await maybeQuarantine(context, {
-          onLocked: async () => {
-            appwardenResponse = renderLockPage(context)
-          },
+          waitUntil: (fn: Promise<unknown>) => event.waitUntil(fn),
         })
 
-        if (appwardenResponse) {
-          return appwardenResponse
+        // If locked, render the lock page
+        if (result.isLocked) {
+          return renderLockPage({
+            lockPageSlug,
+            requestUrl,
+          })
         }
       }
     } catch (e) {

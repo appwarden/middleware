@@ -1,11 +1,8 @@
 import { APPWARDEN_CACHE_KEY } from "../constants"
-import {
-  handleResetCache,
-  isResetCacheRequest,
-  maybeQuarantine,
-} from "../handlers"
+import { checkLockStatus } from "../core"
+import { handleResetCache, isResetCacheRequest } from "../handlers"
 import { CloudflareConfigType, LockValueType } from "../schemas"
-import { CloudflareProviderContext, Middleware } from "../types"
+import { Middleware } from "../types"
 import { isHTMLResponse, printMessage, renderLockPage } from "../utils"
 import { store } from "../utils/cloudflare"
 
@@ -47,24 +44,23 @@ export const useAppwarden: (input: CloudflareConfigType) => Middleware =
           return
         }
 
-        const innerContext: CloudflareProviderContext = {
-          keyName,
+        // Check lock status using the core function
+        const result = await checkLockStatus({
           request,
-          edgeCache,
-          requestUrl,
-          provider,
-          debug: input.debug,
-          lockPageSlug,
           appwardenApiToken: input.appwardenApiToken,
           appwardenApiHostname: input.appwardenApiHostname,
-          waitUntil: (fn: any) => context.waitUntil(fn),
-        }
-
-        await maybeQuarantine(innerContext, {
-          onLocked: async () => {
-            context.response = await renderLockPage(innerContext)
-          },
+          debug: input.debug,
+          lockPageSlug,
+          waitUntil: (fn) => context.waitUntil(fn),
         })
+
+        // If locked, render the lock page
+        if (result.isLocked) {
+          context.response = await renderLockPage({
+            lockPageSlug,
+            requestUrl,
+          })
+        }
       }
     } catch (e) {
       const message =
