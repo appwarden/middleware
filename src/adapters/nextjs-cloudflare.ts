@@ -86,13 +86,13 @@ export function createAppwardenMiddleware(
       const { getCloudflareContext } = await import("@opennextjs/cloudflare")
       const { env, ctx } = await getCloudflareContext()
 
-      const config = configFn({ env, ctx })
-
       // Skip non-HTML requests (e.g., API calls, static assets)
       if (!isHTMLRequest(request)) {
         return NextResponse.next()
       }
 
+      // Get config from the config function
+      const config = configFn({ env, ctx })
       // Validate config against schema
       const hasError = validateConfig(config, NextJsCloudflareConfigSchema)
       if (hasError) {
