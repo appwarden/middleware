@@ -106,14 +106,13 @@ export function createAppwardenMiddleware(
         return next()
       }
 
-      // Get config from the config function
-      const config = configFn(runtime)
-
       // Skip non-HTML requests (e.g., API calls, static assets)
       if (!isHTMLRequest(request)) {
         return next()
       }
 
+      // Get config from the config function
+      const config = configFn(runtime)
       // Validate config against schema
       const hasError = validateConfig(config, AstroCloudflareConfigSchema)
       if (hasError) {
