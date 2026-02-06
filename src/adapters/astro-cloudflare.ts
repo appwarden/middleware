@@ -15,25 +15,7 @@ import {
  * Cloudflare runtime context provided by Astro on Cloudflare Workers.
  * This is extracted from the locals object when using @astrojs/cloudflare adapter.
  *
-<<<<<<< HEAD
- * The `CloudflareEnv` interface is declared globally by this package and includes
- * the default Appwarden bindings (e.g., `APPWARDEN_API_TOKEN`, `LOCK_PAGE_SLUG`).
- * You do not need to define it yourself.
- *
- * If you need to add additional custom environment variables, use declaration merging:
- *
- * @example
- * ```typescript
- * // src/env.d.ts
- * declare global {
- *   interface CloudflareEnv {
- *     MY_CUSTOM_VAR: string
- *   }
- * }
- * ```
-=======
  * Note: Uses generic CloudflareEnv which should be defined in the user's project.
->>>>>>> 41c07ed (feat(astro): use official Astro types and add peer dependencies)
  */
 export type AstroCloudflareRuntime = Runtime<CloudflareEnv>["runtime"]
 
