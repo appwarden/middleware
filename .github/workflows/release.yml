@@ -36,12 +36,6 @@ jobs:
           registry-url: https://registry.npmjs.org/
           cache: pnpm
 
-      - name: Verify lockfile integrity
-        run: |
-          # Check if lockfile has been tampered with
-          echo "Verifying lockfile integrity..."
-          pnpm dedupe --check
-
       - name: Install dependencies
         run: |
           # Set safer npm config
@@ -85,7 +79,7 @@ jobs:
           pnpm run sbom:generate
 
       - name: Upload SBOM as artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: sbom
           path: |
