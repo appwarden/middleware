@@ -21,6 +21,8 @@ export const UseAppwardenInputSchema = z.object({
   appwardenApiHostname: z.string().optional(),
 })
 
+export type UseAppwardenInput = z.infer<typeof UseAppwardenInputSchema>
+
 // Refinement to ensure either lockPageSlug or multidomainConfig is provided
 export const lockPageSlugRefinement = <T extends z.ZodTypeAny>(schema: T) =>
   schema.refine(
