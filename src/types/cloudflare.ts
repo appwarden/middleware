@@ -1,14 +1,15 @@
 import type { getRequestContext } from "@cloudflare/next-on-pages"
 import type { NextFetchEvent } from "next/server"
+import { z } from "zod"
 import { APPWARDEN_CACHE_KEY } from "../constants"
-import { LockValueType, NextJsConfigFnType } from "../schemas"
+import { LockValueType, UseAppwardenInputSchema } from "../schemas"
 import { JSONStore } from "../utils/cloudflare"
 import { ContentSecurityPolicyType } from "./csp"
 
 export type RequestContext = ReturnType<typeof getRequestContext>
 
 export type CloudflareProviderContext = Omit<
-  ReturnType<NextJsConfigFnType>,
+  z.infer<typeof UseAppwardenInputSchema>,
   "lockPageSlug"
 > & {
   request: Request
