@@ -1,9 +1,8 @@
 import type { NextFetchEvent } from "next/server"
-import { z } from "zod"
 import { APPWARDEN_CACHE_KEY } from "../constants"
-import { LockValueType, UseAppwardenInputSchema } from "../schemas"
-import { JSONStore } from "../utils/cloudflare"
-import { ContentSecurityPolicyType } from "./csp"
+import type { LockValueType, UseAppwardenInput } from "../schemas"
+import type { JSONStore } from "../utils/cloudflare"
+import type { ContentSecurityPolicyType } from "./csp"
 
 export type Bindings = {
   DEBUG: string | boolean
@@ -29,7 +28,7 @@ export type RequestContext = {
 }
 
 export type CloudflareProviderContext = Omit<
-  z.infer<typeof UseAppwardenInputSchema>,
+  UseAppwardenInput,
   "lockPageSlug"
 > & {
   request: Request
