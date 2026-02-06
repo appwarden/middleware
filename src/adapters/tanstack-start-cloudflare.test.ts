@@ -257,7 +257,7 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
     const result = await middleware(mockArgs)
 
     expect(consoleErrorSpy).toHaveBeenCalledWith(
-      expect.stringContaining("Error in Appwarden middleware"),
+      expect.stringContaining("Unhandled error:"),
     )
     expect(mockNext).toHaveBeenCalled()
     expect(result).toEqual({ status: 200 })

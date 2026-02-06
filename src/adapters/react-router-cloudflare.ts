@@ -136,7 +136,7 @@ export function createAppwardenMiddleware(
       // Log other errors but don't block the request
       console.error(
         printMessage(
-          `Error in Appwarden middleware: ${error instanceof Error ? error.message : String(error)}`,
+          `Unhandled error: ${error instanceof Error ? error.message : String(error)}`,
         ),
       )
       return next()
