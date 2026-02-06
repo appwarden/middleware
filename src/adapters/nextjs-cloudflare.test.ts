@@ -236,7 +236,7 @@ describe("createAppwardenMiddleware (OpenNext Cloudflare)", () => {
     const result = await middleware(mockRequest as any)
 
     expect(consoleErrorSpy).toHaveBeenCalledWith(
-      expect.stringContaining("Error in Appwarden middleware"),
+      expect.stringContaining("Unhandled error:"),
     )
     expect(result.type).toBe("next")
   })
@@ -287,7 +287,7 @@ describe("createAppwardenMiddleware (OpenNext Cloudflare)", () => {
     const result = await middleware(mockRequest as any)
 
     expect(consoleErrorSpy).toHaveBeenCalledWith(
-      expect.stringContaining("Error in Appwarden middleware"),
+      expect.stringContaining("Unhandled error:"),
     )
     expect(result.type).toBe("next")
   })

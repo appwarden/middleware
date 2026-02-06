@@ -259,7 +259,7 @@ describe("createAppwardenMiddleware (Astro)", () => {
     const result = await middleware(mockContext, mockNext)
 
     expect(consoleErrorSpy).toHaveBeenCalledWith(
-      expect.stringContaining("Error in Appwarden middleware"),
+      expect.stringContaining("Unhandled error:"),
     )
     expect(mockNext).toHaveBeenCalled()
     expect(result.status).toBe(200)
