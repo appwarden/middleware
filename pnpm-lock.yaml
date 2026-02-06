@@ -22,10 +22,10 @@ importers:
     dependencies:
       '@cloudflare/next-on-pages':
         specifier: ^1.13.16
-        version: 1.13.16(@cloudflare/workers-types@4.20250607.0)(next@16.1.5(@babel/core@7.28.6)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(wrangler@4.61.0(@cloudflare/workers-types@4.20250607.0))
+        version: 1.13.16(@cloudflare/workers-types@4.20260206.0)(next@16.1.5(@babel/core@7.28.6)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(wrangler@4.61.0(@cloudflare/workers-types@4.20260206.0))
       '@opennextjs/cloudflare':
         specifier: '>=1.0.0'
-        version: 1.16.2(encoding@0.1.13)(next@16.1.5(@babel/core@7.28.6)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(wrangler@4.61.0(@cloudflare/workers-types@4.20250607.0))
+        version: 1.16.2(encoding@0.1.13)(next@16.1.5(@babel/core@7.28.6)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(wrangler@4.61.0(@cloudflare/workers-types@4.20260206.0))
       '@upstash/redis':
         specifier: ^1.36.2
         version: 1.36.2
@@ -44,10 +44,10 @@ importers:
         version: 3.17.0(semantic-release@25.0.2(typescript@5.9.3))
       '@cloudflare/vitest-pool-workers':
         specifier: ^0.12.10
-        version: 0.12.10(@cloudflare/workers-types@4.20250607.0)(@vitest/runner@4.0.18)(@vitest/snapshot@4.0.18)(vitest@3.2.4(@edge-runtime/vm@3.2.0)(@types/debug@4.1.12)(@types/node@18.19.130)(jiti@2.6.1)(terser@5.16.9)(yaml@2.8.2))
+        version: 0.12.10(@cloudflare/workers-types@4.20260206.0)(@vitest/runner@4.0.18)(@vitest/snapshot@4.0.18)(vitest@3.2.4(@edge-runtime/vm@3.2.0)(@types/debug@4.1.12)(@types/node@18.19.130)(jiti@2.6.1)(terser@5.16.9)(yaml@2.8.2))
       '@cloudflare/workers-types':
-        specifier: 4.20250607.0
-        version: 4.20250607.0
+        specifier: 4.20260206.0
+        version: 4.20260206.0
       '@commitlint/cli':
         specifier: ^20.4.1
         version: 20.4.1(@types/node@18.19.130)(typescript@5.9.3)
@@ -110,7 +110,7 @@ importers:
         version: 3.2.4(@edge-runtime/vm@3.2.0)(@types/debug@4.1.12)(@types/node@18.19.130)(jiti@2.6.1)(terser@5.16.9)(yaml@2.8.2)
       wrangler:
         specifier: ^4.61.0
-        version: 4.61.0(@cloudflare/workers-types@4.20250607.0)
+        version: 4.61.0(@cloudflare/workers-types@4.20260206.0)
 
 packages:
 
@@ -752,8 +752,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@cloudflare/workers-types@4.20250607.0':
-    resolution: {integrity: sha512-OYmKNzC2eQy6CNj+j0go8Ut3SezjsprCgJyEaBzJql+473WAN9ndVnNZy9lj/tTyLV6wzpQkZWmRAKGDmacvkg==}
+  '@cloudflare/workers-types@4.20260206.0':
+    resolution: {integrity: sha512-rHbE1XM3mfwzoyOiKm1oFRTp00Cv4U5UiuMDQwmu/pc79yOA3nDiOC0lue8aOpobBrP4tPHQqsPcWG606Zrw/w==}
 
   '@colors/colors@1.5.0':
     resolution: {integrity: sha512-ooWCrlZP11i8GImSjTHYHLkvFDP48nS4+204nGb1RiX/WXYHmJA2III9/e2DWVabCESdW7hBAEzHRqUn9OUVvQ==}
@@ -7238,7 +7238,7 @@ snapshots:
 
   '@cloudflare/kv-asset-handler@0.4.2': {}
 
-  '@cloudflare/next-on-pages@1.13.16(@cloudflare/workers-types@4.20250607.0)(next@16.1.5(@babel/core@7.28.6)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(wrangler@4.61.0(@cloudflare/workers-types@4.20250607.0))':
+  '@cloudflare/next-on-pages@1.13.16(@cloudflare/workers-types@4.20260206.0)(next@16.1.5(@babel/core@7.28.6)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(wrangler@4.61.0(@cloudflare/workers-types@4.20260206.0))':
     dependencies:
       acorn: 8.15.0
       ast-types: 0.14.2
@@ -7253,9 +7253,9 @@ snapshots:
       package-manager-manager: 0.2.0
       pcre-to-regexp: 1.1.0
       semver: 7.7.3
-      wrangler: 4.61.0(@cloudflare/workers-types@4.20250607.0)
+      wrangler: 4.61.0(@cloudflare/workers-types@4.20260206.0)
     optionalDependencies:
-      '@cloudflare/workers-types': 4.20250607.0
+      '@cloudflare/workers-types': 4.20260206.0
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -7272,7 +7272,7 @@ snapshots:
     optionalDependencies:
       workerd: 1.20260205.0
 
-  '@cloudflare/vitest-pool-workers@0.12.10(@cloudflare/workers-types@4.20250607.0)(@vitest/runner@4.0.18)(@vitest/snapshot@4.0.18)(vitest@3.2.4(@edge-runtime/vm@3.2.0)(@types/debug@4.1.12)(@types/node@18.19.130)(jiti@2.6.1)(terser@5.16.9)(yaml@2.8.2))':
+  '@cloudflare/vitest-pool-workers@0.12.10(@cloudflare/workers-types@4.20260206.0)(@vitest/runner@4.0.18)(@vitest/snapshot@4.0.18)(vitest@3.2.4(@edge-runtime/vm@3.2.0)(@types/debug@4.1.12)(@types/node@18.19.130)(jiti@2.6.1)(terser@5.16.9)(yaml@2.8.2))':
     dependencies:
       '@vitest/runner': 4.0.18
       '@vitest/snapshot': 4.0.18
@@ -7280,7 +7280,7 @@ snapshots:
       esbuild: 0.27.0
       miniflare: 4.20260205.0
       vitest: 3.2.4(@edge-runtime/vm@3.2.0)(@types/debug@4.1.12)(@types/node@18.19.130)(jiti@2.6.1)(terser@5.16.9)(yaml@2.8.2)
-      wrangler: 4.63.0(@cloudflare/workers-types@4.20250607.0)
+      wrangler: 4.63.0(@cloudflare/workers-types@4.20260206.0)
     transitivePeerDependencies:
       - '@cloudflare/workers-types'
       - bufferutil
@@ -7331,7 +7331,7 @@ snapshots:
   '@cloudflare/workerd-windows-64@1.20260205.0':
     optional: true
 
-  '@cloudflare/workers-types@4.20250607.0': {}
+  '@cloudflare/workers-types@4.20260206.0': {}
 
   '@colors/colors@1.5.0':
     optional: true
@@ -8318,7 +8318,7 @@ snapshots:
       - aws-crt
       - supports-color
 
-  '@opennextjs/cloudflare@1.16.2(encoding@0.1.13)(next@16.1.5(@babel/core@7.28.6)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(wrangler@4.61.0(@cloudflare/workers-types@4.20250607.0))':
+  '@opennextjs/cloudflare@1.16.2(encoding@0.1.13)(next@16.1.5(@babel/core@7.28.6)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(wrangler@4.61.0(@cloudflare/workers-types@4.20260206.0))':
     dependencies:
       '@ast-grep/napi': 0.40.0
       '@dotenvx/dotenvx': 1.31.0
@@ -8328,7 +8328,7 @@ snapshots:
       glob: 12.0.0
       next: 16.1.5(@babel/core@7.28.6)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       ts-tqdm: 0.8.6
-      wrangler: 4.61.0(@cloudflare/workers-types@4.20250607.0)
+      wrangler: 4.61.0(@cloudflare/workers-types@4.20260206.0)
       yargs: 18.0.0
     transitivePeerDependencies:
       - aws-crt
@@ -12520,7 +12520,7 @@ snapshots:
       '@cloudflare/workerd-linux-arm64': 1.20260205.0
       '@cloudflare/workerd-windows-64': 1.20260205.0
 
-  wrangler@4.61.0(@cloudflare/workers-types@4.20250607.0):
+  wrangler@4.61.0(@cloudflare/workers-types@4.20260206.0):
     dependencies:
       '@cloudflare/kv-asset-handler': 0.4.2
       '@cloudflare/unenv-preset': 2.11.0(unenv@2.0.0-rc.24)(workerd@1.20260124.0)
@@ -12531,13 +12531,13 @@ snapshots:
       unenv: 2.0.0-rc.24
       workerd: 1.20260124.0
     optionalDependencies:
-      '@cloudflare/workers-types': 4.20250607.0
+      '@cloudflare/workers-types': 4.20260206.0
       fsevents: 2.3.3
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
 
-  wrangler@4.63.0(@cloudflare/workers-types@4.20250607.0):
+  wrangler@4.63.0(@cloudflare/workers-types@4.20260206.0):
     dependencies:
       '@cloudflare/kv-asset-handler': 0.4.2
       '@cloudflare/unenv-preset': 2.12.0(unenv@2.0.0-rc.24)(workerd@1.20260205.0)
@@ -12548,7 +12548,7 @@ snapshots:
       unenv: 2.0.0-rc.24
       workerd: 1.20260205.0
     optionalDependencies:
-      '@cloudflare/workers-types': 4.20250607.0
+      '@cloudflare/workers-types': 4.20260206.0
       fsevents: 2.3.3
     transitivePeerDependencies:
       - bufferutil
