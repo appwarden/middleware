@@ -74,7 +74,6 @@
     "commitlint": "commitlint --edit"
   },
   "dependencies": {
-    "@cloudflare/next-on-pages": "^1.13.16",
     "@upstash/redis": "^1.36.2",
     "@vercel/edge-config": "^1.4.3",
     "zod": "^3.25.76"
