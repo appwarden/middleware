@@ -3,6 +3,26 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [1.6.0](https://github.com/appwarden/middleware/compare/@appwarden/middleware@1.5.1...@appwarden/middleware@1.6.0) (2026-02-06)
+
+
+### Bug Fixes
+
+* correct getLockValue mock return type in test ([782a41a](https://github.com/appwarden/middleware/commit/782a41a091235aaaf0941fbd927fa4449b96775a))
+* replace maybeQuarantine with direct checkLockStatus calls ([eef13e5](https://github.com/appwarden/middleware/commit/eef13e5d9cf8cfc5eef50c39e2207fc5a641311e))
+* use NextResponse.next() for proper middleware pass-through ([a5b11eb](https://github.com/appwarden/middleware/commit/a5b11eb708b35ef8a595171d8ca325593d1b69e7))
+
+
+### Features
+
+* add after middleware support to Cloudflare config ([933f957](https://github.com/appwarden/middleware/commit/933f95779f3f7227d4e19c39df6119c82724bf43))
+* add Cloudflare adapter configuration schemas ([c8387b2](https://github.com/appwarden/middleware/commit/c8387b25d7ab06acd28b5232a276a448e33122e7))
+* add Cloudflare framework adapters ([5389943](https://github.com/appwarden/middleware/commit/53899439bb642d135bf44d5c79cfec29281970b5))
+* add core checkLockStatus function ([38ba968](https://github.com/appwarden/middleware/commit/38ba9682ccd3651e66d2d5e273f744aa24161383))
+* add framework-specific Cloudflare bundles ([428d302](https://github.com/appwarden/middleware/commit/428d302eb47b47f0b1b0613969624f5616063893))
+* add new Cloudflare entry points to build config ([5691bfd](https://github.com/appwarden/middleware/commit/5691bfdaf46fb4ac53528ab98cba64c1f98fb7a7))
+* add test coverage for all bundle exports ([fc293db](https://github.com/appwarden/middleware/commit/fc293dbea5846f46337be3f4d76d91880ce89ff1))
+
 ## [1.5.1](https://github.com/appwarden/middleware/compare/@appwarden/middleware@1.5.0...@appwarden/middleware@1.5.1) (2026-01-30)
 
 
