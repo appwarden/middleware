@@ -3,6 +3,24 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [2.0.0](https://github.com/appwarden/middleware/compare/@appwarden/middleware@1.6.0...@appwarden/middleware@2.0.0) (2026-02-06)
+
+
+* feat!: remove Next.js Pages Router bundle ([9091025](https://github.com/appwarden/middleware/commit/909102597197eab2e30b8a889bb840a184ce483a))
+
+
+### BREAKING CHANGES
+
+* Remove the deprecated Next.js Pages Router bundle that was
+designed for @cloudflare/next-on-pages. This removes:
+
+- The withAppwardenOnNextJs export
+- The appwardenOnPagesNextJs runner function
+- The NextJsConfigFnOutputSchema and NextJsConfigFnType schemas
+
+Users should migrate to the modern Next.js Cloudflare bundle:
+import { createAppwardenMiddleware } from '@appwarden/middleware/cloudflare/nextjs'
+
 # [1.6.0](https://github.com/appwarden/middleware/compare/@appwarden/middleware@1.5.1...@appwarden/middleware@1.6.0) (2026-02-06)
 
 
