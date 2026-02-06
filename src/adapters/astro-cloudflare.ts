@@ -1,3 +1,5 @@
+import type { Runtime } from "@astrojs/cloudflare"
+import type { APIContext, MiddlewareHandler } from "astro"
 import { checkLockStatus } from "../core"
 import { AstroCloudflareConfigSchema } from "../schemas/astro-cloudflare"
 import {
@@ -11,11 +13,19 @@ import {
 
 /**
  * Cloudflare runtime context provided by Astro on Cloudflare Workers.
- * This is the shape of `context.locals.runtime` when using @astrojs/cloudflare adapter.
+ * This is extracted from the locals object when using @astrojs/cloudflare adapter.
+ *
+ * Note: Uses generic CloudflareEnv which should be defined in the user's project.
  */
-export interface AstroCloudflareRuntime {
-  env: CloudflareEnv
-  ctx: ExecutionContext
+export type AstroCloudflareRuntime = Runtime<CloudflareEnv>["runtime"]
+
+/**
+ * Locals interface with Cloudflare runtime.
+ * This is the expected shape of context.locals when using @astrojs/cloudflare.
+ */
+interface LocalsWithRuntime {
+  runtime?: AstroCloudflareRuntime
+  [key: string]: unknown
 }
 
 /**
@@ -42,28 +52,19 @@ export type AstroConfigFn = (
 
 /**
  * Astro middleware context type.
- * This matches Astro's APIContext shape for middleware.
+ * Re-exported from Astro's official APIContext type for type compatibility.
+ *
+ * @deprecated Use `APIContext` from 'astro' directly. This alias is kept for backward compatibility.
  */
-export interface AstroMiddlewareContext {
-  /** The incoming request */
-  request: Request
-  /** Object for storing request-specific data */
-  locals: {
-    runtime?: AstroCloudflareRuntime
-    [key: string]: unknown
-  }
-  /** Helper to create redirect responses */
-  redirect: (path: string, status?: number) => Response
-}
+export type AstroMiddlewareContext = APIContext
 
 /**
  * Astro middleware function signature.
- * This matches the onRequest export type in Astro's middleware system.
+ * This is an alias for Astro's official MiddlewareHandler type for type compatibility.
+ *
+ * @deprecated Use `MiddlewareHandler` from 'astro' directly. This alias is kept for backward compatibility.
  */
-export type AstroMiddlewareFunction = (
-  context: AstroMiddlewareContext,
-  next: () => Promise<Response>,
-) => Promise<Response>
+export type AstroMiddlewareFunction = MiddlewareHandler
 
 /**
  * Creates an Appwarden middleware function for Astro.
@@ -90,9 +91,11 @@ export type AstroMiddlewareFunction = (
  */
 export function createAppwardenMiddleware(
   configFn: AstroConfigFn,
-): AstroMiddlewareFunction {
+): MiddlewareHandler {
   return async (context, next) => {
-    const { request, locals } = context
+    const { request } = context
+    // Cast locals to include runtime property added by @astrojs/cloudflare
+    const locals = context.locals as LocalsWithRuntime
 
     try {
       // Get Cloudflare runtime from Astro locals

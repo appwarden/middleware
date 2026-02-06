@@ -1,10 +1,39 @@
+import type { APIContext } from "astro"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { checkLockStatus } from "../core"
 import {
   AstroCloudflareRuntime,
-  AstroMiddlewareContext,
   createAppwardenMiddleware,
 } from "./astro-cloudflare"
+
+/**
+ * Mock Astro middleware context interface for testing.
+ * This is a simplified version that matches what the middleware actually uses.
+ */
+interface MockAstroContext {
+  request: Request
+  locals: {
+    runtime?: AstroCloudflareRuntime
+    [key: string]: unknown
+  }
+  redirect: (path: string, status?: number) => Response
+}
+
+/**
+ * Helper to cast mock context to APIContext for testing.
+ * The middleware only uses a subset of APIContext properties.
+ */
+const asAPIContext = (ctx: MockAstroContext): APIContext =>
+  ctx as unknown as APIContext
+
+/**
+ * Helper to assert result is a Response and return it.
+ * Our middleware implementation always returns a Response, never void.
+ */
+const asResponse = (result: Response | void): Response => {
+  expect(result).toBeInstanceOf(Response)
+  return result as Response
+}
 
 // Mock dependencies
 vi.mock("../core", () => ({
@@ -43,7 +72,7 @@ afterEach(() => {
 
 describe("createAppwardenMiddleware (Astro)", () => {
   let mockRuntime: AstroCloudflareRuntime
-  let mockContext: AstroMiddlewareContext
+  let mockContext: MockAstroContext
   let mockNext: () => Promise<Response>
 
   beforeEach(() => {
@@ -53,12 +82,14 @@ describe("createAppwardenMiddleware (Astro)", () => {
       env: {
         APPWARDEN_API_TOKEN: "test-token",
         LOCK_PAGE_SLUG: "/maintenance",
-      } as unknown as CloudflareEnv,
+      },
+      cf: undefined,
+      caches: {} as unknown as CacheStorage,
       ctx: {
         waitUntil: vi.fn(),
         passThroughOnException: vi.fn(),
       } as unknown as ExecutionContext,
-    }
+    } as unknown as AstroCloudflareRuntime
 
     mockContext = {
       // Default request accepts HTML
@@ -95,7 +126,9 @@ describe("createAppwardenMiddleware (Astro)", () => {
       appwardenApiToken: "test-token",
     }))
 
-    const result = await middleware(mockContext, mockNext)
+    const result = asResponse(
+      await middleware(asAPIContext(mockContext), mockNext),
+    )
 
     expect(mockNext).toHaveBeenCalled()
     expect(result.status).toBe(200)
@@ -110,7 +143,9 @@ describe("createAppwardenMiddleware (Astro)", () => {
       appwardenApiToken: "test-token",
     }))
 
-    const result = await middleware(mockContext, mockNext)
+    const result = asResponse(
+      await middleware(asAPIContext(mockContext), mockNext),
+    )
 
     expect(validateConfig).toHaveBeenCalled()
     expect(checkLockStatus).not.toHaveBeenCalled()
@@ -129,7 +164,9 @@ describe("createAppwardenMiddleware (Astro)", () => {
       appwardenApiToken: "test-token",
     }))
 
-    const result = await middleware(mockContext, mockNext)
+    const result = asResponse(
+      await middleware(asAPIContext(mockContext), mockNext),
+    )
 
     expect(mockContext.redirect).toHaveBeenCalledWith(
       "https://example.com/maintenance",
@@ -152,7 +189,9 @@ describe("createAppwardenMiddleware (Astro)", () => {
       appwardenApiToken: "test-token",
     }))
 
-    const result = await middleware(mockContext, mockNext)
+    const result = asResponse(
+      await middleware(asAPIContext(mockContext), mockNext),
+    )
 
     expect(mockContext.redirect).toHaveBeenCalledWith(
       "https://example.com/maintenance",
@@ -174,7 +213,7 @@ describe("createAppwardenMiddleware (Astro)", () => {
       appwardenApiToken: "test-token",
     }))
 
-    await middleware(mockContext, mockNext)
+    await middleware(asAPIContext(mockContext), mockNext)
 
     expect(checkLockStatus).not.toHaveBeenCalled()
     expect(mockNext).toHaveBeenCalled()
@@ -188,7 +227,7 @@ describe("createAppwardenMiddleware (Astro)", () => {
       appwardenApiToken: "test-token",
     }))
 
-    await middleware(mockContext, mockNext)
+    await middleware(asAPIContext(mockContext), mockNext)
 
     expect(consoleErrorSpy).toHaveBeenCalledWith(
       expect.stringContaining("Cloudflare runtime not found"),
@@ -204,7 +243,7 @@ describe("createAppwardenMiddleware (Astro)", () => {
       debug: true,
     }))
 
-    await middleware(mockContext, mockNext)
+    await middleware(asAPIContext(mockContext), mockNext)
 
     expect(checkLockStatus).toHaveBeenCalledWith({
       request: mockContext.request,
@@ -222,7 +261,7 @@ describe("createAppwardenMiddleware (Astro)", () => {
       appwardenApiToken: "test-token",
     }))
 
-    await middleware(mockContext, mockNext)
+    await middleware(asAPIContext(mockContext), mockNext)
 
     // Get the waitUntil function that was passed to checkLockStatus
     const checkLockStatusCall = vi.mocked(checkLockStatus).mock.calls[0][0]
@@ -243,7 +282,7 @@ describe("createAppwardenMiddleware (Astro)", () => {
     })
 
     const middleware = createAppwardenMiddleware(configFn)
-    await middleware(mockContext, mockNext)
+    await middleware(asAPIContext(mockContext), mockNext)
 
     expect(configFn).toHaveBeenCalledWith(mockRuntime)
   })
@@ -256,7 +295,9 @@ describe("createAppwardenMiddleware (Astro)", () => {
       appwardenApiToken: "test-token",
     }))
 
-    const result = await middleware(mockContext, mockNext)
+    const result = asResponse(
+      await middleware(asAPIContext(mockContext), mockNext),
+    )
 
     expect(consoleErrorSpy).toHaveBeenCalledWith(
       expect.stringContaining("Unhandled error:"),
@@ -276,7 +317,9 @@ describe("createAppwardenMiddleware (Astro)", () => {
       appwardenApiToken: "test-token",
     }))
 
-    const result = await middleware(mockContext, mockNext)
+    const result = asResponse(
+      await middleware(asAPIContext(mockContext), mockNext),
+    )
 
     expect(result.status).toBe(302)
   })
@@ -293,7 +336,7 @@ describe("createAppwardenMiddleware (Astro)", () => {
       appwardenApiToken: "test-token",
     }))
 
-    await expect(middleware(mockContext, mockNext)).rejects.toBe(
+    await expect(middleware(asAPIContext(mockContext), mockNext)).rejects.toBe(
       redirectResponse,
     )
   })
@@ -315,7 +358,9 @@ describe("createAppwardenMiddleware (Astro)", () => {
       appwardenApiToken: "test-token",
     }))
 
-    const result = await middleware(mockContext, mockNext)
+    const result = asResponse(
+      await middleware(asAPIContext(mockContext), mockNext),
+    )
 
     expect(result.status).toBe(302)
     expect(result.headers.get("Location")).toBe(
@@ -334,7 +379,9 @@ describe("createAppwardenMiddleware (Astro)", () => {
       appwardenApiToken: "test-token",
     }))
 
-    const result = await middleware(mockContext, mockNext)
+    const result = asResponse(
+      await middleware(asAPIContext(mockContext), mockNext),
+    )
 
     expect(result.status).toBe(302)
     expect(result.headers.get("Location")).toBe(

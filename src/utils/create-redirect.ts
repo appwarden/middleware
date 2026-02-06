@@ -1,8 +1,10 @@
 /**
  * HTTP 302 Found - Temporary redirect status code.
  * Used to redirect users to the lock page when the site is locked.
+ * Using `as const` to preserve the literal type for compatibility with
+ * frameworks like Astro that expect specific redirect status codes.
  */
-export const TEMPORARY_REDIRECT_STATUS = 302
+export const TEMPORARY_REDIRECT_STATUS = 302 as const
 
 /**
  * Creates a redirect response with the specified URL.

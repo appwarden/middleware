@@ -51,14 +51,15 @@ describe("astro-cloudflare bundle", () => {
 
     it("should export AstroCloudflareRuntime type", () => {
       // Type check - this will fail at compile time if the type is not exported
-      const runtime: AstroCloudflareRuntime = {
+      // Use type assertion since we're only verifying the type is exported, not creating a full runtime
+      const runtime = {
         env: {} as CloudflareEnv,
         ctx: {
           waitUntil: () => {},
           passThroughOnException: () => {},
           props: {},
         } as ExecutionContext,
-      }
+      } as unknown as AstroCloudflareRuntime
       expect(runtime.env).toBeDefined()
     })
 
@@ -73,7 +74,8 @@ describe("astro-cloudflare bundle", () => {
 
     it("should export AstroMiddlewareContext type", () => {
       // Type check - this will fail at compile time if the type is not exported
-      const context: AstroMiddlewareContext = {
+      // Use type assertion since we're only verifying the type is exported, not creating a full context
+      const context = {
         request: new Request("https://example.com"),
         locals: {
           runtime: {
@@ -86,7 +88,7 @@ describe("astro-cloudflare bundle", () => {
           },
         },
         redirect: (_path: string, _status?: number) => new Response(),
-      }
+      } as unknown as AstroMiddlewareContext
       expect(context.request).toBeDefined()
     })
 
