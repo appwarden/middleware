@@ -8,6 +8,10 @@ updates:
     # Limit to security updates only
     open-pull-requests-limit: 10
     versioning-strategy: increase
+    ignore:
+      # Ignore major version updates for zod - requires manual migration
+      - dependency-name: "zod"
+        update-types: ["version-update:semver-major"]
     groups:
       dev-dependencies:
         patterns:
