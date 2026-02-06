@@ -7,6 +7,7 @@ import {
   debug,
   isCacheUrl,
   isHTMLRequest,
+  isOnLockPage,
   MemoryCache,
   printMessage,
   validateConfig,
@@ -56,6 +57,11 @@ export function createAppwardenMiddleware(
 
       // Pass through if no lock page is configured
       if (!parsedConfig.lockPageSlug) {
+        return NextResponse.next()
+      }
+
+      // Skip if already on lock page to prevent infinite redirect loop
+      if (isOnLockPage(parsedConfig.lockPageSlug, request.url)) {
         return NextResponse.next()
       }
 

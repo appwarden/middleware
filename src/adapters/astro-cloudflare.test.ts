@@ -57,6 +57,11 @@ vi.mock("../utils", () => ({
     url.pathname = slug.startsWith("/") ? slug : `/${slug}`
     return url
   }),
+  isOnLockPage: vi.fn((slug: string, requestUrl: string) => {
+    const normalizedSlug = slug.startsWith("/") ? slug : `/${slug}`
+    const url = new URL(requestUrl)
+    return url.pathname === normalizedSlug
+  }),
   validateConfig: vi.fn(() => false), // No validation errors by default
   TEMPORARY_REDIRECT_STATUS: 302,
 }))
@@ -387,5 +392,58 @@ describe("createAppwardenMiddleware (Astro)", () => {
     expect(result.headers.get("Location")).toBe(
       "https://example.com/maintenance",
     )
+  })
+
+  it("should not redirect when already on lock page to prevent infinite redirect loop", async () => {
+    vi.mocked(checkLockStatus).mockResolvedValue({
+      isLocked: true,
+      isTestLock: false,
+    })
+
+    // Request is already on the lock page
+    mockContext.request = new Request("https://example.com/maintenance", {
+      headers: { Accept: "text/html,application/xhtml+xml" },
+    })
+
+    const middleware = createAppwardenMiddleware(() => ({
+      lockPageSlug: "/maintenance",
+      appwardenApiToken: "test-token",
+    }))
+
+    const result = asResponse(
+      await middleware(asAPIContext(mockContext), mockNext),
+    )
+
+    // Should call next() and NOT redirect
+    expect(mockNext).toHaveBeenCalled()
+    expect(checkLockStatus).not.toHaveBeenCalled()
+    expect(mockContext.redirect).not.toHaveBeenCalled()
+    expect(result.status).toBe(200)
+  })
+
+  it("should not redirect when already on lock page (slug without leading slash)", async () => {
+    vi.mocked(checkLockStatus).mockResolvedValue({
+      isLocked: true,
+      isTestLock: false,
+    })
+
+    // Request is already on the lock page
+    mockContext.request = new Request("https://example.com/maintenance", {
+      headers: { Accept: "text/html,application/xhtml+xml" },
+    })
+
+    const middleware = createAppwardenMiddleware(() => ({
+      lockPageSlug: "maintenance", // No leading slash
+      appwardenApiToken: "test-token",
+    }))
+
+    const result = asResponse(
+      await middleware(asAPIContext(mockContext), mockNext),
+    )
+
+    // Should call next() and NOT redirect
+    expect(mockNext).toHaveBeenCalled()
+    expect(checkLockStatus).not.toHaveBeenCalled()
+    expect(result.status).toBe(200)
   })
 })

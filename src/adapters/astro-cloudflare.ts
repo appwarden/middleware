@@ -6,6 +6,7 @@ import {
   buildLockPageUrl,
   createRedirect,
   isHTMLRequest,
+  isOnLockPage,
   printMessage,
   TEMPORARY_REDIRECT_STATUS,
   validateConfig,
@@ -119,6 +120,11 @@ export function createAppwardenMiddleware(
       // Validate config against schema
       const hasError = validateConfig(config, AstroCloudflareConfigSchema)
       if (hasError) {
+        return next()
+      }
+
+      // Skip if already on lock page to prevent infinite redirect loop
+      if (isOnLockPage(config.lockPageSlug, request.url)) {
         return next()
       }
 

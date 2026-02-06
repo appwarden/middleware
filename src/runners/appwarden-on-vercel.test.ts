@@ -9,12 +9,14 @@ const {
   mockWaitUntil,
   mockNextResponseNext,
   mockValidateConfig,
+  mockIsOnLockPage,
 } = vi.hoisted(() => ({
   mockMemoryCacheGet: vi.fn(),
   mockIsExpired: vi.fn(),
   mockWaitUntil: vi.fn(),
   mockNextResponseNext: vi.fn(),
   mockValidateConfig: vi.fn(),
+  mockIsOnLockPage: vi.fn(),
 }))
 
 // Mock @vercel/functions
@@ -60,6 +62,7 @@ vi.mock("../utils", () => {
       (request: Request) =>
         request.headers.get("accept")?.includes("text/html") ?? false,
     ),
+    isOnLockPage: mockIsOnLockPage,
     validateConfig: mockValidateConfig,
   }
 })
@@ -124,6 +127,13 @@ describe("createAppwardenMiddleware", () => {
 
     // Mock validateConfig to return false (valid config) by default
     mockValidateConfig.mockReturnValue(false)
+
+    // Mock isOnLockPage to return false by default (not on lock page)
+    mockIsOnLockPage.mockImplementation((slug: string, requestUrl: string) => {
+      const normalizedSlug = slug.startsWith("/") ? slug : `/${slug}`
+      const url = new URL(requestUrl)
+      return url.pathname === normalizedSlug
+    })
 
     // Mock AppwardenConfigSchema.parse to return the config by default
     vi.mocked(AppwardenConfigSchema.parse).mockReturnValue(mockConfig)
@@ -512,6 +522,59 @@ describe("createAppwardenMiddleware", () => {
       expect(result.headers.get("Location")).toBe(
         "https://example.com/custom-lock",
       )
+    })
+  })
+
+  describe("redirect loop prevention", () => {
+    it("should not redirect when already on lock page to prevent infinite redirect loop", async () => {
+      vi.mocked(getLockValue).mockResolvedValue({
+        lockValue: {
+          isLocked: 1,
+          isLockedTest: 0,
+          lastCheck: Date.now(),
+          code: "",
+        },
+        shouldDeleteEdgeValue: false,
+      })
+
+      // Request is already on the lock page
+      const middleware = createAppwardenMiddleware(mockConfig)
+      const request = new Request("https://example.com/maintenance", {
+        headers: { accept: "text/html" },
+      })
+      const result = await middleware(request)
+
+      // Should return NextResponse.next() and NOT redirect
+      expect(getLockValue).not.toHaveBeenCalled()
+      expect(result.status).toBe(200)
+      expect(mockNextResponseNext).toHaveBeenCalled()
+    })
+
+    it("should not redirect when already on lock page (slug without leading slash)", async () => {
+      const configWithoutSlash = { ...mockConfig, lockPageSlug: "maintenance" }
+      vi.mocked(AppwardenConfigSchema.parse).mockReturnValue(configWithoutSlash)
+
+      vi.mocked(getLockValue).mockResolvedValue({
+        lockValue: {
+          isLocked: 1,
+          isLockedTest: 0,
+          lastCheck: Date.now(),
+          code: "",
+        },
+        shouldDeleteEdgeValue: false,
+      })
+
+      // Request is already on the lock page
+      const middleware = createAppwardenMiddleware(configWithoutSlash)
+      const request = new Request("https://example.com/maintenance", {
+        headers: { accept: "text/html" },
+      })
+      const result = await middleware(request)
+
+      // Should return NextResponse.next() and NOT redirect
+      expect(getLockValue).not.toHaveBeenCalled()
+      expect(result.status).toBe(200)
+      expect(mockNextResponseNext).toHaveBeenCalled()
     })
   })
 })

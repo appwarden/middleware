@@ -4,6 +4,7 @@ import {
   buildLockPageUrl,
   createRedirect,
   isHTMLRequest,
+  isOnLockPage,
   printMessage,
   validateConfig,
 } from "../utils"
@@ -106,6 +107,11 @@ export function createAppwardenMiddleware(
       // Validate config against schema
       const hasError = validateConfig(config, ReactRouterCloudflareConfigSchema)
       if (hasError) {
+        return next()
+      }
+
+      // Skip if already on lock page to prevent infinite redirect loop
+      if (isOnLockPage(config.lockPageSlug, request.url)) {
         return next()
       }
 
