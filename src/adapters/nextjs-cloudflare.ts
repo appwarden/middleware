@@ -8,6 +8,7 @@ import { NextJsCloudflareConfigSchema } from "../schemas/nextjs-cloudflare"
 import {
   buildLockPageUrl,
   isHTMLRequest,
+  isOnLockPage,
   printMessage,
   TEMPORARY_REDIRECT_STATUS,
   validateConfig,
@@ -96,6 +97,11 @@ export function createAppwardenMiddleware(
       // Validate config against schema
       const hasError = validateConfig(config, NextJsCloudflareConfigSchema)
       if (hasError) {
+        return NextResponse.next()
+      }
+
+      // Skip if already on lock page to prevent infinite redirect loop
+      if (isOnLockPage(config.lockPageSlug, request.url)) {
         return NextResponse.next()
       }
 

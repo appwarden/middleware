@@ -1,5 +1,27 @@
 import { describe, expect, it } from "vitest"
-import { buildLockPageUrl } from "./build-lock-page-url"
+import {
+  buildLockPageUrl,
+  isOnLockPage,
+  normalizeLockPageSlug,
+} from "./build-lock-page-url"
+
+describe("normalizeLockPageSlug", () => {
+  it("should add leading slash when slug does not start with /", () => {
+    expect(normalizeLockPageSlug("locked")).toBe("/locked")
+  })
+
+  it("should preserve leading slash when slug already starts with /", () => {
+    expect(normalizeLockPageSlug("/locked")).toBe("/locked")
+  })
+
+  it("should handle nested paths without leading slash", () => {
+    expect(normalizeLockPageSlug("maintenance/page")).toBe("/maintenance/page")
+  })
+
+  it("should handle nested paths with leading slash", () => {
+    expect(normalizeLockPageSlug("/maintenance/page")).toBe("/maintenance/page")
+  })
+})
 
 describe("buildLockPageUrl", () => {
   describe("slug normalization", () => {
@@ -65,6 +87,74 @@ describe("buildLockPageUrl", () => {
       )
       expect(url.search).toBe("")
       expect(url.href).toBe("https://example.com/locked")
+    })
+  })
+})
+
+describe("isOnLockPage", () => {
+  describe("matching paths", () => {
+    it("should return true when pathname exactly matches slug without leading slash", () => {
+      expect(isOnLockPage("locked", "https://example.com/locked")).toBe(true)
+    })
+
+    it("should return true when pathname exactly matches slug with leading slash", () => {
+      expect(isOnLockPage("/locked", "https://example.com/locked")).toBe(true)
+    })
+
+    it("should return true for nested paths", () => {
+      expect(
+        isOnLockPage(
+          "maintenance/page",
+          "https://example.com/maintenance/page",
+        ),
+      ).toBe(true)
+    })
+
+    it("should return true when URL has query parameters", () => {
+      expect(
+        isOnLockPage("maintenance", "https://example.com/maintenance?foo=bar"),
+      ).toBe(true)
+    })
+
+    it("should return true when URL has hash fragment", () => {
+      expect(
+        isOnLockPage("maintenance", "https://example.com/maintenance#section"),
+      ).toBe(true)
+    })
+
+    it("should accept a URL object as requestUrl", () => {
+      const requestUrl = new URL("https://example.com/maintenance")
+      expect(isOnLockPage("maintenance", requestUrl)).toBe(true)
+    })
+  })
+
+  describe("non-matching paths", () => {
+    it("should return false when pathname does not match slug", () => {
+      expect(isOnLockPage("locked", "https://example.com/dashboard")).toBe(
+        false,
+      )
+    })
+
+    it("should return false when pathname is a subpath of slug", () => {
+      expect(isOnLockPage("locked", "https://example.com/locked/extra")).toBe(
+        false,
+      )
+    })
+
+    it("should return false when pathname is a prefix of slug", () => {
+      expect(isOnLockPage("locked-page", "https://example.com/locked")).toBe(
+        false,
+      )
+    })
+
+    it("should return false for root path when slug is not root", () => {
+      expect(isOnLockPage("locked", "https://example.com/")).toBe(false)
+    })
+
+    it("should return false when paths are similar but not exact", () => {
+      expect(isOnLockPage("maintenance", "https://example.com/maintain")).toBe(
+        false,
+      )
     })
   })
 })
