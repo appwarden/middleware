@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.0.1](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.0.0...@appwarden/middleware@3.0.1) (2026-02-07)
+
+
+### Bug Fixes
+
+* **isOnLockPage:** normalize trailing slashes to prevent redirect loops ([97da59a](https://github.com/appwarden/middleware/commit/97da59a95f478015d117d60a5addfdce4fb06ae4))
+* prevent infinite redirect loop when already on lock page ([cb3ff79](https://github.com/appwarden/middleware/commit/cb3ff79cfbea5da1a9fe36e95d9f5c8d46c3a033))
+
 # [3.0.0](https://github.com/appwarden/middleware/compare/@appwarden/middleware@2.0.0...@appwarden/middleware@3.0.0) (2026-02-07)
 
 
@@ -14,7 +22,6 @@ All notable changes to this project will be documented in this file. See
 ### Features
 
 * **astro:** use official Astro types and add peer dependencies ([4d037ef](https://github.com/appwarden/middleware/commit/4d037efd9840a49e5dfd7026f64f7cae9ce53abd))
-
 
 # [2.0.0](https://github.com/appwarden/middleware/compare/@appwarden/middleware@1.6.0...@appwarden/middleware@2.0.0) (2026-02-06)
 
