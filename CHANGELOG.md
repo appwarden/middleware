@@ -6,9 +6,6 @@ All notable changes to this project will be documented in this file. See
 # [3.0.0](https://github.com/appwarden/middleware/compare/@appwarden/middleware@2.0.0...@appwarden/middleware@3.0.0) (2026-02-07)
 
 
-* feat!: remove Next.js Pages Router bundle ([6f8d969](https://github.com/appwarden/middleware/commit/6f8d969f15b0c9f5789e1be98cdc3b2e9cd3674a))
-
-
 ### Bug Fixes
 
 * **security:** add pnpm override for wrangler CVE-2025-GHSA-36p8-mvp6-cv38 ([43c2896](https://github.com/appwarden/middleware/commit/43c28965d71e232b9bd45e43730e5db3dd1eea2c))
@@ -16,21 +13,8 @@ All notable changes to this project will be documented in this file. See
 
 ### Features
 
-* **astro:** use official Astro types and add peer dependencies ([a55f150](https://github.com/appwarden/middleware/commit/a55f1507db437764067db9153180f1d2d1659e38))
 * **astro:** use official Astro types and add peer dependencies ([4d037ef](https://github.com/appwarden/middleware/commit/4d037efd9840a49e5dfd7026f64f7cae9ce53abd))
 
-
-### BREAKING CHANGES
-
-* Remove the deprecated Next.js Pages Router bundle that was
-designed for @cloudflare/next-on-pages. This removes:
-
-- The withAppwardenOnNextJs export
-- The appwardenOnPagesNextJs runner function
-- The NextJsConfigFnOutputSchema and NextJsConfigFnType schemas
-
-Users should migrate to the modern Next.js Cloudflare bundle:
-import { createAppwardenMiddleware } from '@appwarden/middleware/cloudflare/nextjs'
 
 # [2.0.0](https://github.com/appwarden/middleware/compare/@appwarden/middleware@1.6.0...@appwarden/middleware@2.0.0) (2026-02-06)
 
