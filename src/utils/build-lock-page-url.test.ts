@@ -157,4 +157,54 @@ describe("isOnLockPage", () => {
       )
     })
   })
+
+  describe("trailing slash scenarios", () => {
+    it("should return true when slug has no trailing slash but request path does", () => {
+      expect(
+        isOnLockPage("maintenance", "https://example.com/maintenance/"),
+      ).toBe(true)
+    })
+
+    it("should return true when slug has trailing slash but request path does not", () => {
+      expect(
+        isOnLockPage("maintenance/", "https://example.com/maintenance"),
+      ).toBe(true)
+    })
+
+    it("should return true when both slug and request path have trailing slashes", () => {
+      expect(
+        isOnLockPage("maintenance/", "https://example.com/maintenance/"),
+      ).toBe(true)
+    })
+
+    it("should return true when slug has leading slash and request has trailing slash", () => {
+      expect(
+        isOnLockPage("/maintenance", "https://example.com/maintenance/"),
+      ).toBe(true)
+    })
+
+    it("should return true when slug has both leading and trailing slashes", () => {
+      expect(
+        isOnLockPage("/maintenance/", "https://example.com/maintenance"),
+      ).toBe(true)
+    })
+
+    it("should handle nested paths with trailing slash in request", () => {
+      expect(
+        isOnLockPage(
+          "maintenance/page",
+          "https://example.com/maintenance/page/",
+        ),
+      ).toBe(true)
+    })
+
+    it("should handle nested paths with trailing slash in slug", () => {
+      expect(
+        isOnLockPage(
+          "maintenance/page/",
+          "https://example.com/maintenance/page",
+        ),
+      ).toBe(true)
+    })
+  })
 })
