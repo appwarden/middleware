@@ -1,4 +1,5 @@
 export {
+  cloudflareContextSymbol,
   createAppwardenMiddleware,
   type CloudflareContext,
   type ReactRouterAppwardenConfig,
