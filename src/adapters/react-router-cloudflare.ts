@@ -19,6 +19,14 @@ export interface CloudflareContext {
 }
 
 /**
+ * Symbol used to store Cloudflare context in RouterContextProvider.
+ * This is used when middleware is enabled with the v8_middleware future flag.
+ */
+export const cloudflareContextSymbol = Symbol.for(
+  "@appwarden/middleware:cloudflare",
+)
+
+/**
  * Configuration for the Appwarden middleware.
  */
 export interface ReactRouterAppwardenConfig {
@@ -43,13 +51,15 @@ export type ReactRouterConfigFn = (
 /**
  * React Router middleware function signature.
  * This matches the unstable_middleware export type in React Router v7.
+ *
+ * Supports both old and new context APIs:
+ * - Old API: context is a plain object with `cloudflare` property
+ * - New API (v8_middleware): context is a RouterContextProvider instance
  */
 export interface ReactRouterMiddlewareArgs {
   request: Request
   params: Record<string, string | undefined>
-  context: {
-    cloudflare: CloudflareContext
-  }
+  context: any // Can be either plain object or RouterContextProvider
 }
 
 export type ReactRouterMiddlewareFunction = (
@@ -58,10 +68,42 @@ export type ReactRouterMiddlewareFunction = (
 ) => Promise<unknown>
 
 /**
+ * Helper function to extract Cloudflare context from React Router context.
+ * Supports both old and new context APIs.
+ *
+ * @param context - React Router context (can be plain object or RouterContextProvider)
+ * @returns Cloudflare context or null if not found
+ */
+function getCloudflareContext(context: any): CloudflareContext | null {
+  // Try old API first: context.cloudflare
+  if (context?.cloudflare) {
+    return context.cloudflare
+  }
+
+  // Try new API: RouterContextProvider with symbol
+  if (context?.get && typeof context.get === "function") {
+    try {
+      const cloudflare = context.get(cloudflareContextSymbol)
+      if (cloudflare) {
+        return cloudflare
+      }
+    } catch {
+      // Symbol not found in context, continue
+    }
+  }
+
+  return null
+}
+
+/**
  * Creates an Appwarden middleware function for React Router.
  *
  * This middleware checks if the site is locked and redirects to the lock page if so.
  * It should be exported from your root route (root.tsx) to protect all routes.
+ *
+ * Supports both old and new React Router context APIs:
+ * - Old API: Pass context as plain object with `cloudflare` property
+ * - New API (v8_middleware): Use RouterContextProvider with cloudflareContextSymbol
  *
  * @example
  * ```typescript
@@ -86,12 +128,12 @@ export function createAppwardenMiddleware(
     const { request, context } = args
 
     try {
-      // Get Cloudflare context from React Router context
-      const cloudflare = context.cloudflare
+      // Get Cloudflare context from React Router context (supports both APIs)
+      const cloudflare = getCloudflareContext(context)
       if (!cloudflare) {
         console.error(
           printMessage(
-            "Cloudflare context not found. Make sure you're running on Cloudflare Workers.",
+            "Cloudflare context not found. Make sure you're running on Cloudflare Workers and have set up the context correctly.",
           ),
         )
         return next()
