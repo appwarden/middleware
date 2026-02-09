@@ -14,30 +14,40 @@ import { store } from "../utils/cloudflare"
 export const useAppwarden: (input: CloudflareConfigType) => Middleware =
   (input) => async (context, next) => {
     const { request } = context
+    let nextCalled = false
+
+    const callNext = async () => {
+      if (!nextCalled) {
+        nextCalled = true
+        await next()
+      }
+    }
 
     try {
       const requestUrl = new URL(request.url)
-      const provider = "cloudflare-cache" as const
-      const keyName = APPWARDEN_CACHE_KEY
-      // we don't set a TTL on this cache to avoid the site rendering when quarantined
-      // between when the cache expires and when the latest sync happens to set the cache again
-      const edgeCache = store.json<LockValueType>(
-        {
-          serviceOrigin: requestUrl.origin,
-          cache: (await caches.open("appwarden:lock")) as unknown as Cache,
-        },
-        keyName,
-      )
 
       // Handle reset cache request
+      // Only initialize edge cache for reset-cache requests to avoid duplicate Cache API calls
+      // (checkLockStatus opens its own cache internally)
       if (isResetCacheRequest(request)) {
+        const provider = "cloudflare-cache" as const
+        const keyName = APPWARDEN_CACHE_KEY
+        const edgeCache = store.json<LockValueType>(
+          {
+            serviceOrigin: requestUrl.origin,
+            cache: (await caches.open("appwarden:lock")) as unknown as Cache,
+          },
+          keyName,
+        )
         await handleResetCache(keyName, provider, edgeCache, request)
+        // Explicitly set a 204 No Content response for the reset-cache endpoint
+        context.response = new Response(null, { status: 204 })
         return
       }
 
       // Skip non-HTML requests (e.g., API calls, static assets)
       if (!isHTMLRequest(request)) {
-        await next()
+        await callNext()
         return
       }
 
@@ -48,13 +58,13 @@ export const useAppwarden: (input: CloudflareConfigType) => Middleware =
         input.lockPageSlug
 
       if (!lockPageSlug) {
-        await next()
+        await callNext()
         return
       }
 
       // Skip if already on lock page to prevent infinite redirect loop
       if (isOnLockPage(lockPageSlug, request.url)) {
-        await next()
+        await callNext()
         return
       }
 
@@ -79,7 +89,7 @@ export const useAppwarden: (input: CloudflareConfigType) => Middleware =
       }
 
       // Not locked, proceed to fetch the origin
-      await next()
+      await callNext()
     } catch (e) {
       const message =
         "Appwarden encountered an unknown error. Please contact Appwarden support at https://appwarden.io/join-community."
@@ -90,7 +100,7 @@ export const useAppwarden: (input: CloudflareConfigType) => Middleware =
         ),
       )
 
-      // On error, still proceed to fetch the origin
-      await next()
+      // On error, still proceed to fetch the origin (if not already called)
+      await callNext()
     }
   }
