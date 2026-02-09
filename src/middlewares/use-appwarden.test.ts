@@ -21,10 +21,17 @@ vi.mock("../handlers", () => ({
 vi.mock("../utils", () => ({
   printMessage: vi.fn((message) => `[@appwarden/middleware] ${message}`),
   renderLockPage: vi.fn(() => new Response("Locked page")),
-  isHTMLResponse: vi.fn(
-    (response: Response) =>
-      response.headers.get("Content-Type")?.includes("text/html") ?? false,
+  isHTMLRequest: vi.fn(
+    (request: Request) =>
+      request.headers.get("accept")?.includes("text/html") ?? false,
   ),
+  isOnLockPage: vi.fn((lockPageSlug: string, requestUrl: string) => {
+    const normalizedSlug = lockPageSlug.startsWith("/")
+      ? lockPageSlug
+      : `/${lockPageSlug}`
+    const url = new URL(requestUrl)
+    return url.pathname === normalizedSlug
+  }),
 }))
 
 vi.mock("../utils/cloudflare", () => ({
@@ -53,12 +60,12 @@ describe("useAppwarden", () => {
     // Reset mocks
     vi.clearAllMocks()
 
-    // Setup test data
+    // Setup test data - use Accept header for HTML requests
     mockContext = {
-      request: new Request("https://example.com"),
-      response: new Response("Test response", {
-        headers: { "Content-Type": "text/html" },
+      request: new Request("https://example.com", {
+        headers: { accept: "text/html" },
       }),
+      response: new Response("Test response"),
       hostname: "example.com",
       waitUntil: vi.fn(),
     }
@@ -145,19 +152,21 @@ describe("useAppwarden", () => {
     expect(checkLockStatus).not.toHaveBeenCalled()
   })
 
-  it("should not check lock status for non-HTML responses", async () => {
-    // Set up a non-HTML response
-    mockContext.response = new Response("Test response", {
-      headers: { "Content-Type": "application/json" },
+  it("should not check lock status for non-HTML requests", async () => {
+    // Set up a non-HTML request (no Accept: text/html header)
+    mockContext.request = new Request("https://example.com/api/data", {
+      headers: { accept: "application/json" },
     })
 
     const middleware = useAppwarden(mockInput)
     await middleware(mockContext, mockNext)
 
     expect(checkLockStatus).not.toHaveBeenCalled()
+    // Should still call next() to fetch the origin
+    expect(mockNext).toHaveBeenCalled()
   })
 
-  it("should call checkLockStatus for HTML responses", async () => {
+  it("should call checkLockStatus for HTML requests", async () => {
     const middleware = useAppwarden(mockInput)
     await middleware(mockContext, mockNext)
 
@@ -262,7 +271,9 @@ describe("useAppwarden", () => {
         },
       }
 
-      mockContext.request = new Request("https://example.com/page")
+      mockContext.request = new Request("https://example.com/page", {
+        headers: { accept: "text/html" },
+      })
       mockContext.hostname = "example.com"
 
       const middleware = useAppwarden(inputWithMultidomain)
@@ -284,7 +295,9 @@ describe("useAppwarden", () => {
         },
       }
 
-      mockContext.request = new Request("https://other.com/page")
+      mockContext.request = new Request("https://other.com/page", {
+        headers: { accept: "text/html" },
+      })
       mockContext.hostname = "other.com"
 
       const middleware = useAppwarden(inputWithMultidomain)
@@ -305,7 +318,9 @@ describe("useAppwarden", () => {
         },
       }
 
-      mockContext.request = new Request("https://unknown-domain.com/page")
+      mockContext.request = new Request("https://unknown-domain.com/page", {
+        headers: { accept: "text/html" },
+      })
       mockContext.hostname = "unknown-domain.com"
 
       const middleware = useAppwarden(inputWithMultidomain)
@@ -313,6 +328,8 @@ describe("useAppwarden", () => {
 
       // checkLockStatus should NOT be called for unconfigured domains
       expect(checkLockStatus).not.toHaveBeenCalled()
+      // But next() should still be called
+      expect(mockNext).toHaveBeenCalled()
     })
 
     it("should fall back to root lockPageSlug when multidomainConfig is not provided", async () => {
@@ -323,7 +340,9 @@ describe("useAppwarden", () => {
         middleware: { before: [], after: [] },
       }
 
-      mockContext.request = new Request("https://any-domain.com/page")
+      mockContext.request = new Request("https://any-domain.com/page", {
+        headers: { accept: "text/html" },
+      })
       mockContext.hostname = "any-domain.com"
 
       const middleware = useAppwarden(inputWithRootOnly)
@@ -345,7 +364,9 @@ describe("useAppwarden", () => {
         },
       }
 
-      mockContext.request = new Request("https://example.com/page")
+      mockContext.request = new Request("https://example.com/page", {
+        headers: { accept: "text/html" },
+      })
       mockContext.hostname = "example.com"
 
       const middleware = useAppwarden(inputWithBoth)
@@ -367,7 +388,9 @@ describe("useAppwarden", () => {
         },
       }
 
-      mockContext.request = new Request("https://other-domain.com/page")
+      mockContext.request = new Request("https://other-domain.com/page", {
+        headers: { accept: "text/html" },
+      })
       mockContext.hostname = "other-domain.com"
 
       const middleware = useAppwarden(inputWithBoth)
