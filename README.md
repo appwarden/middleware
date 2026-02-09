@@ -26,13 +26,17 @@ For detailed usage instructions, please refer to our [documentation](https://app
 
 ### On Cloudflare
 
-Cloudflare has two deployment options: [pages.dev](https://pages.dev) and [Workers static assets](https://developers.cloudflare.com/workers/static-assets/). We support both.
+For all websites deployed on Cloudflare—including popular modern frameworks like Astro, Next.js, React Router, TanStack Start, and more—we recommend using the [build-cloudflare-action](https://github.com/appwarden/build-cloudflare-action). This action builds a worker that runs on the root of your domain (e.g., `your.app.io/*` for an `your.app.io` website), providing seamless integration with Appwarden without modifying your application code.
 
-#### On pages.dev
+Please see the [build-cloudflare-action documentation](https://github.com/appwarden/build-cloudflare-action) for more information.
 
-- [All websites on pages.dev](https://appwarden.io/docs/guides/cloudflare-integration)
+#### Recommended: build-cloudflare-action
 
-#### On Workers static assets
+- [build-cloudflare-action](https://github.com/appwarden/build-cloudflare-action) — Seamless integration with Appwarden for Cloudflare-deployed websites.
+
+#### Framework adapters (alternative)
+
+If you cannot use the `build-cloudflare-action`, you can use framework-specific adapters instead:
 
 - [Astro](https://appwarden.io/docs/guides/astro-cloudflare)
 - [React Router](https://appwarden.io/docs/guides/react-router-cloudflare)
