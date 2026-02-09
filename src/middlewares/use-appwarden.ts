@@ -33,9 +33,6 @@ export const useAppwarden: (input: CloudflareConfigType) => Middleware =
           keyName,
         )
         await handleResetCache(keyName, provider, edgeCache, request)
-        // Explicitly set a 204 No Content response for the reset-cache endpoint
-        context.response = new Response(null, { status: 204 })
-        shouldCallNext = false
         return
       }
 

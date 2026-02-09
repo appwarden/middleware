@@ -149,7 +149,7 @@ describe("useAppwarden", () => {
     expect(store.json).not.toHaveBeenCalled()
   })
 
-  it("should handle reset cache request when detected and return 204 response", async () => {
+  it("should handle reset cache request when detected and call next()", async () => {
     vi.mocked(isResetCacheRequest).mockReturnValue(true)
 
     const middleware = useAppwarden(mockInput)
@@ -163,10 +163,8 @@ describe("useAppwarden", () => {
     )
     // Should return early and not process further
     expect(checkLockStatus).not.toHaveBeenCalled()
-    // Should not call next() for reset-cache requests
-    expect(mockNext).not.toHaveBeenCalled()
-    // Should set a 204 No Content response
-    expect(mockContext.response.status).toBe(204)
+    // Should call next() to get the origin response
+    expect(mockNext).toHaveBeenCalled()
   })
 
   it("should not check lock status for non-HTML requests", async () => {
