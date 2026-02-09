@@ -122,7 +122,10 @@ describe("useAppwarden", () => {
     expect(mockNext).toHaveBeenCalled()
   })
 
-  it("should initialize the edge cache with the correct parameters", async () => {
+  it("should initialize the edge cache only for reset-cache requests", async () => {
+    // For reset-cache requests, edge cache should be initialized
+    vi.mocked(isResetCacheRequest).mockReturnValue(true)
+
     const middleware = useAppwarden(mockInput)
     await middleware(mockContext, mockNext)
 
@@ -136,7 +139,17 @@ describe("useAppwarden", () => {
     )
   })
 
-  it("should handle reset cache request when detected", async () => {
+  it("should NOT initialize edge cache for normal HTML requests (checkLockStatus handles its own cache)", async () => {
+    vi.mocked(isResetCacheRequest).mockReturnValue(false)
+
+    const middleware = useAppwarden(mockInput)
+    await middleware(mockContext, mockNext)
+
+    // Edge cache should NOT be opened here since checkLockStatus opens its own cache
+    expect(store.json).not.toHaveBeenCalled()
+  })
+
+  it("should handle reset cache request when detected and return 204 response", async () => {
     vi.mocked(isResetCacheRequest).mockReturnValue(true)
 
     const middleware = useAppwarden(mockInput)
@@ -150,6 +163,10 @@ describe("useAppwarden", () => {
     )
     // Should return early and not process further
     expect(checkLockStatus).not.toHaveBeenCalled()
+    // Should not call next() for reset-cache requests
+    expect(mockNext).not.toHaveBeenCalled()
+    // Should set a 204 No Content response
+    expect(mockContext.response.status).toBe(204)
   })
 
   it("should not check lock status for non-HTML requests", async () => {
@@ -229,11 +246,9 @@ describe("useAppwarden", () => {
     expect(renderLockPage).not.toHaveBeenCalled()
   })
 
-  it("should handle errors gracefully", async () => {
-    // Simulate an error
-    vi.mocked(store.json).mockImplementation(() => {
-      throw new Error("Test error")
-    })
+  it("should handle errors gracefully and call next()", async () => {
+    // Simulate an error in checkLockStatus
+    vi.mocked(checkLockStatus).mockRejectedValue(new Error("Test error"))
 
     const middleware = useAppwarden(mockInput)
     await middleware(mockContext, mockNext)
@@ -241,6 +256,27 @@ describe("useAppwarden", () => {
     expect(consoleErrorSpy).toHaveBeenCalledWith(
       expect.stringContaining("Appwarden encountered an unknown error"),
     )
+    // Should still call next() on error
+    expect(mockNext).toHaveBeenCalledTimes(1)
+  })
+
+  it("should not call next() twice when error occurs after next() was already called", async () => {
+    // Simulate the happy path completing (next called), then an error thrown
+    // This tests the nextCalled guard in the catch block
+    let firstCall = true
+    vi.mocked(checkLockStatus).mockImplementation(async () => {
+      if (firstCall) {
+        firstCall = false
+        return { isLocked: false, isTestLock: false }
+      }
+      throw new Error("Unexpected second call")
+    })
+
+    const middleware = useAppwarden(mockInput)
+    await middleware(mockContext, mockNext)
+
+    // next() should only be called once
+    expect(mockNext).toHaveBeenCalledTimes(1)
   })
 
   it("should pass the correct config to checkLockStatus", async () => {
