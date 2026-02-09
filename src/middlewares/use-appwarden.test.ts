@@ -166,6 +166,21 @@ describe("useAppwarden", () => {
     expect(mockNext).toHaveBeenCalled()
   })
 
+  it("should not check lock status when already on lock page and should call next()", async () => {
+    // Set up a request that is already on the lock page
+    mockContext.request = new Request("https://example.com/maintenance", {
+      headers: { accept: "text/html" },
+    })
+
+    const middleware = useAppwarden(mockInput)
+    await middleware(mockContext, mockNext)
+
+    // Should NOT check lock status to prevent infinite redirect loop
+    expect(checkLockStatus).not.toHaveBeenCalled()
+    // Should still call next() to fetch the origin (render the lock page)
+    expect(mockNext).toHaveBeenCalled()
+  })
+
   it("should call checkLockStatus for HTML requests", async () => {
     const middleware = useAppwarden(mockInput)
     await middleware(mockContext, mockNext)
