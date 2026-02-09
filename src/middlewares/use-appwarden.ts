@@ -14,14 +14,7 @@ import { store } from "../utils/cloudflare"
 export const useAppwarden: (input: CloudflareConfigType) => Middleware =
   (input) => async (context, next) => {
     const { request } = context
-    let nextCalled = false
-
-    const callNext = async () => {
-      if (!nextCalled) {
-        nextCalled = true
-        await next()
-      }
-    }
+    let shouldCallNext = true
 
     try {
       const requestUrl = new URL(request.url)
@@ -42,12 +35,12 @@ export const useAppwarden: (input: CloudflareConfigType) => Middleware =
         await handleResetCache(keyName, provider, edgeCache, request)
         // Explicitly set a 204 No Content response for the reset-cache endpoint
         context.response = new Response(null, { status: 204 })
+        shouldCallNext = false
         return
       }
 
       // Skip non-HTML requests (e.g., API calls, static assets)
       if (!isHTMLRequest(request)) {
-        await callNext()
         return
       }
 
@@ -58,13 +51,11 @@ export const useAppwarden: (input: CloudflareConfigType) => Middleware =
         input.lockPageSlug
 
       if (!lockPageSlug) {
-        await callNext()
         return
       }
 
       // Skip if already on lock page to prevent infinite redirect loop
       if (isOnLockPage(lockPageSlug, request.url)) {
-        await callNext()
         return
       }
 
@@ -85,11 +76,9 @@ export const useAppwarden: (input: CloudflareConfigType) => Middleware =
           lockPageSlug,
           requestUrl,
         })
+        shouldCallNext = false
         return
       }
-
-      // Not locked, proceed to fetch the origin
-      await callNext()
     } catch (e) {
       const message =
         "Appwarden encountered an unknown error. Please contact Appwarden support at https://appwarden.io/join-community."
@@ -99,8 +88,9 @@ export const useAppwarden: (input: CloudflareConfigType) => Middleware =
           e instanceof Error ? `${message} - ${e.message}` : message,
         ),
       )
-
-      // On error, still proceed to fetch the origin (if not already called)
-      await callNext()
+    } finally {
+      if (shouldCallNext) {
+        await next()
+      }
     }
   }
