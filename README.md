@@ -32,7 +32,11 @@ Cloudflare has two deployment options: [pages.dev](https://pages.dev) and [Worke
 
 - [All websites on pages.dev](https://appwarden.io/docs/guides/cloudflare-integration)
 
-#### On Workers static assets
+- [build-cloudflare-action](https://github.com/appwarden/build-cloudflare-action) — Seamless integration with Appwarden via Github Actions for Cloudflare-deployed websites.
+
+#### On Workers static assets (framework adapters)
+
+If you cannot use the `build-cloudflare-action`, you can use framework-specific adapters instead:
 
 - [Astro](https://appwarden.io/docs/guides/astro-cloudflare)
 - [React Router](https://appwarden.io/docs/guides/react-router-cloudflare)

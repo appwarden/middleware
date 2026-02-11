@@ -49,7 +49,7 @@ const updateCacheValue = async (
   debug(
     "updating cache...",
     cacheKey.href,
-    value,
+    JSON.stringify(value),
     ttl ? `expires in ${ttl}s` : "",
   )
 
