@@ -103,7 +103,10 @@ export function createAppwardenMiddleware(
           parsedConfig.lockPageSlug,
           request.url,
         )
-        return Response.redirect(lockPageUrl.toString(), TEMPORARY_REDIRECT_STATUS)
+        return Response.redirect(
+          lockPageUrl.toString(),
+          TEMPORARY_REDIRECT_STATUS,
+        )
       }
 
       // Site is not locked - pass through to the next handler
