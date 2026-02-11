@@ -3,6 +3,19 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [3.2.0](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.1.1...@appwarden/middleware@3.2.0) (2026-02-11)
+
+
+### Bug Fixes
+
+* address prettier formatting issues ([5ac81c2](https://github.com/appwarden/middleware/commit/5ac81c28664d088f56f3a0796fe8179cdc6195b6))
+* correct debug Error serialization and test mock isolation ([ea9f42f](https://github.com/appwarden/middleware/commit/ea9f42fa9581b2e354522d77a8def27e84cd025d))
+
+
+### Features
+
+* redirect to lock page instead of rendering inline ([fe18d62](https://github.com/appwarden/middleware/commit/fe18d62cdb9298d6bd1c6cf3617a33073f0a57ac))
+
 ## [3.1.1](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.1.0...@appwarden/middleware@3.1.1) (2026-02-10)
 
 
