@@ -4,6 +4,7 @@ import { APPWARDEN_CACHE_KEY, globalErrors } from "../constants"
 import { LockValueType } from "../schemas"
 import { AppwardenConfigSchema, VercelAppwardenConfig } from "../schemas/vercel"
 import {
+  buildLockPageUrl,
   debug,
   isCacheUrl,
   isHTMLRequest,
@@ -97,7 +98,10 @@ export function createAppwardenMiddleware(
         ).lockValue
 
       if (lockValue?.isLocked) {
-        const lockPageUrl = new URL(parsedConfig.lockPageSlug, request.url)
+        const lockPageUrl = buildLockPageUrl(
+          parsedConfig.lockPageSlug,
+          request.url,
+        )
         return Response.redirect(lockPageUrl.toString(), 302)
       }
 
