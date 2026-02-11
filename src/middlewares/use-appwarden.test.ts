@@ -4,7 +4,6 @@ import { checkLockStatus } from "../core"
 import { handleResetCache, isResetCacheRequest } from "../handlers"
 import { CloudflareConfigType } from "../schemas"
 import { MiddlewareContext } from "../types"
-import { renderLockPage } from "../utils"
 import { store } from "../utils/cloudflare"
 import { useAppwarden } from "./use-appwarden"
 
@@ -20,7 +19,17 @@ vi.mock("../handlers", () => ({
 
 vi.mock("../utils", () => ({
   printMessage: vi.fn((message) => `[@appwarden/middleware] ${message}`),
-  renderLockPage: vi.fn(() => new Response("Locked page")),
+  buildLockPageUrl: vi.fn((slug: string, requestUrl: string) => {
+    const url = new URL(requestUrl)
+    url.pathname = slug.startsWith("/") ? slug : `/${slug}`
+    return url
+  }),
+  createRedirect: vi.fn((url: URL) => {
+    return new Response(null, {
+      status: 302,
+      headers: { Location: url.toString() },
+    })
+  }),
   isHTMLRequest: vi.fn(
     (request: Request) =>
       request.headers.get("accept")?.includes("text/html") ?? false,
@@ -211,11 +220,7 @@ describe("useAppwarden", () => {
     )
   })
 
-  it("should set the response to the lock page when site is locked", async () => {
-    // Create a mock response for renderLockPage
-    const mockLockPageResponse = new Response("Locked page")
-    vi.mocked(renderLockPage).mockResolvedValue(mockLockPageResponse)
-
+  it("should redirect to lock page when site is locked", async () => {
     // Mock checkLockStatus to return locked state
     vi.mocked(checkLockStatus).mockResolvedValue({
       isLocked: true,
@@ -225,14 +230,17 @@ describe("useAppwarden", () => {
     const middleware = useAppwarden(mockInput)
     await middleware(mockContext, mockNext)
 
-    expect(renderLockPage).toHaveBeenCalledWith({
-      lockPageSlug: mockInput.lockPageSlug,
-      requestUrl: new URL(mockContext.request.url),
-    })
-    expect(mockContext.response).toBe(mockLockPageResponse)
+    // Verify response is a redirect
+    expect(mockContext.response).toBeInstanceOf(Response)
+    expect(mockContext.response!.status).toBe(302)
+    expect(mockContext.response!.headers.get("Location")).toBe(
+      "https://example.com/maintenance",
+    )
+    // Should not call next() when redirecting
+    expect(mockNext).not.toHaveBeenCalled()
   })
 
-  it("should not render lock page when site is not locked", async () => {
+  it("should not redirect when site is not locked", async () => {
     vi.mocked(checkLockStatus).mockResolvedValue({
       isLocked: false,
       isTestLock: false,
@@ -241,7 +249,9 @@ describe("useAppwarden", () => {
     const middleware = useAppwarden(mockInput)
     await middleware(mockContext, mockNext)
 
-    expect(renderLockPage).not.toHaveBeenCalled()
+    // Response should not be a redirect
+    expect(mockContext.response?.status).not.toBe(302)
+    expect(mockNext).toHaveBeenCalled()
   })
 
   it("should handle errors gracefully and call next()", async () => {

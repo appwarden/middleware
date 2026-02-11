@@ -43,6 +43,10 @@ vi.mock("next/server", () => ({
 // Mock dependencies - we need to mock MemoryCache before it's instantiated
 vi.mock("../utils", () => {
   return {
+    buildLockPageUrl: vi.fn((slug: string, requestUrl: string) => {
+      const normalizedSlug = slug.startsWith("/") ? slug : `/${slug}`
+      return new URL(normalizedSlug, requestUrl)
+    }),
     debug: vi.fn(),
     getErrors: vi.fn(() => ["Error message"]),
     isCacheUrl: {

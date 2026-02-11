@@ -4,10 +4,11 @@ import { handleResetCache, isResetCacheRequest } from "../handlers"
 import { CloudflareConfigType, LockValueType } from "../schemas"
 import { Middleware } from "../types"
 import {
+  buildLockPageUrl,
+  createRedirect,
   isHTMLRequest,
   isOnLockPage,
   printMessage,
-  renderLockPage,
 } from "../utils"
 import { store } from "../utils/cloudflare"
 
@@ -67,12 +68,10 @@ export const useAppwarden: (input: CloudflareConfigType) => Middleware =
         waitUntil: (fn) => context.waitUntil(fn),
       })
 
-      // If locked, render the lock page directly without fetching the origin
+      // If locked, redirect to the lock page
       if (result.isLocked) {
-        context.response = await renderLockPage({
-          lockPageSlug,
-          requestUrl,
-        })
+        const lockPageUrl = buildLockPageUrl(lockPageSlug, request.url)
+        context.response = createRedirect(lockPageUrl)
         shouldCallNext = false
         return
       }
