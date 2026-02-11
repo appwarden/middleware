@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.1.1](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.1.0...@appwarden/middleware@3.1.1) (2026-02-10)
+
+
+### Bug Fixes
+
+* add test for isOnLockPage short-circuit to prevent redirect loops ([b0dc703](https://github.com/appwarden/middleware/commit/b0dc70319c6d82b927983ce5412d127c4b59598c))
+* address copilot review feedback on PR [#160](https://github.com/appwarden/middleware/issues/160) ([602029b](https://github.com/appwarden/middleware/commit/602029b2373d2cae036d3b43cc198057c912dc27))
+* check lock status before fetching origin to prevent SSR flash ([4cd1757](https://github.com/appwarden/middleware/commit/4cd17576eb3c4e1fdf74d2f2f9c9fd3749f3d8a2))
+* reset-cache endpoint should call next() instead of returning 204 ([99023ac](https://github.com/appwarden/middleware/commit/99023ac94dac8be0cefe6af891be86e1f9d1cc54))
+* simplify control flow with finally block ([1f4a180](https://github.com/appwarden/middleware/commit/1f4a1804803cc6a90fce8ff920d3c605852955fa))
+
 # [3.1.0](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.0.3...@appwarden/middleware@3.1.0) (2026-02-08)
 
 

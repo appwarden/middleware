@@ -1,6 +1,6 @@
 # @appwarden/middleware
 
-![Test Coverage](https://img.shields.io/badge/coverage-95.44%25-brightgreen)
+![Test Coverage](https://img.shields.io/badge/coverage-95.67%25-brightgreen)
 [![npm version](https://img.shields.io/npm/v/@appwarden/middleware.svg)](https://www.npmjs.com/package/@appwarden/middleware)
 [![npm provenance](https://img.shields.io/badge/npm-provenance-green)](https://docs.npmjs.com/generating-provenance-statements)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
@@ -26,15 +26,15 @@ For detailed usage instructions, please refer to our [documentation](https://app
 
 ### On Cloudflare
 
-Cloudflare has two deployment options: [pages.dev](https://pages.dev) and [Workers static assets](https://developers.cloudflare.com/workers/static-assets/). We support both.
+For all websites deployed on Cloudflare—including popular modern frameworks like Astro, Next.js, React Router, TanStack Start, and more—we recommend using the [build-cloudflare-action](https://github.com/appwarden/build-cloudflare-action). This action builds a worker that runs on the root of your domain (e.g., `your.app.io/*` for an `your.app.io` website), providing seamless integration with Appwarden without modifying your application code.
 
-#### On pages.dev
+Please see the [build-cloudflare-action documentation](https://github.com/appwarden/build-cloudflare-action) for more information.
 
-- [All websites on pages.dev](https://appwarden.io/docs/guides/cloudflare-integration)
+#### Recommended: build-cloudflare-action
 
-- [build-cloudflare-action](https://github.com/appwarden/build-cloudflare-action) — Seamless integration with Appwarden via GitHub Actions for Cloudflare-deployed websites.
+- [build-cloudflare-action](https://github.com/appwarden/build-cloudflare-action) — Seamless integration with Appwarden for Cloudflare-deployed websites.
 
-#### On Workers static assets (framework adapters)
+#### Framework adapters (alternative)
 
 If you cannot use the `build-cloudflare-action`, you can use framework-specific adapters instead:
 
