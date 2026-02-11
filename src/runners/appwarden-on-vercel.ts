@@ -4,12 +4,14 @@ import { APPWARDEN_CACHE_KEY, globalErrors } from "../constants"
 import { LockValueType } from "../schemas"
 import { AppwardenConfigSchema, VercelAppwardenConfig } from "../schemas/vercel"
 import {
+  buildLockPageUrl,
   debug,
   isCacheUrl,
   isHTMLRequest,
   isOnLockPage,
   MemoryCache,
   printMessage,
+  TEMPORARY_REDIRECT_STATUS,
   validateConfig,
 } from "../utils"
 import { getLockValue, syncEdgeValue } from "../utils/vercel"
@@ -97,8 +99,11 @@ export function createAppwardenMiddleware(
         ).lockValue
 
       if (lockValue?.isLocked) {
-        const lockPageUrl = new URL(parsedConfig.lockPageSlug, request.url)
-        return Response.redirect(lockPageUrl.toString(), 302)
+        const lockPageUrl = buildLockPageUrl(
+          parsedConfig.lockPageSlug,
+          request.url,
+        )
+        return Response.redirect(lockPageUrl.toString(), TEMPORARY_REDIRECT_STATUS)
       }
 
       // Site is not locked - pass through to the next handler

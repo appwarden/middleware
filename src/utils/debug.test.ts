@@ -37,8 +37,41 @@ describe("debug", () => {
 
     debug("message 1", "message 2", { key: "value" })
 
-    expect(consoleLogSpy).toHaveBeenCalledWith("message 1", "message 2", {
-      key: "value",
-    })
+    // Objects are stringified to ensure readable output in Cloudflare Workers
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      "message 1",
+      "message 2",
+      '{"key":"value"}',
+    )
+  })
+
+  it("should handle circular references gracefully", () => {
+    vi.stubGlobal("DEBUG", true)
+
+    // Create an object with a circular reference
+    const circularObj: Record<string, unknown> = { name: "test" }
+    circularObj.self = circularObj
+
+    // Should not throw and should fall back to String()
+    debug("circular:", circularObj)
+
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      "circular:",
+      "[object Object]",
+    )
+  })
+
+  it("should handle Error objects with stack trace", () => {
+    vi.stubGlobal("DEBUG", true)
+
+    const error = new Error("test error")
+
+    debug("error:", error)
+
+    // Error objects should show stack or message
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      "error:",
+      expect.stringContaining("test error"),
+    )
   })
 })
