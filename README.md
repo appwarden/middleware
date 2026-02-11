@@ -32,7 +32,7 @@ Cloudflare has two deployment options: [pages.dev](https://pages.dev) and [Worke
 
 - [All websites on pages.dev](https://appwarden.io/docs/guides/cloudflare-integration)
 
-- [build-cloudflare-action](https://github.com/appwarden/build-cloudflare-action) — Seamless integration with Appwarden via Github Actions for Cloudflare-deployed websites.
+- [build-cloudflare-action](https://github.com/appwarden/build-cloudflare-action) — Seamless integration with Appwarden via GitHub Actions for Cloudflare-deployed websites.
 
 #### On Workers static assets (framework adapters)
 

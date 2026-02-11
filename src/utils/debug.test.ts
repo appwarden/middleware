@@ -37,8 +37,11 @@ describe("debug", () => {
 
     debug("message 1", "message 2", { key: "value" })
 
-    expect(consoleLogSpy).toHaveBeenCalledWith("message 1", "message 2", {
-      key: "value",
-    })
+    // Objects are stringified to ensure readable output in Cloudflare Workers
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      "message 1",
+      "message 2",
+      '{"key":"value"}',
+    )
   })
 })

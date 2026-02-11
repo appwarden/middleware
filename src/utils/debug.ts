@@ -1,6 +1,9 @@
 export const debug = (...msg: any[]) => {
   // @ts-expect-error config variables
   if (DEBUG) {
-    console.log(...msg)
+    const formatted = msg.map((m) =>
+      typeof m === "object" && m !== null ? JSON.stringify(m) : m,
+    )
+    console.log(...formatted)
   }
 }
