@@ -68,6 +68,7 @@ vi.mock("../utils", () => {
     ),
     isOnLockPage: mockIsOnLockPage,
     validateConfig: mockValidateConfig,
+    TEMPORARY_REDIRECT_STATUS: 302,
   }
 })
 
@@ -99,8 +100,12 @@ afterEach(() => {
 })
 
 describe("createAppwardenMiddleware", () => {
-  // Import createAppwardenMiddleware dynamically after mocks are set up
+  // Import modules dynamically after mocks are set up (they need to be re-imported after resetModules)
   let createAppwardenMiddleware: typeof import("./appwarden-on-vercel").createAppwardenMiddleware
+  let getLockValueMock: typeof getLockValue
+  let syncEdgeValueMock: typeof syncEdgeValue
+  let AppwardenConfigSchemaMock: typeof AppwardenConfigSchema
+  let isCacheUrlMock: typeof isCacheUrl
   let mockConfig: any
 
   beforeEach(async () => {
@@ -110,9 +115,19 @@ describe("createAppwardenMiddleware", () => {
     // Reset module to get fresh instance with mocked MemoryCache
     vi.resetModules()
 
-    // Re-import the module to get a fresh instance
+    // Re-import all modules that use vi.mock to get fresh mock references
     const module = await import("./appwarden-on-vercel")
     createAppwardenMiddleware = module.createAppwardenMiddleware
+
+    const vercelModule = await import("../utils/vercel")
+    getLockValueMock = vercelModule.getLockValue
+    syncEdgeValueMock = vercelModule.syncEdgeValue
+
+    const schemaModule = await import("../schemas/vercel")
+    AppwardenConfigSchemaMock = schemaModule.AppwardenConfigSchema
+
+    const utilsModule = await import("../utils")
+    isCacheUrlMock = utilsModule.isCacheUrl
 
     // Set default mock return values
     mockMemoryCacheGet.mockReturnValue(undefined)
@@ -127,7 +142,7 @@ describe("createAppwardenMiddleware", () => {
     }
 
     // Mock isCacheUrl.edgeConfig
-    vi.mocked(isCacheUrl.edgeConfig).mockReturnValue(true)
+    vi.mocked(isCacheUrlMock.edgeConfig).mockReturnValue(true)
 
     // Mock validateConfig to return false (valid config) by default
     mockValidateConfig.mockReturnValue(false)
@@ -140,10 +155,10 @@ describe("createAppwardenMiddleware", () => {
     })
 
     // Mock AppwardenConfigSchema.parse to return the config by default
-    vi.mocked(AppwardenConfigSchema.parse).mockReturnValue(mockConfig)
+    vi.mocked(AppwardenConfigSchemaMock.parse).mockReturnValue(mockConfig)
 
     // Mock getLockValue to return not locked by default
-    vi.mocked(getLockValue).mockResolvedValue({
+    vi.mocked(getLockValueMock).mockResolvedValue({
       lockValue: {
         isLocked: 0,
         isLockedTest: 0,
@@ -192,7 +207,7 @@ describe("createAppwardenMiddleware", () => {
 
   it("should call NextResponse.next() when no lock page slug is configured (pass through)", async () => {
     const configWithoutLockPage = { ...mockConfig, lockPageSlug: "" }
-    vi.mocked(AppwardenConfigSchema.parse).mockReturnValue(
+    vi.mocked(AppwardenConfigSchemaMock.parse).mockReturnValue(
       configWithoutLockPage,
     )
 
@@ -202,13 +217,13 @@ describe("createAppwardenMiddleware", () => {
     })
     const result = await middleware(request)
 
-    expect(getLockValue).not.toHaveBeenCalled()
+    expect(getLockValueMock).not.toHaveBeenCalled()
     expect(result.status).toBe(200)
     expect(mockNextResponseNext).toHaveBeenCalled()
   })
 
   it("should redirect to lock page when site is locked", async () => {
-    vi.mocked(getLockValue).mockResolvedValue({
+    vi.mocked(getLockValueMock).mockResolvedValue({
       lockValue: {
         isLocked: 1,
         isLockedTest: 0,
@@ -232,9 +247,11 @@ describe("createAppwardenMiddleware", () => {
 
   it("should normalize lock page slug to start with /", async () => {
     const configWithoutSlash = { ...mockConfig, lockPageSlug: "maintenance" }
-    vi.mocked(AppwardenConfigSchema.parse).mockReturnValue(configWithoutSlash)
+    vi.mocked(AppwardenConfigSchemaMock.parse).mockReturnValue(
+      configWithoutSlash,
+    )
 
-    vi.mocked(getLockValue).mockResolvedValue({
+    vi.mocked(getLockValueMock).mockResolvedValue({
       lockValue: {
         isLocked: 1,
         isLockedTest: 0,
@@ -258,7 +275,7 @@ describe("createAppwardenMiddleware", () => {
   })
 
   it("should call NextResponse.next() when site is not locked (pass through)", async () => {
-    vi.mocked(getLockValue).mockResolvedValue({
+    vi.mocked(getLockValueMock).mockResolvedValue({
       lockValue: {
         isLocked: 0,
         isLockedTest: 0,
@@ -288,7 +305,7 @@ describe("createAppwardenMiddleware", () => {
     })
     await middleware(request)
 
-    expect(syncEdgeValue).toHaveBeenCalled()
+    expect(syncEdgeValueMock).toHaveBeenCalled()
     expect(mockWaitUntil).toHaveBeenCalled()
   })
 
@@ -309,7 +326,7 @@ describe("createAppwardenMiddleware", () => {
     })
     await middleware(request)
 
-    expect(syncEdgeValue).not.toHaveBeenCalled()
+    expect(syncEdgeValueMock).not.toHaveBeenCalled()
     expect(mockWaitUntil).not.toHaveBeenCalled()
   })
 
@@ -333,11 +350,11 @@ describe("createAppwardenMiddleware", () => {
     // Should redirect because cached value has isLocked: 1
     expect(result.status).toBe(302)
     // Should not call getLockValue because we use cached value
-    expect(getLockValue).not.toHaveBeenCalled()
+    expect(getLockValueMock).not.toHaveBeenCalled()
   })
 
   it("should call NextResponse.next() on errors (fail open)", async () => {
-    vi.mocked(getLockValue).mockRejectedValue(new Error("API error"))
+    vi.mocked(getLockValueMock).mockRejectedValue(new Error("API error"))
 
     const middleware = createAppwardenMiddleware(mockConfig)
     const request = new Request("https://example.com/page", {
@@ -352,7 +369,7 @@ describe("createAppwardenMiddleware", () => {
 
   it("should not log error if it's in globalErrors", async () => {
     const globalError = new Error(globalErrors[0])
-    vi.mocked(getLockValue).mockRejectedValue(globalError)
+    vi.mocked(getLockValueMock).mockRejectedValue(globalError)
 
     // Clear the spy to count only errors from the middleware
     consoleErrorSpy.mockClear()
@@ -374,8 +391,8 @@ describe("createAppwardenMiddleware", () => {
       lockPageSlug: "/maintenance",
     }
 
-    vi.mocked(AppwardenConfigSchema.parse).mockReturnValue(upstashConfig)
-    vi.mocked(isCacheUrl.edgeConfig).mockReturnValue(false)
+    vi.mocked(AppwardenConfigSchemaMock.parse).mockReturnValue(upstashConfig)
+    vi.mocked(isCacheUrlMock.edgeConfig).mockReturnValue(false)
 
     const middleware = createAppwardenMiddleware(upstashConfig)
     const request = new Request("https://example.com/page", {
@@ -384,7 +401,7 @@ describe("createAppwardenMiddleware", () => {
     await middleware(request)
 
     // Verify getLockValue was called with upstash provider
-    expect(getLockValue).toHaveBeenCalledWith(
+    expect(getLockValueMock).toHaveBeenCalledWith(
       expect.objectContaining({
         provider: "upstash",
       }),
@@ -392,7 +409,7 @@ describe("createAppwardenMiddleware", () => {
   })
 
   it("should use edge-config provider when cacheUrl is edge config URL", async () => {
-    vi.mocked(isCacheUrl.edgeConfig).mockReturnValue(true)
+    vi.mocked(isCacheUrlMock.edgeConfig).mockReturnValue(true)
 
     const middleware = createAppwardenMiddleware(mockConfig)
     const request = new Request("https://example.com/page", {
@@ -401,7 +418,7 @@ describe("createAppwardenMiddleware", () => {
     await middleware(request)
 
     // Verify getLockValue was called with edge-config provider
-    expect(getLockValue).toHaveBeenCalledWith(
+    expect(getLockValueMock).toHaveBeenCalledWith(
       expect.objectContaining({
         provider: "edge-config",
       }),
@@ -415,7 +432,7 @@ describe("createAppwardenMiddleware", () => {
     })
     await middleware(request)
 
-    expect(getLockValue).toHaveBeenCalledWith(
+    expect(getLockValueMock).toHaveBeenCalledWith(
       expect.objectContaining({
         keyName: APPWARDEN_CACHE_KEY,
       }),
@@ -442,7 +459,7 @@ describe("createAppwardenMiddleware", () => {
       lockPageSlug: "/maintenance",
     }
 
-    vi.mocked(AppwardenConfigSchema.parse).mockReturnValue(minimalConfig)
+    vi.mocked(AppwardenConfigSchemaMock.parse).mockReturnValue(minimalConfig)
 
     const middleware = createAppwardenMiddleware(minimalConfig)
     const request = new Request("https://example.com", {
@@ -472,14 +489,14 @@ describe("createAppwardenMiddleware", () => {
       // Should not throw even if waitUntil fails
       const result = await middleware(request)
       expect(result).toBeDefined()
-      expect(syncEdgeValue).toHaveBeenCalled()
+      expect(syncEdgeValueMock).toHaveBeenCalled()
     })
   })
 
   // Response.redirect behavior tests
   describe("Response.redirect behavior", () => {
     it("should use 302 status code for redirects (temporary redirect)", async () => {
-      vi.mocked(getLockValue).mockResolvedValue({
+      vi.mocked(getLockValueMock).mockResolvedValue({
         lockValue: {
           isLocked: 1,
           isLockedTest: 0,
@@ -503,11 +520,11 @@ describe("createAppwardenMiddleware", () => {
         ...mockConfig,
         lockPageSlug: "/custom-lock",
       }
-      vi.mocked(AppwardenConfigSchema.parse).mockReturnValue(
+      vi.mocked(AppwardenConfigSchemaMock.parse).mockReturnValue(
         configWithCustomPath,
       )
 
-      vi.mocked(getLockValue).mockResolvedValue({
+      vi.mocked(getLockValueMock).mockResolvedValue({
         lockValue: {
           isLocked: 1,
           isLockedTest: 0,
@@ -531,7 +548,7 @@ describe("createAppwardenMiddleware", () => {
 
   describe("redirect loop prevention", () => {
     it("should not redirect when already on lock page to prevent infinite redirect loop", async () => {
-      vi.mocked(getLockValue).mockResolvedValue({
+      vi.mocked(getLockValueMock).mockResolvedValue({
         lockValue: {
           isLocked: 1,
           isLockedTest: 0,
@@ -549,16 +566,18 @@ describe("createAppwardenMiddleware", () => {
       const result = await middleware(request)
 
       // Should return NextResponse.next() and NOT redirect
-      expect(getLockValue).not.toHaveBeenCalled()
+      expect(getLockValueMock).not.toHaveBeenCalled()
       expect(result.status).toBe(200)
       expect(mockNextResponseNext).toHaveBeenCalled()
     })
 
     it("should not redirect when already on lock page (slug without leading slash)", async () => {
       const configWithoutSlash = { ...mockConfig, lockPageSlug: "maintenance" }
-      vi.mocked(AppwardenConfigSchema.parse).mockReturnValue(configWithoutSlash)
+      vi.mocked(AppwardenConfigSchemaMock.parse).mockReturnValue(
+        configWithoutSlash,
+      )
 
-      vi.mocked(getLockValue).mockResolvedValue({
+      vi.mocked(getLockValueMock).mockResolvedValue({
         lockValue: {
           isLocked: 1,
           isLockedTest: 0,
@@ -576,7 +595,7 @@ describe("createAppwardenMiddleware", () => {
       const result = await middleware(request)
 
       // Should return NextResponse.next() and NOT redirect
-      expect(getLockValue).not.toHaveBeenCalled()
+      expect(getLockValueMock).not.toHaveBeenCalled()
       expect(result.status).toBe(200)
       expect(mockNextResponseNext).toHaveBeenCalled()
     })

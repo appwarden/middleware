@@ -3,13 +3,14 @@ export const debug = (...msg: any[]) => {
   if (DEBUG) {
     const formatted = msg.map((m) => {
       if (typeof m === "object" && m !== null) {
+        // Handle Error objects specially - JSON.stringify returns "{}" for them
+        if (m instanceof Error) {
+          return m.stack ?? m.message
+        }
         try {
           return JSON.stringify(m)
         } catch {
           // Handle circular references, BigInt, etc.
-          if (m instanceof Error && m.stack) {
-            return m.stack
-          }
           try {
             return String(m)
           } catch {
