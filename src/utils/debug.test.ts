@@ -55,10 +55,7 @@ describe("debug", () => {
     // Should not throw and should fall back to String()
     debug("circular:", circularObj)
 
-    expect(consoleLogSpy).toHaveBeenCalledWith(
-      "circular:",
-      "[object Object]",
-    )
+    expect(consoleLogSpy).toHaveBeenCalledWith("circular:", "[object Object]")
   })
 
   it("should handle Error objects with stack trace", () => {

@@ -6,8 +6,9 @@ export const debug = (...msg: any[]) => {
         try {
           return JSON.stringify(m)
         } catch {
-          if (m instanceof Error) {
-            return m.stack || m.message || String(m)
+          // Handle circular references, BigInt, etc.
+          if (m instanceof Error && m.stack) {
+            return m.stack
           }
           try {
             return String(m)
