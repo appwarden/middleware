@@ -1,5 +1,9 @@
 import { UseCSPInput } from "../../schemas"
 import { ContentSecurityPolicyType } from "../../types"
+import {
+  autoQuoteCSPDirectiveArray,
+  autoQuoteCSPDirectiveValue,
+} from "./csp-keywords"
 
 const addNonce = (value: string, cspNonce: string) =>
   value.replace("{{nonce}}", `'nonce-${cspNonce}'`)
@@ -22,9 +26,13 @@ export const makeCSPHeader = (
     namesSeen.add(name)
 
     if (Array.isArray(value)) {
-      value = addNonce(value.join(" "), cspNonce)
+      // Auto-quote CSP keywords before joining
+      value = addNonce(autoQuoteCSPDirectiveArray(value).join(" "), cspNonce)
     } else if (value === true) {
       value = ""
+    } else if (typeof value === "string") {
+      // Auto-quote CSP keywords in string values
+      value = autoQuoteCSPDirectiveValue(value)
     }
 
     if (value) {
