@@ -228,4 +228,155 @@ describe("makeCSPHeader", () => {
     expect(headerName).toBe("Content-Security-Policy")
     expect(headerValue).toBe("default-src 'none'")
   })
+
+  describe("CSP keyword auto-quoting", () => {
+    it("should auto-quote unquoted 'self' keyword in arrays", () => {
+      const directives = {
+        "script-src": ["self", "https://example.com"],
+      } as unknown as ContentSecurityPolicyType
+
+      const [, headerValue] = makeCSPHeader(testNonce, directives, "enforced")
+
+      expect(headerValue).toBe("script-src 'self' https://example.com")
+    })
+
+    it("should auto-quote unquoted 'none' keyword in arrays", () => {
+      const directives = {
+        "object-src": ["none"],
+      } as unknown as ContentSecurityPolicyType
+
+      const [, headerValue] = makeCSPHeader(testNonce, directives, "enforced")
+
+      expect(headerValue).toBe("object-src 'none'")
+    })
+
+    it("should auto-quote multiple unquoted keywords in arrays", () => {
+      const directives = {
+        "script-src": ["self", "unsafe-inline", "strict-dynamic"],
+      } as unknown as ContentSecurityPolicyType
+
+      const [, headerValue] = makeCSPHeader(testNonce, directives, "enforced")
+
+      expect(headerValue).toBe(
+        "script-src 'self' 'unsafe-inline' 'strict-dynamic'",
+      )
+    })
+
+    it("should NOT double-quote already-quoted keywords in arrays", () => {
+      const directives = {
+        "script-src": ["'self'", "'unsafe-inline'"],
+      } as unknown as ContentSecurityPolicyType
+
+      const [, headerValue] = makeCSPHeader(testNonce, directives, "enforced")
+
+      expect(headerValue).toBe("script-src 'self' 'unsafe-inline'")
+      // Ensure no double quotes
+      expect(headerValue).not.toContain("''self''")
+      expect(headerValue).not.toContain("''unsafe-inline''")
+    })
+
+    it("should handle mixed quoted and unquoted keywords in arrays", () => {
+      const directives = {
+        "script-src": ["'self'", "unsafe-inline", "https://example.com"],
+      } as unknown as ContentSecurityPolicyType
+
+      const [, headerValue] = makeCSPHeader(testNonce, directives, "enforced")
+
+      expect(headerValue).toBe(
+        "script-src 'self' 'unsafe-inline' https://example.com",
+      )
+    })
+
+    it("should auto-quote unquoted keywords in string values", () => {
+      const directives = {
+        "script-src": "self unsafe-inline https://example.com",
+      } as unknown as ContentSecurityPolicyType
+
+      const [, headerValue] = makeCSPHeader(testNonce, directives, "enforced")
+
+      expect(headerValue).toBe(
+        "script-src 'self' 'unsafe-inline' https://example.com",
+      )
+    })
+
+    it("should NOT double-quote already-quoted keywords in string values", () => {
+      const directives = {
+        "script-src": "'self' 'unsafe-inline'",
+      } as unknown as ContentSecurityPolicyType
+
+      const [, headerValue] = makeCSPHeader(testNonce, directives, "enforced")
+
+      expect(headerValue).toBe("script-src 'self' 'unsafe-inline'")
+      expect(headerValue).not.toContain("''")
+    })
+
+    it("should preserve non-keyword values unchanged", () => {
+      const directives = {
+        "script-src": ["self", "an-elf", "https://cdn.example.com"],
+      } as unknown as ContentSecurityPolicyType
+
+      const [, headerValue] = makeCSPHeader(testNonce, directives, "enforced")
+
+      expect(headerValue).toBe(
+        "script-src 'self' an-elf https://cdn.example.com",
+      )
+    })
+
+    it("should preserve nonce placeholders and auto-quote keywords", () => {
+      const directives = {
+        "script-src": ["self", "{{nonce}}", "an-elf"],
+      } as unknown as ContentSecurityPolicyType
+
+      const [, headerValue] = makeCSPHeader(testNonce, directives, "enforced")
+
+      expect(headerValue).toBe(`script-src 'self' 'nonce-${testNonce}' an-elf`)
+    })
+
+    it("should preserve hash values and auto-quote keywords", () => {
+      const directives = {
+        "script-src": ["self", "'sha256-abc123def456'"],
+      } as unknown as ContentSecurityPolicyType
+
+      const [, headerValue] = makeCSPHeader(testNonce, directives, "enforced")
+
+      expect(headerValue).toBe("script-src 'self' 'sha256-abc123def456'")
+    })
+
+    it("should auto-quote all W3C CSP Level 3 keywords", () => {
+      const directives = {
+        "script-src": [
+          "self",
+          "none",
+          "unsafe-inline",
+          "unsafe-eval",
+          "unsafe-hashes",
+          "strict-dynamic",
+          "wasm-unsafe-eval",
+        ],
+      } as unknown as ContentSecurityPolicyType
+
+      const [, headerValue] = makeCSPHeader(testNonce, directives, "enforced")
+
+      expect(headerValue).toBe(
+        "script-src 'self' 'none' 'unsafe-inline' 'unsafe-eval' 'unsafe-hashes' 'strict-dynamic' 'wasm-unsafe-eval'",
+      )
+    })
+
+    it("should handle the real-world bug scenario from user config", () => {
+      // This is the exact scenario from the bug report:
+      // User provided: ["self", "an-elf", "{{nonce}}"]
+      // Expected output: 'self' an-elf 'nonce-xxx'
+      const directives = {
+        "script-src": ["self", "an-elf", "{{nonce}}"],
+      } as unknown as ContentSecurityPolicyType
+
+      const [, headerValue] = makeCSPHeader(testNonce, directives, "enforced")
+
+      expect(headerValue).toBe(`script-src 'self' an-elf 'nonce-${testNonce}'`)
+      // Verify 'self' is properly quoted
+      expect(headerValue).toContain("'self'")
+      // Verify 'an-elf' is NOT quoted (it's not a keyword)
+      expect(headerValue).toContain(" an-elf ")
+    })
+  })
 })
