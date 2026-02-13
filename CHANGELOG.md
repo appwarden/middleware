@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.2.1](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.2.0...@appwarden/middleware@3.2.1) (2026-02-13)
+
+
+### Bug Fixes
+
+* auto-quote CSP keywords to prevent invalid headers ([aee4189](https://github.com/appwarden/middleware/commit/aee4189fea9ddcf46743fe24134d4b5b7eebb812))
+* handle whitespace in CSP keyword values ([ee6c5c2](https://github.com/appwarden/middleware/commit/ee6c5c233dc6eb43a48885677d699b0792f0cd6a))
+
 # [3.2.0](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.1.1...@appwarden/middleware@3.2.0) (2026-02-11)
 
 
