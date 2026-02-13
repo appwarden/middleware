@@ -71,14 +71,14 @@ importers:
         specifier: ^10.0.1
         version: 10.0.1(semantic-release@25.0.3(typescript@5.9.3))
       '@semantic-release/github':
-        specifier: ^12.0.3
-        version: 12.0.3(semantic-release@25.0.3(typescript@5.9.3))
+        specifier: ^12.0.5
+        version: 12.0.5(semantic-release@25.0.3(typescript@5.9.3))
       '@semantic-release/npm':
         specifier: ^13.1.4
         version: 13.1.4(semantic-release@25.0.3(typescript@5.9.3))
       '@vercel/functions':
-        specifier: ^3.4.1
-        version: 3.4.1(@aws-sdk/credential-provider-web-identity@3.972.3)
+        specifier: ^3.4.2
+        version: 3.4.2(@aws-sdk/credential-provider-web-identity@3.972.3)
       '@vitest/coverage-istanbul':
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4(@edge-runtime/vm@3.2.0)(@types/debug@4.1.12)(@types/node@18.19.130)(jiti@2.6.1)(terser@5.16.9)(yaml@2.8.2))
@@ -1895,8 +1895,8 @@ packages:
     peerDependencies:
       semantic-release: '>=18.0.0'
 
-  '@semantic-release/github@12.0.3':
-    resolution: {integrity: sha512-pod3AVGVVVk2rUczMBL4+gfY7hP7A9YYOwjpxVFSusF+pDbFOYBzFRQcHjv1H3IntQyB/Noxzx8LUZ/iwAQQeQ==}
+  '@semantic-release/github@12.0.5':
+    resolution: {integrity: sha512-QEf76UJGbNdq58EWQHBO56YWVQbPDuFOSITkfaI6Q4acpThWqL/jpbrDTilcqo3plRE3NnJko97XLmpCEp4WGw==}
     engines: {node: ^22.14.0 || >= 24.10.0}
     peerDependencies:
       semantic-release: '>=24.1.0'
@@ -2407,8 +2407,21 @@ packages:
       '@aws-sdk/credential-provider-web-identity':
         optional: true
 
+  '@vercel/functions@3.4.2':
+    resolution: {integrity: sha512-WDsNNuGOOUhRYxfcSgk8nlXaYW/6u1Lw2eaKm0y4+gDPGK/hwmYIeP2hESfccuCiPXd5ZGO8Jz/V5Ud3ZByoUQ==}
+    engines: {node: '>= 20'}
+    peerDependencies:
+      '@aws-sdk/credential-provider-web-identity': '*'
+    peerDependenciesMeta:
+      '@aws-sdk/credential-provider-web-identity':
+        optional: true
+
   '@vercel/oidc@3.1.0':
     resolution: {integrity: sha512-Fw28YZpRnA3cAHHDlkt7xQHiJ0fcL+NRcIqsocZQUSmbzeIKRpwttJjik5ZGanXP+vlA4SbTg+AbA3bP363l+w==}
+    engines: {node: '>= 20'}
+
+  '@vercel/oidc@3.2.0':
+    resolution: {integrity: sha512-UycprH3T6n3jH0k44NHMa7pnFHGu/N05MjojYr+Mc6I7obkoLIJujSWwin1pCvdy/eOxrI/l3uDLQsmcrOb4ug==}
     engines: {node: '>= 20'}
 
   '@vitest/coverage-istanbul@3.2.4':
@@ -8327,7 +8340,7 @@ snapshots:
 
   '@npmcli/fs@4.0.0':
     dependencies:
-      semver: 7.7.4
+      semver: 7.7.3
     optional: true
 
   '@npmcli/fs@5.0.0':
@@ -8638,7 +8651,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@semantic-release/github@12.0.3(semantic-release@25.0.3(typescript@5.9.3))':
+  '@semantic-release/github@12.0.5(semantic-release@25.0.3(typescript@5.9.3))':
     dependencies:
       '@octokit/core': 7.0.6
       '@octokit/plugin-paginate-rest': 14.0.0(@octokit/core@7.0.6)
@@ -9444,8 +9457,18 @@ snapshots:
       '@vercel/oidc': 3.1.0
     optionalDependencies:
       '@aws-sdk/credential-provider-web-identity': 3.972.3
+    optional: true
 
-  '@vercel/oidc@3.1.0': {}
+  '@vercel/functions@3.4.2(@aws-sdk/credential-provider-web-identity@3.972.3)':
+    dependencies:
+      '@vercel/oidc': 3.2.0
+    optionalDependencies:
+      '@aws-sdk/credential-provider-web-identity': 3.972.3
+
+  '@vercel/oidc@3.1.0':
+    optional: true
+
+  '@vercel/oidc@3.2.0': {}
 
   '@vitest/coverage-istanbul@3.2.4(vitest@3.2.4(@edge-runtime/vm@3.2.0)(@types/debug@4.1.12)(@types/node@18.19.130)(jiti@2.6.1)(terser@5.16.9)(yaml@2.8.2))':
     dependencies:
@@ -11956,7 +11979,7 @@ snapshots:
 
   node-abi@3.87.0:
     dependencies:
-      semver: 7.7.4
+      semver: 7.7.3
     optional: true
 
   node-addon-api@8.5.0:
@@ -11987,7 +12010,7 @@ snapshots:
       make-fetch-happen: 14.0.3
       nopt: 8.1.0
       proc-log: 5.0.0
-      semver: 7.7.4
+      semver: 7.7.3
       tar: 7.5.7
       tinyglobby: 0.2.15
       which: 5.0.0
@@ -12656,7 +12679,7 @@ snapshots:
     dependencies:
       '@semantic-release/commit-analyzer': 13.0.1(semantic-release@25.0.3(typescript@5.9.3))
       '@semantic-release/error': 4.0.0
-      '@semantic-release/github': 12.0.3(semantic-release@25.0.3(typescript@5.9.3))
+      '@semantic-release/github': 12.0.5(semantic-release@25.0.3(typescript@5.9.3))
       '@semantic-release/npm': 13.1.4(semantic-release@25.0.3(typescript@5.9.3))
       '@semantic-release/release-notes-generator': 14.1.0(semantic-release@25.0.3(typescript@5.9.3))
       aggregate-error: 5.0.0
