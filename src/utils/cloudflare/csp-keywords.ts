@@ -58,18 +58,20 @@ export const isQuoted = (value: string): boolean => {
  * autoQuoteCSPKeyword("{{nonce}}") // "{{nonce}}" (nonce placeholder)
  */
 export const autoQuoteCSPKeyword = (value: string): string => {
-  // If already quoted, return as-is
-  if (isQuoted(value)) {
-    return value
+  const trimmed = value.trim()
+
+  // If already quoted (ignoring surrounding whitespace), return as-is
+  if (isQuoted(trimmed)) {
+    return trimmed
   }
 
-  // If it's a CSP keyword, quote it
-  if (isCSPKeyword(value)) {
-    return `'${value}'`
+  // If it's a CSP keyword (ignoring surrounding whitespace), quote the normalized keyword
+  if (isCSPKeyword(trimmed)) {
+    return `'${trimmed}'`
   }
 
-  // Otherwise, return unchanged
-  return value
+  // Otherwise, return the trimmed value
+  return trimmed
 }
 
 /**
@@ -80,7 +82,12 @@ export const autoQuoteCSPKeyword = (value: string): string => {
  * autoQuoteCSPDirectiveValue("'self' none") // "'self' 'none'"
  */
 export const autoQuoteCSPDirectiveValue = (value: string): string => {
-  return value.split(/\s+/).map(autoQuoteCSPKeyword).join(" ")
+  return value
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map(autoQuoteCSPKeyword)
+    .join(" ")
 }
 
 /**

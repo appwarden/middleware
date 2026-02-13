@@ -152,6 +152,29 @@ describe("CSP Keywords", () => {
         expect(thirdCall).toBe("'self'")
       })
     })
+
+    describe("whitespace handling", () => {
+      it.each([
+        [" self", "'self'"],
+        ["self ", "'self'"],
+        [" self ", "'self'"],
+        ["  self  ", "'self'"],
+        [" 'self'", "'self'"],
+        ["'self' ", "'self'"],
+        [" 'self' ", "'self'"],
+      ])(
+        "autoQuoteCSPKeyword(%s) should trim and return %s",
+        (input, expected) => {
+          expect(autoQuoteCSPKeyword(input)).toBe(expected)
+        },
+      )
+
+      it("should trim non-keyword values", () => {
+        expect(autoQuoteCSPKeyword(" https://example.com ")).toBe(
+          "https://example.com",
+        )
+      })
+    })
   })
 
   describe("autoQuoteCSPDirectiveValue", () => {
@@ -181,6 +204,40 @@ describe("CSP Keywords", () => {
       expect(autoQuoteCSPDirectiveValue("self {{nonce}}")).toBe(
         "'self' {{nonce}}",
       )
+    })
+
+    describe("whitespace handling", () => {
+      it("should handle leading whitespace", () => {
+        expect(autoQuoteCSPDirectiveValue("  self https://example.com")).toBe(
+          "'self' https://example.com",
+        )
+      })
+
+      it("should handle trailing whitespace", () => {
+        expect(autoQuoteCSPDirectiveValue("self https://example.com  ")).toBe(
+          "'self' https://example.com",
+        )
+      })
+
+      it("should handle multiple spaces between values", () => {
+        expect(autoQuoteCSPDirectiveValue("self    https://example.com")).toBe(
+          "'self' https://example.com",
+        )
+      })
+
+      it("should handle leading, trailing, and multiple internal spaces", () => {
+        expect(
+          autoQuoteCSPDirectiveValue("  self   unsafe-inline   none  "),
+        ).toBe("'self' 'unsafe-inline' 'none'")
+      })
+
+      it("should handle empty string", () => {
+        expect(autoQuoteCSPDirectiveValue("")).toBe("")
+      })
+
+      it("should handle whitespace-only string", () => {
+        expect(autoQuoteCSPDirectiveValue("   ")).toBe("")
+      })
     })
   })
 
@@ -227,6 +284,21 @@ describe("CSP Keywords", () => {
         "'self'",
         "'sha256-abc123'",
       ])
+    })
+
+    describe("whitespace handling", () => {
+      it("should trim whitespace from array elements", () => {
+        expect(autoQuoteCSPDirectiveArray([" self", "none "])).toEqual([
+          "'self'",
+          "'none'",
+        ])
+      })
+
+      it("should handle elements with surrounding whitespace", () => {
+        expect(
+          autoQuoteCSPDirectiveArray([" self ", " https://example.com "]),
+        ).toEqual(["'self'", "https://example.com"])
+      })
     })
   })
 })
