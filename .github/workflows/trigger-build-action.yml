@@ -3,6 +3,8 @@ on:
   release:
     types: [published]
 
+# Dispatches "middleware-release" event
+
 # Minimal permissions - we only need to read release info
 # Cross-repo dispatch uses the PAT token directly
 permissions:
