@@ -50,7 +50,7 @@ importers:
         specifier: ^0.12.10
         version: 0.12.10(@cloudflare/workers-types@4.20260206.0)(@vitest/runner@4.0.18)(@vitest/snapshot@4.0.18)(vitest@3.2.4(@edge-runtime/vm@3.2.0)(@types/debug@4.1.12)(@types/node@18.19.130)(jiti@2.6.1)(terser@5.16.9)(yaml@2.8.2))
       '@cloudflare/workers-types':
-        specifier: 4.20260206.0
+        specifier: ^4.20260206.0
         version: 4.20260206.0
       '@commitlint/cli':
         specifier: ^20.4.1
