@@ -25,19 +25,23 @@ export const makeCSPHeader = (
 
     namesSeen.add(name)
 
+    // Normalize value to a string with auto-quoted CSP keywords
+    let directiveValue: string
     if (Array.isArray(value)) {
-      // Auto-quote CSP keywords before joining
-      value = addNonce(autoQuoteCSPDirectiveArray(value).join(" "), cspNonce)
+      directiveValue = autoQuoteCSPDirectiveArray(value).join(" ")
     } else if (value === true) {
-      value = ""
+      directiveValue = ""
     } else if (typeof value === "string") {
-      // Auto-quote CSP keywords in string values
-      value = autoQuoteCSPDirectiveValue(value)
+      directiveValue = autoQuoteCSPDirectiveValue(value)
+    } else {
+      // value is false - skip this directive
+      return
     }
 
-    if (value) {
-      result.push(`${name} ${addNonce(value, cspNonce)}`)
-    } else if (value !== false) {
+    // Replace nonce placeholder once, at the end
+    if (directiveValue) {
+      result.push(`${name} ${addNonce(directiveValue, cspNonce)}`)
+    } else {
       result.push(name)
     }
   })
