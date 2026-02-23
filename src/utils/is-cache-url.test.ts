@@ -107,7 +107,7 @@ describe("isValidCacheUrl", () => {
           "Aa3vAAIjcDFkNWIzYTlkODVhMWY0ZjliOGQzMmUyNmMxZWUxMzcxOXAxMA",
       },
     ])(
-      "should return the password for valid Upstash URL: $url",
+      "should return the password for valid Upstash URL",
       ({ url, expectedPassword }) => {
         const result = isValidCacheUrl.upstash(url)
         expect(result).toBe(expectedPassword)

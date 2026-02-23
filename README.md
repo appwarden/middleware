@@ -14,7 +14,8 @@
 
 - **Instant Quarantine**: Immediately redirects all visitors to a lock page when activated
 - **Discord Integration**: Trigger lockdowns via Discord commands (`/quarantine lock your.app.io`)
-- **Nonce-based Content Security Policy (Cloudflare only)**: Deploy a nonce-based Content Security Policy to supercharge your website security
+- **Nonce-based Content Security Policy (Cloudflare only)**: Deploy a nonce-based Content Security Policy (CSP) using HTML rewriting on Cloudflare where supported.
+- **Static CSP headers on other platforms**: Apply CSP as headers only (no HTML rewriting, no nonce injection) on Vercel Edge Middleware and the Next.js Cloudflare adapter.
 - **Minimal Runtime Overhead**: Negligible performance impact by using `event.waitUntil` for status checks
 
 ## Installation
@@ -51,8 +52,9 @@ export default {
 }
 ```
 
-    - `lockPageSlug` controls where users are redirected when the site is quarantined. See [Configuration](#configuration) for details.
-    - `CSP_MODE` and `CSP_DIRECTIVES` configure a nonce-based Content Security Policy that runs **after** origin rendering (when HTML rewriting is available). See [Configuration](#configuration) for CSP modes and directives.
+        - `lockPageSlug` controls where users are redirected when the site is quarantined. See [Configuration](#configuration) for details.
+        - `CSP_MODE` and `CSP_DIRECTIVES` configure a nonce-based Content Security Policy that runs **after** origin rendering (when HTML rewriting is available). See [Configuration](#configuration) for CSP modes and directives.
+        - The optional `hostname` field in the `contentSecurityPolicy` configuration lets you scope CSP to a specific hostname. In this universal Worker example it is omitted so the CSP applies to all hostnames served by the worker; framework adapter examples below include `hostname` to show how to scope CSP to a single site.
 
 See the Cloudflare integration docs on [appwarden.io](https://appwarden.io/docs) for environment variable setup and deployment details.
 
@@ -175,7 +177,7 @@ export default createAppwardenMiddleware(({ env }) => ({
   appwardenApiToken: env.APPWARDEN_API_TOKEN,
   appwardenApiHostname: env.APPWARDEN_API_HOSTNAME,
   debug: env.APPWARDEN_DEBUG === "true",
-  // Headers-only CSP (no HTML rewriting)
+  // Headers-only CSP (no HTML rewriting, no nonce support; do not use `{{nonce}}` here)
   contentSecurityPolicy: {
     hostname: "next.example.com",
     mode: "report-only",
@@ -191,7 +193,7 @@ export default createAppwardenMiddleware(({ env }) => ({
 }))
 ```
 
-This adapter applies CSP **headers only** before origin (no HTML rewriting, no nonce injection). See the [Next.js + Cloudflare guide](https://appwarden.io/docs/guides/nextjs-cloudflare) for more.
+This adapter applies CSP **headers only** before origin (no HTML rewriting, no nonce injection). Nonce-based CSP (`{{nonce}}`) is **not supported** in this adapter; CSP directives must not include `{{nonce}}`. See the [Next.js + Cloudflare guide](https://appwarden.io/docs/guides/nextjs-cloudflare) for more.
 
 ### 2. Vercel
 
@@ -268,8 +270,8 @@ Controls the Content Security Policy (CSP) headers that Appwarden adds.
   }
   ```
 
-  To add a nonce to a directive (Cloudflare adapters only), include the `"{{nonce}}"` placeholder
-  in the list of sources. On Vercel Edge Middleware, nonces are not supported and `"{{nonce}}"`
+  To add a nonce to a directive (Cloudflare universal middleware and Cloudflare framework adapters only), include the `"{{nonce}}"` placeholder
+  in the list of sources. On Vercel Edge Middleware and the Next.js Cloudflare adapter, nonces are not supported and `"{{nonce}}"`
   must not be used.
 
   Commonly used directives include: `default-src`, `script-src`, `style-src`, `img-src`,
