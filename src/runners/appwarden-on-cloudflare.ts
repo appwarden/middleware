@@ -29,9 +29,16 @@ export const appwardenOnCloudflare =
 
       const pipeline = [useAppwarden(input), useFetchOrigin()]
 
-      // Add CSP middleware after origin if configured
+      // Add CSP middleware after origin if configured.
+      // When hostname is provided in the CSP config, only mount the middleware
+      // for matching hostnames. This is primarily used with multidomainConfig
+      // in the Cloudflare universal middleware.
+      const cspConfig = input.contentSecurityPolicy
       if (input.contentSecurityPolicy) {
-        pipeline.push(useContentSecurityPolicy(input.contentSecurityPolicy))
+        const cspHostname = cspConfig.hostname
+        if (!cspHostname || cspHostname === context.hostname) {
+          pipeline.push(useContentSecurityPolicy(cspConfig))
+        }
       }
 
       await usePipeline(...pipeline).execute(context)

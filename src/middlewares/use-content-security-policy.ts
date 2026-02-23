@@ -23,11 +23,6 @@ export const useContentSecurityPolicy: (input: UseCSPInput) => Middleware = (
     // run the middleware after the origin is fetched
     await next()
 
-    // Skip if hostname is configured and doesn't match the request hostname
-    if (config.hostname && context.hostname !== config.hostname) {
-      return
-    }
-
     const { response } = context
 
     if (
