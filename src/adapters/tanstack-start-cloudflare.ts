@@ -1,4 +1,5 @@
 import { checkLockStatus } from "../core"
+import type { UseCSPInput } from "../schemas"
 import { TanStackStartCloudflareConfigSchema } from "../schemas/tanstack-start-cloudflare"
 import {
   buildLockPageUrl,
@@ -31,7 +32,7 @@ export interface TanStackStartAppwardenConfig {
   /** Enable debug logging */
   debug?: boolean
   /** Optional Content Security Policy configuration */
-  contentSecurityPolicy?: import("../schemas/use-content-security-policy").UseCSPInput
+  contentSecurityPolicy?: UseCSPInput
 }
 
 /**

@@ -1,6 +1,7 @@
 import type { Runtime } from "@astrojs/cloudflare"
 import type { APIContext, MiddlewareHandler } from "astro"
 import { checkLockStatus } from "../core"
+import type { UseCSPInput } from "../schemas"
 import { AstroCloudflareConfigSchema } from "../schemas/astro-cloudflare"
 import {
   buildLockPageUrl,
@@ -42,7 +43,7 @@ export interface AstroAppwardenConfig {
   /** Enable debug logging */
   debug?: boolean
   /** Optional Content Security Policy configuration */
-  contentSecurityPolicy?: import("../schemas/use-content-security-policy").UseCSPInput
+  contentSecurityPolicy?: UseCSPInput
 }
 
 /**

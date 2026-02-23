@@ -1,4 +1,5 @@
 import { checkLockStatus } from "../core"
+import type { UseCSPInput } from "../schemas"
 import { ReactRouterCloudflareConfigSchema } from "../schemas/react-router-cloudflare"
 import {
   buildLockPageUrl,
@@ -39,7 +40,7 @@ export interface ReactRouterAppwardenConfig {
   /** Enable debug logging */
   debug?: boolean
   /** Optional Content Security Policy configuration */
-  contentSecurityPolicy?: import("../schemas/use-content-security-policy").UseCSPInput
+  contentSecurityPolicy?: UseCSPInput
 }
 
 /**

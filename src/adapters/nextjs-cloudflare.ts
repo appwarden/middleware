@@ -4,6 +4,7 @@ import {
   type NextRequest,
 } from "next/server"
 import { checkLockStatus } from "../core"
+import type { UseCSPInput } from "../schemas"
 import { NextJsCloudflareConfigSchema } from "../schemas/nextjs-cloudflare"
 import {
   buildLockPageUrl,
@@ -36,7 +37,7 @@ export interface NextJsCloudflareAppwardenConfig {
   /** Enable debug logging */
   debug?: boolean
   /** Optional Content Security Policy configuration (headers only, no HTML rewriting; `{{nonce}}` placeholders are not supported) */
-  contentSecurityPolicy?: import("../schemas/use-content-security-policy").UseCSPInput
+  contentSecurityPolicy?: UseCSPInput
 }
 
 /**
