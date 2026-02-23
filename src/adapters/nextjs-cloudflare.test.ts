@@ -10,31 +10,35 @@ vi.mock("../core", () => ({
   checkLockStatus: vi.fn(),
 }))
 
-vi.mock("../utils", () => ({
-  printMessage: vi.fn((message) => `[@appwarden/middleware] ${message}`),
-  isHTMLRequest: vi.fn(
-    (request: Request) =>
-      request.headers.get("accept")?.includes("text/html") ?? false,
-  ),
-  createRedirect: vi.fn((url: URL) => {
-    return new Response(null, {
-      status: 302,
-      headers: { Location: url.toString() },
-    })
-  }),
-  buildLockPageUrl: vi.fn((slug: string, requestUrl: string) => {
-    const url = new URL(requestUrl)
-    url.pathname = slug.startsWith("/") ? slug : `/${slug}`
-    return url
-  }),
-  isOnLockPage: vi.fn((slug: string, requestUrl: string) => {
-    const normalizedSlug = slug.startsWith("/") ? slug : `/${slug}`
-    const url = new URL(requestUrl)
-    return url.pathname === normalizedSlug
-  }),
-  validateConfig: vi.fn(() => false), // No validation errors by default
-  TEMPORARY_REDIRECT_STATUS: 302,
-}))
+vi.mock("../utils", async (importOriginal) => {
+  const actual = (await importOriginal()) as typeof import("../utils")
+  return {
+    ...actual,
+    printMessage: vi.fn((message) => `[@appwarden/middleware] ${message}`),
+    isHTMLRequest: vi.fn(
+      (request: Request) =>
+        request.headers.get("accept")?.includes("text/html") ?? false,
+    ),
+    createRedirect: vi.fn((url: URL) => {
+      return new Response(null, {
+        status: 302,
+        headers: { Location: url.toString() },
+      })
+    }),
+    buildLockPageUrl: vi.fn((slug: string, requestUrl: string) => {
+      const url = new URL(requestUrl)
+      url.pathname = slug.startsWith("/") ? slug : `/${slug}`
+      return url
+    }),
+    isOnLockPage: vi.fn((slug: string, requestUrl: string) => {
+      const normalizedSlug = slug.startsWith("/") ? slug : `/${slug}`
+      const url = new URL(requestUrl)
+      return url.pathname === normalizedSlug
+    }),
+    validateConfig: vi.fn(() => false), // No validation errors by default
+    TEMPORARY_REDIRECT_STATUS: 302,
+  }
+})
 
 // Mock next/server
 vi.mock("next/server", () => ({

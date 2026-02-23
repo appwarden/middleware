@@ -1,6 +1,56 @@
 import { z } from "zod"
-import { isCacheUrl, isValidCacheUrl } from "../utils"
+import { ContentSecurityPolicyType } from "../types"
+import { isCacheUrl, isValidCacheUrl, SchemaErrorKey } from "../utils"
 import { printMessage } from "../utils/print-message"
+import {
+  CSPDirectivesSchema,
+  CSPModeSchema,
+} from "./use-content-security-policy"
+
+export const VercelCSPSchema = z
+  .object({
+    mode: CSPModeSchema,
+    directives: z
+      .lazy(() => CSPDirectivesSchema)
+      .optional()
+      .refine(
+        (val) => {
+          try {
+            if (typeof val === "string") {
+              JSON.parse(val)
+            }
+            return true
+          } catch {
+            return false
+          }
+        },
+        { message: SchemaErrorKey.DirectivesBadParse },
+      )
+      .refine(
+        (val) => {
+          if (!val) return true
+          const serialized = typeof val === "string" ? val : JSON.stringify(val)
+          return !serialized.includes("{{nonce}}")
+        },
+        {
+          message:
+            "Nonce-based CSP is not supported in Vercel Edge Middleware. Remove '{{nonce}}' placeholders from your CSP directives, as Vercel does not support nonce injection.",
+        },
+      )
+      .transform(
+        (val) =>
+          (typeof val === "string" ? JSON.parse(val) : val) as
+            | ContentSecurityPolicyType
+            | undefined,
+      ),
+  })
+  .refine(
+    (values) =>
+      ["report-only", "enforced"].includes(values.mode)
+        ? !!values.directives
+        : true,
+    { path: ["directives"], message: SchemaErrorKey.DirectivesRequired },
+  )
 
 export const BaseNextJsConfigSchema = z.object({
   cacheUrl: z.string(),
@@ -10,6 +60,7 @@ export const BaseNextJsConfigSchema = z.object({
     .string()
     .default("")
     .transform((val) => val.replace(/^\/?/, "/")),
+  contentSecurityPolicy: VercelCSPSchema.optional(),
 })
 
 export const AppwardenConfigSchema = BaseNextJsConfigSchema

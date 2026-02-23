@@ -8,7 +8,7 @@
     "APPWARDEN_API_TOKEN": "123",
     "APPWARDEN_API_HOSTNAME": "https://staging-api.appwarden.io",
     "CSP_MODE": "report-only",
-    "CSP_DIRECTIVES": "{ \"defaultSrc\": [\"{{nonce}}\"] }",
+    "CSP_DIRECTIVES": "{ \"default-src\": [\"{{nonce}}\"] }",
     "DEBUG": true,
   },
 }

@@ -1,5 +1,5 @@
 import { ZodError } from "zod"
-import { useAppwarden } from "../middlewares"
+import { useAppwarden, useContentSecurityPolicy } from "../middlewares"
 import { useFetchOrigin } from "../middlewares/use-fetch-origin"
 import { CloudflareConfigType, ConfigFnInputSchema } from "../schemas"
 import { Bindings, MiddlewareContext } from "../types"
@@ -27,11 +27,12 @@ export const appwardenOnCloudflare =
     try {
       const input = parsedInput.data({ env, ctx, cf: {} })
 
-      const pipeline = [
-        ...input.middleware.before,
-        useAppwarden(input),
-        useFetchOrigin(),
-      ]
+      const pipeline = [useAppwarden(input), useFetchOrigin()]
+
+      // Add CSP middleware after origin if configured
+      if (input.contentSecurityPolicy) {
+        pipeline.push(useContentSecurityPolicy(input.contentSecurityPolicy))
+      }
 
       await usePipeline(...pipeline).execute(context)
     } catch (error) {

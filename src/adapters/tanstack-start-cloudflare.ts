@@ -30,6 +30,8 @@ export interface TanStackStartAppwardenConfig {
   appwardenApiHostname?: string
   /** Enable debug logging */
   debug?: boolean
+  /** Optional Content Security Policy configuration */
+  contentSecurityPolicy?: import("../schemas/use-content-security-policy").UseCSPInput
 }
 
 /**
@@ -141,8 +143,31 @@ export function createAppwardenMiddleware(
         throw createRedirect(lockPageUrl)
       }
 
-      // Continue to next middleware/handler
-      return next()
+      // Continue to next middleware/handler and get the response
+      const response = await next()
+
+      // Apply CSP if configured (runs after origin)
+      if (config.contentSecurityPolicy && response instanceof Response) {
+        const { useContentSecurityPolicy } =
+          await import("../middlewares/use-content-security-policy")
+
+        // Create a mini context for CSP middleware
+        const cspContext = {
+          request,
+          response,
+          hostname: new URL(request.url).hostname,
+          waitUntil: (fn: any) => cloudflare.ctx.waitUntil(fn),
+        }
+
+        await useContentSecurityPolicy(config.contentSecurityPolicy)(
+          cspContext,
+          async () => {}, // no-op next
+        )
+
+        return cspContext.response
+      }
+
+      return response
     } catch (error) {
       // Re-throw redirects and responses
       if (error instanceof Response) {

@@ -35,6 +35,8 @@ export interface NextJsCloudflareAppwardenConfig {
   appwardenApiHostname?: string
   /** Enable debug logging */
   debug?: boolean
+  /** Optional Content Security Policy configuration (headers only, no HTML rewriting) */
+  contentSecurityPolicy?: import("../schemas/use-content-security-policy").UseCSPInput
 }
 
 /**
@@ -119,6 +121,25 @@ export function createAppwardenMiddleware(
       if (result.isLocked) {
         const lockPageUrl = buildLockPageUrl(config.lockPageSlug, request.url)
         return NextResponse.redirect(lockPageUrl, TEMPORARY_REDIRECT_STATUS)
+      }
+
+      // Apply CSP headers if configured (pre-origin, headers only)
+      if (
+        config.contentSecurityPolicy &&
+        config.contentSecurityPolicy.mode !== "disabled"
+      ) {
+        const { makeCSPHeader } = await import("../utils/cloudflare")
+
+        const cspNonce = crypto.randomUUID()
+        const [headerName, headerValue] = makeCSPHeader(
+          cspNonce,
+          config.contentSecurityPolicy.directives,
+          config.contentSecurityPolicy.mode,
+        )
+
+        const response = NextResponse.next()
+        response.headers.set(headerName, headerValue)
+        return response
       }
 
       // Continue to next handler
