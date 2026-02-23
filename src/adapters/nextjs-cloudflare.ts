@@ -35,7 +35,7 @@ export interface NextJsCloudflareAppwardenConfig {
   appwardenApiHostname?: string
   /** Enable debug logging */
   debug?: boolean
-  /** Optional Content Security Policy configuration (headers only, no HTML rewriting) */
+  /** Optional Content Security Policy configuration (headers only, no HTML rewriting; `{{nonce}}` placeholders are not supported) */
   contentSecurityPolicy?: import("../schemas/use-content-security-policy").UseCSPInput
 }
 
@@ -129,10 +129,8 @@ export function createAppwardenMiddleware(
         config.contentSecurityPolicy.mode !== "disabled"
       ) {
         const { makeCSPHeader } = await import("../utils/cloudflare")
-
-        const cspNonce = crypto.randomUUID()
         const [headerName, headerValue] = makeCSPHeader(
-          cspNonce,
+          "",
           config.contentSecurityPolicy.directives,
           config.contentSecurityPolicy.mode,
         )
