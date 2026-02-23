@@ -18,6 +18,9 @@ vi.mock("../middlewares", () => ({
   useAppwarden: vi.fn(() => async (_ctx: any, next: any) => {
     await next()
   }),
+  useContentSecurityPolicy: vi.fn(() => async (_ctx: any, next: any) => {
+    await next()
+  }),
 }))
 
 vi.mock("../middlewares/use-fetch-origin", () => ({
@@ -196,19 +199,17 @@ describe("appwardenOnCloudflare", () => {
     })
   })
 
-  it("should include custom middleware in the pipeline", async () => {
-    // Create a custom middleware for testing
-    const customMiddleware = async (_ctx: any, next: any) => {
-      await next()
-    }
-
-    // Update the mock input function to include the custom middleware
+  it("should include CSP middleware in the pipeline when configured", async () => {
+    // Update the mock input function to include CSP configuration
     mockInputFn.mockReturnValueOnce({
       debug: true,
       lockPageSlug: "/maintenance",
       appwardenApiToken: "test-token",
-      middleware: {
-        before: [customMiddleware],
+      contentSecurityPolicy: {
+        mode: "enforced",
+        directives: {
+          "default-src": ["'self'"],
+        },
       },
     })
 
@@ -216,8 +217,8 @@ describe("appwardenOnCloudflare", () => {
     const handler = appwardenOnCloudflare(mockInputFn) as any
     await handler(mockRequest, mockEnv, mockCtx)
 
-    // Verify that usePipeline was called with the custom middleware included
+    // Verify that usePipeline was called with 3 middlewares (useAppwarden, useFetchOrigin, useContentSecurityPolicy)
     const usePipelineArgs = (usePipeline as any).mock.calls[0]
-    expect(usePipelineArgs).toContain(customMiddleware)
+    expect(usePipelineArgs).toHaveLength(3)
   })
 })

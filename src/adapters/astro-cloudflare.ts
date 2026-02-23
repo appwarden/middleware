@@ -41,6 +41,8 @@ export interface AstroAppwardenConfig {
   appwardenApiHostname?: string
   /** Enable debug logging */
   debug?: boolean
+  /** Optional Content Security Policy configuration */
+  contentSecurityPolicy?: import("../schemas/use-content-security-policy").UseCSPInput
 }
 
 /**
@@ -152,8 +154,31 @@ export function createAppwardenMiddleware(
         return createRedirect(lockPageUrl)
       }
 
-      // Continue to next middleware/route
-      return next()
+      // Continue to next middleware/route and get the response
+      const response = await next()
+
+      // Apply CSP if configured (runs after origin)
+      if (config.contentSecurityPolicy) {
+        const { useContentSecurityPolicy } =
+          await import("../middlewares/use-content-security-policy")
+
+        // Create a mini context for CSP middleware
+        const cspContext = {
+          request,
+          response,
+          hostname: new URL(request.url).hostname,
+          waitUntil: (fn: any) => runtime.ctx.waitUntil(fn),
+        }
+
+        await useContentSecurityPolicy(config.contentSecurityPolicy)(
+          cspContext,
+          async () => {}, // no-op next
+        )
+
+        return cspContext.response
+      }
+
+      return response
     } catch (error) {
       // Re-throw redirects and responses
       if (error instanceof Response) {

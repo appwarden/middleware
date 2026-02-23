@@ -8,13 +8,11 @@ describe("ConfigFnInputSchema", () => {
       debug: true,
       lockPageSlug: "/maintenance",
       appwardenApiToken: "token123",
-      middleware: {
-        before: [
-          async (ctx: any, next: any) => {
-            // Mock middleware function
-            await next()
-          },
-        ],
+      contentSecurityPolicy: {
+        mode: "enforced",
+        directives: {
+          "default-src": ["'self'"],
+        },
       },
     })
 

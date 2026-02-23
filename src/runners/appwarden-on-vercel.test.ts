@@ -10,6 +10,7 @@ const {
   mockNextResponseNext,
   mockValidateConfig,
   mockIsOnLockPage,
+  mockMakeCSPHeader,
 } = vi.hoisted(() => ({
   mockMemoryCacheGet: vi.fn(),
   mockIsExpired: vi.fn(),
@@ -17,6 +18,7 @@ const {
   mockNextResponseNext: vi.fn(),
   mockValidateConfig: vi.fn(),
   mockIsOnLockPage: vi.fn(),
+  mockMakeCSPHeader: vi.fn(),
 }))
 
 // Mock @vercel/functions
@@ -77,6 +79,10 @@ vi.mock("../utils/vercel", () => ({
   getLockValue: vi.fn(),
 }))
 
+vi.mock("../utils/cloudflare", () => ({
+  makeCSPHeader: (...args: unknown[]) => mockMakeCSPHeader(...args),
+}))
+
 // Mock AppwardenConfigSchema
 vi.mock("../schemas/vercel", () => ({
   AppwardenConfigSchema: {
@@ -132,6 +138,10 @@ describe("createAppwardenMiddleware", () => {
     // Set default mock return values
     mockMemoryCacheGet.mockReturnValue(undefined)
     mockIsExpired.mockReturnValue(true)
+    mockMakeCSPHeader.mockReturnValue([
+      "Content-Security-Policy",
+      "default-src 'self'",
+    ])
 
     // Mock valid config
     mockConfig = {
@@ -598,6 +608,140 @@ describe("createAppwardenMiddleware", () => {
       expect(getLockValueMock).not.toHaveBeenCalled()
       expect(result.status).toBe(200)
       expect(mockNextResponseNext).toHaveBeenCalled()
+    })
+  })
+
+  describe("CSP support", () => {
+    it("should add Content-Security-Policy header when mode is 'enforced'", async () => {
+      const directives = { defaultSrc: ["self"] }
+      const configWithCSP = {
+        ...mockConfig,
+        contentSecurityPolicy: { mode: "enforced", directives },
+      }
+      vi.mocked(AppwardenConfigSchemaMock.parse).mockReturnValue(configWithCSP)
+      mockMakeCSPHeader.mockReturnValue([
+        "Content-Security-Policy",
+        "default-src 'self'",
+      ])
+
+      const middleware = createAppwardenMiddleware(configWithCSP)
+      const result = await middleware(
+        new Request("https://example.com/page", {
+          headers: { accept: "text/html" },
+        }),
+      )
+
+      expect(mockMakeCSPHeader).toHaveBeenCalledWith("", directives, "enforced")
+      expect(result.headers.get("Content-Security-Policy")).toBe(
+        "default-src 'self'",
+      )
+    })
+
+    it("should add Content-Security-Policy-Report-Only header when mode is 'report-only'", async () => {
+      const directives = { defaultSrc: ["self"] }
+      const configWithCSP = {
+        ...mockConfig,
+        contentSecurityPolicy: { mode: "report-only", directives },
+      }
+      vi.mocked(AppwardenConfigSchemaMock.parse).mockReturnValue(configWithCSP)
+      mockMakeCSPHeader.mockReturnValue([
+        "Content-Security-Policy-Report-Only",
+        "default-src 'self'",
+      ])
+
+      const middleware = createAppwardenMiddleware(configWithCSP)
+      const result = await middleware(
+        new Request("https://example.com/page", {
+          headers: { accept: "text/html" },
+        }),
+      )
+
+      expect(mockMakeCSPHeader).toHaveBeenCalledWith(
+        "",
+        directives,
+        "report-only",
+      )
+      expect(result.headers.get("Content-Security-Policy-Report-Only")).toBe(
+        "default-src 'self'",
+      )
+    })
+
+    it("should not add CSP header when mode is 'disabled'", async () => {
+      const configWithCSP = {
+        ...mockConfig,
+        contentSecurityPolicy: { mode: "disabled" },
+      }
+      vi.mocked(AppwardenConfigSchemaMock.parse).mockReturnValue(configWithCSP)
+
+      const middleware = createAppwardenMiddleware(configWithCSP)
+      const result = await middleware(
+        new Request("https://example.com/page", {
+          headers: { accept: "text/html" },
+        }),
+      )
+
+      expect(mockMakeCSPHeader).not.toHaveBeenCalled()
+      expect(result.headers.get("Content-Security-Policy")).toBeNull()
+      expect(
+        result.headers.get("Content-Security-Policy-Report-Only"),
+      ).toBeNull()
+    })
+
+    it("should not add CSP header when no contentSecurityPolicy config is provided", async () => {
+      // mockConfig has no contentSecurityPolicy field
+      const middleware = createAppwardenMiddleware(mockConfig)
+      const result = await middleware(
+        new Request("https://example.com/page", {
+          headers: { accept: "text/html" },
+        }),
+      )
+
+      expect(mockMakeCSPHeader).not.toHaveBeenCalled()
+      expect(result.headers.get("Content-Security-Policy")).toBeNull()
+    })
+
+    it("should not add CSP header for non-HTML requests", async () => {
+      const directives = { defaultSrc: ["self"] }
+      const configWithCSP = {
+        ...mockConfig,
+        contentSecurityPolicy: { mode: "enforced", directives },
+      }
+      vi.mocked(AppwardenConfigSchemaMock.parse).mockReturnValue(configWithCSP)
+
+      const middleware = createAppwardenMiddleware(configWithCSP)
+      const result = await middleware(
+        new Request("https://example.com/api/data.json", {
+          headers: { accept: "application/json" },
+        }),
+      )
+
+      expect(mockMakeCSPHeader).not.toHaveBeenCalled()
+      expect(result.headers.get("Content-Security-Policy")).toBeNull()
+    })
+
+    it("should pass empty nonce and correct directives to makeCSPHeader", async () => {
+      const directives = {
+        defaultSrc: ["self"],
+        scriptSrc: ["self", "https://cdn.example.com"],
+      }
+      const configWithCSP = {
+        ...mockConfig,
+        contentSecurityPolicy: { mode: "enforced", directives },
+      }
+      vi.mocked(AppwardenConfigSchemaMock.parse).mockReturnValue(configWithCSP)
+      mockMakeCSPHeader.mockReturnValue([
+        "Content-Security-Policy",
+        "default-src 'self'; script-src 'self' https://cdn.example.com",
+      ])
+
+      const middleware = createAppwardenMiddleware(configWithCSP)
+      await middleware(
+        new Request("https://example.com/page", {
+          headers: { accept: "text/html" },
+        }),
+      )
+
+      expect(mockMakeCSPHeader).toHaveBeenCalledWith("", directives, "enforced")
     })
   })
 })

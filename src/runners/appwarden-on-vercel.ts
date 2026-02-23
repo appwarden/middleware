@@ -14,6 +14,7 @@ import {
   TEMPORARY_REDIRECT_STATUS,
   validateConfig,
 } from "../utils"
+import { makeCSPHeader } from "../utils/cloudflare"
 import { getLockValue, syncEdgeValue } from "../utils/vercel"
 
 // we use this log to search vercel logs during testing (see packages/appwarden-vercel/edge-cache-testing-results.md)
@@ -45,6 +46,19 @@ export function createAppwardenMiddleware(
     }
 
     const parsedConfig = AppwardenConfigSchema.parse(config)
+
+    const applyCspHeaders = (response: Response): Response => {
+      const cspConfig = parsedConfig.contentSecurityPolicy
+      if (cspConfig && ["enforced", "report-only"].includes(cspConfig.mode)) {
+        const [headerName, headerValue] = makeCSPHeader(
+          "",
+          cspConfig.directives,
+          cspConfig.mode,
+        )
+        response.headers.set(headerName, headerValue)
+      }
+      return response
+    }
 
     try {
       const requestUrl = new URL(request.url)
@@ -103,14 +117,16 @@ export function createAppwardenMiddleware(
           parsedConfig.lockPageSlug,
           request.url,
         )
-        return Response.redirect(
+        const redirectResponse = Response.redirect(
           lockPageUrl.toString(),
           TEMPORARY_REDIRECT_STATUS,
         )
+        return applyCspHeaders(redirectResponse)
       }
 
       // Site is not locked - pass through to the next handler
-      return NextResponse.next()
+      const response = NextResponse.next()
+      return applyCspHeaders(response)
     } catch (e) {
       const message =
         "Appwarden encountered an unknown error. Please contact Appwarden support at https://appwarden.io/join-community."

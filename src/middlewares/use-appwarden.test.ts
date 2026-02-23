@@ -85,7 +85,6 @@ describe("useAppwarden", () => {
       debug: false,
       lockPageSlug: "/maintenance",
       appwardenApiToken: "test-token",
-      middleware: { before: [], after: [] },
     }
 
     mockEdgeCache = {
@@ -323,7 +322,6 @@ describe("useAppwarden", () => {
       const inputWithMultidomain: CloudflareConfigType = {
         debug: false,
         appwardenApiToken: "test-token",
-        middleware: { before: [], after: [] },
         multidomainConfig: {
           "example.com": { lockPageSlug: "/maintenance-example" },
           "other.com": { lockPageSlug: "/maintenance-other" },
@@ -347,7 +345,6 @@ describe("useAppwarden", () => {
       const inputWithMultidomain: CloudflareConfigType = {
         debug: false,
         appwardenApiToken: "test-token",
-        middleware: { before: [], after: [] },
         multidomainConfig: {
           "example.com": { lockPageSlug: "/maintenance-example" },
           "other.com": { lockPageSlug: "/maintenance-other" },
@@ -371,7 +368,6 @@ describe("useAppwarden", () => {
       const inputWithMultidomain: CloudflareConfigType = {
         debug: false,
         appwardenApiToken: "test-token",
-        middleware: { before: [], after: [] },
         multidomainConfig: {
           "example.com": { lockPageSlug: "/maintenance-example" },
         },
@@ -396,7 +392,6 @@ describe("useAppwarden", () => {
         debug: false,
         lockPageSlug: "/root-maintenance",
         appwardenApiToken: "test-token",
-        middleware: { before: [], after: [] },
       }
 
       mockContext.request = new Request("https://any-domain.com/page", {
@@ -417,7 +412,6 @@ describe("useAppwarden", () => {
         debug: false,
         lockPageSlug: "/root-maintenance",
         appwardenApiToken: "test-token",
-        middleware: { before: [], after: [] },
         multidomainConfig: {
           "example.com": { lockPageSlug: "/domain-specific-maintenance" },
         },
@@ -441,7 +435,6 @@ describe("useAppwarden", () => {
         debug: false,
         lockPageSlug: "/root-maintenance",
         appwardenApiToken: "test-token",
-        middleware: { before: [], after: [] },
         multidomainConfig: {
           "example.com": { lockPageSlug: "/domain-specific-maintenance" },
         },

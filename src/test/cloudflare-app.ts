@@ -1,38 +1,30 @@
-import { createAppwardenMiddleware } from "../bundles/cloudflare"
-import { useContentSecurityPolicy } from "../middlewares"
-import { Middleware } from "../types"
-
-const useHeader: (headerName: string) => Middleware =
-  (headerName) => async (context, next) => {
-    // run the middleware after the origin is fetched
-    await next()
-
-    const { response } = context
-
-    const nextResponse = new Response(response.body, response)
-
-    nextResponse.headers.set(headerName, "true")
-
-    context.response = nextResponse
-  }
+import { appwardenOnCloudflare } from "../runners/appwarden-on-cloudflare"
 
 export default {
-  fetch: createAppwardenMiddleware(
-    // @ts-expect-error todo types aren't making it here
-    (context) => ({
-      debug: context.env.DEBUG,
-      lockPageSlug: context.env.LOCK_PAGE_SLUG,
-      appwardenApiToken: context.env.APPWARDEN_API_TOKEN,
-      appwardenApiHostname: context.env.APPWARDEN_API_HOSTNAME,
-      middleware: {
-        before: [
-          useHeader("test-appwarden-ran"),
-          useContentSecurityPolicy({
-            mode: context.env.CSP_MODE,
-            directives: context.env.CSP_DIRECTIVES,
-          }),
-        ],
-      },
-    }),
-  ),
+  fetch: async (request: Request, env: any, ctx: any) => {
+    // Create the Appwarden handler
+    const appwardenHandler = appwardenOnCloudflare(
+      // @ts-expect-error todo types aren't making it here
+      (context) => ({
+        debug: context.env.DEBUG,
+        lockPageSlug: context.env.LOCK_PAGE_SLUG,
+        appwardenApiToken: context.env.APPWARDEN_API_TOKEN,
+        appwardenApiHostname: context.env.APPWARDEN_API_HOSTNAME,
+        contentSecurityPolicy: {
+          mode: context.env.CSP_MODE,
+          directives: context.env.CSP_DIRECTIVES,
+        },
+      }),
+    )
+
+    // Wrap the handler to add test header
+    const wrappedHandler = async (req: Request, e: any, c: any) => {
+      const response = await appwardenHandler(req as any, e, c)
+      const newResponse = new Response(response.body, response)
+      newResponse.headers.set("test-appwarden-ran", "true")
+      return newResponse
+    }
+
+    return wrappedHandler(request, env, ctx)
+  },
 }

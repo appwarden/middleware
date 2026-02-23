@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest"
-import { AppwardenConfigSchema, BaseNextJsConfigSchema } from "./vercel"
+import {
+  AppwardenConfigSchema,
+  BaseNextJsConfigSchema,
+  VercelCSPSchema,
+} from "./vercel"
 
 describe("BaseNextJsConfigSchema", () => {
   it("should validate a valid config", () => {
@@ -267,5 +271,84 @@ describe("AppwardenConfigSchema", () => {
         expect(result.data.lockPageSlug).toBe("/maintenance")
       }
     })
+  })
+})
+
+describe("VercelCSPSchema", () => {
+  it("should accept enforced mode with directives", () => {
+    const result = VercelCSPSchema.safeParse({
+      mode: "enforced",
+      directives: { "default-src": ["'self'"] },
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it("should accept report-only mode with directives", () => {
+    const result = VercelCSPSchema.safeParse({
+      mode: "report-only",
+      directives: { "default-src": ["'self'"] },
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it("should accept disabled mode without directives", () => {
+    const result = VercelCSPSchema.safeParse({ mode: "disabled" })
+    expect(result.success).toBe(true)
+  })
+
+  it("should reject enforced mode without directives", () => {
+    const result = VercelCSPSchema.safeParse({ mode: "enforced" })
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      const issue = result.error.issues.find((i) =>
+        i.path.includes("directives"),
+      )
+      expect(issue).toBeDefined()
+    }
+  })
+
+  it("should reject report-only mode without directives", () => {
+    const result = VercelCSPSchema.safeParse({ mode: "report-only" })
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      const issue = result.error.issues.find((i) =>
+        i.path.includes("directives"),
+      )
+      expect(issue).toBeDefined()
+    }
+  })
+
+  it("should reject directives containing {{nonce}} (object form)", () => {
+    const result = VercelCSPSchema.safeParse({
+      mode: "enforced",
+      directives: { "script-src": ["self", "{{nonce}}"] },
+    })
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.issues[0].message).toContain(
+        "Nonce-based CSP is not supported",
+      )
+    }
+  })
+
+  it("should reject directives containing {{nonce}} (string form)", () => {
+    const result = VercelCSPSchema.safeParse({
+      mode: "enforced",
+      directives: JSON.stringify({ scriptSrc: ["self", "{{nonce}}"] }),
+    })
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.issues[0].message).toContain(
+        "Nonce-based CSP is not supported",
+      )
+    }
+  })
+
+  it("should reject malformed JSON string directives", () => {
+    const result = VercelCSPSchema.safeParse({
+      mode: "enforced",
+      directives: "not-valid-json",
+    })
+    expect(result.success).toBe(false)
   })
 })

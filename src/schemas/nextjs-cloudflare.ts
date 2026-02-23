@@ -1,5 +1,6 @@
 import { z } from "zod"
 import { AppwardenApiTokenSchema, BooleanSchema } from "./helpers"
+import { UseCSPInputSchema } from "./use-content-security-policy"
 
 /**
  * Zod schema for Next.js Cloudflare adapter configuration.
@@ -14,6 +15,8 @@ export const NextJsCloudflareConfigSchema = z.object({
   appwardenApiHostname: z.string().optional(),
   /** Enable debug logging */
   debug: BooleanSchema.default(false),
+  /** Optional Content Security Policy configuration (headers only, no HTML rewriting) */
+  contentSecurityPolicy: z.lazy(() => UseCSPInputSchema).optional(),
 })
 
 export type NextJsCloudflareConfig = z.infer<
