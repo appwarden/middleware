@@ -1,22 +1,104 @@
 # @appwarden/middleware
 
+[![Docs](https://img.shields.io/badge/Documentation-blue)](https://appwarden.io/docs/reference/appwarden-middleware)
 [![GitHub](https://img.shields.io/badge/GitHub-appwarden%2Fmiddleware-181717?logo=github&logoColor=white)](https://github.com/appwarden/middleware)
 [![npm version](https://img.shields.io/npm/v/@appwarden/middleware.svg)](https://www.npmjs.com/package/@appwarden/middleware)
 [![npm provenance](https://img.shields.io/badge/npm-provenance-green)](https://docs.npmjs.com/generating-provenance-statements)
 ![Test Coverage](https://img.shields.io/badge/coverage-95.72%25-brightgreen)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-> Read the docs [to learn more](https://appwarden.io/docs)
+## Core Features
 
-## Stop in progress attacks in their tracks
-
-### Core Features
-
-- **Instant Quarantine**: Immediately redirects all visitors to a lock page when activated
-- **Discord Integration**: Trigger lockdowns via Discord commands (`/quarantine lock your.app.io`)
-- **Nonce-based Content Security Policy (Cloudflare only)**: Deploy a nonce-based Content Security Policy (CSP) using HTML rewriting on Cloudflare where supported.
-- **Static CSP headers on other platforms**: Apply CSP as headers only (no HTML rewriting, no nonce injection) on Vercel Edge Middleware and the Next.js Cloudflare adapter.
+- **Discord Integration**: Quarantine your website via Discord commands (`/quarantine [un]lock`)
+- **Instant Quarantine**: Immediately redirects all visitors to a lock page when activated to stop in progress attacks.
+- **Nonce-based Content Security Policy (See [Feature Compatibility](#feature-compatibility))**: Deploy a nonce-based Content Security Policy (CSP) using HTML rewriting on Cloudflare where supported.
 - **Minimal Runtime Overhead**: Negligible performance impact by using `event.waitUntil` for status checks
+
+### Feature Compatibility
+
+The table below summarizes which Appwarden features are available on each platform, including quarantine enforcement and Content Security Policy (CSP) support (with or without nonces).
+
+| Platform / Adapter                      | Package / entrypoint                              | Quarantine | CSP | CSP Nonce |
+| --------------------------------------- | ------------------------------------------------- | ---------- | --- | --------- |
+| Cloudflare – Universal middleware       | `@appwarden/middleware/cloudflare`                | ✅         | ✅  | ✅        |
+| Cloudflare – Astro                      | `@appwarden/middleware/cloudflare/astro`          | ✅         | ✅  | ✅        |
+| Cloudflare – React Router               | `@appwarden/middleware/cloudflare/react-router`   | ✅         | ✅  | ✅        |
+| Cloudflare – TanStack Start             | `@appwarden/middleware/cloudflare/tanstack-start` | ✅         | ✅  | ✅        |
+| Cloudflare – Next.js (OpenNext adapter) | `@appwarden/middleware/cloudflare/nextjs`         | ✅         | ✅  | ❌        |
+| Vercel - Universal middleware           | `@appwarden/middleware/vercel`                    | ✅         | ✅  | ❌        |
+
+Nonce-based CSP requires HTML rewriting and is only available on Cloudflare. Next.js on Cloudflare (OpenNext) and Vercel Edge Middleware apply CSP headers only and do **not** support nonces. If you are using Next.js on Cloudflare, please use the Cloudflare Universal middleware for CSP nonce support.
+
+## Configuration
+
+The following options are shared across the Cloudflare and Vercel middleware bundles.
+
+### `lockPageSlug`
+
+The path or route (for example, `/maintenance`) to redirect users to when the domain is quarantined.
+This should be a working page on your site, such as a maintenance or status page, that
+explains why the website is temporarily unavailable.
+
+### `contentSecurityPolicy`
+
+Controls the Content Security Policy (CSP) headers that Appwarden adds.
+
+- `mode` (optional) controls how the CSP is applied:
+  - `"disabled"` – no CSP header is sent.
+  - `"report-only"` – sends the `Content-Security-Policy-Report-Only` header so violations are
+    reported (for example in the browser console) but not blocked.
+  - `"enforced"` – sends the `Content-Security-Policy` header so violations are actively blocked.
+
+  When developing or iterating on your CSP, we recommend starting with `"report-only"` so you can
+  identify and fix violations before switching to `"enforced"`.
+
+- `directives` (optional) is an object whose keys are CSP directive names and whose values are
+  arrays of allowed sources. For example:
+
+  ```ts
+  contentSecurityPolicy: {
+    mode: "enforced",
+    directives: {
+      "default-src": ["'self'"],
+      "script-src": ["'self'", "{{nonce}}"],
+    },
+  }
+  ```
+
+  To add a nonce to a directive (Cloudflare universal middleware and Cloudflare framework adapters only), include the `"{{nonce}}"` placeholder
+  in the list of sources. On Vercel Edge Middleware and the Next.js Cloudflare adapter, nonces are not supported and `"{{nonce}}"` must not be used.
+
+  Commonly used directives include: `default-src`, `script-src`, `style-src`, `img-src`,
+  `connect-src`, `font-src`, `object-src`, `media-src`, `frame-src`, `sandbox`, `report-uri`,
+  `child-src`, `form-action`, `frame-ancestors`, `plugin-types`, `base-uri`, `report-to`,
+  `worker-src`, `manifest-src`, `prefetch-src`, `navigate-to`, `require-sri-for`,
+  `block-all-mixed-content`, `upgrade-insecure-requests`, `trusted-types`, and
+  `require-trusted-types-for`.
+
+### `cacheUrl` (Vercel only)
+
+The URL or connection string of the cache provider (for example, Upstash or Vercel Edge Config)
+that stores the quarantine status for your domain. See the
+[Vercel integration guide](https://appwarden.io/docs/guides/vercel-middleware-integration#3-configure-a-cache-provider)
+for cache provider configuration details.
+
+### `vercelApiToken` (Vercel only)
+
+A Vercel API token that Appwarden uses to manage the cache (for example, Upstash or Vercel Edge
+Config) that synchronizes the quarantine status of your domain.
+
+Appwarden never stores or logs your Vercel API token; it is used only to manage the quarantine
+status cache for your domain.
+
+### `appwardenApiToken`
+
+The Appwarden API token used to authenticate requests to the Appwarden API. See the
+[API token management guide](https://appwarden.io/docs/guides/api-token-management) for details on creating and
+managing your token.
+
+Treat this token as a secret (similar to a password): do not commit it to source control and store
+it in environment variables or secret management where possible. Appwarden stores API tokens using
+AES-GCM encryption and does not display them after creation.
 
 ## Installation
 
@@ -52,10 +134,6 @@ export default {
 }
 ```
 
-        - `lockPageSlug` controls where users are redirected when the site is quarantined. See [Configuration](#configuration) for details.
-        - `CSP_MODE` and `CSP_DIRECTIVES` configure a nonce-based Content Security Policy that runs **after** origin rendering (when HTML rewriting is available). See [Configuration](#configuration) for CSP modes and directives.
-        - The optional `hostname` field in the `contentSecurityPolicy` configuration lets you scope CSP to a specific hostname. In this universal Worker example it is omitted so the CSP applies to all hostnames served by the worker; framework adapter examples below include `hostname` to show how to scope CSP to a single site.
-
 See the Cloudflare integration docs on [appwarden.io](https://appwarden.io/docs) for environment variable setup and deployment details.
 
 #### 1.2 Cloudflare framework adapters
@@ -77,15 +155,14 @@ const appwarden = createAppwardenMiddleware(({ env }) => ({
   appwardenApiHostname: env.APPWARDEN_API_HOSTNAME,
   debug: env.APPWARDEN_DEBUG === "true",
   contentSecurityPolicy: {
-    hostname: "www.example.com",
+    hostname: "www.your.app",
     mode: "enforced",
     directives: {
       "default-src": ["'self'"],
       "script-src": ["'self'", "{{nonce}}"],
       "style-src": ["'self'", "{{nonce}}"],
       "img-src": ["'self'", "data:"],
-      "connect-src": ["'self'", "https://api.appwarden.io"],
-      "report-uri": ["https://csp-reports.example.com/astro"],
+      "report-uri": ["https://csp-reports.your.app/astro"],
     },
   },
 }))
@@ -109,15 +186,14 @@ export const unstable_middleware = [
     appwardenApiHostname: cloudflare.env.APPWARDEN_API_HOSTNAME,
     debug: cloudflare.env.APPWARDEN_DEBUG === "true",
     contentSecurityPolicy: {
-      hostname: "app.example.com",
+      hostname: "app.your.app",
       mode: "enforced",
       directives: {
         "default-src": ["'self'"],
         "script-src": ["'self'", "{{nonce}}"],
         "style-src": ["'self'", "{{nonce}}"],
         "img-src": ["'self'", "data:"],
-        "connect-src": ["'self'", "https://api.appwarden.io"],
-        "report-uri": ["https://csp-reports.example.com/react-router"],
+        "report-uri": ["https://csp-reports.your.app/react-router"],
       },
     },
   })),
@@ -141,15 +217,14 @@ const appwardenMiddleware = createAppwardenMiddleware(
     appwardenApiHostname: cloudflare.env.APPWARDEN_API_HOSTNAME,
     debug: cloudflare.env.APPWARDEN_DEBUG === "true",
     contentSecurityPolicy: {
-      hostname: "start.example.com",
+      hostname: "start.your.app",
       mode: "enforced",
       directives: {
         "default-src": ["'self'"],
         "script-src": ["'self'", "{{nonce}}"],
         "style-src": ["'self'", "{{nonce}}"],
         "img-src": ["'self'", "data:"],
-        "connect-src": ["'self'", "https://api.appwarden.io"],
-        "report-uri": ["https://csp-reports.example.com/tanstack"],
+        "report-uri": ["https://csp-reports.your.app/tanstack"],
       },
     },
   }),
@@ -179,15 +254,14 @@ export default createAppwardenMiddleware(({ env }) => ({
   debug: env.APPWARDEN_DEBUG === "true",
   // Headers-only CSP (no HTML rewriting, no nonce support; do not use `{{nonce}}` here)
   contentSecurityPolicy: {
-    hostname: "next.example.com",
+    hostname: "next.your.app",
     mode: "report-only",
     directives: {
       "default-src": ["'self'"],
       "script-src": ["'self'"],
       "style-src": ["'self'", "'unsafe-inline'"],
       "img-src": ["'self'", "data:"],
-      "connect-src": ["'self'", "https://api.appwarden.io"],
-      "report-uri": ["https://csp-reports.example.com/opennext"],
+      "report-uri": ["https://csp-reports.your.app/opennext"],
     },
   },
 }))
@@ -208,13 +282,10 @@ const appwardenMiddleware: VercelMiddlewareFunction = createAppwardenMiddleware(
   {
     // Edge Config or Upstash KV URL
     cacheUrl: process.env.APPWARDEN_CACHE_URL!,
-    // Required Appwarden API token
-    appwardenApiToken: process.env.APPWARDEN_API_TOKEN!,
     // Required when using Vercel Edge Config
     vercelApiToken: process.env.APPWARDEN_VERCEL_API_TOKEN!,
-    // Path to your lock page
-    lockPageSlug: "/lock",
-    // Optional CSP (no nonce support on Vercel Edge Middleware)
+    appwardenApiToken: process.env.APPWARDEN_API_TOKEN!,
+    lockPageSlug: "/maintenance",
     contentSecurityPolicy: {
       mode: "report-only",
       directives: {
@@ -222,8 +293,7 @@ const appwardenMiddleware: VercelMiddlewareFunction = createAppwardenMiddleware(
         "script-src": ["'self'"],
         "style-src": ["'self'", "'unsafe-inline'"],
         "img-src": ["'self'", "data:"],
-        "connect-src": ["'self'", "https://api.appwarden.io"],
-        "report-uri": ["https://csp-reports.example.com/vercel"],
+        "report-uri": ["https://csp-reports.your.app/vercel"],
       },
     },
   },
@@ -234,79 +304,7 @@ export default appwardenMiddleware
 
 Nonce-based CSP (`{{nonce}}`) is **not supported** in Vercel Edge Middleware; CSP directives must not include `{{nonce}}`. See the [Vercel integration guide](https://appwarden.io/docs/guides/vercel-integration) for full details.
 
-## Configuration
-
-The following options are shared across the Cloudflare and Vercel middleware bundles.
-
-### `lockPageSlug`
-
-The path or route (for example, `/lock`) to redirect users to when the domain is quarantined.
-This should be a working page on your site, such as a maintenance or status page, that
-explains why the website is temporarily unavailable.
-
-### `contentSecurityPolicy`
-
-Controls the Content Security Policy (CSP) headers that Appwarden adds.
-
-- `mode` (optional) controls how the CSP is applied:
-  - `"disabled"` – no CSP header is sent.
-  - `"report-only"` – sends the `Content-Security-Policy-Report-Only` header so violations are
-    reported (for example in the browser console) but not blocked.
-  - `"enforced"` – sends the `Content-Security-Policy` header so violations are actively blocked.
-
-  When developing or iterating on your CSP, we recommend starting with `"report-only"` so you can
-  identify and fix violations before switching to `"enforced"`.
-
-- `directives` (optional) is an object whose keys are CSP directive names and whose values are
-  arrays of allowed sources. For example:
-
-  ```ts
-  contentSecurityPolicy: {
-    mode: "enforced",
-    directives: {
-      "default-src": ["'self'"],
-      "script-src": ["'self'", "{{nonce}}"],
-    },
-  }
-  ```
-
-  To add a nonce to a directive (Cloudflare universal middleware and Cloudflare framework adapters only), include the `"{{nonce}}"` placeholder
-  in the list of sources. On Vercel Edge Middleware and the Next.js Cloudflare adapter, nonces are not supported and `"{{nonce}}"`
-  must not be used.
-
-  Commonly used directives include: `default-src`, `script-src`, `style-src`, `img-src`,
-  `connect-src`, `font-src`, `object-src`, `media-src`, `frame-src`, `sandbox`, `report-uri`,
-  `child-src`, `form-action`, `frame-ancestors`, `plugin-types`, `base-uri`, `report-to`,
-  `worker-src`, `manifest-src`, `prefetch-src`, `navigate-to`, `require-sri-for`,
-  `block-all-mixed-content`, `upgrade-insecure-requests`, `trusted-types`, and
-  `require-trusted-types-for`.
-
-### `cacheUrl` (Vercel only)
-
-The URL or connection string of the cache provider (for example, Upstash or Vercel Edge Config)
-that stores the quarantine status for your domain. See the
-[Vercel integration guide](https://appwarden.io/docs/guides/vercel-middleware-integration#3-configure-a-cache-provider)
-for cache provider configuration details.
-
-### `vercelApiToken` (Vercel only)
-
-A Vercel API token that Appwarden uses to manage the cache (for example, Upstash or Vercel Edge
-Config) that synchronizes the quarantine status of your domain.
-
-Appwarden never stores or logs your Vercel API token; it is used only to manage the quarantine
-status cache for your domain.
-
-### `appwardenApiToken`
-
-The Appwarden API token used to authenticate requests to the Appwarden API. See the
-[API token management guide](https://appwarden.io/docs/guides/api-token-management) for details on creating and
-managing your token.
-
-Treat this token as a secret (similar to a password): do not commit it to source control and store
-it in environment variables or secret management where possible. Appwarden stores API tokens using
-AES-GCM encryption and does not display them in Discord.
-
-## Supported websites
+## Supported platforms
 
 - [All websites on Cloudflare](https://appwarden.io/docs/guides/cloudflare-middleware-integration)
   - [Astro on Cloudflare](https://appwarden.io/docs/guides/astro-cloudflare)
