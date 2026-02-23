@@ -174,4 +174,16 @@ describe("UseCSPInputSchema", () => {
     const result = UseCSPInputSchema.parse(input)
     expect(result).toEqual(input)
   })
+
+  it("should allow optional hostname configuration", () => {
+    const input = {
+      mode: "enforced",
+      hostname: "example.com",
+      directives: {
+        "default-src": ["'self'"],
+      },
+    }
+    const result = UseCSPInputSchema.parse(input)
+    expect(result).toEqual(input)
+  })
 })

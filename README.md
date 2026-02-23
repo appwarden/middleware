@@ -41,7 +41,7 @@ explains why the website is temporarily unavailable.
 
 ### `contentSecurityPolicy`
 
-Controls the Content Security Policy (CSP) headers that Appwarden adds.
+Controls the [Content Security Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP) headers that Appwarden adds.
 
 - `mode` (optional) controls how the CSP is applied:
   - `"disabled"` – no CSP header is sent.
@@ -65,30 +65,7 @@ Controls the Content Security Policy (CSP) headers that Appwarden adds.
   }
   ```
 
-  To add a nonce to a directive (Cloudflare universal middleware and Cloudflare framework adapters only), include the `"{{nonce}}"` placeholder
-  in the list of sources. On Vercel Edge Middleware and the Next.js Cloudflare adapter, nonces are not supported and `"{{nonce}}"` must not be used.
-
-  Commonly used directives include: `default-src`, `script-src`, `style-src`, `img-src`,
-  `connect-src`, `font-src`, `object-src`, `media-src`, `frame-src`, `sandbox`, `report-uri`,
-  `child-src`, `form-action`, `frame-ancestors`, `plugin-types`, `base-uri`, `report-to`,
-  `worker-src`, `manifest-src`, `prefetch-src`, `navigate-to`, `require-sri-for`,
-  `block-all-mixed-content`, `upgrade-insecure-requests`, `trusted-types`, and
-  `require-trusted-types-for`.
-
-### `cacheUrl` (Vercel only)
-
-The URL or connection string of the cache provider (for example, Upstash or Vercel Edge Config)
-that stores the quarantine status for your domain. See the
-[Vercel integration guide](https://appwarden.io/docs/guides/vercel-middleware-integration#3-configure-a-cache-provider)
-for cache provider configuration details.
-
-### `vercelApiToken` (Vercel only)
-
-A Vercel API token that Appwarden uses to manage the cache (for example, Upstash or Vercel Edge
-Config) that synchronizes the quarantine status of your domain.
-
-Appwarden never stores or logs your Vercel API token; it is used only to manage the quarantine
-status cache for your domain.
+To add a nonce to a directive (See [Feature Compatibility](#feature-compatibility)), include the `"{{nonce}}"` placeholder in the list of sources.
 
 ### `appwardenApiToken`
 
@@ -99,6 +76,21 @@ managing your token.
 Treat this token as a secret (similar to a password): do not commit it to source control and store
 it in environment variables or secret management where possible. Appwarden stores API tokens using
 AES-GCM encryption and does not display them after creation.
+
+### `cacheUrl` (Vercel only)
+
+The URL or connection string of the cache provider (for example, Upstash or Vercel Edge Config)
+that stores the quarantine status for your domain. See the
+[Vercel integration guide](https://appwarden.io/docs/guides/vercel-middleware-integration#3-configure-a-cache-provider)
+for cache provider configuration details.
+
+### `vercelApiToken` (Vercel only)
+
+A Vercel API token that Appwarden uses to manage the Vercel Edge Config cache provider that synchronizes the quarantine status of your domain.
+See the [Vercel integration guide](https://appwarden.io/docs/guides/vercel-middleware-integration#3-configure-a-cache-provider)
+for cache provider configuration details.
+
+Appwarden never stores or logs your Vercel API token; it is used only to manage the quarantine status cache for your domain.
 
 ## Installation
 
@@ -116,14 +108,14 @@ The **Universal Middleware** (`@appwarden/middleware/cloudflare`) is the recomme
 // src/worker.ts
 import { createAppwardenMiddleware } from "@appwarden/middleware/cloudflare"
 
-const appwardenHandler = createAppwardenMiddleware((context) => ({
-  debug: context.env.DEBUG === "true",
-  lockPageSlug: context.env.LOCK_PAGE_SLUG,
-  appwardenApiToken: context.env.APPWARDEN_API_TOKEN,
-  appwardenApiHostname: context.env.APPWARDEN_API_HOSTNAME,
+const appwardenHandler = createAppwardenMiddleware((cloudflare) => ({
+  debug: cloudflare.env.DEBUG === "true",
+  lockPageSlug: cloudflare.env.LOCK_PAGE_SLUG,
+  appwardenApiToken: cloudflare.env.APPWARDEN_API_TOKEN,
+  appwardenApiHostname: cloudflare.env.APPWARDEN_API_HOSTNAME,
   contentSecurityPolicy: {
-    mode: context.env.CSP_MODE,
-    directives: context.env.CSP_DIRECTIVES,
+    mode: cloudflare.env.CSP_MODE,
+    directives: cloudflare.env.CSP_DIRECTIVES,
   },
 }))
 
@@ -149,13 +141,12 @@ If you cannot use `build-cloudflare-action`, you can mount Appwarden inside your
 import { sequence } from "astro:middleware"
 import { createAppwardenMiddleware } from "@appwarden/middleware/cloudflare/astro"
 
-const appwarden = createAppwardenMiddleware(({ env }) => ({
-  lockPageSlug: env.APPWARDEN_LOCK_PAGE_SLUG,
-  appwardenApiToken: env.APPWARDEN_API_TOKEN,
-  appwardenApiHostname: env.APPWARDEN_API_HOSTNAME,
-  debug: env.APPWARDEN_DEBUG === "true",
+const appwarden = createAppwardenMiddleware((cloudflare) => ({
+  lockPageSlug: cloudflare.env.APPWARDEN_LOCK_PAGE_SLUG,
+  appwardenApiToken: cloudflare.env.APPWARDEN_API_TOKEN,
+  appwardenApiHostname: cloudflare.env.APPWARDEN_API_HOSTNAME,
+  debug: cloudflare.env.APPWARDEN_DEBUG === "true",
   contentSecurityPolicy: {
-    hostname: "www.your.app",
     mode: "enforced",
     directives: {
       "default-src": ["'self'"],
@@ -186,7 +177,6 @@ export const unstable_middleware = [
     appwardenApiHostname: cloudflare.env.APPWARDEN_API_HOSTNAME,
     debug: cloudflare.env.APPWARDEN_DEBUG === "true",
     contentSecurityPolicy: {
-      hostname: "app.your.app",
       mode: "enforced",
       directives: {
         "default-src": ["'self'"],
@@ -217,7 +207,6 @@ const appwardenMiddleware = createAppwardenMiddleware(
     appwardenApiHostname: cloudflare.env.APPWARDEN_API_HOSTNAME,
     debug: cloudflare.env.APPWARDEN_DEBUG === "true",
     contentSecurityPolicy: {
-      hostname: "start.your.app",
       mode: "enforced",
       directives: {
         "default-src": ["'self'"],
@@ -247,14 +236,13 @@ export const config = {
   matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 }
 
-export default createAppwardenMiddleware(({ env }) => ({
-  lockPageSlug: env.APPWARDEN_LOCK_PAGE_SLUG,
-  appwardenApiToken: env.APPWARDEN_API_TOKEN,
-  appwardenApiHostname: env.APPWARDEN_API_HOSTNAME,
-  debug: env.APPWARDEN_DEBUG === "true",
+export default createAppwardenMiddleware((cloudflare) => ({
+  lockPageSlug: cloudflare.env.APPWARDEN_LOCK_PAGE_SLUG,
+  appwardenApiToken: cloudflare.env.APPWARDEN_API_TOKEN,
+  appwardenApiHostname: cloudflare.env.APPWARDEN_API_HOSTNAME,
+  debug: cloudflare.env.APPWARDEN_DEBUG === "true",
   // Headers-only CSP (no HTML rewriting, no nonce support; do not use `{{nonce}}` here)
   contentSecurityPolicy: {
-    hostname: "next.your.app",
     mode: "report-only",
     directives: {
       "default-src": ["'self'"],
@@ -267,7 +255,7 @@ export default createAppwardenMiddleware(({ env }) => ({
 }))
 ```
 
-This adapter applies CSP **headers only** before origin (no HTML rewriting, no nonce injection). Nonce-based CSP (`{{nonce}}`) is **not supported** in this adapter; CSP directives must not include `{{nonce}}`. See the [Next.js + Cloudflare guide](https://appwarden.io/docs/guides/nextjs-cloudflare) for more.
+This adapter applies CSP **headers only** before origin (no HTML rewriting, no nonce injection). Nonce-based CSP (`{{nonce}}`) is **not supported** in this adapter; CSP directives must not include `{{nonce}}`.
 
 ### 2. Vercel
 
@@ -302,7 +290,7 @@ const appwardenMiddleware: VercelMiddlewareFunction = createAppwardenMiddleware(
 export default appwardenMiddleware
 ```
 
-Nonce-based CSP (`{{nonce}}`) is **not supported** in Vercel Edge Middleware; CSP directives must not include `{{nonce}}`. See the [Vercel integration guide](https://appwarden.io/docs/guides/vercel-integration) for full details.
+Nonce-based CSP (`{{nonce}}`) is **not supported** in Vercel Edge Middleware; CSP directives must not include `{{nonce}}`.
 
 ## Supported platforms
 

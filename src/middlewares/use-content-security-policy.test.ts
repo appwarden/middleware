@@ -229,72 +229,6 @@ describe("use-content-security-policy", () => {
     })
 
     describe("Hostname Filtering", () => {
-      it("should apply CSP when hostname matches configured hostname", async () => {
-        const middleware = useContentSecurityPolicy({
-          hostname: "example.com",
-          mode: "enforced",
-          directives: {
-            "default-src": ["'self'"],
-            "script-src": ["'self'", "https://scripts-a.com"],
-          },
-        })
-
-        const mockContext = {
-          request: new Request("https://example.com/"),
-          response: new Response(
-            "<html><script src='test.js'></script></html>",
-            {
-              headers: { "content-type": "text/html" },
-            },
-          ),
-          hostname: "example.com",
-          waitUntil: vi.fn(),
-        }
-
-        const next = vi.fn()
-        await middleware(mockContext, next)
-
-        expect(next).toHaveBeenCalled()
-        expect(
-          mockContext.response.headers.has("content-security-policy"),
-        ).toBe(true)
-        expect(
-          mockContext.response.headers.get("content-security-policy"),
-        ).toContain("https://scripts-a.com")
-      })
-
-      it("should skip CSP when hostname does not match configured hostname", async () => {
-        const middleware = useContentSecurityPolicy({
-          hostname: "example.com",
-          mode: "enforced",
-          directives: {
-            "default-src": ["'self'"],
-            "script-src": ["'self'", "https://scripts-a.com"],
-          },
-        })
-
-        const mockContext = {
-          request: new Request("https://other-domain.com/"),
-          response: new Response(
-            "<html><script src='test.js'></script></html>",
-            {
-              headers: { "content-type": "text/html" },
-            },
-          ),
-          hostname: "other-domain.com",
-          waitUntil: vi.fn(),
-        }
-
-        const next = vi.fn()
-        await middleware(mockContext, next)
-
-        expect(next).toHaveBeenCalled()
-        // CSP should NOT be applied for non-matching hostname
-        expect(
-          mockContext.response.headers.has("content-security-policy"),
-        ).toBe(false)
-      })
-
       it("should apply CSP when no hostname is configured", async () => {
         const middleware = useContentSecurityPolicy({
           // No hostname configured - should apply to all requests
@@ -322,9 +256,8 @@ describe("use-content-security-policy", () => {
         ).toBe(true)
       })
 
-      it("should allow multiple CSP middlewares for different domains", async () => {
+      it("should allow combining enforced and report-only CSP middlewares", async () => {
         const middlewareA = useContentSecurityPolicy({
-          hostname: "domain-a.com",
           mode: "enforced",
           directives: {
             "script-src": ["'self'", "https://scripts-a.com"],
@@ -332,7 +265,6 @@ describe("use-content-security-policy", () => {
         })
 
         const middlewareB = useContentSecurityPolicy({
-          hostname: "domain-b.com",
           mode: "report-only",
           directives: {
             "script-src": ["'self'", "https://scripts-b.com"],
@@ -351,17 +283,20 @@ describe("use-content-security-policy", () => {
 
         const nextA = vi.fn()
         await middlewareA(contextA, nextA)
-        await middlewareB(contextA, nextA) // middlewareB should skip for domain-a.com
+        await middlewareB(contextA, nextA)
 
         expect(contextA.response.headers.has("content-security-policy")).toBe(
           true,
         )
         expect(
           contextA.response.headers.has("content-security-policy-report-only"),
-        ).toBe(false)
+        ).toBe(true)
         expect(
           contextA.response.headers.get("content-security-policy"),
         ).toContain("https://scripts-a.com")
+        expect(
+          contextA.response.headers.get("content-security-policy-report-only"),
+        ).toContain("https://scripts-b.com")
 
         // Test domain B
         const contextB = {
@@ -374,23 +309,25 @@ describe("use-content-security-policy", () => {
         }
 
         const nextB = vi.fn()
-        await middlewareA(contextB, nextB) // middlewareA should skip for domain-b.com
+        await middlewareA(contextB, nextB)
         await middlewareB(contextB, nextB)
 
+        expect(contextB.response.headers.has("content-security-policy")).toBe(
+          true,
+        )
         expect(
           contextB.response.headers.has("content-security-policy-report-only"),
         ).toBe(true)
-        expect(contextB.response.headers.has("content-security-policy")).toBe(
-          false,
-        )
+        expect(
+          contextB.response.headers.get("content-security-policy"),
+        ).toContain("https://scripts-a.com")
         expect(
           contextB.response.headers.get("content-security-policy-report-only"),
         ).toContain("https://scripts-b.com")
       })
 
-      it("should not apply any CSP for unconfigured domains when all middlewares have hostnames", async () => {
+      it("should apply CSP for any hostname", async () => {
         const middlewareA = useContentSecurityPolicy({
-          hostname: "domain-a.com",
           mode: "enforced",
           directives: {
             "script-src": ["'self'"],
@@ -398,7 +335,6 @@ describe("use-content-security-policy", () => {
         })
 
         const middlewareB = useContentSecurityPolicy({
-          hostname: "domain-b.com",
           mode: "report-only",
           directives: {
             "script-src": ["'self'"],
@@ -418,20 +354,19 @@ describe("use-content-security-policy", () => {
         await middlewareA(contextUnknown, next)
         await middlewareB(contextUnknown, next)
 
-        // Neither CSP header should be present
+        // Both CSP headers should be present
         expect(
           contextUnknown.response.headers.has("content-security-policy"),
-        ).toBe(false)
+        ).toBe(true)
         expect(
           contextUnknown.response.headers.has(
             "content-security-policy-report-only",
           ),
-        ).toBe(false)
+        ).toBe(true)
       })
 
       it("should generate unique nonces across different domains", async () => {
         const middlewareA = useContentSecurityPolicy({
-          hostname: "domain-a.com",
           mode: "enforced",
           directives: {
             "script-src": ["'self'", "{{nonce}}"],
@@ -439,7 +374,6 @@ describe("use-content-security-policy", () => {
         })
 
         const middlewareB = useContentSecurityPolicy({
-          hostname: "domain-b.com",
           mode: "enforced",
           directives: {
             "script-src": ["'self'", "{{nonce}}"],
