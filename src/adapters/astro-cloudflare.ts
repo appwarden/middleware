@@ -1,6 +1,7 @@
 import type { Runtime } from "@astrojs/cloudflare"
 import type { APIContext, MiddlewareHandler } from "astro"
 import { checkLockStatus } from "../core"
+import { useContentSecurityPolicy } from "../middlewares"
 import type { UseCSPInput } from "../schemas"
 import { AstroCloudflareConfigSchema } from "../schemas/astro-cloudflare"
 import {
@@ -160,9 +161,6 @@ export function createAppwardenMiddleware(
 
       // Apply CSP if configured (runs after origin)
       if (config.contentSecurityPolicy) {
-        const { useContentSecurityPolicy } =
-          await import("../middlewares/use-content-security-policy")
-
         // Create a mini context for CSP middleware
         const cspContext = {
           request,
