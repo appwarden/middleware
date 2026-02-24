@@ -10,9 +10,14 @@ export default {
         lockPageSlug: context.env.LOCK_PAGE_SLUG,
         appwardenApiToken: context.env.APPWARDEN_API_TOKEN,
         appwardenApiHostname: context.env.APPWARDEN_API_HOSTNAME,
-        contentSecurityPolicy: {
-          mode: context.env.CSP_MODE,
-          directives: context.env.CSP_DIRECTIVES,
+        multidomainConfig: {
+          "appwarden.io": {
+            lockPageSlug: context.env.LOCK_PAGE_SLUG,
+            contentSecurityPolicy: {
+              mode: context.env.CSP_MODE,
+              directives: context.env.CSP_DIRECTIVES,
+            },
+          },
         },
       }),
     )

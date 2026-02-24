@@ -6,12 +6,16 @@ describe("ConfigFnInputSchema", () => {
     // Create a valid function that returns a valid config
     const validFn = (context: any) => ({
       debug: true,
-      lockPageSlug: "/maintenance",
       appwardenApiToken: "token123",
-      contentSecurityPolicy: {
-        mode: "enforced",
-        directives: {
-          "default-src": ["'self'"],
+      multidomainConfig: {
+        "example.com": {
+          lockPageSlug: "/maintenance",
+          contentSecurityPolicy: {
+            mode: "enforced",
+            directives: {
+              "default-src": ["'self'"],
+            },
+          },
         },
       },
     })

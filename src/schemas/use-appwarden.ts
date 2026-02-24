@@ -6,6 +6,7 @@ export const AppwardenMultidomainConfigSchema = z.record(
   z.string(),
   z.object({
     lockPageSlug: z.string(),
+    contentSecurityPolicy: z.lazy(() => UseCSPInputSchema).optional(),
   }),
 )
 
@@ -20,7 +21,6 @@ export const UseAppwardenInputSchema = z.object({
   multidomainConfig: AppwardenMultidomainConfigSchema.optional(),
   appwardenApiToken: AppwardenApiTokenSchema,
   appwardenApiHostname: z.string().optional(),
-  contentSecurityPolicy: z.lazy(() => UseCSPInputSchema).optional(),
 })
 
 export type UseAppwardenInput = z.infer<typeof UseAppwardenInputSchema>
