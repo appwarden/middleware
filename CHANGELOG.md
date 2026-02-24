@@ -3,6 +3,23 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [3.3.0](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.2.1...@appwarden/middleware@3.3.0) (2026-02-24)
+
+
+### Bug Fixes
+
+* clarify CSP nonce support for Next.js and Vercel ([5e64020](https://github.com/appwarden/middleware/commit/5e640205494a7738f8d10137465d74d13c70d8e3))
+* gate CSP middleware by hostname in Cloudflare runner ([b97195f](https://github.com/appwarden/middleware/commit/b97195ffec7ae45ffd35cbd6e3e087912c321345))
+* read CSP config from multidomainConfig in Cloudflare runner ([0d79adf](https://github.com/appwarden/middleware/commit/0d79adf9589f2675dfebef8b7999361c9643b4bb))
+* remove dynamic import type ([6da1060](https://github.com/appwarden/middleware/commit/6da106035997008170c9c7d6e8f88acf94c6cc06))
+* remove dynamic import type ([e48bcc7](https://github.com/appwarden/middleware/commit/e48bcc74f009c0296e944442e6c31cb5cd1128d9))
+* remove dynamic import type ([1dc9b6a](https://github.com/appwarden/middleware/commit/1dc9b6a99cc7236f837de22b79ef4cadd4166a2c))
+
+
+### Features
+
+* add universal CSP middleware support for cloudflare and vercel ([a21125c](https://github.com/appwarden/middleware/commit/a21125c5ffd412e37dc79a70e719bf35b1dd980d))
+
 ## [3.2.1](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.2.0...@appwarden/middleware@3.2.1) (2026-02-13)
 
 
