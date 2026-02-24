@@ -59,7 +59,6 @@ Controls the [Content Security Policy](https://developer.mozilla.org/en-US/docs/
   contentSecurityPolicy: {
     mode: "enforced",
     directives: {
-      "default-src": ["'self'"],
       "script-src": ["'self'", "{{nonce}}"],
     },
   }
@@ -112,7 +111,6 @@ const appwardenHandler = createAppwardenMiddleware((cloudflare) => ({
   debug: cloudflare.env.DEBUG === "true",
   lockPageSlug: cloudflare.env.LOCK_PAGE_SLUG,
   appwardenApiToken: cloudflare.env.APPWARDEN_API_TOKEN,
-  appwardenApiHostname: cloudflare.env.APPWARDEN_API_HOSTNAME,
   contentSecurityPolicy: {
     mode: cloudflare.env.CSP_MODE,
     directives: cloudflare.env.CSP_DIRECTIVES,
@@ -144,16 +142,12 @@ import { createAppwardenMiddleware } from "@appwarden/middleware/cloudflare/astr
 const appwarden = createAppwardenMiddleware((cloudflare) => ({
   lockPageSlug: cloudflare.env.APPWARDEN_LOCK_PAGE_SLUG,
   appwardenApiToken: cloudflare.env.APPWARDEN_API_TOKEN,
-  appwardenApiHostname: cloudflare.env.APPWARDEN_API_HOSTNAME,
   debug: cloudflare.env.APPWARDEN_DEBUG === "true",
   contentSecurityPolicy: {
     mode: "enforced",
     directives: {
-      "default-src": ["'self'"],
       "script-src": ["'self'", "{{nonce}}"],
       "style-src": ["'self'", "{{nonce}}"],
-      "img-src": ["'self'", "data:"],
-      "report-uri": ["https://csp-reports.your.app/astro"],
     },
   },
 }))
@@ -174,16 +168,12 @@ export const unstable_middleware = [
   createAppwardenMiddleware((cloudflare: CloudflareContext) => ({
     lockPageSlug: cloudflare.env.APPWARDEN_LOCK_PAGE_SLUG,
     appwardenApiToken: cloudflare.env.APPWARDEN_API_TOKEN,
-    appwardenApiHostname: cloudflare.env.APPWARDEN_API_HOSTNAME,
     debug: cloudflare.env.APPWARDEN_DEBUG === "true",
     contentSecurityPolicy: {
       mode: "enforced",
       directives: {
-        "default-src": ["'self'"],
         "script-src": ["'self'", "{{nonce}}"],
         "style-src": ["'self'", "{{nonce}}"],
-        "img-src": ["'self'", "data:"],
-        "report-uri": ["https://csp-reports.your.app/react-router"],
       },
     },
   })),
@@ -204,16 +194,12 @@ const appwardenMiddleware = createAppwardenMiddleware(
   (cloudflare: TanStackStartCloudflareContext) => ({
     lockPageSlug: cloudflare.env.APPWARDEN_LOCK_PAGE_SLUG,
     appwardenApiToken: cloudflare.env.APPWARDEN_API_TOKEN,
-    appwardenApiHostname: cloudflare.env.APPWARDEN_API_HOSTNAME,
     debug: cloudflare.env.APPWARDEN_DEBUG === "true",
     contentSecurityPolicy: {
       mode: "enforced",
       directives: {
-        "default-src": ["'self'"],
         "script-src": ["'self'", "{{nonce}}"],
         "style-src": ["'self'", "{{nonce}}"],
-        "img-src": ["'self'", "data:"],
-        "report-uri": ["https://csp-reports.your.app/tanstack"],
       },
     },
   }),
@@ -239,17 +225,13 @@ export const config = {
 export default createAppwardenMiddleware((cloudflare) => ({
   lockPageSlug: cloudflare.env.APPWARDEN_LOCK_PAGE_SLUG,
   appwardenApiToken: cloudflare.env.APPWARDEN_API_TOKEN,
-  appwardenApiHostname: cloudflare.env.APPWARDEN_API_HOSTNAME,
   debug: cloudflare.env.APPWARDEN_DEBUG === "true",
   // Headers-only CSP (no HTML rewriting, no nonce support; do not use `{{nonce}}` here)
   contentSecurityPolicy: {
     mode: "report-only",
     directives: {
-      "default-src": ["'self'"],
       "script-src": ["'self'"],
       "style-src": ["'self'", "'unsafe-inline'"],
-      "img-src": ["'self'", "data:"],
-      "report-uri": ["https://csp-reports.your.app/opennext"],
     },
   },
 }))
@@ -277,11 +259,8 @@ const appwardenMiddleware: VercelMiddlewareFunction = createAppwardenMiddleware(
     contentSecurityPolicy: {
       mode: "report-only",
       directives: {
-        "default-src": ["'self'"],
         "script-src": ["'self'"],
         "style-src": ["'self'", "'unsafe-inline'"],
-        "img-src": ["'self'", "data:"],
-        "report-uri": ["https://csp-reports.your.app/vercel"],
       },
     },
   },

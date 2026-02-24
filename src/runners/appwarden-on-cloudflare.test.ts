@@ -199,21 +199,23 @@ describe("appwardenOnCloudflare", () => {
     })
   })
 
-  it("should include CSP middleware in the pipeline when configured", async () => {
-    // Update the mock input function to include CSP configuration
+  it("should include CSP middleware when multidomainConfig has CSP for the request hostname", async () => {
     mockInputFn.mockReturnValueOnce({
       debug: true,
-      lockPageSlug: "/maintenance",
       appwardenApiToken: "test-token",
-      contentSecurityPolicy: {
-        mode: "enforced",
-        directives: {
-          "default-src": ["'self'"],
+      multidomainConfig: {
+        "example.com": {
+          lockPageSlug: "/maintenance-example",
+          contentSecurityPolicy: {
+            mode: "enforced",
+            directives: {
+              "default-src": ["'self'"],
+            },
+          },
         },
       },
     })
 
-    // Type assertion to make TypeScript happy
     const handler = appwardenOnCloudflare(mockInputFn) as any
     await handler(mockRequest, mockEnv, mockCtx)
 
@@ -222,16 +224,22 @@ describe("appwardenOnCloudflare", () => {
     expect(usePipelineArgs).toHaveLength(3)
   })
 
-  it("should include CSP middleware when hostname matches request hostname", async () => {
+  it("should not include CSP middleware when multidomainConfig does not have config for request hostname", async () => {
+    // Change request hostname so it does not match any multidomainConfig key
+    mockRequest = new Request("https://other-domain.com")
+
     mockInputFn.mockReturnValueOnce({
       debug: true,
-      lockPageSlug: "/maintenance",
       appwardenApiToken: "test-token",
-      contentSecurityPolicy: {
-        hostname: "example.com",
-        mode: "enforced",
-        directives: {
-          "default-src": ["'self'"],
+      multidomainConfig: {
+        "example.com": {
+          lockPageSlug: "/maintenance-example",
+          contentSecurityPolicy: {
+            mode: "enforced",
+            directives: {
+              "default-src": ["'self'"],
+            },
+          },
         },
       },
     })
@@ -240,22 +248,17 @@ describe("appwardenOnCloudflare", () => {
     await handler(mockRequest, mockEnv, mockCtx)
 
     const usePipelineArgs = (usePipeline as any).mock.calls[0]
-    expect(usePipelineArgs).toHaveLength(3)
+    expect(usePipelineArgs).toHaveLength(2)
   })
 
-  it("should not include CSP middleware when configured hostname does not match request hostname", async () => {
-    // Change request hostname so it does not match the CSP config
-    mockRequest = new Request("https://other-domain.com")
-
+  it("should not include CSP middleware when multidomainConfig entry for hostname lacks CSP config", async () => {
     mockInputFn.mockReturnValueOnce({
       debug: true,
-      lockPageSlug: "/maintenance",
       appwardenApiToken: "test-token",
-      contentSecurityPolicy: {
-        hostname: "example.com",
-        mode: "enforced",
-        directives: {
-          "default-src": ["'self'"],
+      multidomainConfig: {
+        "example.com": {
+          lockPageSlug: "/maintenance-example",
+          // No contentSecurityPolicy configured for this hostname
         },
       },
     })

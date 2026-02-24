@@ -11,9 +11,11 @@ export const appwardenOnCloudflare =
   async (request, env, ctx) => {
     ctx.passThroughOnException()
 
+    const requestUrl = new URL(request.url)
+
     const context: MiddlewareContext = {
       request,
-      hostname: new URL(request.url).host,
+      hostname: requestUrl.hostname,
       response: new Response("Unhandled response"),
       // https://developers.cloudflare.com/workers/observability/errors/#illegal-invocation-errors
       waitUntil: (fn: any) => ctx.waitUntil(fn),
@@ -29,16 +31,12 @@ export const appwardenOnCloudflare =
 
       const pipeline = [useAppwarden(input), useFetchOrigin()]
 
-      // Add CSP middleware after origin if configured.
-      // When hostname is provided in the CSP config, only mount the middleware
-      // for matching hostnames. This is primarily used with multidomainConfig
-      // in the Cloudflare universal middleware.
-      const cspConfig = input.contentSecurityPolicy
-      if (input.contentSecurityPolicy) {
-        const cspHostname = cspConfig.hostname
-        if (!cspHostname || cspHostname === context.hostname) {
-          pipeline.push(useContentSecurityPolicy(cspConfig))
-        }
+      // Add CSP middleware after origin if configured for this hostname via multidomainConfig.
+      const cspConfig =
+        input.multidomainConfig?.[requestUrl.hostname]?.contentSecurityPolicy
+
+      if (cspConfig) {
+        pipeline.push(useContentSecurityPolicy(cspConfig))
       }
 
       await usePipeline(...pipeline).execute(context)
