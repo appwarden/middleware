@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [3.4.0](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.3.0...@appwarden/middleware@3.4.0) (2026-02-25)
+
+
+### Features
+
+* add context-based debug logging and fix type/check issues ([cb0874c](https://github.com/appwarden/middleware/commit/cb0874c1a30362f02f38f18ba757a7dd6a409623))
+
 # [3.3.0](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.2.1...@appwarden/middleware@3.3.0) (2026-02-24)
 
 
