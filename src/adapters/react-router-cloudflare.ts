@@ -72,6 +72,11 @@ export type ReactRouterMiddlewareFunction = (
   next: () => Promise<unknown>,
 ) => Promise<unknown>
 
+const getNowMs = () =>
+  typeof performance !== "undefined" && typeof performance.now === "function"
+    ? performance.now()
+    : Date.now()
+
 /**
  * Helper function to extract Cloudflare context from React Router context.
  * Supports both old and new context APIs.
@@ -130,7 +135,7 @@ export function createAppwardenMiddleware(
   configFn: ReactRouterConfigFn,
 ): ReactRouterMiddlewareFunction {
   return async (args, next) => {
-    const startTime = Date.now()
+    const startTime = getNowMs()
     const { request, context } = args
 
     try {
@@ -153,7 +158,7 @@ export function createAppwardenMiddleware(
 
       debugFn(
         `Appwarden middleware invoked for ${requestUrl.pathname}`,
-        `HTML request: ${isHTML}`,
+        `isHTML: ${isHTML}`,
       )
 
       // Skip non-HTML requests (e.g., API calls, static assets)
@@ -190,7 +195,7 @@ export function createAppwardenMiddleware(
         throw createRedirect(lockPageUrl)
       }
 
-      debugFn("Site is unlocked - continuing to origin")
+      debugFn("Site is unlocked to origin")
 
       // Continue to next middleware/loader and get the response
       const response = await next()
@@ -212,13 +217,13 @@ export function createAppwardenMiddleware(
           async () => {}, // no-op next
         )
 
-        const elapsed = Date.now() - startTime
-        debugFn(`Appwarden middleware completed in ${elapsed}ms`)
+        const elapsed = Math.round(getNowMs() - startTime)
+        debugFn(`Middleware executed in ${elapsed}ms`)
         return cspContext.response
       }
 
-      const elapsed = Date.now() - startTime
-      debugFn(`Appwarden middleware completed in ${elapsed}ms`)
+      const elapsed = Math.round(getNowMs() - startTime)
+      debugFn(`Middleware executed in ${elapsed}ms`)
       return response
     } catch (error) {
       // Re-throw redirects and responses

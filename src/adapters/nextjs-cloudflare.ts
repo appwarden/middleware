@@ -58,6 +58,11 @@ export type NextJsMiddlewareFunction = (
   event?: NextFetchEvent,
 ) => Promise<NextResponse>
 
+const getNowMs = () =>
+  typeof performance !== "undefined" && typeof performance.now === "function"
+    ? performance.now()
+    : Date.now()
+
 /**
  * Creates an Appwarden middleware function for Next.js on Cloudflare.
  *
@@ -86,7 +91,7 @@ export function createAppwardenMiddleware(
   configFn: NextJsCloudflareConfigFn,
 ): NextJsMiddlewareFunction {
   return async (request, _event) => {
-    const startTime = Date.now()
+    const startTime = getNowMs()
 
     try {
       // Dynamic import to avoid bundling issues
@@ -101,7 +106,7 @@ export function createAppwardenMiddleware(
 
       debugFn(
         `Appwarden middleware invoked for ${requestUrl.pathname}`,
-        `HTML request: ${isHTML}`,
+        `isHTML: ${isHTML}`,
       )
 
       // Skip non-HTML requests (e.g., API calls, static assets)
@@ -138,7 +143,7 @@ export function createAppwardenMiddleware(
         return NextResponse.redirect(lockPageUrl, TEMPORARY_REDIRECT_STATUS)
       }
 
-      debugFn("Site is unlocked - continuing")
+      debugFn("Site is unlocked")
 
       // Apply CSP headers if configured (pre-origin, headers only)
       if (
@@ -157,14 +162,14 @@ export function createAppwardenMiddleware(
 
         const response = NextResponse.next()
         response.headers.set(headerName, headerValue)
-        const elapsed = Date.now() - startTime
-        debugFn(`Appwarden middleware completed in ${elapsed}ms`)
+        const elapsed = Math.round(getNowMs() - startTime)
+        debugFn(`Middleware executed in ${elapsed}ms`)
         return response
       }
 
       // Continue to next handler
-      const elapsed = Date.now() - startTime
-      debugFn(`Appwarden middleware completed in ${elapsed}ms`)
+      const elapsed = Math.round(getNowMs() - startTime)
+      debugFn(`Middleware executed in ${elapsed}ms`)
       return NextResponse.next()
     } catch (error) {
       // Log errors but don't block the request
