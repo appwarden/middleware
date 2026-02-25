@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { LockValue } from "../../schemas"
 import { CloudflareProviderContext } from "../../types/cloudflare"
-import { debug } from "../debug"
 import { syncEdgeValue } from "./sync-edge-value"
 
 // Mock dependencies
@@ -11,10 +10,6 @@ vi.mock("../../schemas", () => ({
       parse: vi.fn((value) => value),
     })),
   },
-}))
-
-vi.mock("../debug", () => ({
-  debug: vi.fn(),
 }))
 
 vi.mock("../print-message", () => ({
@@ -69,7 +64,7 @@ describe("syncEdgeValue", () => {
         deleteValue: vi.fn(),
       },
       request: new Request("https://example.com"),
-      debug: false,
+      debug: vi.fn(),
       lockPageSlug: "/maintenance",
       waitUntil: vi.fn(),
     }
@@ -107,7 +102,9 @@ describe("syncEdgeValue", () => {
       },
     )
 
-    expect(debug).toHaveBeenCalledWith("syncing with api")
+    expect(mockContext.debug).toHaveBeenCalledWith(
+      `Fetching lock value from API: ${mockContext.appwardenApiHostname}`,
+    )
   })
 
   it("should update the edge cache with the API response", async () => {
@@ -134,8 +131,9 @@ describe("syncEdgeValue", () => {
       lastCheck: expect.any(Number),
     })
 
-    expect(debug).toHaveBeenCalledWith(
-      expect.stringContaining("syncing with api...DONE"),
+    expect(mockContext.debug).toHaveBeenCalledWith(
+      `API call to ${mockContext.appwardenApiHostname} succeeded`,
+      expect.stringContaining("Lock status: "),
     )
   })
 
@@ -168,7 +166,7 @@ describe("syncEdgeValue", () => {
     await syncEdgeValue(mockContext)
 
     expect(consoleErrorSpy).toHaveBeenCalledWith(
-      "[@appwarden/middleware] Failed to fetch from check endpoint - 422 Unprocessable Entity",
+      `[@appwarden/middleware] API call to ${mockContext.appwardenApiHostname} failed: 422 Unprocessable Entity`,
     )
     expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
   })
@@ -214,7 +212,7 @@ describe("syncEdgeValue", () => {
     await syncEdgeValue(mockContext)
 
     expect(consoleErrorSpy).toHaveBeenCalledWith(
-      "[@appwarden/middleware] Failed to fetch from check endpoint - Network error",
+      `[@appwarden/middleware] API call to ${mockContext.appwardenApiHostname} failed: Network error`,
     )
     expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
   })
@@ -233,7 +231,7 @@ describe("syncEdgeValue", () => {
       await syncEdgeValue(mockContext)
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "[@appwarden/middleware] Failed to fetch from check endpoint - 401 Unauthorized",
+        `[@appwarden/middleware] API call to ${mockContext.appwardenApiHostname} failed: 401 Unauthorized`,
       )
       expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
     })
@@ -248,7 +246,7 @@ describe("syncEdgeValue", () => {
       await syncEdgeValue(mockContext)
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "[@appwarden/middleware] Failed to fetch from check endpoint - 403 Forbidden",
+        `[@appwarden/middleware] API call to ${mockContext.appwardenApiHostname} failed: 403 Forbidden`,
       )
       expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
     })
@@ -266,7 +264,7 @@ describe("syncEdgeValue", () => {
       await syncEdgeValue(mockContext)
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "[@appwarden/middleware] Failed to fetch from check endpoint - 429 Too Many Requests",
+        `[@appwarden/middleware] API call to ${mockContext.appwardenApiHostname} failed: 429 Too Many Requests`,
       )
       expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
     })
@@ -284,7 +282,7 @@ describe("syncEdgeValue", () => {
       await syncEdgeValue(mockContext)
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "[@appwarden/middleware] Failed to fetch from check endpoint - 500 Internal Server Error",
+        `[@appwarden/middleware] API call to ${mockContext.appwardenApiHostname} failed: 500 Internal Server Error`,
       )
       expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
     })
@@ -302,7 +300,7 @@ describe("syncEdgeValue", () => {
       await syncEdgeValue(mockContext)
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "[@appwarden/middleware] Failed to fetch from check endpoint - 502 Bad Gateway",
+        `[@appwarden/middleware] API call to ${mockContext.appwardenApiHostname} failed: 502 Bad Gateway`,
       )
       expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
     })
@@ -320,7 +318,7 @@ describe("syncEdgeValue", () => {
       await syncEdgeValue(mockContext)
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "[@appwarden/middleware] Failed to fetch from check endpoint - 503 Service Unavailable",
+        `[@appwarden/middleware] API call to ${mockContext.appwardenApiHostname} failed: 503 Service Unavailable`,
       )
       expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
     })
@@ -338,7 +336,7 @@ describe("syncEdgeValue", () => {
       await syncEdgeValue(mockContext)
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "[@appwarden/middleware] Failed to fetch from check endpoint - 504 Gateway Timeout",
+        `[@appwarden/middleware] API call to ${mockContext.appwardenApiHostname} failed: 504 Gateway Timeout`,
       )
       expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
     })
@@ -349,7 +347,7 @@ describe("syncEdgeValue", () => {
       await syncEdgeValue(mockContext)
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "[@appwarden/middleware] Failed to fetch from check endpoint - Request timeout",
+        `[@appwarden/middleware] API call to ${mockContext.appwardenApiHostname} failed: Request timeout`,
       )
       expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
     })
@@ -362,7 +360,7 @@ describe("syncEdgeValue", () => {
       await syncEdgeValue(mockContext)
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "[@appwarden/middleware] Failed to fetch from check endpoint - getaddrinfo ENOTFOUND",
+        `[@appwarden/middleware] API call to ${mockContext.appwardenApiHostname} failed: getaddrinfo ENOTFOUND`,
       )
       expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
     })

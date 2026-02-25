@@ -29,7 +29,7 @@ export type RequestContext = {
 
 export type CloudflareProviderContext = Omit<
   UseAppwardenInput,
-  "lockPageSlug"
+  "lockPageSlug" | "debug"
 > & {
   request: Request
   requestUrl: URL
@@ -39,6 +39,7 @@ export type CloudflareProviderContext = Omit<
   waitUntil: NextFetchEvent["waitUntil"]
   lockPageSlug: string // Required - context is only created when lockPageSlug is resolved
   appwardenApiHostname?: string
+  debug: (...msg: any[]) => void
 }
 
 export type RequestHandler<Env = any> = PagesFunction<Env>

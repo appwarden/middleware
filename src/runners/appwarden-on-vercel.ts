@@ -17,9 +17,6 @@ import {
 import { makeCSPHeader } from "../utils/cloudflare"
 import { getLockValue, syncEdgeValue } from "../utils/vercel"
 
-// we use this log to search vercel logs during testing (see packages/appwarden-vercel/edge-cache-testing-results.md)
-debug("Instantiating isolate")
-
 const memoryCache = new MemoryCache<string, LockValueType>({ maxSize: 1 })
 
 /**
@@ -46,6 +43,9 @@ export function createAppwardenMiddleware(
     }
 
     const parsedConfig = AppwardenConfigSchema.parse(config)
+    const debugFn = debug(parsedConfig.debug ?? false)
+
+    debugFn("Appwarden Vercel middleware invoked", `url=${request.url}`)
 
     const applyCspHeaders = (response: Response): Response => {
       const cspConfig = parsedConfig.contentSecurityPolicy
@@ -64,20 +64,27 @@ export function createAppwardenMiddleware(
       const requestUrl = new URL(request.url)
       const isHTML = isHTMLRequest(request)
 
-      debug({ isHTMLRequest: isHTML, url: requestUrl.pathname })
+      debugFn(
+        "Request classification",
+        `isHTML=${isHTML}`,
+        `path=${requestUrl.pathname}`,
+      )
 
       // Pass through non-HTML requests to the next handler
       if (!isHTML) {
+        debugFn("Non-HTML request detected - passing through")
         return NextResponse.next()
       }
 
       // Pass through if no lock page is configured
       if (!parsedConfig.lockPageSlug) {
+        debugFn("No lockPageSlug configured - passing through")
         return NextResponse.next()
       }
 
       // Skip if already on lock page to prevent infinite redirect loop
       if (isOnLockPage(parsedConfig.lockPageSlug, request.url)) {
+        debugFn("Already on lock page - passing through")
         return NextResponse.next()
       }
 
@@ -85,18 +92,26 @@ export function createAppwardenMiddleware(
         ? ("edge-config" as const)
         : ("upstash" as const)
 
+      debugFn(`Using provider: ${provider}`)
+
       // Check memory cache first
       const cacheValue = memoryCache.get(APPWARDEN_CACHE_KEY)
       const shouldRecheck = MemoryCache.isExpired(cacheValue)
 
       // Sync from edge in background if cache is expired or missing
       if (!cacheValue || shouldRecheck) {
+        debugFn(
+          "Memory cache miss or expired - syncing edge value in background",
+          `hasCache=${!!cacheValue}`,
+          `shouldRecheck=${shouldRecheck}`,
+        )
         safeWaitUntil(
           syncEdgeValue({
             requestUrl,
             cacheUrl: parsedConfig.cacheUrl,
             appwardenApiToken: parsedConfig.appwardenApiToken,
             vercelApiToken: parsedConfig.vercelApiToken,
+            debug: debugFn,
           }),
         )
       }
@@ -113,6 +128,7 @@ export function createAppwardenMiddleware(
         ).lockValue
 
       if (lockValue?.isLocked) {
+        debugFn("Site is locked - redirecting to lock page")
         const lockPageUrl = buildLockPageUrl(
           parsedConfig.lockPageSlug,
           request.url,
@@ -126,8 +142,13 @@ export function createAppwardenMiddleware(
 
       // Site is not locked - pass through to the next handler
       const response = NextResponse.next()
+      debugFn("Site is not locked - passing through")
       return applyCspHeaders(response)
     } catch (e) {
+      debugFn(
+        "Error in Appwarden Vercel middleware",
+        e instanceof Error ? e.message : String(e),
+      )
       const message =
         "Appwarden encountered an unknown error. Please contact Appwarden support at https://appwarden.io/join-community."
 

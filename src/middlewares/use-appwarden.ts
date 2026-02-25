@@ -30,6 +30,7 @@ export const useAppwarden: (input: CloudflareConfigType) => Middleware =
           {
             serviceOrigin: requestUrl.origin,
             cache: (await caches.open("appwarden:lock")) as unknown as Cache,
+            debug: context.debug,
           },
           keyName,
         )

@@ -1,6 +1,5 @@
 import { LockValue, LockValueType } from "../../schemas"
 import { CloudflareProviderContext } from "../../types/cloudflare"
-import { debug } from "../debug"
 import { printMessage } from "../print-message"
 
 class APIError extends Error {
@@ -13,12 +12,11 @@ class APIError extends Error {
 const DEFAULT_API_HOSTNAME = "https://api.appwarden.io"
 
 export const syncEdgeValue = async (context: CloudflareProviderContext) => {
-  // we use this log to search vercel logs during testing (see packages/appwarden-vercel/edge-cache-testing-results.md)
-  debug(`syncing with api`)
+  // Use runtime-configured hostname if provided, otherwise fall back to default
+  const apiHostname = context.appwardenApiHostname ?? DEFAULT_API_HOSTNAME
+  context.debug(`Fetching lock value from API: ${apiHostname}`)
 
   try {
-    // Use runtime-configured hostname if provided, otherwise fall back to default
-    const apiHostname = context.appwardenApiHostname ?? DEFAULT_API_HOSTNAME
     // @ts-expect-error API_PATHNAME is a build-time config variable
     const response = await fetch(new URL(API_PATHNAME, apiHostname), {
       method: "POST",
@@ -52,7 +50,10 @@ export const syncEdgeValue = async (context: CloudflareProviderContext) => {
         const parsedValue = LockValue.omit({ lastCheck: true }).parse(
           result.content,
         )
-        debug(`syncing with api...DONE ${JSON.stringify(parsedValue, null, 2)}`)
+        context.debug(
+          `API call to ${apiHostname} succeeded`,
+          `Lock status: ${parsedValue.isLocked ? "LOCKED" : "UNLOCKED"}`,
+        )
 
         await context.edgeCache.updateValue({
           ...parsedValue,
@@ -63,14 +64,14 @@ export const syncEdgeValue = async (context: CloudflareProviderContext) => {
       }
     }
   } catch (e) {
-    const message = "Failed to fetch from check endpoint"
+    const message = `API call to ${apiHostname} failed`
 
     console.error(
       printMessage(
         e instanceof APIError
           ? e.message
           : e instanceof Error
-            ? `${message} - ${e.message}`
+            ? `${message}: ${e.message}`
             : message,
       ),
     )

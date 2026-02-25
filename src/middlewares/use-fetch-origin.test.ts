@@ -30,6 +30,7 @@ describe("useFetchOrigin", () => {
       response: new Response(), // Initialize with an empty response
       hostname: "example.com",
       waitUntil: vi.fn(),
+      debug: vi.fn(),
     }
 
     // Create mock next function
@@ -67,6 +68,7 @@ describe("useFetchOrigin", () => {
       response: new Response(), // Initialize with an empty response
       hostname: "example.com",
       waitUntil: vi.fn(),
+      debug: vi.fn(),
     }
 
     // Create mock next function

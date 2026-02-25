@@ -1,13 +1,6 @@
 import { fetchMock, SELF } from "cloudflare:test"
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest"
 import { mockOriginResponse } from "../test/test.helpers"
-
-// Mock the debug utility to avoid DEBUG global issues
-vi.mock("../utils/debug", () => ({
-  debug: vi.fn(),
-  printMessage: vi.fn((msg) => msg),
-}))
-
 import { useContentSecurityPolicy } from "./use-content-security-policy"
 
 describe("use-content-security-policy", () => {
@@ -114,6 +107,7 @@ describe("use-content-security-policy", () => {
         }),
         hostname: "example.com",
         waitUntil: vi.fn(),
+        debug: vi.fn(),
       }
 
       const next = vi.fn()
@@ -147,6 +141,7 @@ describe("use-content-security-policy", () => {
         }),
         hostname: "example.com",
         waitUntil: vi.fn(),
+        debug: vi.fn(),
       }
 
       const next = vi.fn()
@@ -177,6 +172,7 @@ describe("use-content-security-policy", () => {
         }),
         hostname: "example.com",
         waitUntil: vi.fn(),
+        debug: vi.fn(),
       }
 
       const next = vi.fn()
@@ -210,6 +206,7 @@ describe("use-content-security-policy", () => {
         }),
         hostname: "example.com",
         waitUntil: vi.fn(),
+        debug: vi.fn(),
       }
 
       const next = vi.fn()
@@ -245,6 +242,7 @@ describe("use-content-security-policy", () => {
           }),
           hostname: "any-domain.com",
           waitUntil: vi.fn(),
+          debug: vi.fn(),
         }
 
         const next = vi.fn()
@@ -279,6 +277,7 @@ describe("use-content-security-policy", () => {
           }),
           hostname: "domain-a.com",
           waitUntil: vi.fn(),
+          debug: vi.fn(),
         }
 
         const nextA = vi.fn()
@@ -306,6 +305,7 @@ describe("use-content-security-policy", () => {
           }),
           hostname: "domain-b.com",
           waitUntil: vi.fn(),
+          debug: vi.fn(),
         }
 
         const nextB = vi.fn()
@@ -348,6 +348,7 @@ describe("use-content-security-policy", () => {
           }),
           hostname: "unknown-domain.com",
           waitUntil: vi.fn(),
+          debug: vi.fn(),
         }
 
         const next = vi.fn()
@@ -387,6 +388,7 @@ describe("use-content-security-policy", () => {
           }),
           hostname: "domain-a.com",
           waitUntil: vi.fn(),
+          debug: vi.fn(),
         }
 
         const contextB = {
@@ -396,6 +398,7 @@ describe("use-content-security-policy", () => {
           }),
           hostname: "domain-b.com",
           waitUntil: vi.fn(),
+          debug: vi.fn(),
         }
 
         const next = vi.fn()
@@ -437,6 +440,7 @@ describe("use-content-security-policy", () => {
             ),
             hostname: "example.com",
             waitUntil: vi.fn(),
+            debug: vi.fn(),
           }
 
           const next = vi.fn()
@@ -478,6 +482,7 @@ describe("use-content-security-policy", () => {
           ),
           hostname: "example.com",
           waitUntil: vi.fn(),
+          debug: vi.fn(),
         }
 
         const next = vi.fn()
@@ -514,6 +519,7 @@ describe("use-content-security-policy", () => {
           ),
           hostname: "example.com",
           waitUntil: vi.fn(),
+          debug: vi.fn(),
         }
 
         const next = vi.fn()
@@ -548,6 +554,7 @@ describe("use-content-security-policy", () => {
           }),
           hostname: "example.com",
           waitUntil: vi.fn(),
+          debug: vi.fn(),
         }
 
         const next = vi.fn()
@@ -592,6 +599,7 @@ describe("use-content-security-policy", () => {
             }),
             hostname: "example.com",
             waitUntil: vi.fn(),
+            debug: vi.fn(),
           }
 
           const next = vi.fn()

@@ -40,6 +40,7 @@ vi.mock("../utils", () => ({
     DirectivesBadParse: "DirectivesBadParse",
   },
   getErrors: vi.fn(() => ["Error message"]),
+  debug: vi.fn(() => vi.fn()),
 }))
 
 vi.mock("../utils/cloudflare", () => ({

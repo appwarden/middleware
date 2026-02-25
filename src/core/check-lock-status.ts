@@ -1,7 +1,7 @@
 import { APPWARDEN_CACHE_KEY, APPWARDEN_TEST_ROUTE } from "../constants"
 import { LockValueType } from "../schemas"
 import { CloudflareProviderContext } from "../types"
-import { MemoryCache } from "../utils"
+import { debug, MemoryCache } from "../utils"
 import {
   deleteEdgeValue,
   getLockValue,
@@ -49,10 +49,13 @@ const createContext = async (
   const keyName = APPWARDEN_CACHE_KEY
   const provider = "cloudflare-cache" as const
 
+  const debugFn = debug(config.debug ?? false)
+
   const edgeCache = store.json<LockValueType>(
     {
       serviceOrigin: requestUrl.origin,
       cache: (await caches.open("appwarden:lock")) as unknown as Cache,
+      debug: debugFn,
     },
     keyName,
   )
@@ -63,7 +66,7 @@ const createContext = async (
     edgeCache,
     requestUrl,
     provider,
-    debug: config.debug ?? false,
+    debug: debugFn,
     lockPageSlug: config.lockPageSlug,
     appwardenApiToken: config.appwardenApiToken,
     appwardenApiHostname: config.appwardenApiHostname,
@@ -85,7 +88,14 @@ const resolveLockStatus = async (
 > => {
   const { lockValue, shouldDeleteEdgeValue } = await getLockValue(context)
 
+  if (lockValue) {
+    context.debug("Lock value resolved from cache")
+  } else {
+    context.debug("Cache miss - no lock value found")
+  }
+
   if (shouldDeleteEdgeValue) {
+    context.debug("Deleting corrupted cache value")
     await deleteEdgeValue(context)
   }
 
@@ -129,11 +139,15 @@ export const checkLockStatus = async (
     if (!lockValue || wasDeleted || lockValue.isLocked) {
       // Sync synchronously if no cache, cache was corrupted/deleted, or currently locked
       // to avoid rendering incorrect lock state
+      context.debug(
+        "Cache expired/missing/corrupted or site is locked - syncing with API synchronously",
+      )
       await syncEdgeValue(context)
       // Re-check after sync
       ;({ isLocked, isTestLock } = await resolveLockStatus(context))
     } else {
       // Sync asynchronously in background if cache exists and not locked
+      context.debug("Cache expired but site unlocked - syncing in background")
       config.waitUntil(syncEdgeValue(context))
     }
   }

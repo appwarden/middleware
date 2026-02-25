@@ -77,6 +77,7 @@ describe("useAppwarden", () => {
       response: new Response("Test response"),
       hostname: "example.com",
       waitUntil: vi.fn(),
+      debug: vi.fn(),
     }
 
     mockNext = vi.fn(async () => {})
@@ -142,6 +143,7 @@ describe("useAppwarden", () => {
       {
         serviceOrigin: "https://example.com",
         cache: expect.any(Object),
+        debug: expect.any(Function),
       },
       APPWARDEN_CACHE_KEY,
     )

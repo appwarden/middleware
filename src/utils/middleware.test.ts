@@ -9,6 +9,7 @@ describe("usePipeline", () => {
     request: new Request("https://example.com"),
     response: new Response("Test response"),
     waitUntil: vi.fn(),
+    debug: vi.fn(),
   })
 
   it("should create a pipeline with the provided middlewares", () => {

@@ -5,6 +5,7 @@ export interface MiddlewareContext {
   request: Request
   response: Response
   waitUntil: ExecutionContext["waitUntil"]
+  debug: (...msg: any[]) => void
 }
 
 export type Middleware = (

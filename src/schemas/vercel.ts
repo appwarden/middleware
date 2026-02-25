@@ -56,6 +56,7 @@ export const BaseNextJsConfigSchema = z.object({
   cacheUrl: z.string(),
   appwardenApiToken: z.string(),
   vercelApiToken: z.string().optional(),
+  debug: z.boolean().optional(),
   lockPageSlug: z
     .string()
     .default("")

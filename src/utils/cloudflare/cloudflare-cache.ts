@@ -3,6 +3,7 @@ import { debug } from "../debug"
 
 type Context = {
   cache: Cache
+  debug: ReturnType<typeof debug>
   serviceOrigin: string
 }
 
@@ -32,11 +33,11 @@ export const store = {
 const getCacheValue = async (context: Context, cacheKey: URL) => {
   const match = await context.cache.match(cacheKey)
   if (!match) {
-    debug(`[${cacheKey.pathname}] Cache MISS!`)
+    context.debug(`[${cacheKey.pathname}] Cache MISS!`)
     return undefined
   }
 
-  debug(`[${cacheKey.pathname}] Cache MATCH!`)
+  context.debug(`[${cacheKey.pathname}] Cache MATCH!`)
   return match
 }
 
@@ -46,7 +47,7 @@ const updateCacheValue = async (
   value: Record<string, unknown>,
   ttl?: number,
 ) => {
-  debug(
+  context.debug(
     "updating cache...",
     cacheKey.href,
     value,

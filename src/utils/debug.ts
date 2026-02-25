@@ -1,25 +1,35 @@
-export const debug = (...msg: any[]) => {
-  // @ts-expect-error config variables
-  if (DEBUG) {
+import { printMessage } from "./print-message"
+
+export const debug =
+  (isDebug: boolean) =>
+  (...msg: any[]) => {
+    if (!isDebug) return
+
     const formatted = msg.map((m) => {
-      if (typeof m === "object" && m !== null) {
-        // Handle Error objects specially - JSON.stringify returns "{}" for them
-        if (m instanceof Error) {
-          return m.stack ?? m.message
-        }
+      let content: string
+
+      if (m instanceof Error) {
+        // Prefer stack trace when available, fall back to message
+        content = m.stack ?? m.message
+      } else if (typeof m === "object" && m !== null) {
+        // Objects are JSON stringified for readability in logs
         try {
-          return JSON.stringify(m)
+          content = JSON.stringify(m)
         } catch {
           // Handle circular references, BigInt, etc.
           try {
-            return String(m)
+            content = String(m)
           } catch {
-            return "[Unserializable value]"
+            content = "[Unserializable value]"
           }
         }
+      } else {
+        // Primitives (string, number, boolean, etc.)
+        content = String(m)
       }
-      return m
+
+      return printMessage(content)
     })
+
     console.log(...formatted)
   }
-}

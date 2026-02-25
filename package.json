@@ -63,6 +63,7 @@
     "deploy:staging": "pnpm build && wrangler deploy -e staging",
     "release": "NODE_ENV=production pnpm build && node scripts/prepare-package.cjs && semantic-release",
     "build": "tsup",
+    "build:test-websites": "for dir in ./websites/appwarden-cc*; do if [ -d $dir ]; then (cd $dir && pnpm build); fi; done",
     "check:types": "tsc --noEmit",
     "check:prettier": "prettier --check .",
     "check:ci": "pnpm check:types && pnpm check:prettier && pnpm build",
