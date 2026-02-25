@@ -5,6 +5,7 @@ import { TanStackStartCloudflareConfigSchema } from "../schemas/tanstack-start-c
 import {
   buildLockPageUrl,
   createRedirect,
+  debug,
   isHTMLRequest,
   isOnLockPage,
   printMessage,
@@ -94,6 +95,7 @@ export function createAppwardenMiddleware(
   configFn: TanStackStartConfigFn,
 ): TanStackStartMiddlewareFunction {
   return async (args) => {
+    const startTime = Date.now()
     const { request, next, context } = args
 
     try {
@@ -108,13 +110,22 @@ export function createAppwardenMiddleware(
         return next()
       }
 
+      // Get config from the config function
+      const config = configFn(cloudflare)
+      const debugFn = debug(config.debug ?? false)
+      const requestUrl = new URL(request.url)
+      const isHTML = isHTMLRequest(request)
+
+      debugFn(
+        `Appwarden middleware invoked for ${requestUrl.pathname}`,
+        `HTML request: ${isHTML}`,
+      )
+
       // Skip non-HTML requests (e.g., API calls, static assets)
-      if (!isHTMLRequest(request)) {
+      if (!isHTML) {
         return next()
       }
 
-      // Get config from the config function
-      const config = configFn(cloudflare)
       // Validate config against schema
       const hasError = validateConfig(
         config,
@@ -126,6 +137,7 @@ export function createAppwardenMiddleware(
 
       // Skip if already on lock page to prevent infinite redirect loop
       if (isOnLockPage(config.lockPageSlug, request.url)) {
+        debugFn("Already on lock page - skipping")
         return next()
       }
 
@@ -142,20 +154,25 @@ export function createAppwardenMiddleware(
       // If locked, throw redirect to lock page
       if (result.isLocked) {
         const lockPageUrl = buildLockPageUrl(config.lockPageSlug, request.url)
+        debugFn(`Site is locked - redirecting to ${lockPageUrl.pathname}`)
         throw createRedirect(lockPageUrl)
       }
+
+      debugFn("Site is unlocked - continuing to origin")
 
       // Continue to next middleware/handler and get the response
       const response = await next()
 
       // Apply CSP if configured (runs after origin)
       if (config.contentSecurityPolicy && response instanceof Response) {
+        debugFn("Applying CSP middleware")
         // Create a mini context for CSP middleware
         const cspContext = {
           request,
           response,
-          hostname: new URL(request.url).hostname,
+          hostname: requestUrl.hostname,
           waitUntil: (fn: any) => cloudflare.ctx.waitUntil(fn),
+          debug: debugFn,
         }
 
         await useContentSecurityPolicy(config.contentSecurityPolicy)(
@@ -163,9 +180,13 @@ export function createAppwardenMiddleware(
           async () => {}, // no-op next
         )
 
+        const elapsed = Date.now() - startTime
+        debugFn(`Appwarden middleware completed in ${elapsed}ms`)
         return cspContext.response
       }
 
+      const elapsed = Date.now() - startTime
+      debugFn(`Appwarden middleware completed in ${elapsed}ms`)
       return response
     } catch (error) {
       // Re-throw redirects and responses

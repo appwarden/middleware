@@ -49,7 +49,7 @@ vi.mock("../utils", () => {
       const normalizedSlug = slug.startsWith("/") ? slug : `/${slug}`
       return new URL(normalizedSlug, requestUrl)
     }),
-    debug: vi.fn(),
+    debug: vi.fn(() => vi.fn()),
     getErrors: vi.fn(() => ["Error message"]),
     isCacheUrl: {
       edgeConfig: vi.fn(),

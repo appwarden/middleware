@@ -1,6 +1,6 @@
 import { UseCSPInput, UseCSPInputSchema } from "../schemas"
 import { Middleware } from "../types"
-import { debug, isHTMLResponse, printMessage } from "../utils"
+import { isHTMLResponse } from "../utils"
 import { makeCSPHeader } from "../utils/cloudflare"
 
 const AppendAttribute = (attribute: string, nonce: string) => ({
@@ -29,7 +29,7 @@ export const useContentSecurityPolicy: (input: UseCSPInput) => Middleware = (
       // if the csp is disabled
       !["enforced", "report-only"].includes(config.mode)
     ) {
-      debug(printMessage("csp is disabled"))
+      context.debug("CSP is disabled")
       return
     }
     // or if content type is defined but its not html
@@ -43,6 +43,11 @@ export const useContentSecurityPolicy: (input: UseCSPInput) => Middleware = (
       cspNonce,
       config.directives,
       config.mode,
+    )
+
+    context.debug(
+      `Applying CSP in ${config.mode} mode`,
+      `Directives: ${config.directives ? Object.keys(config.directives).join(", ") : "none"}`,
     )
 
     const nextResponse = new Response(response.body, response)

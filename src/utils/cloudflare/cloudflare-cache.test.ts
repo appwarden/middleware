@@ -1,12 +1,6 @@
 import { Cache } from "@cloudflare/workers-types"
 import { describe, expect, it, vi } from "vitest"
-import { debug } from "../debug"
 import { store } from "./cloudflare-cache"
-
-// Mock dependencies
-vi.mock("../debug", () => ({
-  debug: vi.fn(),
-}))
 
 describe("cloudflare-cache", () => {
   // Create mock cache
@@ -22,6 +16,7 @@ describe("cloudflare-cache", () => {
   const createMockContext = (cache: Cache) => ({
     cache,
     serviceOrigin: "https://example.com",
+    debug: vi.fn(),
   })
 
   describe("store.json", () => {
@@ -68,7 +63,7 @@ describe("cloudflare-cache", () => {
       const result = await jsonStore.getValue()
 
       expect(result).toBe(mockResponse)
-      expect(debug).toHaveBeenCalledWith("[/test-key] Cache MATCH!")
+      expect(mockContext.debug).toHaveBeenCalledWith("[/test-key] Cache MATCH!")
     })
 
     it("should return undefined when the cache is empty", async () => {
@@ -82,7 +77,7 @@ describe("cloudflare-cache", () => {
       const result = await jsonStore.getValue()
 
       expect(result).toBeUndefined()
-      expect(debug).toHaveBeenCalledWith("[/test-key] Cache MISS!")
+      expect(mockContext.debug).toHaveBeenCalledWith("[/test-key] Cache MISS!")
     })
   })
 

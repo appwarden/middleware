@@ -29,6 +29,7 @@ vi.mock("../utils", () => ({
     isExpired: vi.fn(),
     isTestExpired: vi.fn(),
   },
+  debug: vi.fn(() => vi.fn()),
 }))
 
 // Mock global caches API

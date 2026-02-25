@@ -1,13 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { VercelProviderContext } from "../../types"
-import { debug } from "../debug"
 import { printMessage } from "../print-message"
 import { syncEdgeValue } from "./sync-edge-value"
-
-// Mock dependencies
-vi.mock("../debug", () => ({
-  debug: vi.fn(),
-}))
 
 vi.mock("../print-message", () => ({
   printMessage: vi.fn((message) => `[@appwarden/middleware] ${message}`),
@@ -17,10 +11,15 @@ vi.mock("../print-message", () => ({
 const originalFetch = global.fetch
 let mockFetchResponse: Response
 
+type SyncEdgeContext = Pick<
+  VercelProviderContext,
+  "cacheUrl" | "requestUrl" | "vercelApiToken" | "appwardenApiToken" | "debug"
+>
+
 describe("syncEdgeValue", () => {
   // Mock console.error
   let consoleErrorSpy: ReturnType<typeof vi.spyOn>
-  let mockContext: VercelProviderContext
+  let mockContext: SyncEdgeContext
 
   beforeEach(() => {
     consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {})
@@ -35,14 +34,12 @@ describe("syncEdgeValue", () => {
 
     // Setup mock context
     mockContext = {
-      provider: "edge-config",
       requestUrl: new URL("https://example.com"),
       appwardenApiToken: "test-token",
       vercelApiToken: "vercel-token",
-      keyName: "appwarden-lock",
       cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
-      lockPageSlug: "/locked",
-    } as VercelProviderContext
+      debug: vi.fn(),
+    }
 
     // Reset mocks
     vi.clearAllMocks()
@@ -77,7 +74,7 @@ describe("syncEdgeValue", () => {
       },
     )
 
-    expect(debug).toHaveBeenCalledWith("syncing with api")
+    expect(mockContext.debug).toHaveBeenCalledWith("syncing with api")
   })
 
   it("should handle API errors", async () => {

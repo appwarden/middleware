@@ -53,6 +53,7 @@ describe("handleVercelRequest", () => {
       lockPageSlug: "/maintenance",
       memoryCache: mockMemoryCache,
       waitUntil: vi.fn(),
+      debug: vi.fn(),
     }
 
     // Create mock onLocked callback

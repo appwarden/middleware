@@ -1,5 +1,4 @@
 import { VercelProviderContext } from "../../types"
-import { debug } from "../debug"
 import { printMessage } from "../print-message"
 
 class APIError extends Error {
@@ -12,11 +11,11 @@ class APIError extends Error {
 export const syncEdgeValue = async (
   context: Pick<
     VercelProviderContext,
-    "cacheUrl" | "requestUrl" | "vercelApiToken" | "appwardenApiToken"
+    "cacheUrl" | "requestUrl" | "vercelApiToken" | "appwardenApiToken" | "debug"
   >,
 ) => {
   // we use this log to search vercel logs during testing (see packages/appwarden-vercel/edge-cache-testing-results.md)
-  debug(`syncing with api`)
+  context.debug("syncing with api")
 
   try {
     // @ts-expect-error config variables

@@ -8,6 +8,7 @@ import type { UseCSPInput } from "../schemas"
 import { NextJsCloudflareConfigSchema } from "../schemas/nextjs-cloudflare"
 import {
   buildLockPageUrl,
+  debug,
   isHTMLRequest,
   isOnLockPage,
   printMessage,
@@ -85,18 +86,29 @@ export function createAppwardenMiddleware(
   configFn: NextJsCloudflareConfigFn,
 ): NextJsMiddlewareFunction {
   return async (request, _event) => {
+    const startTime = Date.now()
+
     try {
       // Dynamic import to avoid bundling issues
       const { getCloudflareContext } = await import("@opennextjs/cloudflare")
       const { env, ctx } = await getCloudflareContext()
 
+      // Get config from the config function
+      const config = configFn({ env, ctx })
+      const debugFn = debug(config.debug ?? false)
+      const requestUrl = new URL(request.url)
+      const isHTML = isHTMLRequest(request)
+
+      debugFn(
+        `Appwarden middleware invoked for ${requestUrl.pathname}`,
+        `HTML request: ${isHTML}`,
+      )
+
       // Skip non-HTML requests (e.g., API calls, static assets)
-      if (!isHTMLRequest(request)) {
+      if (!isHTML) {
         return NextResponse.next()
       }
 
-      // Get config from the config function
-      const config = configFn({ env, ctx })
       // Validate config against schema
       const hasError = validateConfig(config, NextJsCloudflareConfigSchema)
       if (hasError) {
@@ -105,6 +117,7 @@ export function createAppwardenMiddleware(
 
       // Skip if already on lock page to prevent infinite redirect loop
       if (isOnLockPage(config.lockPageSlug, request.url)) {
+        debugFn("Already on lock page - skipping")
         return NextResponse.next()
       }
 
@@ -121,14 +134,20 @@ export function createAppwardenMiddleware(
       // If locked, redirect to lock page
       if (result.isLocked) {
         const lockPageUrl = buildLockPageUrl(config.lockPageSlug, request.url)
+        debugFn(`Site is locked - redirecting to ${lockPageUrl.pathname}`)
         return NextResponse.redirect(lockPageUrl, TEMPORARY_REDIRECT_STATUS)
       }
+
+      debugFn("Site is unlocked - continuing")
 
       // Apply CSP headers if configured (pre-origin, headers only)
       if (
         config.contentSecurityPolicy &&
         config.contentSecurityPolicy.mode !== "disabled"
       ) {
+        debugFn(
+          `Applying CSP headers in ${config.contentSecurityPolicy.mode} mode`,
+        )
         const { makeCSPHeader } = await import("../utils/cloudflare")
         const [headerName, headerValue] = makeCSPHeader(
           "",
@@ -138,10 +157,14 @@ export function createAppwardenMiddleware(
 
         const response = NextResponse.next()
         response.headers.set(headerName, headerValue)
+        const elapsed = Date.now() - startTime
+        debugFn(`Appwarden middleware completed in ${elapsed}ms`)
         return response
       }
 
       // Continue to next handler
+      const elapsed = Date.now() - startTime
+      debugFn(`Appwarden middleware completed in ${elapsed}ms`)
       return NextResponse.next()
     } catch (error) {
       // Log errors but don't block the request

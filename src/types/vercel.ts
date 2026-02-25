@@ -3,7 +3,7 @@ import { APPWARDEN_CACHE_KEY } from "../constants"
 import { BaseNextJsConfigFnType, LockValueType } from "../schemas"
 import { MemoryCache } from "../utils"
 
-export type VercelProviderContext = BaseNextJsConfigFnType & {
+export type VercelProviderContext = Omit<BaseNextJsConfigFnType, "debug"> & {
   req: NextRequest
   requestUrl: URL
   keyName: typeof APPWARDEN_CACHE_KEY
@@ -11,4 +11,5 @@ export type VercelProviderContext = BaseNextJsConfigFnType & {
   provider: "edge-config" | "upstash"
   memoryCache: MemoryCache<string, LockValueType>
   waitUntil: NextFetchEvent["waitUntil"]
+  debug: (...msg: any[]) => void
 }

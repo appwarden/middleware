@@ -1,4 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+
+// Stub printMessage so we can assert on the raw content produced by debug
+vi.mock("./print-message", () => ({
+  printMessage: (message: string) => message,
+}))
+
 import { debug } from "./debug"
 
 describe("debug", () => {
@@ -13,31 +19,27 @@ describe("debug", () => {
     vi.resetAllMocks()
   })
 
-  it("should log messages when DEBUG is true", () => {
-    // Mock the DEBUG global variable
-    vi.stubGlobal("DEBUG", true)
+  it("logs messages when enabled", () => {
+    const log = debug(true)
 
-    debug("test message")
+    log("test message")
 
     expect(consoleLogSpy).toHaveBeenCalledWith("test message")
   })
 
-  it("should not log messages when DEBUG is false", () => {
-    // Mock the DEBUG global variable
-    vi.stubGlobal("DEBUG", false)
+  it("does not log messages when disabled", () => {
+    const log = debug(false)
 
-    debug("test message")
+    log("test message")
 
     expect(consoleLogSpy).not.toHaveBeenCalled()
   })
 
-  it("should handle multiple arguments", () => {
-    // Mock the DEBUG global variable
-    vi.stubGlobal("DEBUG", true)
+  it("handles multiple arguments and stringifies objects", () => {
+    const log = debug(true)
 
-    debug("message 1", "message 2", { key: "value" })
+    log("message 1", "message 2", { key: "value" })
 
-    // Objects are stringified to ensure readable output in Cloudflare Workers
     expect(consoleLogSpy).toHaveBeenCalledWith(
       "message 1",
       "message 2",
@@ -45,30 +47,29 @@ describe("debug", () => {
     )
   })
 
-  it("should handle circular references gracefully", () => {
-    vi.stubGlobal("DEBUG", true)
+  it("handles circular references gracefully", () => {
+    const log = debug(true)
 
     // Create an object with a circular reference
     const circularObj: Record<string, unknown> = { name: "test" }
     circularObj.self = circularObj
 
     // Should not throw and should fall back to String()
-    debug("circular:", circularObj)
+    log("circular:", circularObj)
 
     expect(consoleLogSpy).toHaveBeenCalledWith("circular:", "[object Object]")
   })
 
-  it("should handle Error objects with stack trace", () => {
-    vi.stubGlobal("DEBUG", true)
+  it("handles Error objects with stack trace", () => {
+    const log = debug(true)
 
     const error = new Error("test error")
 
-    debug("error:", error)
+    log("error:", error)
 
     // Error objects should show stack or message
-    expect(consoleLogSpy).toHaveBeenCalledWith(
-      "error:",
-      expect.stringContaining("test error"),
-    )
+    const lastCallArgs = consoleLogSpy.mock.calls.at(-1) ?? []
+    expect(lastCallArgs[0]).toBe("error:")
+    expect(String(lastCallArgs[1])).toContain("test error")
   })
 })
