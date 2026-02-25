@@ -90,8 +90,6 @@ const resolveLockStatus = async (
 
   if (lockValue) {
     context.debug("Lock value resolved from cache")
-  } else {
-    context.debug("Cache miss - no lock value found")
   }
 
   if (shouldDeleteEdgeValue) {

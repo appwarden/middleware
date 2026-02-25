@@ -72,6 +72,11 @@ export type AstroMiddlewareContext = APIContext
  */
 export type AstroMiddlewareFunction = MiddlewareHandler
 
+const getNowMs = () =>
+  typeof performance !== "undefined" && typeof performance.now === "function"
+    ? performance.now()
+    : Date.now()
+
 /**
  * Creates an Appwarden middleware function for Astro.
  *
@@ -99,7 +104,7 @@ export function createAppwardenMiddleware(
   configFn: AstroConfigFn,
 ): MiddlewareHandler {
   return async (context, next) => {
-    const startTime = Date.now()
+    const startTime = getNowMs()
     const { request } = context
     // Cast locals to include runtime property added by @astrojs/cloudflare
     const locals = context.locals as LocalsWithRuntime
@@ -124,7 +129,7 @@ export function createAppwardenMiddleware(
 
       debugFn(
         `Appwarden middleware invoked for ${requestUrl.pathname}`,
-        `HTML request: ${isHTML}`,
+        `isHTML: ${isHTML}`,
       )
 
       // Skip non-HTML requests (e.g., API calls, static assets)
@@ -169,7 +174,7 @@ export function createAppwardenMiddleware(
         return createRedirect(lockPageUrl)
       }
 
-      debugFn("Site is unlocked - continuing to origin")
+      debugFn("Site is unlocked to origin")
 
       // Continue to next middleware/route and get the response
       const response = await next()
@@ -191,13 +196,13 @@ export function createAppwardenMiddleware(
           async () => {}, // no-op next
         )
 
-        const elapsed = Date.now() - startTime
-        debugFn(`Appwarden middleware completed in ${elapsed}ms`)
+        const elapsed = Math.round(getNowMs() - startTime)
+        debugFn(`Middleware executed in ${elapsed}ms`)
         return cspContext.response
       }
 
-      const elapsed = Date.now() - startTime
-      debugFn(`Appwarden middleware completed in ${elapsed}ms`)
+      const elapsed = Math.round(getNowMs() - startTime)
+      debugFn(`Middleware executed in ${elapsed}ms`)
       return response
     } catch (error) {
       // Re-throw redirects and responses

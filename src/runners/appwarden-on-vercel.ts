@@ -45,8 +45,6 @@ export function createAppwardenMiddleware(
     const parsedConfig = AppwardenConfigSchema.parse(config)
     const debugFn = debug(parsedConfig.debug ?? false)
 
-    debugFn("Appwarden Vercel middleware invoked", `url=${request.url}`)
-
     const applyCspHeaders = (response: Response): Response => {
       const cspConfig = parsedConfig.contentSecurityPolicy
       if (cspConfig && ["enforced", "report-only"].includes(cspConfig.mode)) {
@@ -65,9 +63,8 @@ export function createAppwardenMiddleware(
       const isHTML = isHTMLRequest(request)
 
       debugFn(
-        "Request classification",
-        `isHTML=${isHTML}`,
-        `path=${requestUrl.pathname}`,
+        `Appwarden middleware invoked for ${requestUrl.pathname}`,
+        `isHTML: ${isHTML}`,
       )
 
       // Pass through non-HTML requests to the next handler
@@ -102,7 +99,6 @@ export function createAppwardenMiddleware(
       if (!cacheValue || shouldRecheck) {
         debugFn(
           "Memory cache miss or expired - syncing edge value in background",
-          `hasCache=${!!cacheValue}`,
           `shouldRecheck=${shouldRecheck}`,
         )
         safeWaitUntil(
