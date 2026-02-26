@@ -103,7 +103,7 @@ describe("syncEdgeValue", () => {
     )
 
     expect(mockContext.debug).toHaveBeenCalledWith(
-      `Fetching lock value from API: ${mockContext.appwardenApiHostname}`,
+      `GET ${mockContext.appwardenApiHostname}`,
     )
   })
 
@@ -132,8 +132,7 @@ describe("syncEdgeValue", () => {
     })
 
     expect(mockContext.debug).toHaveBeenCalledWith(
-      `API call to ${mockContext.appwardenApiHostname} succeeded`,
-      expect.stringContaining("Lock status: "),
+      `GET ${mockContext.appwardenApiHostname} succeeded`,
     )
   })
 
@@ -166,7 +165,7 @@ describe("syncEdgeValue", () => {
     await syncEdgeValue(mockContext)
 
     expect(consoleErrorSpy).toHaveBeenCalledWith(
-      `[@appwarden/middleware] API call to ${mockContext.appwardenApiHostname} failed: 422 Unprocessable Entity`,
+      `[@appwarden/middleware] GET ${mockContext.appwardenApiHostname} failed: 422 Unprocessable Entity`,
     )
     expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
   })
@@ -212,7 +211,7 @@ describe("syncEdgeValue", () => {
     await syncEdgeValue(mockContext)
 
     expect(consoleErrorSpy).toHaveBeenCalledWith(
-      `[@appwarden/middleware] API call to ${mockContext.appwardenApiHostname} failed: Network error`,
+      `[@appwarden/middleware] GET ${mockContext.appwardenApiHostname} failed: Network error`,
     )
     expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
   })
@@ -231,7 +230,7 @@ describe("syncEdgeValue", () => {
       await syncEdgeValue(mockContext)
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        `[@appwarden/middleware] API call to ${mockContext.appwardenApiHostname} failed: 401 Unauthorized`,
+        `[@appwarden/middleware] GET ${mockContext.appwardenApiHostname} failed: 401 Unauthorized`,
       )
       expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
     })
@@ -246,7 +245,7 @@ describe("syncEdgeValue", () => {
       await syncEdgeValue(mockContext)
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        `[@appwarden/middleware] API call to ${mockContext.appwardenApiHostname} failed: 403 Forbidden`,
+        `[@appwarden/middleware] GET ${mockContext.appwardenApiHostname} failed: 403 Forbidden`,
       )
       expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
     })
@@ -264,7 +263,7 @@ describe("syncEdgeValue", () => {
       await syncEdgeValue(mockContext)
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        `[@appwarden/middleware] API call to ${mockContext.appwardenApiHostname} failed: 429 Too Many Requests`,
+        `[@appwarden/middleware] GET ${mockContext.appwardenApiHostname} failed: 429 Too Many Requests`,
       )
       expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
     })
@@ -282,7 +281,7 @@ describe("syncEdgeValue", () => {
       await syncEdgeValue(mockContext)
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        `[@appwarden/middleware] API call to ${mockContext.appwardenApiHostname} failed: 500 Internal Server Error`,
+        `[@appwarden/middleware] GET ${mockContext.appwardenApiHostname} failed: 500 Internal Server Error`,
       )
       expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
     })
@@ -300,7 +299,7 @@ describe("syncEdgeValue", () => {
       await syncEdgeValue(mockContext)
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        `[@appwarden/middleware] API call to ${mockContext.appwardenApiHostname} failed: 502 Bad Gateway`,
+        `[@appwarden/middleware] GET ${mockContext.appwardenApiHostname} failed: 502 Bad Gateway`,
       )
       expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
     })
@@ -318,7 +317,7 @@ describe("syncEdgeValue", () => {
       await syncEdgeValue(mockContext)
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        `[@appwarden/middleware] API call to ${mockContext.appwardenApiHostname} failed: 503 Service Unavailable`,
+        `[@appwarden/middleware] GET ${mockContext.appwardenApiHostname} failed: 503 Service Unavailable`,
       )
       expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
     })
@@ -336,7 +335,7 @@ describe("syncEdgeValue", () => {
       await syncEdgeValue(mockContext)
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        `[@appwarden/middleware] API call to ${mockContext.appwardenApiHostname} failed: 504 Gateway Timeout`,
+        `[@appwarden/middleware] GET ${mockContext.appwardenApiHostname} failed: 504 Gateway Timeout`,
       )
       expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
     })
@@ -347,7 +346,7 @@ describe("syncEdgeValue", () => {
       await syncEdgeValue(mockContext)
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        `[@appwarden/middleware] API call to ${mockContext.appwardenApiHostname} failed: Request timeout`,
+        `[@appwarden/middleware] GET ${mockContext.appwardenApiHostname} failed: Request timeout`,
       )
       expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
     })
@@ -360,7 +359,7 @@ describe("syncEdgeValue", () => {
       await syncEdgeValue(mockContext)
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        `[@appwarden/middleware] API call to ${mockContext.appwardenApiHostname} failed: getaddrinfo ENOTFOUND`,
+        `[@appwarden/middleware] GET ${mockContext.appwardenApiHostname} failed: getaddrinfo ENOTFOUND`,
       )
       expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
     })

@@ -32,13 +32,7 @@ export const store = {
 
 const getCacheValue = async (context: Context, cacheKey: URL) => {
   const match = await context.cache.match(cacheKey)
-  if (!match) {
-    context.debug(`[${cacheKey.pathname}] Cache MISS!`)
-    return undefined
-  }
-
-  context.debug(`[${cacheKey.pathname}] Cache MATCH!`)
-  return match
+  return match ?? undefined
 }
 
 const updateCacheValue = async (

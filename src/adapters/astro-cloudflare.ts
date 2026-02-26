@@ -162,7 +162,7 @@ export function createAppwardenMiddleware(
       // If locked, redirect to lock page
       if (result.isLocked) {
         const lockPageUrl = buildLockPageUrl(config.lockPageSlug, request.url)
-        debugFn(`Site is locked - redirecting to ${lockPageUrl.pathname}`)
+        debugFn(`Website is locked - redirecting to ${lockPageUrl.pathname}`)
 
         // Use Astro's redirect helper if available, otherwise create our own redirect
         if (context.redirect) {
@@ -174,7 +174,7 @@ export function createAppwardenMiddleware(
         return createRedirect(lockPageUrl)
       }
 
-      debugFn("Site is unlocked to origin")
+      debugFn("Website is unlocked")
 
       // Continue to next middleware/route and get the response
       const response = await next()

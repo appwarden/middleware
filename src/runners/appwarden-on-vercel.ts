@@ -124,7 +124,9 @@ export function createAppwardenMiddleware(
         ).lockValue
 
       if (lockValue?.isLocked) {
-        debugFn("Site is locked - redirecting to lock page")
+        debugFn(
+          `Website is locked - redirecting to ${parsedConfig.lockPageSlug}`,
+        )
         const lockPageUrl = buildLockPageUrl(
           parsedConfig.lockPageSlug,
           request.url,

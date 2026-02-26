@@ -139,7 +139,7 @@ export function createAppwardenMiddleware(
       // If locked, redirect to lock page
       if (result.isLocked) {
         const lockPageUrl = buildLockPageUrl(config.lockPageSlug, request.url)
-        debugFn(`Site is locked - redirecting to ${lockPageUrl.pathname}`)
+        debugFn(`Website is locked - redirecting to ${lockPageUrl.pathname}`)
         return NextResponse.redirect(lockPageUrl, TEMPORARY_REDIRECT_STATUS)
       }
 

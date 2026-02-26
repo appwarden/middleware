@@ -159,11 +159,11 @@ export function createAppwardenMiddleware(
       // If locked, throw redirect to lock page
       if (result.isLocked) {
         const lockPageUrl = buildLockPageUrl(config.lockPageSlug, request.url)
-        debugFn(`Site is locked - redirecting to ${lockPageUrl.pathname}`)
+        debugFn(`Website is locked - redirecting to ${lockPageUrl.pathname}`)
         throw createRedirect(lockPageUrl)
       }
 
-      debugFn("Site is unlocked to origin")
+      debugFn("Website is unlocked")
 
       // Continue to next middleware/handler and get the response
       const response = await next()

@@ -63,7 +63,7 @@ describe("cloudflare-cache", () => {
       const result = await jsonStore.getValue()
 
       expect(result).toBe(mockResponse)
-      expect(mockContext.debug).toHaveBeenCalledWith("[/test-key] Cache MATCH!")
+      expect(mockContext.debug).not.toHaveBeenCalled()
     })
 
     it("should return undefined when the cache is empty", async () => {
@@ -77,7 +77,7 @@ describe("cloudflare-cache", () => {
       const result = await jsonStore.getValue()
 
       expect(result).toBeUndefined()
-      expect(mockContext.debug).toHaveBeenCalledWith("[/test-key] Cache MISS!")
+      expect(mockContext.debug).not.toHaveBeenCalled()
     })
   })
 
