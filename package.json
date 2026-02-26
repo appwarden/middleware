@@ -104,17 +104,17 @@
   },
   "devDependencies": {
     "@amanda-mitchell/semantic-release-npm-multiple": "^3.17.0",
-    "@cloudflare/vitest-pool-workers": "^0.12.14",
     "@cloudflare/workers-types": "^4.20260305.0",
+    "@cloudflare/vitest-pool-workers": "^0.12.17",
     "@commitlint/cli": "^20.4.2",
     "@commitlint/config-conventional": "^20.4.2",
-    "@cyclonedx/cdxgen": "^12.1.0",
+    "@cyclonedx/cdxgen": "^12.1.1",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/exec": "^7.1.0",
     "@semantic-release/git": "^10.0.1",
     "@semantic-release/github": "^12.0.6",
     "@semantic-release/npm": "^13.1.4",
-    "@vercel/functions": "^3.4.2",
+    "@vercel/functions": "^3.4.3",
     "@vitest/coverage-istanbul": "^3.2.4",
     "cheerio": "^1.2.0",
     "husky": "^9.1.7",
@@ -126,7 +126,7 @@
     "typescript": "^5.9.3",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^3.2.4",
-    "wrangler": "^4.67.0"
+    "wrangler": "^4.68.1"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,json,md,yml,yaml}": [
@@ -150,7 +150,8 @@
       "devalue@<=5.6.2": ">=5.6.3",
       "minimatch@<10.2.1": ">=10.2.1",
       "tar@<7.5.8": ">=7.5.8",
-      "ajv@>=7.0.0-alpha.0 <8.18.0": ">=8.18.0"
+      "ajv@>=7.0.0-alpha.0 <8.18.0": ">=8.18.0",
+      "rollup@>=4.0.0 <4.59.0": ">=4.59.0"
     }
   },
   "sideEffects": false
