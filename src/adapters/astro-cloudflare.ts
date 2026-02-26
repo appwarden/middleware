@@ -14,6 +14,7 @@ import {
   TEMPORARY_REDIRECT_STATUS,
   validateConfig,
 } from "../utils"
+import { isResponseLike } from "../utils/is-response-like"
 
 /**
  * Cloudflare runtime context provided by Astro on Cloudflare Workers.
@@ -180,7 +181,7 @@ export function createAppwardenMiddleware(
       const response = await next()
 
       // Apply CSP if configured (runs after origin)
-      if (config.contentSecurityPolicy) {
+      if (config.contentSecurityPolicy && isResponseLike(response)) {
         debugFn("Applying CSP middleware")
         // Create a mini context for CSP middleware
         const cspContext = {
@@ -206,7 +207,7 @@ export function createAppwardenMiddleware(
       return response
     } catch (error) {
       // Re-throw redirects and responses
-      if (error instanceof Response) {
+      if (isResponseLike(error)) {
         throw error
       }
 
