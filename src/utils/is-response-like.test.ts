@@ -14,9 +14,9 @@ describe("isResponseLike", () => {
 
     it("returns true for an object with headers.has, headers.set, headers.get and body", () => {
       const headers = {
-        has: () => true,
-        set: () => {},
-        get: () => "text/html",
+        has: (): boolean => true,
+        set: (): void => {},
+        get: (): string => "text/html",
       }
 
       const responseLike = { headers, body: "body" }
@@ -44,37 +44,63 @@ describe("isResponseLike", () => {
       ["headers is not an object", { headers: "not-an-object" }],
       [
         "headers missing has",
-        { headers: { set: () => {}, get: () => "" }, body: "body" },
+        {
+          headers: { set: (): void => {}, get: (): string => "" },
+          body: "body",
+        },
       ],
       [
         "headers missing set",
-        { headers: { has: () => true, get: () => "" }, body: "body" },
+        {
+          headers: { has: (): boolean => true, get: (): string => "" },
+          body: "body",
+        },
       ],
       [
         "headers missing get",
-        { headers: { has: () => true, set: () => {} }, body: "body" },
+        {
+          headers: { has: (): boolean => true, set: (): void => {} },
+          body: "body",
+        },
       ],
       [
         "headers.has is not a function",
-        { headers: { has: "yes", set: () => {}, get: () => "" }, body: "body" },
+        {
+          headers: { has: "yes", set: (): void => {}, get: (): string => "" },
+          body: "body",
+        },
       ],
       [
         "headers.set is not a function",
         {
-          headers: { has: () => true, set: "not-a-function", get: () => "" },
+          headers: {
+            has: (): boolean => true,
+            set: "not-a-function",
+            get: (): string => "",
+          },
           body: "body",
         },
       ],
       [
         "headers.get is not a function",
         {
-          headers: { has: () => true, set: () => {}, get: "not-a-function" },
+          headers: {
+            has: (): boolean => true,
+            set: (): void => {},
+            get: "not-a-function",
+          },
           body: "body",
         },
       ],
       [
         "missing body property",
-        { headers: { has: () => true, set: () => {}, get: () => "" } },
+        {
+          headers: {
+            has: (): boolean => true,
+            set: (): void => {},
+            get: (): string => "",
+          },
+        },
       ],
       ["array value", []],
     ])("returns false for invalid response-like object: %s", (_, value) => {
