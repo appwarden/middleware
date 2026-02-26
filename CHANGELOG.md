@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.4.1](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.4.0...@appwarden/middleware@3.4.1) (2026-02-26)
+
+
+### Bug Fixes
+
+* dry up middleware logging for cache and lock status ([e43e99f](https://github.com/appwarden/middleware/commit/e43e99ff7918f44c5a292725ec78d3d35465fa40))
+
 # [3.4.0](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.3.0...@appwarden/middleware@3.4.0) (2026-02-25)
 
 
