@@ -88,10 +88,6 @@ const resolveLockStatus = async (
 > => {
   const { lockValue, shouldDeleteEdgeValue } = await getLockValue(context)
 
-  if (lockValue) {
-    context.debug("Lock value resolved from cache")
-  }
-
   if (shouldDeleteEdgeValue) {
     context.debug("Deleting corrupted cache value")
     await deleteEdgeValue(context)
@@ -132,20 +128,29 @@ export const checkLockStatus = async (
   let { isLocked, isTestLock, lockValue, wasDeleted } =
     await resolveLockStatus(context)
 
+  const isExpired = MemoryCache.isExpired(lockValue)
+
+  // Log when we can confidently use a fresh cached value
+  if (!isExpired && !wasDeleted && lockValue) {
+    context.debug("Lock value resolved from cache")
+  }
+
   // Sync the edge value if cache is expired or was deleted due to corruption
-  if (MemoryCache.isExpired(lockValue) || wasDeleted) {
+  if (isExpired || wasDeleted) {
     if (!lockValue || wasDeleted || lockValue.isLocked) {
       // Sync synchronously if no cache, cache was corrupted/deleted, or currently locked
       // to avoid rendering incorrect lock state
       context.debug(
-        "Cache expired/missing/corrupted or site is locked - syncing with API synchronously",
+        "No fresh cached lock status available - syncing with API synchronously",
       )
       await syncEdgeValue(context)
       // Re-check after sync
       ;({ isLocked, isTestLock } = await resolveLockStatus(context))
     } else {
       // Sync asynchronously in background if cache exists and not locked
-      context.debug("Cache expired but site unlocked - syncing in background")
+      context.debug(
+        "Cached lock status expired but last known state unlocked - syncing with API in background",
+      )
       config.waitUntil(syncEdgeValue(context))
     }
   }

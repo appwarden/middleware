@@ -14,7 +14,7 @@ const DEFAULT_API_HOSTNAME = "https://api.appwarden.io"
 export const syncEdgeValue = async (context: CloudflareProviderContext) => {
   // Use runtime-configured hostname if provided, otherwise fall back to default
   const apiHostname = context.appwardenApiHostname ?? DEFAULT_API_HOSTNAME
-  context.debug(`Fetching lock value from API: ${apiHostname}`)
+  context.debug(`GET ${apiHostname}`)
 
   try {
     // @ts-expect-error API_PATHNAME is a build-time config variable
@@ -50,10 +50,7 @@ export const syncEdgeValue = async (context: CloudflareProviderContext) => {
         const parsedValue = LockValue.omit({ lastCheck: true }).parse(
           result.content,
         )
-        context.debug(
-          `API call to ${apiHostname} succeeded`,
-          `Lock status: ${parsedValue.isLocked ? "LOCKED" : "UNLOCKED"}`,
-        )
+        context.debug(`GET ${apiHostname} succeeded`)
 
         await context.edgeCache.updateValue({
           ...parsedValue,
@@ -64,7 +61,7 @@ export const syncEdgeValue = async (context: CloudflareProviderContext) => {
       }
     }
   } catch (e) {
-    const message = `API call to ${apiHostname} failed`
+    const message = `GET ${apiHostname} failed`
 
     console.error(
       printMessage(

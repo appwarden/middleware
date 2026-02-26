@@ -41,9 +41,7 @@ describe("debug", () => {
     log("message 1", "message 2", { key: "value" })
 
     expect(consoleLogSpy).toHaveBeenCalledWith(
-      "message 1",
-      "message 2",
-      '{"key":"value"}',
+      'message 1 message 2 {"key":"value"}',
     )
   })
 
@@ -57,7 +55,7 @@ describe("debug", () => {
     // Should not throw and should fall back to String()
     log("circular:", circularObj)
 
-    expect(consoleLogSpy).toHaveBeenCalledWith("circular:", "[object Object]")
+    expect(consoleLogSpy).toHaveBeenCalledWith("circular: [object Object]")
   })
 
   it("handles Error objects with stack trace", () => {
@@ -69,7 +67,7 @@ describe("debug", () => {
 
     // Error objects should show stack or message
     const lastCallArgs = consoleLogSpy.mock.calls.at(-1) ?? []
-    expect(lastCallArgs[0]).toBe("error:")
-    expect(String(lastCallArgs[1])).toContain("test error")
+    expect(String(lastCallArgs[0])).toContain("error:")
+    expect(String(lastCallArgs[0])).toContain("test error")
   })
 })

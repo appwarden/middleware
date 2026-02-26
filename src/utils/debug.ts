@@ -5,7 +5,7 @@ export const debug =
   (...msg: any[]) => {
     if (!isDebug) return
 
-    const formatted = msg.map((m) => {
+    const parts = msg.map((m) => {
       let content: string
 
       if (m instanceof Error) {
@@ -28,8 +28,10 @@ export const debug =
         content = String(m)
       }
 
-      return printMessage(content)
+      return content
     })
 
-    console.log(...formatted)
+    const message = parts.join(" ")
+
+    console.log(printMessage(message))
   }
