@@ -4,7 +4,7 @@
 [![GitHub](https://img.shields.io/badge/GitHub-appwarden%2Fmiddleware-181717?logo=github&logoColor=white)](https://github.com/appwarden/middleware)
 [![npm version](https://img.shields.io/npm/v/@appwarden/middleware.svg)](https://www.npmjs.com/package/@appwarden/middleware)
 [![npm provenance](https://img.shields.io/badge/npm-provenance-green)](https://docs.npmjs.com/generating-provenance-statements)
-![Test Coverage](https://img.shields.io/badge/coverage-91.49%25-brightgreen)
+![Test Coverage](https://img.shields.io/badge/coverage-91.55%25-brightgreen)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 ## Core Features
