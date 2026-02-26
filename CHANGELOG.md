@@ -3,6 +3,15 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.4.2](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.4.1...@appwarden/middleware@3.4.2) (2026-02-26)
+
+
+### Bug Fixes
+
+* harden isResponseLike for CSP middleware ([829330f](https://github.com/appwarden/middleware/commit/829330f13ef7bb1775b4cd97f790b2b6af614a84))
+* relax response check in adapters ([ab95430](https://github.com/appwarden/middleware/commit/ab954301452cc98f4c9f4664951084676297477b))
+* satisfy isResponseLike test type checks ([3a3afe2](https://github.com/appwarden/middleware/commit/3a3afe22e6dace73411cb5b5bf83bac6e039d7c6))
+
 ## [3.4.1](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.4.0...@appwarden/middleware@3.4.1) (2026-02-26)
 
 
