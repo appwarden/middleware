@@ -10,7 +10,7 @@
 export const isResponseLike = (value: unknown): value is Response => {
   if (!value || typeof value !== "object") return false
   const headers = (value as any).headers
-  return (
+  return !!(
     headers &&
     typeof headers === "object" &&
     typeof headers.has === "function" &&
