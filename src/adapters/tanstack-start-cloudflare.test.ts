@@ -53,7 +53,7 @@ afterEach(() => {
 describe("createAppwardenMiddleware (TanStack Start)", () => {
   let mockCloudflareContext: TanStackStartCloudflareContext
   let mockArgs: TanStackStartMiddlewareArgs
-  let mockNext: () => Promise<unknown>
+  let mockNext: ReturnType<typeof vi.fn>
 
   beforeEach(() => {
     vi.clearAllMocks()
@@ -69,18 +69,26 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
       } as unknown as ExecutionContext,
     }
 
-    mockNext = vi.fn().mockResolvedValue({ status: 200 })
+    mockNext = vi.fn()
 
     mockArgs = {
       // Default request accepts HTML
       request: new Request("https://example.com/page", {
         headers: { Accept: "text/html,application/xhtml+xml" },
       }),
+      pathname: "/page",
       next: mockNext,
       context: {
         cloudflare: mockCloudflareContext,
       },
     }
+
+    mockNext.mockResolvedValue({
+      request: mockArgs.request,
+      context: mockArgs.context,
+      response: new Response(null, { status: 200 }),
+      pathname: new URL(mockArgs.request.url).pathname,
+    })
 
     // Default: site is not locked
     vi.mocked(checkLockStatus).mockResolvedValue({
@@ -102,7 +110,10 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
     const result = await middleware(mockArgs)
 
     expect(mockNext).toHaveBeenCalled()
-    expect(result).toEqual({ status: 200 })
+    expect(result).toMatchObject({
+      response: expect.any(Response),
+    })
+    expect((result as any).response.status).toBe(200)
   })
 
   it("should call next() when config validation fails (fail open)", async () => {
@@ -119,7 +130,10 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
     expect(validateConfig).toHaveBeenCalled()
     expect(checkLockStatus).not.toHaveBeenCalled()
     expect(mockNext).toHaveBeenCalled()
-    expect(result).toEqual({ status: 200 })
+    expect(result).toMatchObject({
+      response: expect.any(Response),
+    })
+    expect((result as any).response.status).toBe(200)
   })
 
   it("should throw a redirect response when site is locked", async () => {
@@ -269,7 +283,10 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
       expect.stringContaining("Unhandled error:"),
     )
     expect(mockNext).toHaveBeenCalled()
-    expect(result).toEqual({ status: 200 })
+    expect(result).toMatchObject({
+      response: expect.any(Response),
+    })
+    expect((result as any).response.status).toBe(200)
   })
 
   it("should re-throw Response errors (redirects)", async () => {
@@ -349,7 +366,10 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
     // Should call next() and NOT throw a redirect
     expect(mockNext).toHaveBeenCalled()
     expect(checkLockStatus).not.toHaveBeenCalled()
-    expect(result).toEqual({ status: 200 })
+    expect(result).toMatchObject({
+      response: expect.any(Response),
+    })
+    expect((result as any).response.status).toBe(200)
   })
 
   it("should not redirect when already on lock page (slug without leading slash)", async () => {
@@ -373,6 +393,9 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
     // Should call next() and NOT throw a redirect
     expect(mockNext).toHaveBeenCalled()
     expect(checkLockStatus).not.toHaveBeenCalled()
-    expect(result).toEqual({ status: 200 })
+    expect(result).toMatchObject({
+      response: expect.any(Response),
+    })
+    expect((result as any).response.status).toBe(200)
   })
 })

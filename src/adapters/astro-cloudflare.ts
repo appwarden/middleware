@@ -14,6 +14,7 @@ import {
   TEMPORARY_REDIRECT_STATUS,
   validateConfig,
 } from "../utils"
+import { getNowMs } from "../utils/get-now"
 import { isResponseLike } from "../utils/is-response-like"
 
 /**
@@ -72,11 +73,6 @@ export type AstroMiddlewareContext = APIContext
  * @deprecated Use `MiddlewareHandler` from 'astro' directly. This alias is kept for backward compatibility.
  */
 export type AstroMiddlewareFunction = MiddlewareHandler
-
-const getNowMs = () =>
-  typeof performance !== "undefined" && typeof performance.now === "function"
-    ? performance.now()
-    : Date.now()
 
 /**
  * Creates an Appwarden middleware function for Astro.

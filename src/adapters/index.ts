@@ -23,6 +23,8 @@ export {
   type TanStackStartConfigFn,
   type TanStackStartMiddlewareArgs,
   type TanStackStartMiddlewareFunction,
+  type TanStackStartNextFn,
+  type TanStackStartNextResult,
 } from "./tanstack-start-cloudflare"
 
 export {

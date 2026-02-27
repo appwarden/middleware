@@ -81,6 +81,7 @@
   "peerDependencies": {
     "@astrojs/cloudflare": ">=11.0.0",
     "@opennextjs/cloudflare": ">=1.16.6",
+    "@tanstack/start": "^1.120.20",
     "@vercel/functions": ">=1.0.0",
     "astro": ">=4.0.0",
     "next": ">=14"
@@ -98,14 +99,17 @@
     "@opennextjs/cloudflare": {
       "optional": true
     },
+    "@tanstack/start": {
+      "optional": true
+    },
     "@vercel/functions": {
       "optional": true
     }
   },
   "devDependencies": {
     "@amanda-mitchell/semantic-release-npm-multiple": "^3.17.0",
-    "@cloudflare/workers-types": "^4.20260305.0",
     "@cloudflare/vitest-pool-workers": "^0.12.17",
+    "@cloudflare/workers-types": "^4.20260305.0",
     "@commitlint/cli": "^20.4.2",
     "@commitlint/config-conventional": "^20.4.2",
     "@cyclonedx/cdxgen": "^12.1.1",

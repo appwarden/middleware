@@ -15,6 +15,7 @@ import {
   TEMPORARY_REDIRECT_STATUS,
   validateConfig,
 } from "../utils"
+import { getNowMs } from "../utils/get-now"
 
 /**
  * Cloudflare runtime context provided by @opennextjs/cloudflare.
@@ -57,11 +58,6 @@ export type NextJsMiddlewareFunction = (
   request: NextRequest,
   event?: NextFetchEvent,
 ) => Promise<NextResponse>
-
-const getNowMs = () =>
-  typeof performance !== "undefined" && typeof performance.now === "function"
-    ? performance.now()
-    : Date.now()
 
 /**
  * Creates an Appwarden middleware function for Next.js on Cloudflare.

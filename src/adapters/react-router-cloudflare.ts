@@ -11,6 +11,7 @@ import {
   printMessage,
   validateConfig,
 } from "../utils"
+import { getNowMs } from "../utils/get-now"
 import { isResponseLike } from "../utils/is-response-like"
 
 /**
@@ -72,11 +73,6 @@ export type ReactRouterMiddlewareFunction = (
   args: ReactRouterMiddlewareArgs,
   next: () => Promise<unknown>,
 ) => Promise<unknown>
-
-const getNowMs = () =>
-  typeof performance !== "undefined" && typeof performance.now === "function"
-    ? performance.now()
-    : Date.now()
 
 /**
  * Helper function to extract Cloudflare context from React Router context.

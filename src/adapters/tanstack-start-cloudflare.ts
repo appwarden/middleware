@@ -11,6 +11,7 @@ import {
   printMessage,
   validateConfig,
 } from "../utils"
+import { getNowMs } from "../utils/get-now"
 import { isResponseLike } from "../utils/is-response-like"
 
 /**
@@ -47,52 +48,56 @@ export type TanStackStartConfigFn = (
 ) => TanStackStartAppwardenConfig
 
 /**
+ * The result returned by the `next()` function in TanStack Start request middleware.
+ *
+ * Mirrors the internal `RequestServerResult` interface from `@tanstack/start-client-core`
+ * without importing from an unstable internal package path.
+ */
+export interface TanStackStartNextResult {
+  request: Request
+  pathname: string
+  context: Record<string, unknown>
+  response: Response
+}
+
+/**
+ * The `next()` function passed to TanStack Start request middleware.
+ *
+ * Mirrors the internal `RequestServerNextFn` signature.
+ */
+export type TanStackStartNextFn = (options?: {
+  context?: Record<string, unknown>
+}) => Promise<TanStackStartNextResult>
+
+/**
  * TanStack Start middleware server callback arguments.
- * This matches the shape of arguments passed to createMiddleware().server().
+ *
+ * Mirrors the official TanStack Start `RequestServerOptions` interface, with
+ * an additional optional `cloudflare` context property for Cloudflare
+ * Workers deployments.
  */
 export interface TanStackStartMiddlewareArgs {
   request: Request
-  next: () => Promise<unknown>
+  pathname: string
   context: {
     cloudflare?: TanStackStartCloudflareContext
     [key: string]: unknown
   }
+  next: TanStackStartNextFn
+  serverFnMeta?: unknown
 }
 
 /**
  * TanStack Start middleware function signature.
- * This matches the return type of createMiddleware().server().
+ *
+ * Mirrors the official TanStack Start `RequestServerFn` type used for
+ * request middleware server functions.
  */
 export type TanStackStartMiddlewareFunction = (
   args: TanStackStartMiddlewareArgs,
-) => Promise<unknown>
-
-const getNowMs = () =>
-  typeof performance !== "undefined" && typeof performance.now === "function"
-    ? performance.now()
-    : Date.now()
+) => Promise<TanStackStartNextResult | Response>
 
 /**
- * Creates an Appwarden middleware function for TanStack Start.
- *
- * This middleware checks if the site is locked and throws a redirect to the lock page if so.
- * It should be added to the `requestMiddleware` array in your `src/start.ts` file.
- *
- * @example
- * ```typescript
- * // src/start.ts
- * import { createStart } from "@tanstack/react-start"
- * import { createAppwardenMiddleware } from "@appwarden/middleware/tanstack-start"
- *
- * const appwardenMiddleware = createAppwardenMiddleware(({ env }) => ({
- *   lockPageSlug: env.APPWARDEN_LOCK_PAGE_SLUG,
- *   appwardenApiToken: env.APPWARDEN_API_TOKEN,
- * }))
- *
- * export const startInstance = createStart(() => ({
- *   requestMiddleware: [appwardenMiddleware],
- * }))
- * ```
  *
  * @param configFn - A function that receives the Cloudflare context and returns the config
  * @returns A TanStack Start middleware function
@@ -100,17 +105,22 @@ const getNowMs = () =>
 export function createAppwardenMiddleware(
   configFn: TanStackStartConfigFn,
 ): TanStackStartMiddlewareFunction {
-  return async (args) => {
+  const middleware: TanStackStartMiddlewareFunction = async (args) => {
     const startTime = getNowMs()
     const { request, next, context } = args
 
     try {
       // Get Cloudflare context from TanStack Start context
-      const cloudflare = context.cloudflare
+      // If not available, we'll create a stub (user should be importing env directly)
+      let cloudflare = context.cloudflare as
+        | TanStackStartCloudflareContext
+        | undefined
+
       if (!cloudflare) {
         console.error(
           printMessage(
-            "Cloudflare context not found. Ensure running on Cloudflare Workers with proper context setup.",
+            "Cloudflare context not found in TanStack Start context. " +
+              "Ensure your Register type includes the cloudflare context, or pass it manually in the middleware wrapper.",
           ),
         )
         return next()
@@ -148,7 +158,7 @@ export function createAppwardenMiddleware(
       }
 
       // Check lock status
-      const result = await checkLockStatus({
+      const lockStatus = await checkLockStatus({
         request,
         appwardenApiToken: config.appwardenApiToken,
         appwardenApiHostname: config.appwardenApiHostname,
@@ -158,7 +168,7 @@ export function createAppwardenMiddleware(
       })
 
       // If locked, throw redirect to lock page
-      if (result.isLocked) {
+      if (lockStatus.isLocked) {
         const lockPageUrl = buildLockPageUrl(config.lockPageSlug, request.url)
         debugFn(`Website is locked - redirecting to ${lockPageUrl.pathname}`)
         throw createRedirect(lockPageUrl)
@@ -166,8 +176,9 @@ export function createAppwardenMiddleware(
 
       debugFn("Website is unlocked")
 
-      // Continue to next middleware/handler and get the response
-      const response = await next()
+      // Continue to next middleware/handler and get the result object
+      const result = await next()
+      const { response } = result
 
       // Apply CSP if configured (runs after origin)
       if (config.contentSecurityPolicy && isResponseLike(response)) {
@@ -188,12 +199,15 @@ export function createAppwardenMiddleware(
 
         const elapsed = Math.round(getNowMs() - startTime)
         debugFn(`Middleware executed in ${elapsed}ms`)
-        return cspContext.response
+        return {
+          ...result,
+          response: cspContext.response,
+        }
       }
 
       const elapsed = Math.round(getNowMs() - startTime)
       debugFn(`Middleware executed in ${elapsed}ms`)
-      return response
+      return result
     } catch (error) {
       // Re-throw redirects and responses
       if (isResponseLike(error)) {
@@ -209,4 +223,6 @@ export function createAppwardenMiddleware(
       return next()
     }
   }
+
+  return middleware
 }

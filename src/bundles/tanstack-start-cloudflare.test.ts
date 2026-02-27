@@ -6,6 +6,7 @@ import {
   type TanStackStartConfigFn,
   type TanStackStartMiddlewareArgs,
   type TanStackStartMiddlewareFunction,
+  type TanStackStartNextResult,
 } from "./tanstack-start-cloudflare"
 
 describe("tanstack-start-cloudflare bundle", () => {
@@ -73,28 +74,42 @@ describe("tanstack-start-cloudflare bundle", () => {
 
     it("should export TanStackStartMiddlewareArgs type", () => {
       // Type check - this will fail at compile time if the type is not exported
-      const args: TanStackStartMiddlewareArgs = {
-        request: new Request("https://example.com"),
-        next: async () => new Response("OK"),
-        context: {
-          cloudflare: {
-            env: {} as CloudflareEnv,
-            ctx: {
-              waitUntil: () => {},
-              passThroughOnException: () => {},
-              props: {},
-            } as ExecutionContext,
-          },
+      const argsRequest = new Request("https://example.com")
+      const argsContext = {
+        cloudflare: {
+          env: {} as CloudflareEnv,
+          ctx: {
+            waitUntil: () => {},
+            passThroughOnException: () => {},
+            props: {},
+          } as ExecutionContext,
         },
+      }
+
+      const args: TanStackStartMiddlewareArgs = {
+        request: argsRequest,
+        pathname: "/",
+        next: async (): Promise<TanStackStartNextResult> => ({
+          request: argsRequest,
+          context: argsContext as Record<string, unknown>,
+          response: new Response("OK"),
+          pathname: "/",
+        }),
+        context: argsContext as TanStackStartMiddlewareArgs["context"],
       }
       expect(args.request).toBeDefined()
     })
 
     it("should export TanStackStartMiddlewareFunction type", () => {
       // Type check - this will fail at compile time if the type is not exported
-      const middlewareFn: TanStackStartMiddlewareFunction = async (_args) => {
-        return new Response("OK")
-      }
+      const middlewareFn: TanStackStartMiddlewareFunction = async (
+        args: Parameters<TanStackStartMiddlewareFunction>[0],
+      ) => ({
+        request: args.request,
+        context: args.context,
+        response: new Response("OK"),
+        pathname: "/",
+      })
       expect(typeof middlewareFn).toBe("function")
     })
   })
