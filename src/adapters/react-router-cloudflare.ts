@@ -199,7 +199,6 @@ export function createAppwardenMiddleware(
 
       // Apply CSP if configured (runs after origin)
       if (config.contentSecurityPolicy && isResponseLike(response)) {
-        debugFn("Applying CSP middleware")
         // Create a mini context for CSP middleware
         const cspContext = {
           request,
