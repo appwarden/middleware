@@ -111,8 +111,7 @@ export function createAppwardenMiddleware(
 
     try {
       // Get Cloudflare context from TanStack Start context
-      // If not available, we'll create a stub (user should be importing env directly)
-      let cloudflare = context.cloudflare as
+      const cloudflare = context.cloudflare as
         | TanStackStartCloudflareContext
         | undefined
 
