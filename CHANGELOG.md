@@ -3,21 +3,12 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
-# [3.5.0](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.4.3...@appwarden/middleware@3.5.0) (2026-02-27)
-## [3.4.3](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.4.2...@appwarden/middleware@3.4.3) (2026-02-27)
+## [3.5.1](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.5.0...@appwarden/middleware@3.5.1) (2026-02-27)
 
 
-### Bug Fixes
+### Reverts
 
-* harden isResponseLike for CSP middleware ([260bd83](https://github.com/appwarden/middleware/commit/260bd83446d22b07d321997558f81a3a20d1dbc6))
-* relax response check in adapters ([1385bd7](https://github.com/appwarden/middleware/commit/1385bd79e5498779f21ba644eb366a340eda72b2))
-* relax response check in all adapters ([86f4c5f](https://github.com/appwarden/middleware/commit/86f4c5fe6d9dcdd8f9f2326f015e8ee4c8161cc5))
-* satisfy isResponseLike test type checks ([5024b9c](https://github.com/appwarden/middleware/commit/5024b9ca472f1996e579b65484e3e3ac7e00b50e))
-
-
-### Features
-
-* remove non-AppwardenConfig types from bundle exports ([d844c22](https://github.com/appwarden/middleware/commit/d844c22bb05b14577278312437d53d3c9c7c60d1))
+* Revert "feat: remove non-AppwardenConfig types from bundle exports" ([1446af7](https://github.com/appwarden/middleware/commit/1446af70c6ec4314c90e9dce33b5f4882fdcfb5f))
 
 ## [3.4.2](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.4.1...@appwarden/middleware@3.4.2) (2026-02-26)
 
