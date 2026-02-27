@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [3.6.0](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.5.1...@appwarden/middleware@3.6.0) (2026-02-27)
+
+
+### Features
+
+* remove non-AppwardenConfig types from bundle exports ([7b2640d](https://github.com/appwarden/middleware/commit/7b2640da1c343be4b358aa1a06bb7984c722d806))
+
 ## [3.5.1](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.5.0...@appwarden/middleware@3.5.1) (2026-02-27)
 
 
