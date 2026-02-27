@@ -3,7 +3,6 @@ import { checkLockStatus } from "../core"
 import {
   CloudflareContext,
   createAppwardenMiddleware,
-  ReactRouterMiddlewareArgs,
 } from "./react-router-cloudflare"
 
 // Mock dependencies
@@ -52,7 +51,11 @@ afterEach(() => {
 
 describe("createAppwardenMiddleware", () => {
   let mockCloudflareContext: CloudflareContext
-  let mockArgs: ReactRouterMiddlewareArgs
+  let mockArgs: {
+    request: Request
+    params: Record<string, string | undefined>
+    context: any
+  }
   let mockNext: () => Promise<unknown>
 
   beforeEach(() => {
