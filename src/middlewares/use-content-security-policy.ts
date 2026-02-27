@@ -45,10 +45,7 @@ export const useContentSecurityPolicy: (input: UseCSPInput) => Middleware = (
       config.mode,
     )
 
-    context.debug(
-      `Applying CSP in ${config.mode} mode`,
-      `Directives: ${config.directives ? Object.keys(config.directives).join(", ") : "none"}`,
-    )
+    context.debug(`Applying CSP in ${config.mode} mode`)
 
     const nextResponse = new Response(response.body, response)
 
