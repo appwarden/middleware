@@ -16,7 +16,6 @@ export const isResponseLike = (value: unknown): value is Response => {
     typeof headers === "object" &&
     typeof headers.has === "function" &&
     typeof headers.set === "function" &&
-    typeof headers.get === "function" &&
-    "body" in candidate
+    typeof headers.get === "function"
   )
 }

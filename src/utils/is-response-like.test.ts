@@ -92,16 +92,6 @@ describe("isResponseLike", () => {
           body: "body",
         },
       ],
-      [
-        "missing body property",
-        {
-          headers: {
-            has: (): boolean => true,
-            set: (): void => {},
-            get: (): string => "",
-          },
-        },
-      ],
       ["array value", []],
     ])("returns false for invalid response-like object: %s", (_, value) => {
       expect(isResponseLike(value as unknown)).toBe(false)
