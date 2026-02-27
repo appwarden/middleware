@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest"
 import {
+  AppwardenConfigSchema,
   createAppwardenMiddleware,
+  type VercelAppwardenConfig,
   type VercelMiddlewareFunction,
 } from "./vercel"
 
@@ -14,7 +16,7 @@ describe("vercel bundle", () => {
     })
 
     it("should return a middleware function when called with config", () => {
-      const config = {
+      const config: VercelAppwardenConfig = {
         lockPageSlug: "/maintenance",
         appwardenApiToken: "test-token",
         cacheUrl: validUpstashUrl,
@@ -25,7 +27,7 @@ describe("vercel bundle", () => {
     })
 
     it("should create middleware that accepts request parameter", () => {
-      const config = {
+      const config: VercelAppwardenConfig = {
         lockPageSlug: "/maintenance",
         appwardenApiToken: "test-token",
         cacheUrl: validUpstashUrl,
@@ -37,7 +39,43 @@ describe("vercel bundle", () => {
     })
   })
 
+  describe("AppwardenConfigSchema export", () => {
+    it("should export AppwardenConfigSchema as a Zod schema", () => {
+      expect(AppwardenConfigSchema).toBeDefined()
+      expect(typeof AppwardenConfigSchema.parse).toBe("function")
+    })
+
+    it("should validate a valid config with Upstash URL", () => {
+      const config = {
+        lockPageSlug: "/maintenance",
+        appwardenApiToken: "test-token",
+        cacheUrl: validUpstashUrl,
+      }
+
+      const result = AppwardenConfigSchema.parse(config)
+      expect(result.lockPageSlug).toBe("/maintenance")
+    })
+
+    it("should reject invalid config", () => {
+      const invalidConfig = {
+        // Missing required fields
+      }
+
+      expect(() => AppwardenConfigSchema.parse(invalidConfig)).toThrow()
+    })
+  })
+
   describe("type exports", () => {
+    it("should export VercelAppwardenConfig type", () => {
+      // Type check - this will fail at compile time if the type is not exported
+      const config: VercelAppwardenConfig = {
+        lockPageSlug: "/maintenance",
+        appwardenApiToken: "test-token",
+        cacheUrl: validUpstashUrl,
+      }
+      expect(config.lockPageSlug).toBe("/maintenance")
+    })
+
     it("should export VercelMiddlewareFunction type", () => {
       // Type check - this will fail at compile time if the type is not exported
       const middlewareFn: VercelMiddlewareFunction = async (_request) => {
