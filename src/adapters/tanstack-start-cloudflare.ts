@@ -1,6 +1,7 @@
 import { checkLockStatus } from "../core"
 import { useContentSecurityPolicy } from "../middlewares"
 import type { UseCSPInput } from "../schemas"
+import type { TanStackStartCloudflareConfigInput } from "../schemas/tanstack-start-cloudflare"
 import { TanStackStartCloudflareConfigSchema } from "../schemas/tanstack-start-cloudflare"
 import {
   buildLockPageUrl,
@@ -33,16 +34,6 @@ export interface TanStackStartRuntimeContext {
 }
 
 /**
- * @deprecated Use TanStackStartRuntimeContext instead.
- * Cloudflare context provided by TanStack Start on Cloudflare Workers.
- * This is the shape of the cloudflare context available in middleware.
- */
-export interface TanStackStartCloudflareContext {
-  env: CloudflareEnv
-  ctx: TanStackStartExecutionContext
-}
-
-/**
  * Configuration for the Appwarden middleware.
  */
 export interface TanStackStartAppwardenConfig {
@@ -58,6 +49,9 @@ export interface TanStackStartAppwardenConfig {
   contentSecurityPolicy?: UseCSPInput
 }
 
+// Re-export the input config type so consumers can reference it from this adapter.
+export type { TanStackStartCloudflareConfigInput }
+
 /**
  * Configuration function that receives the runtime context and returns the config.
  * This allows dynamic configuration based on environment variables.
@@ -65,7 +59,7 @@ export interface TanStackStartAppwardenConfig {
  */
 export type TanStackStartConfigFn = (
   runtime: TanStackStartRuntimeContext,
-) => import("../schemas/tanstack-start-cloudflare").TanStackStartAppwardenConfigInput
+) => TanStackStartCloudflareConfigInput
 
 /**
  * The result returned by the `next()` function in TanStack Start request middleware.

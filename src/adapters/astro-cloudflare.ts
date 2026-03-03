@@ -1,5 +1,5 @@
 import type { Runtime } from "@astrojs/cloudflare"
-import type { APIContext, MiddlewareHandler } from "astro"
+import type { MiddlewareHandler } from "astro"
 import { checkLockStatus } from "../core"
 import { useContentSecurityPolicy } from "../middlewares"
 import type { UseCSPInput } from "../schemas"
@@ -57,22 +57,6 @@ export interface AstroAppwardenConfig {
 export type AstroConfigFn = (
   runtime: AstroCloudflareRuntime,
 ) => AstroAppwardenConfig
-
-/**
- * Astro middleware context type.
- * Re-exported from Astro's official APIContext type for type compatibility.
- *
- * @deprecated Use `APIContext` from 'astro' directly. This alias is kept for backward compatibility.
- */
-export type AstroMiddlewareContext = APIContext
-
-/**
- * Astro middleware function signature.
- * This is an alias for Astro's official MiddlewareHandler type for type compatibility.
- *
- * @deprecated Use `MiddlewareHandler` from 'astro' directly. This alias is kept for backward compatibility.
- */
-export type AstroMiddlewareFunction = MiddlewareHandler
 
 /**
  * Creates an Appwarden middleware function for Astro.

@@ -12,19 +12,19 @@ export {
   type AstroAppwardenConfig,
   type AstroCloudflareRuntime,
   type AstroConfigFn,
-  type AstroMiddlewareContext,
-  type AstroMiddlewareFunction,
 } from "./astro-cloudflare"
 
 export {
   createAppwardenMiddleware as createTanStackStartAppwardenMiddleware,
   type TanStackStartAppwardenConfig,
-  type TanStackStartCloudflareContext,
+  type TanStackStartCloudflareConfigInput,
   type TanStackStartConfigFn,
+  type TanStackStartExecutionContext,
   type TanStackStartMiddlewareArgs,
   type TanStackStartMiddlewareFunction,
   type TanStackStartNextFn,
   type TanStackStartNextResult,
+  type TanStackStartRuntimeContext,
 } from "./tanstack-start-cloudflare"
 
 export {
