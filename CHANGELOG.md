@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [3.8.0](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.7.0...@appwarden/middleware@3.8.0) (2026-03-03)
+
+
+### Features
+
+* simplify React Router adapter with runtime context ([191a566](https://github.com/appwarden/middleware/commit/191a566a70985709c8243623b70c3511030ad91b))
+
 # [3.7.0](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.6.0...@appwarden/middleware@3.7.0) (2026-03-03)
 
 
