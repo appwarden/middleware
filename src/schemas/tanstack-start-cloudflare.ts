@@ -22,3 +22,7 @@ export const TanStackStartCloudflareConfigSchema = z.object({
 export type TanStackStartCloudflareConfig = z.infer<
   typeof TanStackStartCloudflareConfigSchema
 >
+
+export type TanStackStartAppwardenConfigInput = z.input<
+  typeof TanStackStartCloudflareConfigSchema
+>

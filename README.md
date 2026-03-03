@@ -185,29 +185,45 @@ See the [React Router + Cloudflare guide](https://appwarden.io/docs/guides/react
 ##### TanStack Start on Cloudflare
 
 ```ts
-// src/start.ts
-import { createStart } from "@tanstack/react-start"
+// app.config.ts
+import { defineConfig } from "@tanstack/start/config"
 import { createAppwardenMiddleware } from "@appwarden/middleware/cloudflare/tanstack-start"
-import type { TanStackStartCloudflareContext } from "@appwarden/middleware/cloudflare/tanstack-start"
 
-const appwardenMiddleware = createAppwardenMiddleware(
-  (cloudflare: TanStackStartCloudflareContext) => ({
-    lockPageSlug: cloudflare.env.APPWARDEN_LOCK_PAGE_SLUG,
-    appwardenApiToken: cloudflare.env.APPWARDEN_API_TOKEN,
-    debug: cloudflare.env.APPWARDEN_DEBUG === "true",
-    contentSecurityPolicy: {
-      mode: "enforced",
-      directives: {
-        "script-src": ["'self'", "{{nonce}}"],
-        "style-src": ["'self'", "{{nonce}}"],
-      },
+const appwardenMiddleware = createAppwardenMiddleware(({ env }) => ({
+  lockPageSlug: env.APPWARDEN_LOCK_PAGE_SLUG,
+  appwardenApiToken: env.APPWARDEN_API_TOKEN,
+  debug: env.APPWARDEN_DEBUG, // Accepts string or boolean
+  contentSecurityPolicy: {
+    mode: "enforced",
+    directives: {
+      "script-src": ["'self'", "{{nonce}}"],
+      "style-src": ["'self'", "{{nonce}}"],
     },
-  }),
-)
-
-export const start = createStart(() => ({
-  requestMiddleware: [appwardenMiddleware],
+  },
 }))
+
+export default defineConfig({
+  server: {
+    preset: "cloudflare-pages",
+    middleware: "./middleware.ts",
+  },
+})
+```
+
+```ts
+// middleware.ts
+import { createMiddleware } from "@tanstack/start"
+import { env, waitUntil } from "cloudflare:workers"
+import { appwardenMiddleware } from "./app.config"
+
+export default createMiddleware().server(async ({ next, request }) => {
+  return await appwardenMiddleware({
+    request,
+    next,
+    context: { env, waitUntil },
+    pathname: new URL(request.url).pathname,
+  })
+})
 ```
 
 See the [TanStack Start + Cloudflare guide](https://appwarden.io/docs/guides/tanstack-start-cloudflare) for more details.
