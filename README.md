@@ -185,8 +185,9 @@ See the [React Router + Cloudflare guide](https://appwarden.io/docs/guides/react
 ##### TanStack Start on Cloudflare
 
 ```ts
-// app.config.ts
-import { defineConfig } from "@tanstack/start/config"
+// start.ts
+import { createMiddleware } from "@tanstack/start"
+import { env, waitUntil } from "cloudflare:workers"
 import { createAppwardenMiddleware } from "@appwarden/middleware/cloudflare/tanstack-start"
 
 const appwardenMiddleware = createAppwardenMiddleware(({ env }) => ({
@@ -202,26 +203,11 @@ const appwardenMiddleware = createAppwardenMiddleware(({ env }) => ({
   },
 }))
 
-export default defineConfig({
-  server: {
-    preset: "cloudflare-pages",
-    middleware: "./middleware.ts",
-  },
-})
-```
-
-```ts
-// middleware.ts
-import { createMiddleware } from "@tanstack/start"
-import { env, waitUntil } from "cloudflare:workers"
-import { appwardenMiddleware } from "./app.config"
-
 export default createMiddleware().server(async ({ next, request }) => {
   return await appwardenMiddleware({
     request,
     next,
     context: { env, waitUntil },
-    pathname: new URL(request.url).pathname,
   })
 })
 ```

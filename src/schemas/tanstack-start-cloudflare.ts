@@ -23,6 +23,6 @@ export type TanStackStartCloudflareConfig = z.infer<
   typeof TanStackStartCloudflareConfigSchema
 >
 
-export type TanStackStartAppwardenConfigInput = z.input<
+export type TanStackStartCloudflareConfigInput = z.input<
   typeof TanStackStartCloudflareConfigSchema
 >

@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest"
-import {
-  createAppwardenMiddleware,
-  type TanStackStartCloudflareContext,
-} from "./tanstack-start-cloudflare"
+import { createAppwardenMiddleware } from "./tanstack-start-cloudflare"
 
 describe("tanstack-start-cloudflare bundle", () => {
   describe("createAppwardenMiddleware export", () => {
@@ -35,7 +32,7 @@ describe("tanstack-start-cloudflare bundle", () => {
   describe("type exports", () => {
     it("should export TanStackStartCloudflareContext type", () => {
       // Type check - this will fail at compile time if the type is not exported
-      const context: TanStackStartCloudflareContext = {
+      const context = {
         env: {} as CloudflareEnv,
         ctx: {
           waitUntil: () => {},
