@@ -158,7 +158,8 @@
       "rollup@>=4.0.0 <4.59.0": ">=4.59.0",
       "h3@<=1.15.4": ">=1.15.5",
       "js-yaml@<3.14.2": ">=3.14.2",
-      "fast-xml-parser@<5.3.8": ">=5.3.8"
+      "fast-xml-parser@<5.3.8": ">=5.3.8",
+      "serialize-javascript@<=7.0.2": ">=7.0.3"
     }
   },
   "sideEffects": false
