@@ -15,12 +15,31 @@ import { getNowMs } from "../utils/get-now"
 import { isResponseLike } from "../utils/is-response-like"
 
 /**
+ * Minimal execution context type for TanStack Start adapter.
+ * Only includes the waitUntil method that the adapter actually uses.
+ */
+export interface TanStackStartExecutionContext {
+  waitUntil(promise: Promise<unknown>): void
+}
+
+/**
+ * Minimal runtime context type for TanStack Start adapter.
+ * Contains only what the adapter and config function need.
+ * Users provide this context by importing env and waitUntil from "cloudflare:workers".
+ */
+export interface TanStackStartRuntimeContext {
+  env: CloudflareEnv
+  waitUntil(promise: Promise<unknown>): void
+}
+
+/**
+ * @deprecated Use TanStackStartRuntimeContext instead.
  * Cloudflare context provided by TanStack Start on Cloudflare Workers.
  * This is the shape of the cloudflare context available in middleware.
  */
 export interface TanStackStartCloudflareContext {
   env: CloudflareEnv
-  ctx: ExecutionContext
+  ctx: TanStackStartExecutionContext
 }
 
 /**
@@ -40,12 +59,13 @@ export interface TanStackStartAppwardenConfig {
 }
 
 /**
- * Configuration function that receives the Cloudflare context and returns the config.
+ * Configuration function that receives the runtime context and returns the config.
  * This allows dynamic configuration based on environment variables.
+ * Accepts pre-transformation input types (e.g., string | boolean for debug, string | object for CSP directives).
  */
 export type TanStackStartConfigFn = (
-  cloudflare: TanStackStartCloudflareContext,
-) => TanStackStartAppwardenConfig
+  runtime: TanStackStartRuntimeContext,
+) => import("../schemas/tanstack-start-cloudflare").TanStackStartAppwardenConfigInput
 
 /**
  * The result returned by the `next()` function in TanStack Start request middleware.
@@ -72,17 +92,13 @@ export type TanStackStartNextFn = (options?: {
 /**
  * TanStack Start middleware server callback arguments.
  *
- * Mirrors the official TanStack Start `RequestServerOptions` interface, with
- * an additional optional `cloudflare` context property for Cloudflare
- * Workers deployments.
+ * Mirrors the official TanStack Start `RequestServerOptions` interface.
+ * The context should include env and waitUntil from the Cloudflare Workers runtime.
  */
 export interface TanStackStartMiddlewareArgs {
   request: Request
   pathname: string
-  context: {
-    cloudflare?: TanStackStartCloudflareContext
-    [key: string]: unknown
-  }
+  context: TanStackStartRuntimeContext & Record<string, unknown>
   next: TanStackStartNextFn
   serverFnMeta?: unknown
 }
@@ -92,10 +108,13 @@ export interface TanStackStartMiddlewareArgs {
  *
  * Mirrors the official TanStack Start `RequestServerFn` type used for
  * request middleware server functions.
+ *
+ * Note: The middleware either returns TanStackStartNextResult or throws a Response (redirect).
+ * Thrown values are not part of the return type.
  */
 export type TanStackStartMiddlewareFunction = (
   args: TanStackStartMiddlewareArgs,
-) => Promise<TanStackStartNextResult | Response>
+) => Promise<TanStackStartNextResult>
 
 /**
  *
@@ -110,23 +129,31 @@ export function createAppwardenMiddleware(
     const { request, next, context } = args
 
     try {
-      // Get Cloudflare context from TanStack Start context
-      const cloudflare = context.cloudflare as
-        | TanStackStartCloudflareContext
-        | undefined
-
-      if (!cloudflare) {
+      // Check if runtime context has required properties
+      if (!context.env || !context.waitUntil) {
         console.error(
           printMessage(
-            "Cloudflare context not found in TanStack Start context. " +
-              "Ensure your Register type includes the cloudflare context, or pass it manually in the middleware wrapper.",
+            "Runtime context missing required properties (env, waitUntil). " +
+              "Ensure you pass { env, waitUntil } from cloudflare:workers to the middleware context.",
           ),
         )
         return next()
       }
 
-      // Get config from the config function
-      const config = configFn(cloudflare)
+      // Get config from the config function (pre-transformation input)
+      const rawConfig = configFn(context)
+
+      // Parse and validate config to get transformed output
+      const parseResult =
+        TanStackStartCloudflareConfigSchema.safeParse(rawConfig)
+      if (!parseResult.success) {
+        // Log validation errors using validateConfig for user-friendly messages
+        validateConfig(rawConfig, TanStackStartCloudflareConfigSchema)
+        return next()
+      }
+
+      // Use the validated and transformed config
+      const config = parseResult.data
       const debugFn = debug(config.debug ?? false)
       const requestUrl = new URL(request.url)
       const isHTML = isHTMLRequest(request)
@@ -138,15 +165,6 @@ export function createAppwardenMiddleware(
 
       // Skip non-HTML requests (e.g., API calls, static assets)
       if (!isHTML) {
-        return next()
-      }
-
-      // Validate config against schema
-      const hasError = validateConfig(
-        config,
-        TanStackStartCloudflareConfigSchema,
-      )
-      if (hasError) {
         return next()
       }
 
@@ -163,7 +181,7 @@ export function createAppwardenMiddleware(
         appwardenApiHostname: config.appwardenApiHostname,
         debug: config.debug,
         lockPageSlug: config.lockPageSlug,
-        waitUntil: (fn) => cloudflare.ctx.waitUntil(fn),
+        waitUntil: context.waitUntil,
       })
 
       // If locked, throw redirect to lock page
@@ -186,7 +204,7 @@ export function createAppwardenMiddleware(
           request,
           response,
           hostname: requestUrl.hostname,
-          waitUntil: (fn: any) => cloudflare.ctx.waitUntil(fn),
+          waitUntil: context.waitUntil,
           debug: debugFn,
         }
 
