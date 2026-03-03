@@ -1,7 +1,9 @@
 import { checkLockStatus } from "../core"
 import { useContentSecurityPolicy } from "../middlewares"
-import type { UseCSPInput } from "../schemas"
-import type { TanStackStartCloudflareConfigInput } from "../schemas/tanstack-start-cloudflare"
+import type {
+  TanStackStartCloudflareConfig,
+  TanStackStartCloudflareConfigInput,
+} from "../schemas/tanstack-start-cloudflare"
 import { TanStackStartCloudflareConfigSchema } from "../schemas/tanstack-start-cloudflare"
 import {
   buildLockPageUrl,
@@ -35,22 +37,19 @@ export interface TanStackStartRuntimeContext {
 
 /**
  * Configuration for the Appwarden middleware.
+ *
+ * This is an alias of the validated output type from
+ * TanStackStartCloudflareConfigSchema, so it always stays in sync with the
+ * actual runtime config contract.
  */
-export interface TanStackStartAppwardenConfig {
-  /** The slug/path of the lock page to redirect to when the site is locked */
-  lockPageSlug: string
-  /** The Appwarden API token for authentication */
-  appwardenApiToken: string
-  /** Optional custom API hostname (defaults to https://api.appwarden.io) */
-  appwardenApiHostname?: string
-  /** Enable debug logging */
-  debug?: boolean
-  /** Optional Content Security Policy configuration */
-  contentSecurityPolicy?: UseCSPInput
-}
+export type TanStackStartAppwardenConfig = TanStackStartCloudflareConfig
 
-// Re-export the input config type so consumers can reference it from this adapter.
-export type { TanStackStartCloudflareConfigInput }
+// Re-export the config types so consumers can reference them from this adapter
+// without importing from the internal schema module.
+export type {
+  TanStackStartCloudflareConfig,
+  TanStackStartCloudflareConfigInput,
+}
 
 /**
  * Configuration function that receives the runtime context and returns the config.
