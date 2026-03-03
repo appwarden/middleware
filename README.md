@@ -162,19 +162,17 @@ See the [Astro + Cloudflare guide](https://appwarden.io/docs/guides/astro-cloudf
 ```ts
 // app/root.tsx
 import { createAppwardenMiddleware } from "@appwarden/middleware/cloudflare/react-router"
-import type { CloudflareContext } from "@appwarden/middleware/cloudflare/react-router"
 
 export const unstable_middleware = [
-  createAppwardenMiddleware((cloudflare: CloudflareContext) => ({
-    lockPageSlug: cloudflare.env.APPWARDEN_LOCK_PAGE_SLUG,
-    appwardenApiToken: cloudflare.env.APPWARDEN_API_TOKEN,
-    debug: cloudflare.env.APPWARDEN_DEBUG === "true",
+  createAppwardenMiddleware(({ env }) => ({
+    lockPageSlug: env.APPWARDEN_LOCK_PAGE_SLUG,
+    appwardenApiToken: env.APPWARDEN_API_TOKEN,
+    // "debug" can be a string or boolean; the schema will normalize it
+    debug: env.APPWARDEN_DEBUG,
+    // "directives" can be a JSON string or an object; the schema will parse it
     contentSecurityPolicy: {
       mode: "enforced",
-      directives: {
-        "script-src": ["'self'", "{{nonce}}"],
-        "style-src": ["'self'", "{{nonce}}"],
-      },
+      directives: env.APPWARDEN_CSP_DIRECTIVES,
     },
   })),
 ]
