@@ -1,7 +1,9 @@
 import { checkLockStatus } from "../core"
 import { useContentSecurityPolicy } from "../middlewares"
-import type { UseCSPInput } from "../schemas"
-import { ReactRouterCloudflareConfigSchema } from "../schemas/react-router-cloudflare"
+import {
+  type ReactRouterAppwardenConfigInput,
+  ReactRouterCloudflareConfigSchema,
+} from "../schemas/react-router-cloudflare"
 import {
   buildLockPageUrl,
   createRedirect,
@@ -9,64 +11,41 @@ import {
   isHTMLRequest,
   isOnLockPage,
   printMessage,
-  validateConfig,
 } from "../utils"
 import { getNowMs } from "../utils/get-now"
 import { isResponseLike } from "../utils/is-response-like"
 
 /**
- * Cloudflare context provided by React Router on Cloudflare Workers.
- * This is the shape of `context.cloudflare` in React Router loaders/actions.
+ * Minimal runtime context required by the React Router adapter.
+ * Contains only the essential properties needed by the middleware.
  */
-export interface CloudflareContext {
+export interface ReactRouterRuntimeContext {
+  /** Cloudflare environment bindings */
   env: CloudflareEnv
-  ctx: ExecutionContext
+  /** Function to extend the lifetime of the request for background tasks */
+  waitUntil(promise: Promise<unknown>): void
 }
 
 /**
- * Symbol used to store Cloudflare context in RouterContextProvider.
- * This is used when middleware is enabled with the v8_middleware future flag.
- */
-export const cloudflareContextSymbol = Symbol.for(
-  "@appwarden/middleware:cloudflare",
-)
-
-/**
- * Configuration for the Appwarden middleware.
- */
-export interface ReactRouterAppwardenConfig {
-  /** The slug/path of the lock page to redirect to when the site is locked */
-  lockPageSlug: string
-  /** The Appwarden API token for authentication */
-  appwardenApiToken: string
-  /** Optional custom API hostname (defaults to https://api.appwarden.io) */
-  appwardenApiHostname?: string
-  /** Enable debug logging */
-  debug?: boolean
-  /** Optional Content Security Policy configuration */
-  contentSecurityPolicy?: UseCSPInput
-}
-
-/**
- * Configuration function that receives the Cloudflare context and returns the config.
+ * Configuration function that receives the runtime context and returns the config.
  * This allows dynamic configuration based on environment variables.
+ * The config can use the relaxed input types (string | boolean for debug,
+ * string | object for CSP directives) which will be transformed by Zod.
  */
 export type ReactRouterConfigFn = (
-  cloudflare: CloudflareContext,
-) => ReactRouterAppwardenConfig
+  runtime: ReactRouterRuntimeContext,
+) => ReactRouterAppwardenConfigInput
 
 /**
  * React Router middleware function signature.
  * This matches the unstable_middleware export type in React Router v7.
  *
- * Supports both old and new context APIs:
- * - Old API: context is a plain object with `cloudflare` property
- * - New API (v8_middleware): context is a RouterContextProvider instance
+ * The context should contain the runtime context with env and waitUntil.
  */
 export interface ReactRouterMiddlewareArgs {
   request: Request
   params: Record<string, string | undefined>
-  context: any // Can be either plain object or RouterContextProvider
+  context: ReactRouterRuntimeContext
 }
 
 export type ReactRouterMiddlewareFunction = (
@@ -75,42 +54,10 @@ export type ReactRouterMiddlewareFunction = (
 ) => Promise<unknown>
 
 /**
- * Helper function to extract Cloudflare context from React Router context.
- * Supports both old and new context APIs.
- *
- * @param context - React Router context (can be plain object or RouterContextProvider)
- * @returns Cloudflare context or null if not found
- */
-function getCloudflareContext(context: any): CloudflareContext | null {
-  // Try old API first: context.cloudflare
-  if (context?.cloudflare) {
-    return context.cloudflare
-  }
-
-  // Try new API: RouterContextProvider with symbol
-  if (context?.get && typeof context.get === "function") {
-    try {
-      const cloudflare = context.get(cloudflareContextSymbol)
-      if (cloudflare) {
-        return cloudflare
-      }
-    } catch {
-      // Symbol not found in context, continue
-    }
-  }
-
-  return null
-}
-
-/**
  * Creates an Appwarden middleware function for React Router.
  *
  * This middleware checks if the site is locked and redirects to the lock page if so.
  * It should be exported from your root route (root.tsx) to protect all routes.
- *
- * Supports both old and new React Router context APIs:
- * - Old API: Pass context as plain object with `cloudflare` property
- * - New API (v8_middleware): Use RouterContextProvider with cloudflareContextSymbol
  *
  * @example
  * ```typescript
@@ -125,7 +72,7 @@ function getCloudflareContext(context: any): CloudflareContext | null {
  * ]
  * ```
  *
- * @param configFn - A function that receives the Cloudflare context and returns the config
+ * @param configFn - A function that receives the runtime context and returns the config
  * @returns A React Router middleware function
  */
 export function createAppwardenMiddleware(
@@ -136,20 +83,33 @@ export function createAppwardenMiddleware(
     const { request, context } = args
 
     try {
-      // Get Cloudflare context from React Router context (supports both APIs)
-      const cloudflare = getCloudflareContext(context)
-      if (!cloudflare) {
+      // Check if runtime context has required properties
+      if (!context?.env || !context?.waitUntil) {
         console.error(
           printMessage(
-            "Cloudflare context not found. Make sure you're running on Cloudflare Workers and have set up the context correctly.",
+            "Runtime context missing required properties (env, waitUntil). Make sure you're passing the correct context to the middleware.",
           ),
         )
         return next()
       }
 
-      // Get config from the config function
-      const config = configFn(cloudflare)
-      const debugFn = debug(config.debug ?? false)
+      // Get config from the config function (using input type - will be validated)
+      const configInput = configFn(context)
+
+      // Validate and transform config against schema
+      const validationResult =
+        ReactRouterCloudflareConfigSchema.safeParse(configInput)
+      if (!validationResult.success) {
+        console.error(
+          printMessage(
+            `Config validation failed: ${validationResult.error.message}`,
+          ),
+        )
+        return next()
+      }
+
+      const config = validationResult.data
+      const debugFn = debug(config.debug)
       const requestUrl = new URL(request.url)
       const isHTML = isHTMLRequest(request)
 
@@ -160,12 +120,6 @@ export function createAppwardenMiddleware(
 
       // Skip non-HTML requests (e.g., API calls, static assets)
       if (!isHTML) {
-        return next()
-      }
-
-      // Validate config against schema
-      const hasError = validateConfig(config, ReactRouterCloudflareConfigSchema)
-      if (hasError) {
         return next()
       }
 
@@ -182,7 +136,7 @@ export function createAppwardenMiddleware(
         appwardenApiHostname: config.appwardenApiHostname,
         debug: config.debug,
         lockPageSlug: config.lockPageSlug,
-        waitUntil: (fn) => cloudflare.ctx.waitUntil(fn),
+        waitUntil: context.waitUntil,
       })
 
       // If locked, redirect to lock page
@@ -204,7 +158,7 @@ export function createAppwardenMiddleware(
           request,
           response,
           hostname: requestUrl.hostname,
-          waitUntil: (fn: any) => cloudflare.ctx.waitUntil(fn),
+          waitUntil: context.waitUntil,
           debug: debugFn,
         }
 

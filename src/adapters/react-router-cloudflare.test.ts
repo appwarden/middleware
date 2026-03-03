@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { checkLockStatus } from "../core"
 import {
-  CloudflareContext,
   createAppwardenMiddleware,
+  type ReactRouterRuntimeContext,
 } from "./react-router-cloudflare"
 
 // Mock dependencies
@@ -50,26 +50,23 @@ afterEach(() => {
 })
 
 describe("createAppwardenMiddleware", () => {
-  let mockCloudflareContext: CloudflareContext
+  let mockRuntimeContext: ReactRouterRuntimeContext
   let mockArgs: {
     request: Request
     params: Record<string, string | undefined>
-    context: any
+    context: ReactRouterRuntimeContext
   }
   let mockNext: () => Promise<unknown>
 
   beforeEach(() => {
     vi.clearAllMocks()
 
-    mockCloudflareContext = {
+    mockRuntimeContext = {
       env: {
         APPWARDEN_API_TOKEN: "test-token",
         LOCK_PAGE_SLUG: "/maintenance",
       } as unknown as CloudflareEnv,
-      ctx: {
-        waitUntil: vi.fn(),
-        passThroughOnException: vi.fn(),
-      } as unknown as ExecutionContext,
+      waitUntil: vi.fn(),
     }
 
     mockArgs = {
@@ -78,9 +75,7 @@ describe("createAppwardenMiddleware", () => {
         headers: { Accept: "text/html,application/xhtml+xml" },
       }),
       params: {},
-      context: {
-        cloudflare: mockCloudflareContext,
-      },
+      context: mockRuntimeContext,
     }
 
     mockNext = vi.fn().mockResolvedValue({ status: 200 })
@@ -109,17 +104,16 @@ describe("createAppwardenMiddleware", () => {
   })
 
   it("should call next() when config validation fails (fail open)", async () => {
-    const { validateConfig } = await import("../utils")
-    vi.mocked(validateConfig).mockReturnValue(true) // Config has errors
-
     const middleware = createAppwardenMiddleware(() => ({
       lockPageSlug: "/maintenance",
-      appwardenApiToken: "test-token",
+      appwardenApiToken: "", // Invalid - empty token
     }))
 
     const result = await middleware(mockArgs, mockNext)
 
-    expect(validateConfig).toHaveBeenCalled()
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("Config validation failed"),
+    )
     expect(checkLockStatus).not.toHaveBeenCalled()
     expect(mockNext).toHaveBeenCalled()
     expect(result).toEqual({ status: 200 })
@@ -190,7 +184,7 @@ describe("createAppwardenMiddleware", () => {
     expect(mockNext).toHaveBeenCalled()
   })
 
-  it("should call next() when cloudflare context is missing", async () => {
+  it("should call next() when runtime context is missing required properties", async () => {
     mockArgs.context = {} as any
 
     const middleware = createAppwardenMiddleware(() => ({
@@ -201,7 +195,7 @@ describe("createAppwardenMiddleware", () => {
     await middleware(mockArgs, mockNext)
 
     expect(consoleErrorSpy).toHaveBeenCalledWith(
-      expect.stringContaining("Cloudflare context not found"),
+      expect.stringContaining("Runtime context missing required properties"),
     )
     expect(mockNext).toHaveBeenCalled()
   })
@@ -226,7 +220,7 @@ describe("createAppwardenMiddleware", () => {
     })
   })
 
-  it("should pass waitUntil function from cloudflare context", async () => {
+  it("should pass waitUntil function from runtime context", async () => {
     const middleware = createAppwardenMiddleware(() => ({
       lockPageSlug: "/maintenance",
       appwardenApiToken: "test-token",
@@ -242,13 +236,11 @@ describe("createAppwardenMiddleware", () => {
     const testPromise = Promise.resolve()
     waitUntilFn!(testPromise)
 
-    // Verify that the cloudflare ctx.waitUntil was called
-    expect(mockCloudflareContext.ctx.waitUntil).toHaveBeenCalledWith(
-      testPromise,
-    )
+    // Verify that the runtime context waitUntil was called
+    expect(mockRuntimeContext.waitUntil).toHaveBeenCalledWith(testPromise)
   })
 
-  it("should receive config from configFn with cloudflare context", async () => {
+  it("should receive config from configFn with runtime context", async () => {
     const configFn = vi.fn().mockReturnValue({
       lockPageSlug: "/maintenance",
       appwardenApiToken: "test-token",
@@ -257,7 +249,7 @@ describe("createAppwardenMiddleware", () => {
     const middleware = createAppwardenMiddleware(configFn)
     await middleware(mockArgs, mockNext)
 
-    expect(configFn).toHaveBeenCalledWith(mockCloudflareContext)
+    expect(configFn).toHaveBeenCalledWith(mockRuntimeContext)
   })
 
   it("should handle errors gracefully and call next()", async () => {

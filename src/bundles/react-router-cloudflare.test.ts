@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 import {
   createAppwardenMiddleware,
-  type CloudflareContext,
+  type ReactRouterRuntimeContext,
 } from "./react-router-cloudflare"
 
 describe("react-router-cloudflare bundle", () => {
@@ -33,17 +33,14 @@ describe("react-router-cloudflare bundle", () => {
   })
 
   describe("type exports", () => {
-    it("should export CloudflareContext type", () => {
+    it("should export ReactRouterRuntimeContext type", () => {
       // Type check - this will fail at compile time if the type is not exported
-      const context: CloudflareContext = {
+      const context: ReactRouterRuntimeContext = {
         env: {} as CloudflareEnv,
-        ctx: {
-          waitUntil: () => {},
-          passThroughOnException: () => {},
-          props: {},
-        } as ExecutionContext,
+        waitUntil: () => {},
       }
       expect(context.env).toBeDefined()
+      expect(typeof context.waitUntil).toBe("function")
     })
   })
 })
