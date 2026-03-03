@@ -3,6 +3,21 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [3.7.0](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.6.0...@appwarden/middleware@3.7.0) (2026-03-03)
+
+
+### Bug Fixes
+
+* address copilot review feedback for tanstack start ([4ef7d5a](https://github.com/appwarden/middleware/commit/4ef7d5a7f5e3e920383861701c06564b1433e374))
+* align tanstack start config type with schema ([d49f1e2](https://github.com/appwarden/middleware/commit/d49f1e2150c958b4d7b565777158b3895cdf34ab))
+* delete adapters index file ([1e87136](https://github.com/appwarden/middleware/commit/1e87136726be76faa51a082f5a452b9e699c8027))
+* override serialize-javascript override for rollup ([b08f2c6](https://github.com/appwarden/middleware/commit/b08f2c60e98fcdf74f03fa893f71e19193d3da92))
+
+
+### Features
+
+* simplify TanStack Start Cloudflare adapter ([7dfc200](https://github.com/appwarden/middleware/commit/7dfc200228ae1590db248c3db4ccbb881dce3a81))
+
 # [3.6.0](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.5.1...@appwarden/middleware@3.6.0) (2026-02-27)
 
 
