@@ -1,7 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { APPWARDEN_CACHE_KEY } from "../constants"
 import { checkLockStatus } from "../core"
-import { handleResetCache, isResetCacheRequest } from "../handlers"
 import { CloudflareConfigType } from "../schemas"
 import { MiddlewareContext } from "../types"
 import { store } from "../utils/cloudflare"
@@ -10,11 +8,6 @@ import { useAppwarden } from "./use-appwarden"
 // Mock dependencies
 vi.mock("../core", () => ({
   checkLockStatus: vi.fn(),
-}))
-
-vi.mock("../handlers", () => ({
-  handleResetCache: vi.fn(),
-  isResetCacheRequest: vi.fn(),
 }))
 
 vi.mock("../utils", () => ({
@@ -111,8 +104,6 @@ describe("useAppwarden", () => {
       writable: true,
     })
 
-    // Default mock implementations
-    vi.mocked(isResetCacheRequest).mockReturnValue(false)
     // Default: site is not locked
     vi.mocked(checkLockStatus).mockResolvedValue({
       isLocked: false,
@@ -128,52 +119,6 @@ describe("useAppwarden", () => {
     const middleware = useAppwarden(mockInput)
     await middleware(mockContext, mockNext)
 
-    expect(mockNext).toHaveBeenCalled()
-  })
-
-  it("should initialize the edge cache only for reset-cache requests", async () => {
-    // For reset-cache requests, edge cache should be initialized
-    vi.mocked(isResetCacheRequest).mockReturnValue(true)
-
-    const middleware = useAppwarden(mockInput)
-    await middleware(mockContext, mockNext)
-
-    expect(mockCachesOpen).toHaveBeenCalledWith("appwarden:lock")
-    expect(store.json).toHaveBeenCalledWith(
-      {
-        serviceOrigin: "https://example.com",
-        cache: expect.any(Object),
-        debug: expect.any(Function),
-      },
-      APPWARDEN_CACHE_KEY,
-    )
-  })
-
-  it("should NOT initialize edge cache for normal HTML requests (checkLockStatus handles its own cache)", async () => {
-    vi.mocked(isResetCacheRequest).mockReturnValue(false)
-
-    const middleware = useAppwarden(mockInput)
-    await middleware(mockContext, mockNext)
-
-    // Edge cache should NOT be opened here since checkLockStatus opens its own cache
-    expect(store.json).not.toHaveBeenCalled()
-  })
-
-  it("should handle reset cache request when detected and call next()", async () => {
-    vi.mocked(isResetCacheRequest).mockReturnValue(true)
-
-    const middleware = useAppwarden(mockInput)
-    await middleware(mockContext, mockNext)
-
-    expect(handleResetCache).toHaveBeenCalledWith(
-      APPWARDEN_CACHE_KEY,
-      "cloudflare-cache",
-      mockEdgeCache,
-      mockContext.request,
-    )
-    // Should return early and not process further
-    expect(checkLockStatus).not.toHaveBeenCalled()
-    // Should call next() to get the origin response
     expect(mockNext).toHaveBeenCalled()
   })
 

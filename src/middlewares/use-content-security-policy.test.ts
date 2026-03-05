@@ -24,7 +24,7 @@ describe("use-content-security-policy", () => {
       .get("https://staging-api.appwarden.io")
       .intercept({
         method: "POST",
-        path: "/v1/appwarden/check",
+        path: "/v1/appwarden/status",
       })
       .reply(
         200,

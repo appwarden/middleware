@@ -21,7 +21,7 @@ describe("Integration Tests - Request/Response Flows", () => {
         .get("https://staging-api.appwarden.io")
         .intercept({
           method: "POST",
-          path: "/v1/appwarden/check",
+          path: "/v1/appwarden/status",
         })
         .reply(
           200,
@@ -80,7 +80,7 @@ describe("Integration Tests - Request/Response Flows", () => {
         .get("https://staging-api.appwarden.io")
         .intercept({
           method: "POST",
-          path: "/v1/appwarden/check",
+          path: "/v1/appwarden/status",
         })
         .reply(
           200,
@@ -152,7 +152,7 @@ describe("Integration Tests - Request/Response Flows", () => {
         .get("https://staging-api.appwarden.io")
         .intercept({
           method: "POST",
-          path: "/v1/appwarden/check",
+          path: "/v1/appwarden/status",
         })
         .reply(
           200,
@@ -202,7 +202,7 @@ describe("Integration Tests - Request/Response Flows", () => {
         .get("https://staging-api.appwarden.io")
         .intercept({
           method: "POST",
-          path: "/v1/appwarden/check",
+          path: "/v1/appwarden/status",
         })
         .reply(
           200,
@@ -287,7 +287,7 @@ describe("Integration Tests - Request/Response Flows", () => {
         .get("https://staging-api.appwarden.io")
         .intercept({
           method: "POST",
-          path: "/v1/appwarden/check",
+          path: "/v1/appwarden/status",
         })
         .reply(
           200,
@@ -358,7 +358,7 @@ describe("Integration Tests - Request/Response Flows", () => {
         .get("https://staging-api.appwarden.io")
         .intercept({
           method: "POST",
-          path: "/v1/appwarden/check",
+          path: "/v1/appwarden/status",
         })
         .reply(500, { error: "Internal Server Error" })
         .persist()
@@ -396,7 +396,7 @@ describe("Integration Tests - Request/Response Flows", () => {
         .get("https://staging-api.appwarden.io")
         .intercept({
           method: "POST",
-          path: "/v1/appwarden/check",
+          path: "/v1/appwarden/status",
         })
         .reply(408, { error: "Request Timeout" })
         .persist()
@@ -436,7 +436,7 @@ describe("Integration Tests - Request/Response Flows", () => {
         .get("https://staging-api.appwarden.io")
         .intercept({
           method: "POST",
-          path: "/v1/appwarden/check",
+          path: "/v1/appwarden/status",
         })
         .reply(
           200,
@@ -486,7 +486,7 @@ describe("Integration Tests - Request/Response Flows", () => {
         .get("https://staging-api.appwarden.io")
         .intercept({
           method: "POST",
-          path: "/v1/appwarden/check",
+          path: "/v1/appwarden/status",
         })
         .reply(
           200,

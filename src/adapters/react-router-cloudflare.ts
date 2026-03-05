@@ -21,8 +21,12 @@ import { isResponseLike } from "../utils/is-response-like"
  * This allows dynamic configuration based on environment variables from cloudflare:workers.
  * The config can use the relaxed input types (string | boolean for debug,
  * string | object for CSP directives) which will be transformed by Zod.
+ *
+ * @param runtime - Optional runtime context (for backward compatibility)
  */
-export type ReactRouterConfigFn = () => ReactRouterAppwardenConfigInput
+export type ReactRouterConfigFn = (
+  runtime?: unknown,
+) => ReactRouterAppwardenConfigInput
 
 /**
  * React Router middleware function signature.
