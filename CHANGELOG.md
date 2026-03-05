@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.9.1](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.9.0...@appwarden/middleware@3.9.1) (2026-03-05)
+
+
+### Bug Fixes
+
+* use ctx.waitUntil from ExecutionContext in Next.js adapter ([0faf422](https://github.com/appwarden/middleware/commit/0faf4224e6c38e28da766a5a63d3f7d8aa0a3b09))
+
 # [3.9.0](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.8.0...@appwarden/middleware@3.9.0) (2026-03-05)
 
 
