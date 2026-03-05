@@ -219,10 +219,7 @@ describe("createAppwardenMiddleware (OpenNext Cloudflare)", () => {
     const checkLockStatusCall = vi.mocked(checkLockStatus).mock.calls[0][0]
     const waitUntilFn = checkLockStatusCall.waitUntil
 
-    // Verify that waitUntil is a function (bound from ctx.waitUntil)
-    expect(typeof waitUntilFn).toBe("function")
-
-    // Call the waitUntil function to verify it calls the mocked ctx.waitUntil
+    // Call the waitUntil function and verify it delegates to the mocked ctx.waitUntil
     const testPromise = Promise.resolve()
     waitUntilFn(testPromise)
 
