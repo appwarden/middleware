@@ -297,7 +297,6 @@ Contributions are welcome! Please feel free to submit a Pull Request.
      - `fix: resolve issue with X`
      - `docs: update README`
      - `chore: update dependencies`
-     - `refactor: improve code structure`
      - `test: add tests for feature X`
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
