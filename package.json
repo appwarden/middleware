@@ -130,7 +130,7 @@
     "typescript": "^5.9.3",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^3.2.4",
-    "wrangler": "^4.68.1"
+    "wrangler": "^4.70.0"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,json,md,yml,yaml}": [
