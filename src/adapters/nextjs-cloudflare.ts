@@ -1,10 +1,14 @@
+import { waitUntil } from "cloudflare:workers"
 import {
   NextResponse,
   type NextFetchEvent,
   type NextRequest,
 } from "next/server"
 import { checkLockStatus } from "../core"
-import type { UseCSPInput } from "../schemas"
+import type {
+  NextJsCloudflareConfig,
+  NextJsCloudflareConfigInput,
+} from "../schemas/nextjs-cloudflare"
 import { NextJsCloudflareConfigSchema } from "../schemas/nextjs-cloudflare"
 import {
   buildLockPageUrl,
@@ -13,7 +17,6 @@ import {
   isOnLockPage,
   printMessage,
   TEMPORARY_REDIRECT_STATUS,
-  validateConfig,
 } from "../utils"
 import { getNowMs } from "../utils/get-now"
 
@@ -28,27 +31,25 @@ export interface NextJsCloudflareRuntime {
 
 /**
  * Configuration for the Appwarden middleware.
+ *
+ * This is an alias of the validated output type from
+ * NextJsCloudflareConfigSchema, so it always stays in sync with the
+ * actual runtime config contract.
  */
-export interface NextJsCloudflareAppwardenConfig {
-  /** The slug/path of the lock page to redirect to when the site is locked */
-  lockPageSlug: string
-  /** The Appwarden API token for authentication */
-  appwardenApiToken: string
-  /** Optional custom API hostname (defaults to https://api.appwarden.io) */
-  appwardenApiHostname?: string
-  /** Enable debug logging */
-  debug?: boolean
-  /** Optional Content Security Policy configuration (headers only, no HTML rewriting; `{{nonce}}` placeholders are not supported) */
-  contentSecurityPolicy?: UseCSPInput
-}
+export type NextJsCloudflareAppwardenConfig = NextJsCloudflareConfig
+
+// Re-export the config types so consumers can reference them from this adapter
+// without importing from the internal schema module.
+export type { NextJsCloudflareConfig, NextJsCloudflareConfigInput }
 
 /**
  * Configuration function that receives the Cloudflare runtime and returns the config.
  * This allows dynamic configuration based on environment variables.
+ * Accepts pre-transformation input types (e.g., string | boolean for debug, string | object for CSP directives).
  */
 export type NextJsCloudflareConfigFn = (
   runtime: NextJsCloudflareRuntime,
-) => NextJsCloudflareAppwardenConfig
+) => NextJsCloudflareConfigInput
 
 /**
  * Next.js middleware function signature.
@@ -94,9 +95,23 @@ export function createAppwardenMiddleware(
       const { getCloudflareContext } = await import("@opennextjs/cloudflare")
       const { env, ctx } = await getCloudflareContext()
 
-      // Get config from the config function
-      const config = configFn({ env, ctx })
-      const debugFn = debug(config.debug ?? false)
+      // Get config from the config function (pre-transformation input)
+      const rawConfig = configFn({ env, ctx })
+
+      // Validate and transform config against schema
+      const validationResult = NextJsCloudflareConfigSchema.safeParse(rawConfig)
+      if (!validationResult.success) {
+        console.error(
+          printMessage(
+            `Config validation failed: ${validationResult.error.message}`,
+          ),
+        )
+        return NextResponse.next()
+      }
+
+      // Use the validated and transformed config
+      const config = validationResult.data
+      const debugFn = debug(config.debug)
       const requestUrl = new URL(request.url)
       const isHTML = isHTMLRequest(request)
 
@@ -107,12 +122,6 @@ export function createAppwardenMiddleware(
 
       // Skip non-HTML requests (e.g., API calls, static assets)
       if (!isHTML) {
-        return NextResponse.next()
-      }
-
-      // Validate config against schema
-      const hasError = validateConfig(config, NextJsCloudflareConfigSchema)
-      if (hasError) {
         return NextResponse.next()
       }
 
@@ -129,7 +138,7 @@ export function createAppwardenMiddleware(
         appwardenApiHostname: config.appwardenApiHostname,
         debug: config.debug,
         lockPageSlug: config.lockPageSlug,
-        waitUntil: (fn) => ctx.waitUntil(fn),
+        waitUntil,
       })
 
       // If locked, redirect to lock page

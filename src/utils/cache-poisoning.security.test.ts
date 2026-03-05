@@ -32,7 +32,6 @@ describe("Cache Poisoning Security Tests", () => {
         isLocked: "1", // String instead of number - could bypass checks
         isLockedTest: 0,
         lastCheck: Date.now(),
-        code: "MALICIOUS",
       }
 
       const mockResponse = {
@@ -71,7 +70,6 @@ describe("Cache Poisoning Security Tests", () => {
         isLocked: -1, // Negative number could bypass > 0 checks
         isLockedTest: -999999,
         lastCheck: -1,
-        code: "OVERFLOW",
       }
 
       const mockResponse = {
@@ -99,7 +97,7 @@ describe("Cache Poisoning Security Tests", () => {
     it("should reject cache data with missing required fields", async () => {
       const maliciousData = {
         isLocked: 1,
-        // Missing isLockedTest, lastCheck, code
+        // Missing isLockedTest and lastCheck
       }
 
       const mockResponse = {
@@ -129,7 +127,6 @@ describe("Cache Poisoning Security Tests", () => {
         isLocked: 0,
         isLockedTest: 0,
         lastCheck: Date.now(),
-        code: "OK",
         __proto__: { isAdmin: true }, // Prototype pollution attempt
         constructor: { prototype: { isAdmin: true } },
       }
@@ -152,7 +149,6 @@ describe("Cache Poisoning Security Tests", () => {
         isLocked: 0,
         isLockedTest: 0,
         lastCheck: maliciousData.lastCheck,
-        code: "OK",
       }
       vi.mocked(LockValue.parse).mockReturnValue(cleanData)
 
@@ -169,7 +165,6 @@ describe("Cache Poisoning Security Tests", () => {
         isLocked: Number.MAX_SAFE_INTEGER,
         isLockedTest: Number.MAX_SAFE_INTEGER,
         lastCheck: Number.MAX_SAFE_INTEGER,
-        code: "X".repeat(1000000), // Extremely long string
       }
 
       const mockResponse = {
@@ -215,7 +210,6 @@ describe("Cache Poisoning Security Tests", () => {
         expect.objectContaining({
           isLocked: 0,
           isLockedTest: 0,
-          code: "",
         }),
       )
       expect(consoleErrorSpy).toHaveBeenCalled()
@@ -226,7 +220,6 @@ describe("Cache Poisoning Security Tests", () => {
         isLocked: NaN,
         isLockedTest: Infinity,
         lastCheck: -Infinity,
-        code: "INVALID",
       }
 
       const mockResponse = {
@@ -258,7 +251,6 @@ describe("Cache Poisoning Security Tests", () => {
         isLocked: 1,
         isLockedTest: 0,
         lastCheck: Date.now(),
-        code: "LOCKED",
       }
 
       const mockValidResponse = {
@@ -329,7 +321,6 @@ describe("Cache Poisoning Security Tests", () => {
         expect.objectContaining({
           isLocked: 0,
           isLockedTest: 0,
-          code: "",
         }),
       )
       expect(consoleErrorSpy).toHaveBeenCalled()

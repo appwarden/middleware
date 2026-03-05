@@ -24,7 +24,7 @@ describe("use-content-security-policy", () => {
       .get("https://staging-api.appwarden.io")
       .intercept({
         method: "POST",
-        path: "/v1/status/check",
+        path: "/v1/appwarden/check",
       })
       .reply(
         200,
@@ -87,9 +87,12 @@ describe("use-content-security-policy", () => {
       expect(() => useContentSecurityPolicy(invalidConfig as any)).toThrow()
     })
 
-    it("should not throw error for disabled mode without directives", () => {
+    it("should not throw error for disabled mode with directives", () => {
       const validConfig = {
         mode: "disabled" as const,
+        directives: {
+          "default-src": ["'self'"],
+        },
       }
 
       expect(() => useContentSecurityPolicy(validConfig)).not.toThrow()
@@ -98,6 +101,9 @@ describe("use-content-security-policy", () => {
     it("should skip CSP when mode is disabled", async () => {
       const middleware = useContentSecurityPolicy({
         mode: "disabled",
+        directives: {
+          "default-src": ["'self'"],
+        },
       })
 
       const mockContext = {

@@ -1,3 +1,4 @@
+import { waitUntil } from "cloudflare:workers"
 import { checkLockStatus } from "../core"
 import { useContentSecurityPolicy } from "../middlewares"
 import {
@@ -16,42 +17,26 @@ import { getNowMs } from "../utils/get-now"
 import { isResponseLike } from "../utils/is-response-like"
 
 /**
- * Minimal runtime context required by the React Router adapter.
- * Contains only the essential properties needed by the middleware.
- */
-export interface ReactRouterRuntimeContext {
-  /** Cloudflare environment bindings */
-  env: CloudflareEnv
-  /** Function to extend the lifetime of the request for background tasks */
-  waitUntil(promise: Promise<unknown>): void
-}
-
-/**
- * Configuration function that receives the runtime context and returns the config.
- * This allows dynamic configuration based on environment variables.
+ * Configuration function that returns the config.
+ * This allows dynamic configuration based on environment variables from cloudflare:workers.
  * The config can use the relaxed input types (string | boolean for debug,
  * string | object for CSP directives) which will be transformed by Zod.
  */
-export type ReactRouterConfigFn = (
-  runtime: ReactRouterRuntimeContext,
-) => ReactRouterAppwardenConfigInput
+export type ReactRouterConfigFn = () => ReactRouterAppwardenConfigInput
 
 /**
  * React Router middleware function signature.
  * This matches the unstable_middleware export type in React Router v7.
- *
- * The context should contain the runtime context with env and waitUntil.
  */
 export interface ReactRouterMiddlewareArgs {
   request: Request
   params: Record<string, string | undefined>
-  context: ReactRouterRuntimeContext
 }
 
 export type ReactRouterMiddlewareFunction = (
   args: ReactRouterMiddlewareArgs,
-  next: () => Promise<unknown>,
-) => Promise<unknown>
+  next: () => Promise<void | Response>,
+) => Promise<void | Response>
 
 /**
  * Creates an Appwarden middleware function for React Router.
@@ -62,17 +47,18 @@ export type ReactRouterMiddlewareFunction = (
  * @example
  * ```typescript
  * // app/root.tsx
+ * import { env } from "cloudflare:workers"
  * import { createAppwardenMiddleware } from "@appwarden/middleware/react-router"
  *
  * export const unstable_middleware = [
- *   createAppwardenMiddleware(({ env }) => ({
+ *   createAppwardenMiddleware(() => ({
  *     lockPageSlug: env.APPWARDEN_LOCK_PAGE_SLUG,
  *     appwardenApiToken: env.APPWARDEN_API_TOKEN,
  *   })),
  * ]
  * ```
  *
- * @param configFn - A function that receives the runtime context and returns the config
+ * @param configFn - A function that returns the config using env from cloudflare:workers
  * @returns A React Router middleware function
  */
 export function createAppwardenMiddleware(
@@ -80,21 +66,11 @@ export function createAppwardenMiddleware(
 ): ReactRouterMiddlewareFunction {
   return async (args, next) => {
     const startTime = getNowMs()
-    const { request, context } = args
+    const { request } = args
 
     try {
-      // Check if runtime context has required properties
-      if (!context?.env || !context?.waitUntil) {
-        console.error(
-          printMessage(
-            "Runtime context missing required properties (env, waitUntil). Make sure you're passing the correct context to the middleware.",
-          ),
-        )
-        return next()
-      }
-
       // Get config from the config function (using input type - will be validated)
-      const configInput = configFn(context)
+      const configInput = configFn()
 
       // Validate and transform config against schema
       const validationResult =
@@ -136,7 +112,7 @@ export function createAppwardenMiddleware(
         appwardenApiHostname: config.appwardenApiHostname,
         debug: config.debug,
         lockPageSlug: config.lockPageSlug,
-        waitUntil: context.waitUntil,
+        waitUntil,
       })
 
       // If locked, redirect to lock page
@@ -158,7 +134,7 @@ export function createAppwardenMiddleware(
           request,
           response,
           hostname: requestUrl.hostname,
-          waitUntil: context.waitUntil,
+          waitUntil,
           debug: debugFn,
         }
 

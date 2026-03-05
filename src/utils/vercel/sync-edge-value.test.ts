@@ -48,7 +48,7 @@ describe("syncEdgeValue", () => {
     // @ts-ignore - Defining constants that are normally defined by the build process
     global.API_HOSTNAME = "https://staging-api.appwarden.io"
     // @ts-ignore
-    global.API_PATHNAME = "/v1/status/check"
+    global.API_PATHNAME = "/v1/appwarden/check"
   })
 
   afterEach(() => {
@@ -60,7 +60,7 @@ describe("syncEdgeValue", () => {
     await syncEdgeValue(mockContext)
 
     expect(fetch).toHaveBeenCalledWith(
-      new URL("/v1/status/check", "https://staging-api.appwarden.io"),
+      new URL("/v1/appwarden/check", "https://staging-api.appwarden.io"),
       {
         method: "POST",
         headers: { "content-type": "application/json" },

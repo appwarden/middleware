@@ -10,9 +10,9 @@ import { printMessage } from "./print-message"
  * @param schema - The Zod schema to validate against
  * @returns `true` if validation failed (has error), `false` if validation passed
  */
-export function validateConfig<T>(
+export function validateConfig(
   config: unknown,
-  schema: ZodSchema<T>,
+  schema: ZodSchema<any, any, any>,
 ): boolean {
   const result = schema.safeParse(config)
   const hasErrors = !result.success

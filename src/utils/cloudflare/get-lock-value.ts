@@ -16,7 +16,6 @@ export const getLockValue = async (
         isLocked: 0,
         isLockedTest: 0,
         lastCheck: Date.now(),
-        code: "",
       }
 
     switch (context.provider) {

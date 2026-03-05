@@ -53,7 +53,6 @@ describe("checkLockStatus", () => {
     isLocked: 0,
     isLockedTest: 0,
     lastCheck: Date.now(),
-    code: "test-code",
     ...overrides,
   })
 

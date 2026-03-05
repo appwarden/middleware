@@ -1,3 +1,4 @@
+import { waitUntil } from "cloudflare:workers"
 import { checkLockStatus } from "../core"
 import { useContentSecurityPolicy } from "../middlewares"
 import type {
@@ -12,37 +13,9 @@ import {
   isHTMLRequest,
   isOnLockPage,
   printMessage,
-  validateConfig,
 } from "../utils"
 import { getNowMs } from "../utils/get-now"
 import { isResponseLike } from "../utils/is-response-like"
-
-/**
- * Minimal execution context type for TanStack Start adapter.
- * Only includes the waitUntil method that the adapter actually uses.
- */
-export interface TanStackStartExecutionContext {
-  waitUntil(promise: Promise<unknown>): void
-}
-
-/**
- * Minimal runtime context type for TanStack Start adapter.
- * Contains only what the adapter and config function need.
- * Users provide this context by importing env and waitUntil from "cloudflare:workers".
- */
-export interface TanStackStartRuntimeContext {
-  env: CloudflareEnv
-  waitUntil(promise: Promise<unknown>): void
-}
-
-/**
- * Configuration for the Appwarden middleware.
- *
- * This is an alias of the validated output type from
- * TanStackStartCloudflareConfigSchema, so it always stays in sync with the
- * actual runtime config contract.
- */
-export type TanStackStartAppwardenConfig = TanStackStartCloudflareConfig
 
 // Re-export the config types so consumers can reference them from this adapter
 // without importing from the internal schema module.
@@ -52,46 +25,77 @@ export type {
 }
 
 /**
- * Configuration function that receives the runtime context and returns the config.
- * This allows dynamic configuration based on environment variables.
+ * Configuration function that returns the config.
+ * This allows dynamic configuration based on environment variables from cloudflare:workers.
  * Accepts pre-transformation input types (e.g., string | boolean for debug, string | object for CSP directives).
  */
-export type TanStackStartConfigFn = (
-  runtime: TanStackStartRuntimeContext,
-) => TanStackStartCloudflareConfigInput
+export type TanStackStartConfigFn = () => TanStackStartCloudflareConfigInput
 
 /**
  * The result returned by the `next()` function in TanStack Start request middleware.
  *
  * Mirrors the internal `RequestServerResult` interface from `@tanstack/start-client-core`
  * without importing from an unstable internal package path.
+ *
+ * Note: `pathname` remains required here to stay structurally compatible with
+ * TanStack's `RequestServerResult` type, which expects a non-optional string.
+ * The adapter itself does not use this property, but other parts of TanStack's
+ * type system do, so we keep it required on the result while allowing it to be
+ * optional on the middleware *args* type.
  */
 export interface TanStackStartNextResult {
   request: Request
   pathname: string
-  context: Record<string, unknown>
+  // The adapter does not depend on the shape of this context. TanStack's
+  // internal `RequestServerResult` uses a complex `Expand<...>` type here
+  // that is not guaranteed to be assignable to `Record<string, unknown>`.
+  //
+  // To remain structurally compatible while staying type-safe for consumers,
+  // we treat the context as `unknown`.
+  context: unknown
   response: Response
 }
 
 /**
  * The `next()` function passed to TanStack Start request middleware.
  *
- * Mirrors the internal `RequestServerNextFn` signature.
+ * This mirrors the shape of TanStack's `RequestServerNextFn` from
+ * `@tanstack/start-client-core` without importing the type directly.
+ *
+ * - It accepts an optional options object with an optional `context`.
+ * - It may return either a `TanStackStartNextResult` or a Promise of one,
+ *   matching TanStack's own union return type
+ *   (`Promise<RequestServerResult> | RequestServerResult`).
+ * - The adapter itself always calls `next()` with no arguments and awaits it,
+ *   so callers are free to pass TanStack's native `next` implementation
+ *   directly (`next: next`).
  */
-export type TanStackStartNextFn = (options?: {
-  context?: Record<string, unknown>
-}) => Promise<TanStackStartNextResult>
+export interface TanStackStartNextOptions<
+  TServerContext = Record<string, unknown>,
+> {
+  context?: TServerContext
+}
+
+export type TanStackStartNextFnResult =
+  | Promise<TanStackStartNextResult>
+  | TanStackStartNextResult
+
+export type TanStackStartNextFn = <TServerContext = Record<string, unknown>>(
+  options?: TanStackStartNextOptions<TServerContext>,
+) => TanStackStartNextFnResult
 
 /**
  * TanStack Start middleware server callback arguments.
  *
  * Mirrors the official TanStack Start `RequestServerOptions` interface.
- * The context should include env and waitUntil from the Cloudflare Workers runtime.
  */
 export interface TanStackStartMiddlewareArgs {
   request: Request
-  pathname: string
-  context: TanStackStartRuntimeContext & Record<string, unknown>
+  /**
+   * Optional pathname supplied by TanStack Start. The adapter does not require it,
+   * so callers do not need to provide it when constructing harness args manually.
+   */
+  pathname?: string
   next: TanStackStartNextFn
   serverFnMeta?: unknown
 }
@@ -111,7 +115,7 @@ export type TanStackStartMiddlewareFunction = (
 
 /**
  *
- * @param configFn - A function that receives the Cloudflare context and returns the config
+ * @param configFn - A function that returns the config using env from cloudflare:workers
  * @returns A TanStack Start middleware function
  */
 export function createAppwardenMiddleware(
@@ -119,34 +123,26 @@ export function createAppwardenMiddleware(
 ): TanStackStartMiddlewareFunction {
   const middleware: TanStackStartMiddlewareFunction = async (args) => {
     const startTime = getNowMs()
-    const { request, next, context } = args
+    const { request, next } = args
 
     try {
-      // Check if runtime context has required properties
-      if (!context.env || !context.waitUntil) {
+      // Get config from the config function (pre-transformation input)
+      const rawConfig = configFn()
+
+      // Validate and transform config against schema
+      const validationResult =
+        TanStackStartCloudflareConfigSchema.safeParse(rawConfig)
+      if (!validationResult.success) {
         console.error(
           printMessage(
-            "Runtime context missing required properties (env, waitUntil). " +
-              "Ensure you pass { env, waitUntil } from cloudflare:workers to the middleware context.",
+            `Config validation failed: ${validationResult.error.message}`,
           ),
         )
         return next()
       }
 
-      // Get config from the config function (pre-transformation input)
-      const rawConfig = configFn(context)
-
-      // Parse and validate config to get transformed output
-      const parseResult =
-        TanStackStartCloudflareConfigSchema.safeParse(rawConfig)
-      if (!parseResult.success) {
-        // Log validation errors using validateConfig for user-friendly messages
-        validateConfig(rawConfig, TanStackStartCloudflareConfigSchema)
-        return next()
-      }
-
       // Use the validated and transformed config
-      const config = parseResult.data
+      const config = validationResult.data
       const debugFn = debug(config.debug ?? false)
       const requestUrl = new URL(request.url)
       const isHTML = isHTMLRequest(request)
@@ -174,14 +170,38 @@ export function createAppwardenMiddleware(
         appwardenApiHostname: config.appwardenApiHostname,
         debug: config.debug,
         lockPageSlug: config.lockPageSlug,
-        waitUntil: context.waitUntil,
+        waitUntil,
       })
 
-      // If locked, throw redirect to lock page
+      // If locked, redirect to the lock page (quarantine) and apply CSP when configured
       if (lockStatus.isLocked) {
         const lockPageUrl = buildLockPageUrl(config.lockPageSlug, request.url)
         debugFn(`Website is locked - redirecting to ${lockPageUrl.pathname}`)
-        throw createRedirect(lockPageUrl)
+
+        const redirectResponse = createRedirect(lockPageUrl)
+
+        if (config.contentSecurityPolicy && isResponseLike(redirectResponse)) {
+          const cspContext = {
+            request,
+            response: redirectResponse,
+            hostname: requestUrl.hostname,
+            waitUntil,
+            debug: debugFn,
+          }
+
+          await useContentSecurityPolicy(config.contentSecurityPolicy)(
+            cspContext,
+            async () => {},
+          )
+
+          const elapsed = Math.round(getNowMs() - startTime)
+          debugFn(`Middleware executed in ${elapsed}ms`)
+          throw cspContext.response
+        }
+
+        const elapsed = Math.round(getNowMs() - startTime)
+        debugFn(`Middleware executed in ${elapsed}ms`)
+        throw redirectResponse
       }
 
       debugFn("Website is unlocked")
@@ -197,7 +217,7 @@ export function createAppwardenMiddleware(
           request,
           response,
           hostname: requestUrl.hostname,
-          waitUntil: context.waitUntil,
+          waitUntil,
           debug: debugFn,
         }
 

@@ -65,7 +65,6 @@ describe("LockValue", () => {
       isLocked: 1,
       isLockedTest: 0,
       lastCheck: Date.now(),
-      code: "MAINTENANCE",
     }
 
     const result = LockValue.parse(validLockValue)
@@ -77,7 +76,6 @@ describe("LockValue", () => {
       isLocked: "1", // Should be a number
       isLockedTest: 0,
       lastCheck: Date.now(),
-      code: "MAINTENANCE",
     }
 
     expect(() => LockValue.parse(invalidLockValue)).toThrow()
@@ -88,7 +86,6 @@ describe("LockValue", () => {
       isLocked: 1,
       isLockedTest: "0", // Should be a number
       lastCheck: Date.now(),
-      code: "MAINTENANCE",
     }
 
     expect(() => LockValue.parse(invalidLockValue)).toThrow()
@@ -99,18 +96,6 @@ describe("LockValue", () => {
       isLocked: 1,
       isLockedTest: 0,
       lastCheck: "now", // Should be a number
-      code: "MAINTENANCE",
-    }
-
-    expect(() => LockValue.parse(invalidLockValue)).toThrow()
-  })
-
-  it("should require code as a string", () => {
-    const invalidLockValue = {
-      isLocked: 1,
-      isLockedTest: 0,
-      lastCheck: Date.now(),
-      code: 123, // Should be a string
     }
 
     expect(() => LockValue.parse(invalidLockValue)).toThrow()
@@ -122,7 +107,6 @@ describe("LockValue", () => {
       LockValue.parse({
         isLockedTest: 0,
         lastCheck: Date.now(),
-        code: "MAINTENANCE",
       }),
     ).toThrow()
 
@@ -131,7 +115,6 @@ describe("LockValue", () => {
       LockValue.parse({
         isLocked: 1,
         lastCheck: Date.now(),
-        code: "MAINTENANCE",
       }),
     ).toThrow()
 
@@ -140,16 +123,6 @@ describe("LockValue", () => {
       LockValue.parse({
         isLocked: 1,
         isLockedTest: 0,
-        code: "MAINTENANCE",
-      }),
-    ).toThrow()
-
-    // Missing code
-    expect(() =>
-      LockValue.parse({
-        isLocked: 1,
-        isLockedTest: 0,
-        lastCheck: Date.now(),
       }),
     ).toThrow()
   })

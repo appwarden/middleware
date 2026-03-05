@@ -291,8 +291,13 @@ describe("VercelCSPSchema", () => {
     expect(result.success).toBe(true)
   })
 
-  it("should accept disabled mode without directives", () => {
-    const result = VercelCSPSchema.safeParse({ mode: "disabled" })
+  it("should accept disabled mode with directives", () => {
+    const result = VercelCSPSchema.safeParse({
+      mode: "disabled",
+      directives: {
+        "default-src": ["'self'"],
+      },
+    })
     expect(result.success).toBe(true)
   })
 

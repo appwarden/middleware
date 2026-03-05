@@ -42,7 +42,7 @@ afterEach(() => {
 
 // Define API constants that are normally injected at build time
 vi.stubGlobal("API_HOSTNAME", "https://staging-api.appwarden.io")
-vi.stubGlobal("API_PATHNAME", "/v1/status/check")
+vi.stubGlobal("API_PATHNAME", "/v1/appwarden/check")
 
 describe("syncEdgeValue", () => {
   let mockContext: CloudflareProviderContext
@@ -75,7 +75,6 @@ describe("syncEdgeValue", () => {
         content: {
           isLocked: 0,
           isLockedTest: 0,
-          code: "test-code",
         },
       }),
       {
@@ -89,7 +88,7 @@ describe("syncEdgeValue", () => {
     await syncEdgeValue(mockContext)
 
     expect(fetch).toHaveBeenCalledWith(
-      new URL("/v1/status/check", "https://staging-api.appwarden.io"),
+      new URL("/v1/appwarden/check", "https://staging-api.appwarden.io"),
       {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -111,7 +110,6 @@ describe("syncEdgeValue", () => {
     const mockApiContent = {
       isLocked: 0,
       isLockedTest: 0,
-      code: "test-code",
     }
 
     mockFetchResponse = new Response(

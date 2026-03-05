@@ -60,6 +60,9 @@ describe("cloudflare bundle", () => {
     it("should create middleware that accepts context and next", () => {
       const config = {
         mode: "disabled" as const,
+        directives: {
+          "default-src": ["'self'"],
+        },
       }
 
       const middleware = useContentSecurityPolicy(config)

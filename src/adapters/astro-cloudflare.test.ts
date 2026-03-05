@@ -1,10 +1,16 @@
 import type { APIContext } from "astro"
+import { waitUntil } from "cloudflare:workers"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { checkLockStatus } from "../core"
 import {
   AstroCloudflareRuntime,
   createAppwardenMiddleware,
 } from "./astro-cloudflare"
+
+// Mock cloudflare:workers waitUntil so we can assert it's used
+vi.mock("cloudflare:workers", () => ({
+  waitUntil: vi.fn(),
+}))
 
 /**
  * Mock Astro middleware context interface for testing.
@@ -144,22 +150,27 @@ describe("createAppwardenMiddleware (Astro)", () => {
   })
 
   it("should call next() when config validation fails (fail open)", async () => {
-    const { validateConfig } = await import("../utils")
-    vi.mocked(validateConfig).mockReturnValue(true) // Config has errors
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {})
 
     const middleware = createAppwardenMiddleware(() => ({
       lockPageSlug: "/maintenance",
-      appwardenApiToken: "test-token",
+      appwardenApiToken: "", // Invalid - empty token
     }))
 
     const result = asResponse(
       await middleware(asAPIContext(mockContext), mockNext),
     )
 
-    expect(validateConfig).toHaveBeenCalled()
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("Config validation failed"),
+    )
     expect(checkLockStatus).not.toHaveBeenCalled()
     expect(mockNext).toHaveBeenCalled()
     expect(result.status).toBe(200)
+
+    consoleErrorSpy.mockRestore()
   })
 
   it("should redirect when site is locked", async () => {
@@ -264,7 +275,7 @@ describe("createAppwardenMiddleware (Astro)", () => {
     })
   })
 
-  it("should pass waitUntil function from runtime context", async () => {
+  it("should use waitUntil from cloudflare:workers in checkLockStatus config", async () => {
     const middleware = createAppwardenMiddleware(() => ({
       lockPageSlug: "/maintenance",
       appwardenApiToken: "test-token",
@@ -276,12 +287,8 @@ describe("createAppwardenMiddleware (Astro)", () => {
     const checkLockStatusCall = vi.mocked(checkLockStatus).mock.calls[0][0]
     const waitUntilFn = checkLockStatusCall.waitUntil
 
-    // Call the waitUntil function
-    const testPromise = Promise.resolve()
-    waitUntilFn!(testPromise)
-
-    // Verify that the runtime ctx.waitUntil was called
-    expect(mockRuntime.ctx.waitUntil).toHaveBeenCalledWith(testPromise)
+    // Verify that the global waitUntil from cloudflare:workers is used
+    expect(waitUntilFn).toBe(waitUntil)
   })
 
   it("should receive config from configFn with runtime context", async () => {

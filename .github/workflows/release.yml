@@ -52,6 +52,11 @@ jobs:
         run: |
           pnpm prepare
 
+      - name: Check for dev mode exports
+        run: |
+          # Ensure package.json doesn't contain dev mode exports with ./build prefix
+          node scripts/check-dev-mode.cjs
+
       - name: Run security checks
         run: |
           # Audit dependencies for security vulnerabilities

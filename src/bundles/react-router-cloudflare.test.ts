@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest"
 import {
   createAppwardenMiddleware,
-  type ReactRouterRuntimeContext,
+  type ReactRouterConfigFn,
+  type ReactRouterMiddlewareArgs,
+  type ReactRouterMiddlewareFunction,
 } from "./react-router-cloudflare"
 
 describe("react-router-cloudflare bundle", () => {
@@ -11,7 +13,7 @@ describe("react-router-cloudflare bundle", () => {
     })
 
     it("should return a middleware function when called with config function", () => {
-      const middleware = createAppwardenMiddleware((_cloudflare) => ({
+      const middleware = createAppwardenMiddleware(() => ({
         debug: true,
         lockPageSlug: "/maintenance",
         appwardenApiToken: "test-token",
@@ -21,7 +23,7 @@ describe("react-router-cloudflare bundle", () => {
     })
 
     it("should create middleware that accepts args and next parameters", () => {
-      const middleware = createAppwardenMiddleware((_cloudflare) => ({
+      const middleware = createAppwardenMiddleware(() => ({
         debug: true,
         lockPageSlug: "/maintenance",
         appwardenApiToken: "test-token",
@@ -33,14 +35,59 @@ describe("react-router-cloudflare bundle", () => {
   })
 
   describe("type exports", () => {
-    it("should export ReactRouterRuntimeContext type", () => {
+    it("should export ReactRouterConfigFn type", () => {
       // Type check - this will fail at compile time if the type is not exported
-      const context: ReactRouterRuntimeContext = {
-        env: {} as CloudflareEnv,
-        waitUntil: () => {},
-      }
-      expect(context.env).toBeDefined()
-      expect(typeof context.waitUntil).toBe("function")
+      const configFn: ReactRouterConfigFn = () => ({
+        lockPageSlug: "/maintenance",
+        appwardenApiToken: "test-token",
+      })
+      expect(typeof configFn).toBe("function")
     })
+
+    it("should export ReactRouterMiddlewareArgs type", () => {
+      // Type check - this will fail at compile time if the type is not exported
+      const args: ReactRouterMiddlewareArgs = {
+        request: new Request("https://example.com"),
+        params: {},
+      }
+      expect(args.request).toBeDefined()
+      expect(args.params).toBeDefined()
+    })
+
+    it("should export ReactRouterMiddlewareFunction type", () => {
+      // Type check - this will fail at compile time if the type is not exported
+      const middleware: ReactRouterMiddlewareFunction = async (args, next) => {
+        return next()
+      }
+      expect(typeof middleware).toBe("function")
+    })
+  })
+})
+
+// Import and test config types from schema
+import type {
+  ReactRouterAppwardenConfigInput,
+  ReactRouterCloudflareConfig,
+} from "./react-router-cloudflare"
+
+describe("react-router-cloudflare config type exports", () => {
+  it("should export ReactRouterCloudflareConfig type", () => {
+    // Type check - this will fail at compile time if the type is not exported
+    const config: ReactRouterCloudflareConfig = {
+      lockPageSlug: "/maintenance",
+      appwardenApiToken: "test-token",
+      debug: true,
+    }
+    expect(config.lockPageSlug).toBe("/maintenance")
+  })
+
+  it("should export ReactRouterAppwardenConfigInput type", () => {
+    // Type check - this will fail at compile time if the type is not exported
+    const config: ReactRouterAppwardenConfigInput = {
+      lockPageSlug: "/maintenance",
+      appwardenApiToken: "test-token",
+      debug: "true", // Input type accepts string
+    }
+    expect(config.lockPageSlug).toBe("/maintenance")
   })
 })

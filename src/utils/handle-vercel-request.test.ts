@@ -76,7 +76,6 @@ describe("handleVercelRequest", () => {
       isLocked: 0,
       isLockedTest: 0,
       lastCheck: Date.now(),
-      code: "test-code",
     }
 
     // Setup mocks
@@ -104,7 +103,6 @@ describe("handleVercelRequest", () => {
       isLocked: 0,
       isLockedTest: 0,
       lastCheck: Date.now() - 60000, // 1 minute ago
-      code: "old-code",
     }
 
     // Mock new value from edge
@@ -112,7 +110,6 @@ describe("handleVercelRequest", () => {
       isLocked: 0,
       isLockedTest: 0,
       lastCheck: Date.now(),
-      code: "new-code",
     }
 
     // Setup mocks
@@ -147,7 +144,6 @@ describe("handleVercelRequest", () => {
       isLocked: 1,
       isLockedTest: 0,
       lastCheck: Date.now(),
-      code: "test-code",
     }
 
     // Setup mocks
@@ -170,7 +166,6 @@ describe("handleVercelRequest", () => {
       isLocked: 0,
       isLockedTest: Date.now(), // Just set
       lastCheck: Date.now(),
-      code: "test-code",
     }
 
     // Setup mocks
@@ -199,7 +194,6 @@ describe("handleVercelRequest", () => {
       isLocked: 0,
       isLockedTest: 0,
       lastCheck: Date.now() - 60000, // 1 minute ago
-      code: "old-code",
     }
 
     // Mock new value from edge
@@ -207,7 +201,6 @@ describe("handleVercelRequest", () => {
       isLocked: 0,
       isLockedTest: 0,
       lastCheck: Date.now(),
-      code: "new-code",
     }
 
     // Setup mocks
@@ -234,7 +227,6 @@ describe("handleVercelRequest", () => {
       isLocked: 0,
       isLockedTest: 0,
       lastCheck: Date.now() - 60000, // 1 minute ago
-      code: "old-code",
     }
 
     // Setup mocks
@@ -265,7 +257,6 @@ describe("handleVercelRequest", () => {
       isLocked: 0,
       isLockedTest: 0,
       lastCheck: Date.now(),
-      code: "new-code",
     }
 
     vi.mocked(getLockValue).mockResolvedValue({

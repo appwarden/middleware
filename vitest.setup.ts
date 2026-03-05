@@ -4,5 +4,5 @@ import { vi } from "vitest"
 // These values match the non-production build configuration
 vi.stubGlobal("DEBUG", true)
 vi.stubGlobal("API_HOSTNAME", "https://staging-api.appwarden.io")
-vi.stubGlobal("API_PATHNAME", "/v1/status/check")
+vi.stubGlobal("API_PATHNAME", "/v1/appwarden/check")
 vi.stubGlobal("CACHE_EXPIRY_MS", 30_000)

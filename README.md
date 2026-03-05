@@ -39,11 +39,13 @@ The path or route (for example, `/maintenance`) to redirect users to when the do
 This should be a working page on your site, such as a maintenance or status page, that
 explains why the website is temporarily unavailable.
 
-### `contentSecurityPolicy`
+### `contentSecurityPolicy` (optional)
 
-Controls the [Content Security Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP) headers that Appwarden adds.
+Controls the [Content Security Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP) headers that Appwarden adds. This configuration is optional—if not provided, no CSP header will be applied.
 
-- `mode` (optional) controls how the CSP is applied:
+When provided, both `mode` and `directives` are required:
+
+- `mode` controls how the CSP is applied:
   - `"disabled"` – no CSP header is sent.
   - `"report-only"` – sends the `Content-Security-Policy-Report-Only` header so violations are
     reported (for example in the browser console) but not blocked.
@@ -52,7 +54,7 @@ Controls the [Content Security Policy](https://developer.mozilla.org/en-US/docs/
   When developing or iterating on your CSP, we recommend starting with `"report-only"` so you can
   identify and fix violations before switching to `"enforced"`.
 
-- `directives` (optional) is an object whose keys are CSP directive names and whose values are
+- `directives` is an object whose keys are CSP directive names and whose values are
   arrays of allowed sources. For example:
 
   ```ts
@@ -60,6 +62,7 @@ Controls the [Content Security Policy](https://developer.mozilla.org/en-US/docs/
     mode: "enforced",
     directives: {
       "script-src": ["'self'", "{{nonce}}"],
+      "style-src": ["'self'", "{{nonce}}"],
     },
   }
   ```
@@ -108,7 +111,7 @@ The **Universal Middleware** (`@appwarden/middleware/cloudflare`) is the recomme
 import { createAppwardenMiddleware } from "@appwarden/middleware/cloudflare"
 
 const appwardenHandler = createAppwardenMiddleware((cloudflare) => ({
-  debug: cloudflare.env.DEBUG === "true",
+  debug: cloudflare.env.DEBUG,
   lockPageSlug: cloudflare.env.LOCK_PAGE_SLUG,
   appwardenApiToken: cloudflare.env.APPWARDEN_API_TOKEN,
   contentSecurityPolicy: {
@@ -142,13 +145,9 @@ import { createAppwardenMiddleware } from "@appwarden/middleware/cloudflare/astr
 const appwarden = createAppwardenMiddleware((cloudflare) => ({
   lockPageSlug: cloudflare.env.APPWARDEN_LOCK_PAGE_SLUG,
   appwardenApiToken: cloudflare.env.APPWARDEN_API_TOKEN,
-  debug: cloudflare.env.APPWARDEN_DEBUG === "true",
+  debug: cloudflare.env.DEBUG,
   contentSecurityPolicy: {
-    mode: "enforced",
-    directives: {
-      "script-src": ["'self'", "{{nonce}}"],
-      "style-src": ["'self'", "{{nonce}}"],
-    },
+    // See Configuration > contentSecurityPolicy section for details
   },
 }))
 
@@ -159,55 +158,51 @@ See the [Astro + Cloudflare guide](https://appwarden.io/docs/guides/astro-cloudf
 
 ##### React Router on Cloudflare
 
+- Set `future.v8_middleware: true` in your `react-router.config.ts` file
+
 ```ts
 // app/root.tsx
+import { env } from "cloudflare:workers"
 import { createAppwardenMiddleware } from "@appwarden/middleware/cloudflare/react-router"
 
-export const unstable_middleware = [
-  createAppwardenMiddleware(({ env }) => ({
+export const middleware = [
+  createAppwardenMiddleware(() => ({
     lockPageSlug: env.APPWARDEN_LOCK_PAGE_SLUG,
     appwardenApiToken: env.APPWARDEN_API_TOKEN,
     // "debug" can be a string or boolean; the schema will normalize it
-    debug: env.APPWARDEN_DEBUG,
+    debug: env.DEBUG,
     // "directives" can be a JSON string or an object; the schema will parse it
     contentSecurityPolicy: {
-      mode: "enforced",
-      directives: env.APPWARDEN_CSP_DIRECTIVES,
+      // See Configuration > contentSecurityPolicy section for details
     },
   })),
 ]
 ```
 
-See the [React Router + Cloudflare guide](https://appwarden.io/docs/guides/react-router-cloudflare) for full usage and context setup.
+See the [React Router + Cloudflare guide](https://appwarden.io/docs/guides/react-router-cloudflare) for more details.
 
 ##### TanStack Start on Cloudflare
 
 ```ts
 // start.ts
 import { createMiddleware } from "@tanstack/start"
-import { env, waitUntil } from "cloudflare:workers"
+import { env } from "cloudflare:workers"
 import { createAppwardenMiddleware } from "@appwarden/middleware/cloudflare/tanstack-start"
 
-const appwardenMiddleware = createAppwardenMiddleware(({ env }) => ({
-  lockPageSlug: env.APPWARDEN_LOCK_PAGE_SLUG,
-  appwardenApiToken: env.APPWARDEN_API_TOKEN,
-  debug: env.APPWARDEN_DEBUG, // Accepts string or boolean
-  contentSecurityPolicy: {
-    mode: "enforced",
-    directives: {
-      "script-src": ["'self'", "{{nonce}}"],
-      "style-src": ["'self'", "{{nonce}}"],
+const appwardenMiddleware = createMiddleware().server(
+  createAppwardenMiddleware(() => ({
+    lockPageSlug: env.APPWARDEN_LOCK_PAGE_SLUG,
+    appwardenApiToken: env.APPWARDEN_API_TOKEN,
+    debug: env.DEBUG, // Accepts string or boolean
+    contentSecurityPolicy: {
+      // See Configuration > contentSecurityPolicy section for details
     },
-  },
-}))
+  })),
+)
 
-export default createMiddleware().server(async ({ next, request }) => {
-  return await appwardenMiddleware({
-    request,
-    next,
-    context: { env, waitUntil },
-  })
-})
+export const startInstance = createStart(() => ({
+  requestMiddleware: [appwardenMiddleware],
+}))
 ```
 
 See the [TanStack Start + Cloudflare guide](https://appwarden.io/docs/guides/tanstack-start-cloudflare) for more details.
@@ -225,14 +220,10 @@ export const config = {
 export default createAppwardenMiddleware((cloudflare) => ({
   lockPageSlug: cloudflare.env.APPWARDEN_LOCK_PAGE_SLUG,
   appwardenApiToken: cloudflare.env.APPWARDEN_API_TOKEN,
-  debug: cloudflare.env.APPWARDEN_DEBUG === "true",
+  debug: cloudflare.env.DEBUG,
   // Headers-only CSP (no HTML rewriting, no nonce support; do not use `{{nonce}}` here)
   contentSecurityPolicy: {
-    mode: "report-only",
-    directives: {
-      "script-src": ["'self'"],
-      "style-src": ["'self'", "'unsafe-inline'"],
-    },
+    // See Configuration > contentSecurityPolicy section for details
   },
 }))
 ```
@@ -246,25 +237,18 @@ To use Appwarden as Vercel Edge Middleware, use the `@appwarden/middleware/verce
 ```ts
 // middleware.ts (Next.js app on Vercel)
 import { createAppwardenMiddleware } from "@appwarden/middleware/vercel"
-import type { VercelMiddlewareFunction } from "@appwarden/middleware/vercel"
 
-const appwardenMiddleware: VercelMiddlewareFunction = createAppwardenMiddleware(
-  {
-    // Edge Config or Upstash KV URL
-    cacheUrl: process.env.APPWARDEN_CACHE_URL!,
-    // Required when using Vercel Edge Config
-    vercelApiToken: process.env.APPWARDEN_VERCEL_API_TOKEN!,
-    appwardenApiToken: process.env.APPWARDEN_API_TOKEN!,
-    lockPageSlug: "/maintenance",
-    contentSecurityPolicy: {
-      mode: "report-only",
-      directives: {
-        "script-src": ["'self'"],
-        "style-src": ["'self'", "'unsafe-inline'"],
-      },
-    },
+const appwardenMiddleware = createAppwardenMiddleware({
+  // Edge Config or Upstash KV URL
+  cacheUrl: process.env.APPWARDEN_CACHE_URL!,
+  // Required when using Vercel Edge Config
+  vercelApiToken: process.env.APPWARDEN_VERCEL_API_TOKEN!,
+  appwardenApiToken: process.env.APPWARDEN_API_TOKEN!,
+  lockPageSlug: "/maintenance",
+  contentSecurityPolicy: {
+    // See Configuration > contentSecurityPolicy section for details
   },
-)
+})
 
 export default appwardenMiddleware
 ```

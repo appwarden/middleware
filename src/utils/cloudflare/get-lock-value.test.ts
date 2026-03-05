@@ -34,7 +34,6 @@ describe("getLockValue", () => {
       isLocked: 0,
       isLockedTest: 0,
       lastCheck: Date.now(),
-      code: "test-code",
     }
 
     // Mock response
@@ -133,7 +132,6 @@ describe("getLockValue", () => {
       lockValue: expect.objectContaining({
         isLocked: 0,
         isLockedTest: 0,
-        code: "",
       }),
       shouldDeleteEdgeValue: true,
     })

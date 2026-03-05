@@ -20,7 +20,6 @@ export const LockValue = z.object({
   isLocked: z.number(),
   isLockedTest: z.number(),
   lastCheck: z.number(),
-  code: z.string(),
 })
 
 export type LockValueType = z.infer<typeof LockValue>
