@@ -1,4 +1,3 @@
-import { waitUntil } from "cloudflare:workers"
 import {
   NextResponse,
   type NextFetchEvent,
@@ -138,7 +137,7 @@ export function createAppwardenMiddleware(
         appwardenApiHostname: config.appwardenApiHostname,
         debug: config.debug,
         lockPageSlug: config.lockPageSlug,
-        waitUntil,
+        waitUntil: ctx.waitUntil.bind(ctx),
       })
 
       // If locked, redirect to lock page
