@@ -55,7 +55,10 @@ jobs:
       - name: Check for dev mode exports
         run: |
           # Ensure package.json doesn't contain dev mode exports with ./build prefix
-          node scripts/check-dev-mode.cjs
+          if grep -q '"./build' package.json; then
+            echo "Error: package.json contains './build' references"
+            exit 1
+          fi
 
       - name: Run security checks
         run: |
