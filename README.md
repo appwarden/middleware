@@ -148,6 +148,10 @@ const appwarden = createAppwardenMiddleware((cloudflare) => ({
   debug: cloudflare.env.DEBUG,
   contentSecurityPolicy: {
     // See Configuration > contentSecurityPolicy section for details
+    mode: "report-only",
+    directives: {
+      "default-src": ["'self'"],
+    },
   },
 }))
 
@@ -174,6 +178,10 @@ export const middleware = [
     // "directives" can be a JSON string or an object; the schema will parse it
     contentSecurityPolicy: {
       // See Configuration > contentSecurityPolicy section for details
+      mode: "report-only",
+      directives: {
+        "default-src": ["'self'"],
+      },
     },
   })),
 ]
@@ -196,6 +204,10 @@ const appwardenMiddleware = createMiddleware().server(
     debug: env.DEBUG, // Accepts string or boolean
     contentSecurityPolicy: {
       // See Configuration > contentSecurityPolicy section for details
+      mode: "report-only",
+      directives: {
+        "default-src": ["'self'"],
+      },
     },
   })),
 )
@@ -224,6 +236,10 @@ export default createAppwardenMiddleware((cloudflare) => ({
   // Headers-only CSP (no HTML rewriting, no nonce support; do not use `{{nonce}}` here)
   contentSecurityPolicy: {
     // See Configuration > contentSecurityPolicy section for details
+    mode: "enforced",
+    directives: {
+      "default-src": ["'self'"],
+    },
   },
 }))
 ```
@@ -247,6 +263,10 @@ const appwardenMiddleware = createAppwardenMiddleware({
   lockPageSlug: "/maintenance",
   contentSecurityPolicy: {
     // See Configuration > contentSecurityPolicy section for details
+    mode: "report-only",
+    directives: {
+      "default-src": ["'self'"],
+    },
   },
 })
 
