@@ -21,8 +21,8 @@ describe("CSPModeSchema", () => {
     expect(CSPModeSchema.parse("enforced")).toBe("enforced")
   })
 
-  it("should default to 'disabled' when not provided", () => {
-    expect(CSPModeSchema.parse(undefined)).toBe("disabled")
+  it("should require a mode value", () => {
+    expect(() => CSPModeSchema.parse(undefined)).toThrow()
   })
 
   it("should reject invalid modes", () => {
@@ -107,33 +107,29 @@ describe("UseCSPInputSchema", () => {
     expect(typeof result.directives).toBe("object")
   })
 
-  it("should allow mode 'disabled' without directives", () => {
+  it("should require both mode and directives", () => {
+    const inputWithoutMode = {
+      directives: {
+        "default-src": ["'self'"],
+      },
+    }
+    expect(() => UseCSPInputSchema.parse(inputWithoutMode)).toThrow()
+
+    const inputWithoutDirectives = {
+      mode: "disabled",
+    }
+    expect(() => UseCSPInputSchema.parse(inputWithoutDirectives)).toThrow()
+  })
+
+  it("should allow mode 'disabled' with directives", () => {
     const input = {
       mode: "disabled",
+      directives: {
+        "default-src": ["'self'"],
+      },
     }
     const result = UseCSPInputSchema.parse(input)
-    expect(result).toEqual({
-      mode: "disabled",
-      directives: undefined,
-    })
-  })
-
-  it("should require directives when mode is 'report-only'", () => {
-    const input = {
-      mode: "report-only",
-    }
-    expect(() => UseCSPInputSchema.parse(input)).toThrow(
-      SchemaErrorKey.DirectivesRequired,
-    )
-  })
-
-  it("should require directives when mode is 'enforced'", () => {
-    const input = {
-      mode: "enforced",
-    }
-    expect(() => UseCSPInputSchema.parse(input)).toThrow(
-      SchemaErrorKey.DirectivesRequired,
-    )
+    expect(result).toEqual(input)
   })
 
   it("should reject invalid JSON string directives", () => {

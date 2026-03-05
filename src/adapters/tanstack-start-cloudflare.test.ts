@@ -3,8 +3,16 @@ import { checkLockStatus } from "../core"
 import {
   createAppwardenMiddleware,
   TanStackStartMiddlewareArgs,
-  TanStackStartRuntimeContext,
 } from "./tanstack-start-cloudflare"
+
+// Mock cloudflare:workers env and waitUntil so we can assert they're used
+vi.mock("cloudflare:workers", () => ({
+  env: {
+    APPWARDEN_API_TOKEN: "test-token",
+    LOCK_PAGE_SLUG: "/maintenance",
+  } as unknown as CloudflareEnv,
+  waitUntil: vi.fn(),
+}))
 
 // Mock dependencies
 vi.mock("../core", () => ({
@@ -51,20 +59,11 @@ afterEach(() => {
 })
 
 describe("createAppwardenMiddleware (TanStack Start)", () => {
-  let mockRuntimeContext: TanStackStartRuntimeContext
   let mockArgs: TanStackStartMiddlewareArgs
   let mockNext: ReturnType<typeof vi.fn>
 
   beforeEach(() => {
     vi.clearAllMocks()
-
-    mockRuntimeContext = {
-      env: {
-        APPWARDEN_API_TOKEN: "test-token",
-        LOCK_PAGE_SLUG: "/maintenance",
-      } as unknown as CloudflareEnv,
-      waitUntil: vi.fn(),
-    }
 
     mockNext = vi.fn()
 
@@ -75,13 +74,11 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
       }),
       pathname: "/page",
       next: mockNext,
-      context: mockRuntimeContext as TanStackStartRuntimeContext &
-        Record<string, unknown>,
     }
 
     mockNext.mockResolvedValue({
       request: mockArgs.request,
-      context: mockArgs.context,
+      context: {},
       response: new Response(null, { status: 200 }),
       pathname: new URL(mockArgs.request.url).pathname,
     })
@@ -113,26 +110,28 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
   })
 
   it("should call next() when config validation fails (fail open)", async () => {
-    const { validateConfig } = await import("../utils")
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {})
 
-    // Return invalid config (missing required fields)
-    const middleware = createAppwardenMiddleware(
-      () =>
-        ({
-          lockPageSlug: "/maintenance",
-          // Missing appwardenApiToken - this will fail validation
-        }) as any,
-    )
+    const middleware = createAppwardenMiddleware(() => ({
+      lockPageSlug: "/maintenance",
+      appwardenApiToken: "", // Invalid - empty token
+    }))
 
     const result = await middleware(mockArgs)
 
-    expect(validateConfig).toHaveBeenCalled()
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("Config validation failed"),
+    )
     expect(checkLockStatus).not.toHaveBeenCalled()
     expect(mockNext).toHaveBeenCalled()
     expect(result).toMatchObject({
       response: expect.any(Response),
     })
     expect((result as any).response.status).toBe(200)
+
+    consoleErrorSpy.mockRestore()
   })
 
   it("should throw a redirect response when site is locked", async () => {
@@ -157,6 +156,39 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
       expect(response.headers.get("Location")).toBe(
         "https://example.com/maintenance",
       )
+    }
+  })
+
+  it("should apply CSP when site is locked and CSP is configured", async () => {
+    vi.mocked(checkLockStatus).mockResolvedValue({
+      isLocked: true,
+      isTestLock: false,
+    })
+
+    const middleware = createAppwardenMiddleware(() => ({
+      lockPageSlug: "/maintenance",
+      appwardenApiToken: "test-token",
+      contentSecurityPolicy: {
+        mode: "enforced",
+        directives: {
+          "script-src": ["'self'", "{{nonce}}"],
+        },
+      },
+    }))
+
+    try {
+      await middleware(mockArgs)
+    } catch (error) {
+      const response = error as Response
+      expect(response.status).toBe(302)
+      expect(response.headers.get("Location")).toBe(
+        "https://example.com/maintenance",
+      )
+
+      const cspHeader =
+        response.headers.get("Content-Security-Policy") ??
+        response.headers.get("Content-Security-Policy-Report-Only")
+      expect(cspHeader).toBeTruthy()
     }
   })
 
@@ -198,38 +230,6 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
     expect(mockNext).toHaveBeenCalled()
   })
 
-  it("should call next() when runtime context is missing env", async () => {
-    mockArgs.context = { waitUntil: vi.fn() } as any
-
-    const middleware = createAppwardenMiddleware(() => ({
-      lockPageSlug: "/maintenance",
-      appwardenApiToken: "test-token",
-    }))
-
-    await middleware(mockArgs)
-
-    expect(consoleErrorSpy).toHaveBeenCalledWith(
-      expect.stringContaining("Runtime context missing required properties"),
-    )
-    expect(mockNext).toHaveBeenCalled()
-  })
-
-  it("should call next() when runtime context is missing waitUntil", async () => {
-    mockArgs.context = { env: {} as CloudflareEnv } as any
-
-    const middleware = createAppwardenMiddleware(() => ({
-      lockPageSlug: "/maintenance",
-      appwardenApiToken: "test-token",
-    }))
-
-    await middleware(mockArgs)
-
-    expect(consoleErrorSpy).toHaveBeenCalledWith(
-      expect.stringContaining("Runtime context missing required properties"),
-    )
-    expect(mockNext).toHaveBeenCalled()
-  })
-
   it("should pass correct config to checkLockStatus", async () => {
     const middleware = createAppwardenMiddleware(() => ({
       lockPageSlug: "/maintenance",
@@ -250,7 +250,9 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
     })
   })
 
-  it("should pass waitUntil function from runtime context", async () => {
+  it("should use waitUntil from cloudflare:workers in checkLockStatus config", async () => {
+    const { waitUntil } = await import("cloudflare:workers")
+
     const middleware = createAppwardenMiddleware(() => ({
       lockPageSlug: "/maintenance",
       appwardenApiToken: "test-token",
@@ -262,15 +264,10 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
     const checkLockStatusCall = vi.mocked(checkLockStatus).mock.calls[0][0]
     const waitUntilFn = checkLockStatusCall.waitUntil
 
-    // Call the waitUntil function
-    const testPromise = Promise.resolve()
-    waitUntilFn!(testPromise)
-
-    // Verify that the runtime context waitUntil was called
-    expect(mockRuntimeContext.waitUntil).toHaveBeenCalledWith(testPromise)
+    expect(waitUntilFn).toBe(waitUntil)
   })
 
-  it("should receive config from configFn with runtime context", async () => {
+  it("should receive config from configFn without parameters", async () => {
     const configFn = vi.fn().mockReturnValue({
       lockPageSlug: "/maintenance",
       appwardenApiToken: "test-token",
@@ -279,7 +276,7 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
     const middleware = createAppwardenMiddleware(configFn)
     await middleware(mockArgs)
 
-    expect(configFn).toHaveBeenCalledWith(mockRuntimeContext)
+    expect(configFn).toHaveBeenCalledWith()
   })
 
   it("should handle errors gracefully and call next()", async () => {

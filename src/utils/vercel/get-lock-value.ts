@@ -13,7 +13,6 @@ export const getLockValue = async (
         isLocked: 0,
         isLockedTest: 0,
         lastCheck: 0,
-        code: "",
       }
 
     switch (context.provider) {

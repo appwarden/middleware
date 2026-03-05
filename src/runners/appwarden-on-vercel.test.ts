@@ -173,7 +173,6 @@ describe("createAppwardenMiddleware", () => {
         isLocked: 0,
         isLockedTest: 0,
         lastCheck: Date.now(),
-        code: "",
       },
       shouldDeleteEdgeValue: false,
     })
@@ -238,7 +237,6 @@ describe("createAppwardenMiddleware", () => {
         isLocked: 1,
         isLockedTest: 0,
         lastCheck: Date.now(),
-        code: "",
       },
       shouldDeleteEdgeValue: false,
     })
@@ -266,7 +264,6 @@ describe("createAppwardenMiddleware", () => {
         isLocked: 1,
         isLockedTest: 0,
         lastCheck: Date.now(),
-        code: "",
       },
       shouldDeleteEdgeValue: false,
     })
@@ -290,7 +287,6 @@ describe("createAppwardenMiddleware", () => {
         isLocked: 0,
         isLockedTest: 0,
         lastCheck: Date.now(),
-        code: "",
       },
       shouldDeleteEdgeValue: false,
     })
@@ -324,7 +320,6 @@ describe("createAppwardenMiddleware", () => {
       isLocked: 0,
       isLockedTest: 0,
       lastCheck: Date.now(),
-      code: "OK",
     }
 
     mockIsExpired.mockReturnValue(false)
@@ -345,7 +340,6 @@ describe("createAppwardenMiddleware", () => {
       isLocked: 1,
       isLockedTest: 0,
       lastCheck: Date.now(),
-      code: "cached",
     }
 
     mockIsExpired.mockReturnValue(false)
@@ -511,7 +505,6 @@ describe("createAppwardenMiddleware", () => {
           isLocked: 1,
           isLockedTest: 0,
           lastCheck: Date.now(),
-          code: "",
         },
         shouldDeleteEdgeValue: false,
       })
@@ -539,7 +532,6 @@ describe("createAppwardenMiddleware", () => {
           isLocked: 1,
           isLockedTest: 0,
           lastCheck: Date.now(),
-          code: "",
         },
         shouldDeleteEdgeValue: false,
       })
@@ -563,7 +555,6 @@ describe("createAppwardenMiddleware", () => {
           isLocked: 1,
           isLockedTest: 0,
           lastCheck: Date.now(),
-          code: "",
         },
         shouldDeleteEdgeValue: false,
       })
@@ -592,7 +583,6 @@ describe("createAppwardenMiddleware", () => {
           isLocked: 1,
           isLockedTest: 0,
           lastCheck: Date.now(),
-          code: "",
         },
         shouldDeleteEdgeValue: false,
       })

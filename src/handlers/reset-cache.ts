@@ -1,6 +1,6 @@
 import { APPWARDEN_CACHE_KEY } from "../constants"
 import { LockValueType } from "../schemas"
-import { getLockValue, JSONStore } from "../utils/cloudflare"
+import { JSONStore } from "../utils/cloudflare"
 
 export const isResetCacheRequest = (request: Request) =>
   request.method === "POST" &&
@@ -13,18 +13,10 @@ export const handleResetCache = async (
   edgeCache: JSONStore<LockValueType>,
   request: Request,
 ) => {
-  const { lockValue } = await getLockValue({
-    keyName,
-    provider,
-    edgeCache,
-  })
-
   try {
-    const body = await request.clone().json<{ code: string }>()
-    if (body.code === lockValue?.code) {
-      // https://discord.com/channels/595317990191398933/1074116255134535700/1074116255134535700
-      // we set the value to an empty object instead of deleting it to avoid the above issue
-      await edgeCache.deleteValue()
-    }
+    // Reset requests are already gated by `isResetCacheRequest` (method, path, and
+    // content-type). We no longer compare any Appwarden "code" value and instead
+    // always clear the edge cache for a valid reset request.
+    await edgeCache.deleteValue()
   } catch (error) {}
 }

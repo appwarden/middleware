@@ -1,8 +1,12 @@
 import type { Runtime } from "@astrojs/cloudflare"
 import type { MiddlewareHandler } from "astro"
+import { waitUntil } from "cloudflare:workers"
 import { checkLockStatus } from "../core"
 import { useContentSecurityPolicy } from "../middlewares"
-import type { UseCSPInput } from "../schemas"
+import type {
+  AstroCloudflareConfig,
+  AstroCloudflareConfigInput,
+} from "../schemas/astro-cloudflare"
 import { AstroCloudflareConfigSchema } from "../schemas/astro-cloudflare"
 import {
   buildLockPageUrl,
@@ -12,7 +16,6 @@ import {
   isOnLockPage,
   printMessage,
   TEMPORARY_REDIRECT_STATUS,
-  validateConfig,
 } from "../utils"
 import { getNowMs } from "../utils/get-now"
 import { isResponseLike } from "../utils/is-response-like"
@@ -36,27 +39,25 @@ interface LocalsWithRuntime {
 
 /**
  * Configuration for the Appwarden middleware.
+ *
+ * This is an alias of the validated output type from
+ * AstroCloudflareConfigSchema, so it always stays in sync with the
+ * actual runtime config contract.
  */
-export interface AstroAppwardenConfig {
-  /** The slug/path of the lock page to redirect to when the site is locked */
-  lockPageSlug: string
-  /** The Appwarden API token for authentication */
-  appwardenApiToken: string
-  /** Optional custom API hostname (defaults to https://api.appwarden.io) */
-  appwardenApiHostname?: string
-  /** Enable debug logging */
-  debug?: boolean
-  /** Optional Content Security Policy configuration */
-  contentSecurityPolicy?: UseCSPInput
-}
+export type AstroAppwardenConfig = AstroCloudflareConfig
+
+// Re-export the config types so consumers can reference them from this adapter
+// without importing from the internal schema module.
+export type { AstroCloudflareConfig, AstroCloudflareConfigInput }
 
 /**
  * Configuration function that receives the Cloudflare runtime and returns the config.
  * This allows dynamic configuration based on environment variables.
+ * Accepts pre-transformation input types (e.g., string | boolean for debug, string | object for CSP directives).
  */
 export type AstroConfigFn = (
   runtime: AstroCloudflareRuntime,
-) => AstroAppwardenConfig
+) => AstroCloudflareConfigInput
 
 /**
  * Creates an Appwarden middleware function for Astro.
@@ -102,9 +103,23 @@ export function createAppwardenMiddleware(
         return next()
       }
 
-      // Get config from the config function
-      const config = configFn(runtime)
-      const debugFn = debug(config.debug ?? false)
+      // Get config from the config function (pre-transformation input)
+      const rawConfig = configFn(runtime)
+
+      // Validate and transform config against schema
+      const validationResult = AstroCloudflareConfigSchema.safeParse(rawConfig)
+      if (!validationResult.success) {
+        console.error(
+          printMessage(
+            `Config validation failed: ${validationResult.error.message}`,
+          ),
+        )
+        return next()
+      }
+
+      // Use the validated and transformed config
+      const config = validationResult.data
+      const debugFn = debug(config.debug)
       const requestUrl = new URL(request.url)
       const isHTML = isHTMLRequest(request)
 
@@ -115,12 +130,6 @@ export function createAppwardenMiddleware(
 
       // Skip non-HTML requests (e.g., API calls, static assets)
       if (!isHTML) {
-        return next()
-      }
-
-      // Validate config against schema
-      const hasError = validateConfig(config, AstroCloudflareConfigSchema)
-      if (hasError) {
         return next()
       }
 
@@ -137,7 +146,7 @@ export function createAppwardenMiddleware(
         appwardenApiHostname: config.appwardenApiHostname,
         debug: config.debug,
         lockPageSlug: config.lockPageSlug,
-        waitUntil: (fn) => runtime.ctx.waitUntil(fn),
+        waitUntil,
       })
 
       // If locked, redirect to lock page
@@ -167,7 +176,7 @@ export function createAppwardenMiddleware(
           request,
           response,
           hostname: requestUrl.hostname,
-          waitUntil: (fn: any) => runtime.ctx.waitUntil(fn),
+          waitUntil,
           debug: debugFn,
         }
 

@@ -49,7 +49,6 @@ describe("getLockValue", () => {
       isLocked: 0,
       isLockedTest: 0,
       lastCheck: Date.now(),
-      code: "test-code",
     }
 
     // Mock edge-config client

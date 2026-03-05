@@ -1,13 +1,8 @@
 import { describe, expect, it, vi } from "vitest"
 import { APPWARDEN_CACHE_KEY } from "../constants"
 import { LockValueType } from "../schemas"
-import { JSONStore, getLockValue } from "../utils/cloudflare"
+import { JSONStore } from "../utils/cloudflare"
 import { handleResetCache, isResetCacheRequest } from "./reset-cache"
-
-// Mock dependencies
-vi.mock("../utils/cloudflare", () => ({
-  getLockValue: vi.fn(),
-}))
 
 describe("isResetCacheRequest", () => {
   it("should return true for valid reset cache requests", () => {
@@ -56,33 +51,19 @@ describe("isResetCacheRequest", () => {
 })
 
 describe("handleResetCache", () => {
-  it("should delete cache when code matches", async () => {
-    // Mock lock value
-    const mockLockValue: LockValueType = {
-      isLocked: 0,
-      isLockedTest: 0,
-      lastCheck: Date.now(),
-      code: "test-code",
-    }
-
+  it("should delete cache for a valid reset cache request", async () => {
     // Mock edge cache
     const mockEdgeCache = {
       deleteValue: vi.fn().mockResolvedValue(undefined),
     } as unknown as JSONStore<LockValueType>
 
-    // Mock getLockValue
-    vi.mocked(getLockValue).mockResolvedValue({
-      lockValue: mockLockValue,
-      shouldDeleteEdgeValue: false,
-    })
-
-    // Create request with matching code
+    // Create request with JSON body (contents are ignored by handler)
     const request = new Request("https://example.com/__appwarden/reset-cache", {
       method: "POST",
       headers: {
         "content-type": "application/json",
       },
-      body: JSON.stringify({ code: "test-code" }),
+      body: JSON.stringify({ any: "payload" }),
     })
 
     // Call the function
@@ -94,76 +75,17 @@ describe("handleResetCache", () => {
     )
 
     // Verify results
-    expect(getLockValue).toHaveBeenCalledWith({
-      keyName: APPWARDEN_CACHE_KEY,
-      provider: "cloudflare-cache",
-      edgeCache: mockEdgeCache,
-    })
     expect(mockEdgeCache.deleteValue).toHaveBeenCalled()
   })
 
-  it("should not delete cache when code doesn't match", async () => {
-    // Mock lock value
-    const mockLockValue: LockValueType = {
-      isLocked: 0,
-      isLockedTest: 0,
-      lastCheck: Date.now(),
-      code: "test-code",
-    }
-
+  it("should delete cache even when request body is invalid JSON", async () => {
     // Mock edge cache
     const mockEdgeCache = {
       deleteValue: vi.fn().mockResolvedValue(undefined),
     } as unknown as JSONStore<LockValueType>
 
-    // Mock getLockValue
-    vi.mocked(getLockValue).mockResolvedValue({
-      lockValue: mockLockValue,
-      shouldDeleteEdgeValue: false,
-    })
-
-    // Create request with non-matching code
-    const request = new Request("https://example.com/__appwarden/reset-cache", {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({ code: "wrong-code" }),
-    })
-
-    // Call the function
-    await handleResetCache(
-      APPWARDEN_CACHE_KEY,
-      "cloudflare-cache",
-      mockEdgeCache,
-      request,
-    )
-
-    // Verify results
-    expect(mockEdgeCache.deleteValue).not.toHaveBeenCalled()
-  })
-
-  it("should handle JSON parsing errors", async () => {
-    // Mock lock value
-    const mockLockValue: LockValueType = {
-      isLocked: 0,
-      isLockedTest: 0,
-      lastCheck: Date.now(),
-      code: "test-code",
-    }
-
-    // Mock edge cache
-    const mockEdgeCache = {
-      deleteValue: vi.fn().mockResolvedValue(undefined),
-    } as unknown as JSONStore<LockValueType>
-
-    // Mock getLockValue
-    vi.mocked(getLockValue).mockResolvedValue({
-      lockValue: mockLockValue,
-      shouldDeleteEdgeValue: false,
-    })
-
-    // Create request with invalid JSON
+    // Create request with invalid JSON body. The handler no longer parses the
+    // body, so this should still succeed and delete the cache.
     const request = new Request("https://example.com/__appwarden/reset-cache", {
       method: "POST",
       headers: {
@@ -181,6 +103,6 @@ describe("handleResetCache", () => {
     )
 
     // Verify results
-    expect(mockEdgeCache.deleteValue).not.toHaveBeenCalled()
+    expect(mockEdgeCache.deleteValue).toHaveBeenCalled()
   })
 })

@@ -18,7 +18,11 @@ export default defineConfig({
   dts: true,
   // don't bundle split unless we're in prod
   splitting: isProd,
+  external: ["cloudflare:workers"],
   noExternal: isProd ? undefined : [/(.*)/],
+  esbuildOptions(options) {
+    options.external = [...(options.external ?? []), "cloudflare:workers"]
+  },
   entry: {
     index: "src/index.ts",
     vercel: "src/bundles/vercel.ts",
@@ -31,12 +35,12 @@ export default defineConfig({
   define: isProd
     ? {
         API_HOSTNAME: v("https://api.appwarden.io"),
-        API_PATHNAME: v("/v1/status/check"),
+        API_PATHNAME: v("/v1/appwarden/status"),
         CACHE_EXPIRY_MS: v(30_000),
       }
     : {
         API_HOSTNAME: v("https://staging-api.appwarden.io"),
-        API_PATHNAME: v("/v1/status/check"),
+        API_PATHNAME: v("/v1/appwarden/status"),
         CACHE_EXPIRY_MS: v(30_000),
       },
 })

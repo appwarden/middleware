@@ -1,9 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { checkLockStatus } from "../core"
-import {
-  createAppwardenMiddleware,
-  type ReactRouterRuntimeContext,
-} from "./react-router-cloudflare"
+import { createAppwardenMiddleware } from "./react-router-cloudflare"
+
+// Mock cloudflare:workers module
+vi.mock("cloudflare:workers", () => ({
+  env: {
+    APPWARDEN_API_TOKEN: "test-token",
+    LOCK_PAGE_SLUG: "/maintenance",
+  } as unknown as CloudflareEnv,
+  waitUntil: vi.fn(),
+}))
 
 // Mock dependencies
 vi.mock("../core", () => ({
@@ -50,24 +56,14 @@ afterEach(() => {
 })
 
 describe("createAppwardenMiddleware", () => {
-  let mockRuntimeContext: ReactRouterRuntimeContext
   let mockArgs: {
     request: Request
     params: Record<string, string | undefined>
-    context: ReactRouterRuntimeContext
   }
-  let mockNext: () => Promise<unknown>
+  let mockNext: () => Promise<void | Response>
 
   beforeEach(() => {
     vi.clearAllMocks()
-
-    mockRuntimeContext = {
-      env: {
-        APPWARDEN_API_TOKEN: "test-token",
-        LOCK_PAGE_SLUG: "/maintenance",
-      } as unknown as CloudflareEnv,
-      waitUntil: vi.fn(),
-    }
 
     mockArgs = {
       // Default request accepts HTML
@@ -75,7 +71,6 @@ describe("createAppwardenMiddleware", () => {
         headers: { Accept: "text/html,application/xhtml+xml" },
       }),
       params: {},
-      context: mockRuntimeContext,
     }
 
     mockNext = vi.fn().mockResolvedValue({ status: 200 })
@@ -184,22 +179,6 @@ describe("createAppwardenMiddleware", () => {
     expect(mockNext).toHaveBeenCalled()
   })
 
-  it("should call next() when runtime context is missing required properties", async () => {
-    mockArgs.context = {} as any
-
-    const middleware = createAppwardenMiddleware(() => ({
-      lockPageSlug: "/maintenance",
-      appwardenApiToken: "test-token",
-    }))
-
-    await middleware(mockArgs, mockNext)
-
-    expect(consoleErrorSpy).toHaveBeenCalledWith(
-      expect.stringContaining("Runtime context missing required properties"),
-    )
-    expect(mockNext).toHaveBeenCalled()
-  })
-
   it("should pass correct config to checkLockStatus", async () => {
     const middleware = createAppwardenMiddleware(() => ({
       lockPageSlug: "/maintenance",
@@ -220,7 +199,9 @@ describe("createAppwardenMiddleware", () => {
     })
   })
 
-  it("should pass waitUntil function from runtime context", async () => {
+  it("should use waitUntil from cloudflare:workers in checkLockStatus config", async () => {
+    const { waitUntil } = await import("cloudflare:workers")
+
     const middleware = createAppwardenMiddleware(() => ({
       lockPageSlug: "/maintenance",
       appwardenApiToken: "test-token",
@@ -232,15 +213,11 @@ describe("createAppwardenMiddleware", () => {
     const checkLockStatusCall = vi.mocked(checkLockStatus).mock.calls[0][0]
     const waitUntilFn = checkLockStatusCall.waitUntil
 
-    // Call the waitUntil function
-    const testPromise = Promise.resolve()
-    waitUntilFn!(testPromise)
-
-    // Verify that the runtime context waitUntil was called
-    expect(mockRuntimeContext.waitUntil).toHaveBeenCalledWith(testPromise)
+    // Verify that the global waitUntil from cloudflare:workers is used
+    expect(waitUntilFn).toBe(waitUntil)
   })
 
-  it("should receive config from configFn with runtime context", async () => {
+  it("should receive config from configFn without parameters", async () => {
     const configFn = vi.fn().mockReturnValue({
       lockPageSlug: "/maintenance",
       appwardenApiToken: "test-token",
@@ -249,7 +226,7 @@ describe("createAppwardenMiddleware", () => {
     const middleware = createAppwardenMiddleware(configFn)
     await middleware(mockArgs, mockNext)
 
-    expect(configFn).toHaveBeenCalledWith(mockRuntimeContext)
+    expect(configFn).toHaveBeenCalledWith()
   })
 
   it("should handle errors gracefully and call next()", async () => {

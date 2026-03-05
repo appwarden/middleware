@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest"
-import { createAppwardenMiddleware } from "./astro-cloudflare"
+import {
+  createAppwardenMiddleware,
+  type AstroAppwardenConfig,
+  type AstroCloudflareConfig,
+  type AstroCloudflareConfigInput,
+  type AstroCloudflareRuntime,
+  type AstroConfigFn,
+} from "./astro-cloudflare"
 
 describe("astro-cloudflare bundle", () => {
   describe("createAppwardenMiddleware export", () => {
@@ -26,6 +33,47 @@ describe("astro-cloudflare bundle", () => {
 
       // Middleware should accept 2 parameters (context, next)
       expect(middleware.length).toBe(2)
+    })
+  })
+
+  describe("type exports", () => {
+    it("should export AstroAppwardenConfig type", () => {
+      // Type check - this will fail at compile time if the type is not exported
+      const config: AstroAppwardenConfig = {
+        lockPageSlug: "/maintenance",
+        appwardenApiToken: "test-token",
+        debug: true,
+      }
+      expect(config.lockPageSlug).toBe("/maintenance")
+    })
+
+    it("should export AstroCloudflareConfig type", () => {
+      // Type check - this will fail at compile time if the type is not exported
+      const config: AstroCloudflareConfig = {
+        lockPageSlug: "/maintenance",
+        appwardenApiToken: "test-token",
+        debug: true,
+      }
+      expect(config.lockPageSlug).toBe("/maintenance")
+    })
+
+    it("should export AstroCloudflareConfigInput type", () => {
+      // Type check - this will fail at compile time if the type is not exported
+      const config: AstroCloudflareConfigInput = {
+        lockPageSlug: "/maintenance",
+        appwardenApiToken: "test-token",
+        debug: "true", // Input type accepts string
+      }
+      expect(config.lockPageSlug).toBe("/maintenance")
+    })
+
+    it("should export AstroConfigFn type", () => {
+      // Type check - this will fail at compile time if the type is not exported
+      const configFn: AstroConfigFn = (_runtime: AstroCloudflareRuntime) => ({
+        lockPageSlug: "/maintenance",
+        appwardenApiToken: "test-token",
+      })
+      expect(typeof configFn).toBe("function")
     })
   })
 })

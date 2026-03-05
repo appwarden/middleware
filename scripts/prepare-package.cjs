@@ -1,6 +1,26 @@
 const fs = require("fs")
 const path = require("path")
 
+function removeBuildPrefix(exports) {
+  if (typeof exports === "string") {
+    return exports.replace("/build/", "/")
+  }
+
+  if (Array.isArray(exports)) {
+    return exports.map(removeBuildPrefix)
+  }
+
+  if (typeof exports === "object" && exports !== null) {
+    const result = {}
+    for (const [key, value] of Object.entries(exports)) {
+      result[key] = removeBuildPrefix(value)
+    }
+    return result
+  }
+
+  return exports
+}
+
 // read the package.json file
 // copy it to build/package.json
 // on the copied file, remove the `/build` substring from the from the main field
@@ -14,6 +34,11 @@ const main = () => {
   // Fix main and types fields
   packageJson.main = packageJson.main.replace("/build", "")
   packageJson.types = packageJson.types.replace("/build", "")
+
+  // Fix exports field recursively
+  if (packageJson.exports) {
+    packageJson.exports = removeBuildPrefix(packageJson.exports)
+  }
 
   // Remove the files field to avoid confusion
   // When publishing from the build directory, we want to include all files in that directory
