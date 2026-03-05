@@ -1,15 +1,9 @@
-import { waitUntil } from "cloudflare:workers"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { checkLockStatus } from "../core"
 import {
   createAppwardenMiddleware,
   NextJsCloudflareRuntime,
 } from "./nextjs-cloudflare"
-
-// Mock cloudflare:workers waitUntil so we can assert it's used
-vi.mock("cloudflare:workers", () => ({
-  waitUntil: vi.fn(),
-}))
 
 // Mock dependencies
 vi.mock("../core", () => ({
@@ -213,7 +207,7 @@ describe("createAppwardenMiddleware (OpenNext Cloudflare)", () => {
     })
   })
 
-  it("should use waitUntil from cloudflare:workers in checkLockStatus config", async () => {
+  it("should use ctx.waitUntil from ExecutionContext in checkLockStatus config", async () => {
     const middleware = createAppwardenMiddleware(() => ({
       lockPageSlug: "/maintenance",
       appwardenApiToken: "test-token",
@@ -225,8 +219,15 @@ describe("createAppwardenMiddleware (OpenNext Cloudflare)", () => {
     const checkLockStatusCall = vi.mocked(checkLockStatus).mock.calls[0][0]
     const waitUntilFn = checkLockStatusCall.waitUntil
 
-    // Verify that the global waitUntil from cloudflare:workers is used
-    expect(waitUntilFn).toBe(waitUntil)
+    // Verify that waitUntil is a function (bound from ctx.waitUntil)
+    expect(typeof waitUntilFn).toBe("function")
+
+    // Call the waitUntil function to verify it calls the mocked ctx.waitUntil
+    const testPromise = Promise.resolve()
+    waitUntilFn(testPromise)
+
+    // Verify that ctx.waitUntil was called with the promise
+    expect(mockRuntime.ctx.waitUntil).toHaveBeenCalledWith(testPromise)
   })
 
   it("should receive config from configFn with runtime context", async () => {
