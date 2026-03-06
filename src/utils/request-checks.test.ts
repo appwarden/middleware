@@ -166,5 +166,43 @@ describe("isHTMLRequest", () => {
       })
       expect(isHTMLRequest(request)).toBe(true)
     })
+
+    it("should return false for substring false positives like application/text/html", () => {
+      // This should NOT match because text/html is not a standalone media type
+      const request = new Request("https://example.com", {
+        headers: { accept: "application/text/html" },
+      })
+      expect(isHTMLRequest(request)).toBe(false)
+    })
+
+    it("should return false for substring false positives like text/htmlx", () => {
+      // This should NOT match because text/htmlx is not text/html
+      const request = new Request("https://example.com", {
+        headers: { accept: "text/htmlx" },
+      })
+      expect(isHTMLRequest(request)).toBe(false)
+    })
+
+    it("should return false for substring false positives like xtext/html", () => {
+      // This should NOT match because xtext/html is not text/html
+      const request = new Request("https://example.com", {
+        headers: { accept: "xtext/html" },
+      })
+      expect(isHTMLRequest(request)).toBe(false)
+    })
+
+    it("should return true for text/html with quality parameter", () => {
+      const request = new Request("https://example.com", {
+        headers: { accept: "text/html;q=0.9" },
+      })
+      expect(isHTMLRequest(request)).toBe(true)
+    })
+
+    it("should return true for text/html with charset parameter", () => {
+      const request = new Request("https://example.com", {
+        headers: { accept: "text/html; charset=utf-8" },
+      })
+      expect(isHTMLRequest(request)).toBe(true)
+    })
   })
 })

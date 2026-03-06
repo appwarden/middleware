@@ -62,7 +62,8 @@ export const useContentSecurityPolicy: (input: UseCSPInput) => Middleware = (
         "Skipping HTMLRewriter transform for response without body or HEAD request",
       )
       // Still apply CSP header, but don't transform the body
-      const nextResponse = new Response(response.body, response)
+      // Use null body for HEAD/204/304 to stay HTTP-spec compliant
+      const nextResponse = new Response(null, response)
       nextResponse.headers.set(cspHeaderName, cspHeaderValue)
       context.response = nextResponse
       return

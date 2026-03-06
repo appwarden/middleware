@@ -66,6 +66,16 @@ export function isHTMLRequest(request: Request): boolean {
     return false
   }
 
-  // Check if text/html is explicitly listed in the Accept header
-  return normalizedAccept.includes("text/html")
+  // Check if text/html is explicitly listed in the Accept header by
+  // parsing media ranges and matching the type/subtype token exactly.
+  const mediaRanges = normalizedAccept.split(",")
+  for (const range of mediaRanges) {
+    const [typeSubtype] = range.split(";")
+    const token = typeSubtype.trim()
+    if (token === "text/html") {
+      return true
+    }
+  }
+
+  return false
 }

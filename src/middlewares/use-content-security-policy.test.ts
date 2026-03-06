@@ -668,6 +668,8 @@ describe("use-content-security-policy", () => {
         expect(
           mockContext.response.headers.has("content-security-policy"),
         ).toBe(true)
+        // Body should be null for HTTP spec compliance
+        expect(mockContext.response.body).toBe(null)
       })
 
       it("should skip HTMLRewriter for 204 No Content responses but still apply CSP header", async () => {
@@ -700,6 +702,8 @@ describe("use-content-security-policy", () => {
         expect(
           mockContext.response.headers.has("content-security-policy"),
         ).toBe(true)
+        // Body should be null for HTTP spec compliance
+        expect(mockContext.response.body).toBe(null)
       })
 
       it("should skip HTMLRewriter for 304 Not Modified responses but still apply CSP header", async () => {
@@ -732,6 +736,8 @@ describe("use-content-security-policy", () => {
         expect(
           mockContext.response.headers.has("content-security-policy"),
         ).toBe(true)
+        // Body should be null for HTTP spec compliance
+        expect(mockContext.response.body).toBe(null)
       })
 
       it("should skip HTMLRewriter for responses without a body but still apply CSP header", async () => {
