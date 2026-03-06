@@ -78,7 +78,7 @@ describe("createAppwardenMiddleware (OpenNext Cloudflare)", () => {
     mockRuntime = {
       env: {
         APPWARDEN_API_TOKEN: "test-token",
-        APPWARDEN_LOCK_PAGE_SLUG: "/maintenance",
+        LOCK_PAGE_SLUG: "/maintenance",
       } as unknown as CloudflareEnv,
       ctx: {
         waitUntil: vi.fn(),

@@ -112,7 +112,7 @@ import { createAppwardenMiddleware } from "@appwarden/middleware/cloudflare"
 
 const appwardenHandler = createAppwardenMiddleware((cloudflare) => ({
   debug: cloudflare.env.DEBUG,
-  lockPageSlug: cloudflare.env.APPWARDEN_LOCK_PAGE_SLUG,
+  lockPageSlug: cloudflare.env.LOCK_PAGE_SLUG,
   appwardenApiToken: cloudflare.env.APPWARDEN_API_TOKEN,
   contentSecurityPolicy: {
     mode: cloudflare.env.CSP_MODE,
@@ -143,7 +143,7 @@ import { sequence } from "astro:middleware"
 import { createAppwardenMiddleware } from "@appwarden/middleware/cloudflare/astro"
 
 const appwarden = createAppwardenMiddleware((cloudflare) => ({
-  lockPageSlug: cloudflare.env.APPWARDEN_LOCK_PAGE_SLUG,
+  lockPageSlug: cloudflare.env.LOCK_PAGE_SLUG,
   appwardenApiToken: cloudflare.env.APPWARDEN_API_TOKEN,
   debug: cloudflare.env.DEBUG,
   contentSecurityPolicy: {
@@ -230,7 +230,7 @@ export const config = {
 }
 
 export default createAppwardenMiddleware((cloudflare) => ({
-  lockPageSlug: cloudflare.env.APPWARDEN_LOCK_PAGE_SLUG,
+  lockPageSlug: cloudflare.env.LOCK_PAGE_SLUG,
   appwardenApiToken: cloudflare.env.APPWARDEN_API_TOKEN,
   debug: cloudflare.env.DEBUG,
   // Headers-only CSP (no HTML rewriting, no nonce support; do not use `{{nonce}}` here)
