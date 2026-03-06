@@ -7,6 +7,7 @@ export const AppwardenMultidomainConfigSchema = z.record(
   z.object({
     lockPageSlug: z.string(),
     contentSecurityPolicy: z.lazy(() => UseCSPInputSchema).optional(),
+    debug: BooleanSchema.optional(),
   }),
 )
 
