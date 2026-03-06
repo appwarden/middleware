@@ -85,6 +85,32 @@ describe("isHTMLRequest", () => {
     })
   })
 
+  describe("case-insensitive media type handling", () => {
+    it.each([
+      "Text/Html",
+      "TEXT/HTML",
+      "text/HTML",
+      "TeXt/HtMl",
+      "text/html, application/xhtml+xml",
+      "TEXT/HTML,APPLICATION/XHTML+XML",
+    ])("should return true for case variations: %s", (accept) => {
+      const request = new Request("https://example.com", {
+        headers: { accept },
+      })
+      expect(isHTMLRequest(request)).toBe(true)
+    })
+
+    it.each(["*/*", "*/*, */*", "*/*;Q=0.8"])(
+      "should handle wildcard case variations: %s",
+      (accept) => {
+        const request = new Request("https://example.com", {
+          headers: { accept },
+        })
+        expect(isHTMLRequest(request)).toBe(false)
+      },
+    )
+  })
+
   describe("edge cases", () => {
     it("should handle empty Accept header", () => {
       const request = new Request("https://example.com", {
