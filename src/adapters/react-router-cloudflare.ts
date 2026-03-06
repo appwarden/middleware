@@ -56,7 +56,7 @@ export type ReactRouterMiddlewareFunction = (
  *
  * export const unstable_middleware = [
  *   createAppwardenMiddleware(() => ({
- *     lockPageSlug: env.LOCK_PAGE_SLUG,
+ *     lockPageSlug: env.APPWARDEN_LOCK_PAGE_SLUG,
  *     appwardenApiToken: env.APPWARDEN_API_TOKEN,
  *   })),
  * ]

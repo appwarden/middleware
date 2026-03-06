@@ -75,7 +75,7 @@ export type NextJsMiddlewareFunction = (
  * }
  *
  * export default createAppwardenMiddleware(({ env }) => ({
- *   lockPageSlug: env.LOCK_PAGE_SLUG,
+ *   lockPageSlug: env.APPWARDEN_LOCK_PAGE_SLUG,
  *   appwardenApiToken: env.APPWARDEN_API_TOKEN,
  * }))
  * ```
