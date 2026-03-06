@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.10.1](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.10.0...@appwarden/middleware@3.10.1) (2026-03-06)
+
+
+### Bug Fixes
+
+* add comprehensive tests for isHTMLRequest wildcard handling ([10739ac](https://github.com/appwarden/middleware/commit/10739ac1b1bb563bc50f975f01e7dfe30ebe01fb))
+* better redirect handling ([c707201](https://github.com/appwarden/middleware/commit/c707201828e0577c00d6b4c5ea89af6eb0b32cc4))
+* env var typo ([052cff7](https://github.com/appwarden/middleware/commit/052cff76331367ead0189d63d420e819cc6740f9))
+* handle case-insensitive Accept headers in isHTMLRequest ([a7f7b78](https://github.com/appwarden/middleware/commit/a7f7b782cf5946058050fc9deb287e53cfead580))
+* prevent redirect loops and streaming body errors ([b07ab1b](https://github.com/appwarden/middleware/commit/b07ab1be9fcf142eec93b13fa67e2479df8c4aa0))
+* use redirect manual for all requests ([ca9f8ba](https://github.com/appwarden/middleware/commit/ca9f8babba121bb9d3845ba3d9595b6a024d8862))
+
 # [3.10.0](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.9.1...@appwarden/middleware@3.10.0) (2026-03-06)
 
 
