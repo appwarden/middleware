@@ -17,6 +17,13 @@ export const useAppwarden: (input: CloudflareConfigType) => Middleware =
     try {
       const requestUrl = new URL(request.url)
 
+      // Skip OPTIONS requests (CORS preflight) to avoid delaying them with lock checks
+      // OPTIONS requests should be handled quickly and don't need lock protection
+      if (request.method === "OPTIONS") {
+        shouldCallNext = false
+        return
+      }
+
       // Skip non-HTML requests (e.g., API calls, static assets)
       if (!isHTMLRequest(request)) {
         return

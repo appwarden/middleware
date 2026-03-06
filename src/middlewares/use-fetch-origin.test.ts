@@ -80,4 +80,80 @@ describe("useFetchOrigin", () => {
     // Verify next was not called
     expect(next).not.toHaveBeenCalled()
   })
+
+  it("should log debug message for opaque redirect responses", async () => {
+    // Create a mock response and override its type property to simulate opaque redirect
+    // We can't use new Response(null, { status: 0 }) because the Response constructor
+    // validates that status must be 200-599
+    const mockResponse = new Response(null, { status: 200 })
+    Object.defineProperty(mockResponse, "type", {
+      value: "opaqueredirect",
+      writable: false,
+    })
+    mockFetch.mockResolvedValue(mockResponse)
+
+    // Create middleware
+    const middleware = useFetchOrigin()
+
+    // Create context with request
+    const debugFn = vi.fn()
+    const context = {
+      request: new Request("https://example.com"),
+      response: new Response(),
+      hostname: "example.com",
+      waitUntil: vi.fn(),
+      debug: debugFn,
+    }
+
+    // Create mock next function
+    const next = vi.fn()
+
+    // Execute middleware
+    await middleware(context, next)
+
+    // Verify debug was called with opaque redirect message
+    expect(debugFn).toHaveBeenCalledWith(
+      "Origin returned a redirect (opaque response) - client will handle redirect",
+    )
+
+    // Verify response was set in context
+    expect(context.response).toBe(mockResponse)
+
+    // Verify next was called
+    expect(next).toHaveBeenCalled()
+  })
+
+  it("should not log debug message for non-redirect responses", async () => {
+    // Create mock normal response
+    const mockResponse = new Response("OK", { status: 200 })
+    mockFetch.mockResolvedValue(mockResponse)
+
+    // Create middleware
+    const middleware = useFetchOrigin()
+
+    // Create context with request
+    const debugFn = vi.fn()
+    const context = {
+      request: new Request("https://example.com"),
+      response: new Response(),
+      hostname: "example.com",
+      waitUntil: vi.fn(),
+      debug: debugFn,
+    }
+
+    // Create mock next function
+    const next = vi.fn()
+
+    // Execute middleware
+    await middleware(context, next)
+
+    // Verify debug was not called with opaque redirect message
+    expect(debugFn).not.toHaveBeenCalledWith(expect.stringContaining("opaque"))
+
+    // Verify response was set in context
+    expect(context.response).toBe(mockResponse)
+
+    // Verify next was called
+    expect(next).toHaveBeenCalled()
+  })
 })

@@ -400,4 +400,64 @@ describe("useAppwarden", () => {
       expect(callArgs.lockPageSlug).toBe("/root-maintenance")
     })
   })
+
+  describe("HTTP Method Handling", () => {
+    it("should skip lock check for OPTIONS requests (CORS preflight)", async () => {
+      mockContext.request = new Request("https://example.com", {
+        method: "OPTIONS",
+        headers: { accept: "text/html" },
+      })
+
+      const middleware = useAppwarden(mockInput)
+      await middleware(mockContext, mockNext)
+
+      // Should not call checkLockStatus for OPTIONS
+      expect(checkLockStatus).not.toHaveBeenCalled()
+
+      // Should not call next (early return)
+      expect(mockNext).not.toHaveBeenCalled()
+    })
+
+    it("should process GET requests normally", async () => {
+      vi.mocked(checkLockStatus).mockResolvedValue({
+        isLocked: false,
+        isTestLock: false,
+      })
+
+      mockContext.request = new Request("https://example.com", {
+        method: "GET",
+        headers: { accept: "text/html" },
+      })
+
+      const middleware = useAppwarden(mockInput)
+      await middleware(mockContext, mockNext)
+
+      // Should call checkLockStatus for GET
+      expect(checkLockStatus).toHaveBeenCalled()
+
+      // Should call next when not locked
+      expect(mockNext).toHaveBeenCalled()
+    })
+
+    it("should process POST requests normally", async () => {
+      vi.mocked(checkLockStatus).mockResolvedValue({
+        isLocked: false,
+        isTestLock: false,
+      })
+
+      mockContext.request = new Request("https://example.com", {
+        method: "POST",
+        headers: { accept: "text/html" },
+      })
+
+      const middleware = useAppwarden(mockInput)
+      await middleware(mockContext, mockNext)
+
+      // Should call checkLockStatus for POST
+      expect(checkLockStatus).toHaveBeenCalled()
+
+      // Should call next when not locked
+      expect(mockNext).toHaveBeenCalled()
+    })
+  })
 })

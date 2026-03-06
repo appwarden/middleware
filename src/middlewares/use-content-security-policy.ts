@@ -47,10 +47,49 @@ export const useContentSecurityPolicy: (input: UseCSPInput) => Middleware = (
 
     context.debug(`Applying CSP in ${config.mode} mode`)
 
-    const nextResponse = new Response(response.body, response)
+    // Check if we need to skip HTMLRewriter transformation
+    // - 204 No Content and 304 Not Modified must not have a body per HTTP spec
+    // - HEAD requests should not have a body
+    // - Responses without a body cannot be transformed by HTMLRewriter
+    // - Redirect responses (3xx) typically don't have HTML bodies to transform
+    const shouldSkipTransform =
+      !response.body ||
+      response.status === 204 ||
+      response.status === 304 ||
+      context.request.method === "HEAD"
+
+    if (shouldSkipTransform) {
+      context.debug(
+        "Skipping HTMLRewriter transform for response without body or HEAD request",
+      )
+      // Still apply CSP header, but don't transform the body
+      const nextResponse = new Response(response.body, response)
+      nextResponse.headers.set(cspHeaderName, cspHeaderValue)
+      context.response = nextResponse
+      return
+    }
+
+    // Clone the response before consuming the body to avoid "body already used" errors
+    const nextResponse = new Response(response.clone().body, response)
 
     nextResponse.headers.set(cspHeaderName, cspHeaderValue)
-    nextResponse.headers.set("content-type", "text/html; charset=utf-8")
+
+    // Preserve the original Content-Type charset if present
+    const originalContentType = response.headers.get("content-type")
+    if (originalContentType) {
+      // If the original has a charset, preserve it; otherwise add utf-8
+      if (originalContentType.includes("charset=")) {
+        nextResponse.headers.set("content-type", originalContentType)
+      } else {
+        nextResponse.headers.set(
+          "content-type",
+          `${originalContentType}; charset=utf-8`,
+        )
+      }
+    } else {
+      // No original Content-Type, set default
+      nextResponse.headers.set("content-type", "text/html; charset=utf-8")
+    }
 
     context.response = new HTMLRewriter()
       .on("style", AppendAttribute("nonce", cspNonce))
