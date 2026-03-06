@@ -20,7 +20,6 @@ export const useAppwarden: (input: CloudflareConfigType) => Middleware =
       // Skip OPTIONS requests (CORS preflight) to avoid delaying them with lock checks
       // OPTIONS requests should be handled quickly and don't need lock protection
       if (request.method === "OPTIONS") {
-        shouldCallNext = false
         return
       }
 

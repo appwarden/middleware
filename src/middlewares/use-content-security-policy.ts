@@ -51,7 +51,6 @@ export const useContentSecurityPolicy: (input: UseCSPInput) => Middleware = (
     // - 204 No Content and 304 Not Modified must not have a body per HTTP spec
     // - HEAD requests should not have a body
     // - Responses without a body cannot be transformed by HTMLRewriter
-    // - Redirect responses (3xx) typically don't have HTML bodies to transform
     const shouldSkipTransform =
       !response.body ||
       response.status === 204 ||
@@ -78,7 +77,8 @@ export const useContentSecurityPolicy: (input: UseCSPInput) => Middleware = (
     const originalContentType = response.headers.get("content-type")
     if (originalContentType) {
       // If the original has a charset, preserve it; otherwise add utf-8
-      if (originalContentType.includes("charset=")) {
+      // Use case-insensitive regex to detect charset parameter
+      if (/charset\s*=/i.test(originalContentType)) {
         nextResponse.headers.set("content-type", originalContentType)
       } else {
         nextResponse.headers.set(

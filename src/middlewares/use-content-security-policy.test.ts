@@ -639,7 +639,7 @@ describe("use-content-security-policy", () => {
     })
 
     describe("HTTP Method and Status Code Handling", () => {
-      it("should skip CSP for HEAD requests", async () => {
+      it("should skip HTMLRewriter transform for HEAD requests but still apply CSP header", async () => {
         const middleware = useContentSecurityPolicy({
           mode: "enforced",
           directives: {
@@ -848,6 +848,60 @@ describe("use-content-security-policy", () => {
         expect(next).toHaveBeenCalled()
         expect(mockContext.response.headers.get("content-type")).toBe(
           "text/html; charset=utf-8",
+        )
+      })
+
+      it("should preserve charset with uppercase 'Charset='", async () => {
+        const middleware = useContentSecurityPolicy({
+          mode: "enforced",
+          directives: {
+            "default-src": ["'self'"],
+          },
+        })
+
+        const mockContext = {
+          request: new Request("https://example.com"),
+          response: new Response("<html></html>", {
+            headers: { "content-type": "text/html; Charset=UTF-8" },
+          }),
+          hostname: "example.com",
+          waitUntil: vi.fn(),
+          debug: vi.fn(),
+        }
+
+        const next = vi.fn()
+        await middleware(mockContext, next)
+
+        expect(next).toHaveBeenCalled()
+        expect(mockContext.response.headers.get("content-type")).toBe(
+          "text/html; Charset=UTF-8",
+        )
+      })
+
+      it("should preserve charset with whitespace around equals", async () => {
+        const middleware = useContentSecurityPolicy({
+          mode: "enforced",
+          directives: {
+            "default-src": ["'self'"],
+          },
+        })
+
+        const mockContext = {
+          request: new Request("https://example.com"),
+          response: new Response("<html></html>", {
+            headers: { "content-type": "text/html; charset = utf-8" },
+          }),
+          hostname: "example.com",
+          waitUntil: vi.fn(),
+          debug: vi.fn(),
+        }
+
+        const next = vi.fn()
+        await middleware(mockContext, next)
+
+        expect(next).toHaveBeenCalled()
+        expect(mockContext.response.headers.get("content-type")).toBe(
+          "text/html; charset = utf-8",
         )
       })
     })
