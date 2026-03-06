@@ -9,7 +9,7 @@ export const useFetchOrigin: () => Middleware = () => async (context, next) => {
 
   context.response = await fetch(
     new Request(context.request, {
-      redirect: "manual",
+      redirect: method === "GET" || method === "HEAD" ? "follow" : "manual",
     }),
   )
 
