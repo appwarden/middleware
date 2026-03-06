@@ -290,6 +290,14 @@ describe("appwardenOnCloudflare", () => {
       // Verify debug was called with true (domain-specific value)
       const { debug: debugMock } = await import("../utils")
       expect(debugMock).toHaveBeenCalledWith(true)
+
+      // Verify useAppwarden was called with config that has debug:true
+      const { useAppwarden } = await import("../middlewares")
+      expect(useAppwarden).toHaveBeenCalledWith(
+        expect.objectContaining({
+          debug: true, // Should use domain-specific debug value
+        }),
+      )
     })
 
     it("should use domain-specific debug:false when configured in multidomainConfig", async () => {
@@ -310,6 +318,14 @@ describe("appwardenOnCloudflare", () => {
       // Verify debug was called with false (domain-specific value)
       const { debug: debugMock } = await import("../utils")
       expect(debugMock).toHaveBeenCalledWith(false)
+
+      // Verify useAppwarden was called with config that has debug:false
+      const { useAppwarden } = await import("../middlewares")
+      expect(useAppwarden).toHaveBeenCalledWith(
+        expect.objectContaining({
+          debug: false, // Should use domain-specific debug value
+        }),
+      )
     })
 
     it("should fall back to global debug when domain has no debug config", async () => {
@@ -330,6 +346,14 @@ describe("appwardenOnCloudflare", () => {
       // Verify debug was called with true (global value)
       const { debug: debugMock } = await import("../utils")
       expect(debugMock).toHaveBeenCalledWith(true)
+
+      // Verify useAppwarden was called with config that has debug:true (global fallback)
+      const { useAppwarden } = await import("../middlewares")
+      expect(useAppwarden).toHaveBeenCalledWith(
+        expect.objectContaining({
+          debug: true, // Should fall back to global debug value
+        }),
+      )
     })
 
     it("should fall back to global debug when hostname not in multidomainConfig", async () => {
@@ -353,6 +377,14 @@ describe("appwardenOnCloudflare", () => {
       // Verify debug was called with true (global value, not example.com's false)
       const { debug: debugMock } = await import("../utils")
       expect(debugMock).toHaveBeenCalledWith(true)
+
+      // Verify useAppwarden was called with config that has debug:true (global fallback)
+      const { useAppwarden } = await import("../middlewares")
+      expect(useAppwarden).toHaveBeenCalledWith(
+        expect.objectContaining({
+          debug: true, // Should fall back to global debug value
+        }),
+      )
     })
 
     it("should default to false when no debug config at all", async () => {
@@ -368,6 +400,14 @@ describe("appwardenOnCloudflare", () => {
       // Verify debug was called with false (default value)
       const { debug: debugMock } = await import("../utils")
       expect(debugMock).toHaveBeenCalledWith(false)
+
+      // Verify useAppwarden was called with config that has debug:false (default)
+      const { useAppwarden } = await import("../middlewares")
+      expect(useAppwarden).toHaveBeenCalledWith(
+        expect.objectContaining({
+          debug: false, // Should default to false
+        }),
+      )
     })
 
     it("should accept string 'true' for domain debug and transform to boolean", async () => {
@@ -388,6 +428,14 @@ describe("appwardenOnCloudflare", () => {
       // Verify debug was called with true (transformed from string)
       const { debug: debugMock } = await import("../utils")
       expect(debugMock).toHaveBeenCalledWith(true)
+
+      // Verify useAppwarden was called with config that has debug:true (transformed)
+      const { useAppwarden } = await import("../middlewares")
+      expect(useAppwarden).toHaveBeenCalledWith(
+        expect.objectContaining({
+          debug: true, // Should transform string "true" to boolean true
+        }),
+      )
     })
 
     it("should accept string 'false' for domain debug and transform to boolean", async () => {
@@ -408,6 +456,14 @@ describe("appwardenOnCloudflare", () => {
       // Verify debug was called with false (transformed from string)
       const { debug: debugMock } = await import("../utils")
       expect(debugMock).toHaveBeenCalledWith(false)
+
+      // Verify useAppwarden was called with config that has debug:false (transformed)
+      const { useAppwarden } = await import("../middlewares")
+      expect(useAppwarden).toHaveBeenCalledWith(
+        expect.objectContaining({
+          debug: false, // Should transform string "false" to boolean false
+        }),
+      )
     })
   })
 })

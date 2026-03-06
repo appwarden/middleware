@@ -46,7 +46,11 @@ export const appwardenOnCloudflare =
     }
 
     try {
-      const pipeline = [useAppwarden(input), useFetchOrigin()]
+      // Pass input with resolved debug value to useAppwarden
+      const pipeline = [
+        useAppwarden({ ...input, debug: domainDebug }),
+        useFetchOrigin(),
+      ]
 
       // Add CSP middleware after origin if configured for this hostname via multidomainConfig.
       const cspConfig =
