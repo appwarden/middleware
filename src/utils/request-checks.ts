@@ -67,5 +67,9 @@ export function isHTMLRequest(request: Request): boolean {
   }
 
   // Check if text/html is explicitly listed in the Accept header
+<<<<<<< HEAD
   return normalizedAccept.includes("text/html")
+=======
+  return accept.includes("text/html")
+>>>>>>> 66b3e39 (fix: prevent redirect loops and streaming body errors)
 }
