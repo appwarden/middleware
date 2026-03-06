@@ -28,14 +28,21 @@ export const appwardenOnCloudflare =
 
     const input = parsedInput.data({ env, ctx, cf: {} })
 
-    // Create context with debug function initialized from config
+    // Resolve debug value per-domain: check multidomainConfig[hostname].debug first,
+    // then fall back to top-level debug
+    const domainDebug =
+      input.multidomainConfig?.[requestUrl.hostname]?.debug ??
+      input.debug ??
+      false
+
+    // Create context with debug function initialized from resolved debug value
     const context: MiddlewareContext = {
       request,
       hostname: requestUrl.hostname,
       response: new Response("Unhandled response"),
       // https://developers.cloudflare.com/workers/observability/errors/#illegal-invocation-errors
       waitUntil: (fn: any) => ctx.waitUntil(fn),
-      debug: debug(input.debug ?? false),
+      debug: debug(domainDebug),
     }
 
     try {

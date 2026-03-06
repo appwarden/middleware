@@ -270,4 +270,144 @@ describe("appwardenOnCloudflare", () => {
     const usePipelineArgs = (usePipeline as any).mock.calls[0]
     expect(usePipelineArgs).toHaveLength(2)
   })
+
+  describe("per-domain debug configuration", () => {
+    it("should use domain-specific debug:true when configured in multidomainConfig", async () => {
+      mockInputFn.mockReturnValueOnce({
+        debug: false, // Global debug is false
+        appwardenApiToken: "test-token",
+        multidomainConfig: {
+          "example.com": {
+            lockPageSlug: "/maintenance-example",
+            debug: true, // Domain-specific debug is true
+          },
+        },
+      })
+
+      const handler = appwardenOnCloudflare(mockInputFn) as any
+      await handler(mockRequest, mockEnv, mockCtx)
+
+      // Verify debug was called with true (domain-specific value)
+      const { debug: debugMock } = await import("../utils")
+      expect(debugMock).toHaveBeenCalledWith(true)
+    })
+
+    it("should use domain-specific debug:false when configured in multidomainConfig", async () => {
+      mockInputFn.mockReturnValueOnce({
+        debug: true, // Global debug is true
+        appwardenApiToken: "test-token",
+        multidomainConfig: {
+          "example.com": {
+            lockPageSlug: "/maintenance-example",
+            debug: false, // Domain-specific debug is false
+          },
+        },
+      })
+
+      const handler = appwardenOnCloudflare(mockInputFn) as any
+      await handler(mockRequest, mockEnv, mockCtx)
+
+      // Verify debug was called with false (domain-specific value)
+      const { debug: debugMock } = await import("../utils")
+      expect(debugMock).toHaveBeenCalledWith(false)
+    })
+
+    it("should fall back to global debug when domain has no debug config", async () => {
+      mockInputFn.mockReturnValueOnce({
+        debug: true, // Global debug is true
+        appwardenApiToken: "test-token",
+        multidomainConfig: {
+          "example.com": {
+            lockPageSlug: "/maintenance-example",
+            // No debug configured for this domain
+          },
+        },
+      })
+
+      const handler = appwardenOnCloudflare(mockInputFn) as any
+      await handler(mockRequest, mockEnv, mockCtx)
+
+      // Verify debug was called with true (global value)
+      const { debug: debugMock } = await import("../utils")
+      expect(debugMock).toHaveBeenCalledWith(true)
+    })
+
+    it("should fall back to global debug when hostname not in multidomainConfig", async () => {
+      // Request to a domain not in multidomainConfig
+      mockRequest = new Request("https://other-domain.com")
+
+      mockInputFn.mockReturnValueOnce({
+        debug: true, // Global debug is true
+        appwardenApiToken: "test-token",
+        multidomainConfig: {
+          "example.com": {
+            lockPageSlug: "/maintenance-example",
+            debug: false,
+          },
+        },
+      })
+
+      const handler = appwardenOnCloudflare(mockInputFn) as any
+      await handler(mockRequest, mockEnv, mockCtx)
+
+      // Verify debug was called with true (global value, not example.com's false)
+      const { debug: debugMock } = await import("../utils")
+      expect(debugMock).toHaveBeenCalledWith(true)
+    })
+
+    it("should default to false when no debug config at all", async () => {
+      mockInputFn.mockReturnValueOnce({
+        // No debug at global level
+        appwardenApiToken: "test-token",
+        lockPageSlug: "/maintenance",
+      })
+
+      const handler = appwardenOnCloudflare(mockInputFn) as any
+      await handler(mockRequest, mockEnv, mockCtx)
+
+      // Verify debug was called with false (default value)
+      const { debug: debugMock } = await import("../utils")
+      expect(debugMock).toHaveBeenCalledWith(false)
+    })
+
+    it("should accept string 'true' for domain debug and transform to boolean", async () => {
+      mockInputFn.mockReturnValueOnce({
+        debug: false,
+        appwardenApiToken: "test-token",
+        multidomainConfig: {
+          "example.com": {
+            lockPageSlug: "/maintenance-example",
+            debug: "true", // String value
+          },
+        },
+      })
+
+      const handler = appwardenOnCloudflare(mockInputFn) as any
+      await handler(mockRequest, mockEnv, mockCtx)
+
+      // Verify debug was called with true (transformed from string)
+      const { debug: debugMock } = await import("../utils")
+      expect(debugMock).toHaveBeenCalledWith(true)
+    })
+
+    it("should accept string 'false' for domain debug and transform to boolean", async () => {
+      mockInputFn.mockReturnValueOnce({
+        debug: true,
+        appwardenApiToken: "test-token",
+        multidomainConfig: {
+          "example.com": {
+            lockPageSlug: "/maintenance-example",
+            debug: "false", // String value
+          },
+        },
+      })
+
+      const handler = appwardenOnCloudflare(mockInputFn) as any
+      await handler(mockRequest, mockEnv, mockCtx)
+
+      // Verify debug was called with false (transformed from string)
+      const { debug: debugMock } = await import("../utils")
+      expect(debugMock).toHaveBeenCalledWith(false)
+    })
+  })
 })
