@@ -112,7 +112,7 @@ import { createAppwardenMiddleware } from "@appwarden/middleware/cloudflare"
 
 const appwardenHandler = createAppwardenMiddleware((cloudflare) => ({
   debug: cloudflare.env.DEBUG,
-  lockPageSlug: cloudflare.env.LOCK_PAGE_SLUG,
+  lockPageSlug: cloudflare.env.APPWARDEN_LOCK_PAGE_SLUG,
   appwardenApiToken: cloudflare.env.APPWARDEN_API_TOKEN,
   contentSecurityPolicy: {
     mode: cloudflare.env.CSP_MODE,
