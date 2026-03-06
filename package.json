@@ -21,36 +21,36 @@
     "web3",
     "monitoring"
   ],
-  "main": "./index.js",
-  "types": "./index.d.ts",
+  "main": "./build/index.js",
+  "types": "./build/index.d.ts",
   "exports": {
     ".": {
-      "types": "./index.d.ts",
-      "default": "./index.js"
+      "types": "./build/index.d.ts",
+      "default": "./build/index.js"
     },
     "./vercel": {
-      "types": "./vercel.d.ts",
-      "default": "./vercel.js"
+      "types": "./build/vercel.d.ts",
+      "default": "./build/vercel.js"
     },
     "./cloudflare": {
-      "types": "./cloudflare.d.ts",
-      "default": "./cloudflare.js"
+      "types": "./build/cloudflare.d.ts",
+      "default": "./build/cloudflare.js"
     },
     "./cloudflare/astro": {
-      "types": "./cloudflare/astro.d.ts",
-      "default": "./cloudflare/astro.js"
+      "types": "./build/cloudflare/astro.d.ts",
+      "default": "./build/cloudflare/astro.js"
     },
     "./cloudflare/react-router": {
-      "types": "./cloudflare/react-router.d.ts",
-      "default": "./cloudflare/react-router.js"
+      "types": "./build/cloudflare/react-router.d.ts",
+      "default": "./build/cloudflare/react-router.js"
     },
     "./cloudflare/tanstack-start": {
-      "types": "./cloudflare/tanstack-start.d.ts",
-      "default": "./cloudflare/tanstack-start.js"
+      "types": "./build/cloudflare/tanstack-start.d.ts",
+      "default": "./build/cloudflare/tanstack-start.js"
     },
     "./cloudflare/nextjs": {
-      "types": "./cloudflare/nextjs.d.ts",
-      "default": "./cloudflare/nextjs.js"
+      "types": "./build/cloudflare/nextjs.d.ts",
+      "default": "./build/cloudflare/nextjs.js"
     }
   },
   "packageManager": "pnpm@10.4.1",
