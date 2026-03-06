@@ -13,5 +13,13 @@ export const useFetchOrigin: () => Middleware = () => async (context, next) => {
     }),
   )
 
+  // Log opaque redirects for debugging purposes
+  // TypeScript's Response type doesn't include "opaqueredirect" but it exists at runtime
+  if ((context.response.type as string) === "opaqueredirect") {
+    context.debug(
+      "Origin returned a redirect (opaque response) - client will handle redirect",
+    )
+  }
+
   await next()
 }

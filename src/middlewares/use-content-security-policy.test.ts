@@ -637,5 +637,219 @@ describe("use-content-security-policy", () => {
         })
       })
     })
+
+    describe("HTTP Method and Status Code Handling", () => {
+      it("should skip CSP for HEAD requests", async () => {
+        const middleware = useContentSecurityPolicy({
+          mode: "enforced",
+          directives: {
+            "default-src": ["'self'"],
+          },
+        })
+
+        const mockContext = {
+          request: new Request("https://example.com", { method: "HEAD" }),
+          response: new Response("<html></html>", {
+            headers: { "content-type": "text/html" },
+          }),
+          hostname: "example.com",
+          waitUntil: vi.fn(),
+          debug: vi.fn(),
+        }
+
+        const next = vi.fn()
+        await middleware(mockContext, next)
+
+        expect(next).toHaveBeenCalled()
+        expect(mockContext.debug).toHaveBeenCalledWith(
+          "Skipping HTMLRewriter transform for response without body or HEAD request",
+        )
+        // CSP header should still be applied
+        expect(
+          mockContext.response.headers.has("content-security-policy"),
+        ).toBe(true)
+      })
+
+      it("should skip HTMLRewriter for 204 No Content responses but still apply CSP header", async () => {
+        const middleware = useContentSecurityPolicy({
+          mode: "enforced",
+          directives: {
+            "default-src": ["'self'"],
+          },
+        })
+
+        const mockContext = {
+          request: new Request("https://example.com"),
+          response: new Response(null, {
+            status: 204,
+            headers: { "content-type": "text/html" },
+          }),
+          hostname: "example.com",
+          waitUntil: vi.fn(),
+          debug: vi.fn(),
+        }
+
+        const next = vi.fn()
+        await middleware(mockContext, next)
+
+        expect(next).toHaveBeenCalled()
+        expect(mockContext.debug).toHaveBeenCalledWith(
+          "Skipping HTMLRewriter transform for response without body or HEAD request",
+        )
+        // CSP header should still be applied
+        expect(
+          mockContext.response.headers.has("content-security-policy"),
+        ).toBe(true)
+      })
+
+      it("should skip HTMLRewriter for 304 Not Modified responses but still apply CSP header", async () => {
+        const middleware = useContentSecurityPolicy({
+          mode: "enforced",
+          directives: {
+            "default-src": ["'self'"],
+          },
+        })
+
+        const mockContext = {
+          request: new Request("https://example.com"),
+          response: new Response(null, {
+            status: 304,
+            headers: { "content-type": "text/html" },
+          }),
+          hostname: "example.com",
+          waitUntil: vi.fn(),
+          debug: vi.fn(),
+        }
+
+        const next = vi.fn()
+        await middleware(mockContext, next)
+
+        expect(next).toHaveBeenCalled()
+        expect(mockContext.debug).toHaveBeenCalledWith(
+          "Skipping HTMLRewriter transform for response without body or HEAD request",
+        )
+        // CSP header should still be applied
+        expect(
+          mockContext.response.headers.has("content-security-policy"),
+        ).toBe(true)
+      })
+
+      it("should skip HTMLRewriter for responses without a body but still apply CSP header", async () => {
+        const middleware = useContentSecurityPolicy({
+          mode: "enforced",
+          directives: {
+            "default-src": ["'self'"],
+          },
+        })
+
+        const mockContext = {
+          request: new Request("https://example.com"),
+          response: new Response(null, {
+            headers: { "content-type": "text/html" },
+          }),
+          hostname: "example.com",
+          waitUntil: vi.fn(),
+          debug: vi.fn(),
+        }
+
+        const next = vi.fn()
+        await middleware(mockContext, next)
+
+        expect(next).toHaveBeenCalled()
+        expect(mockContext.debug).toHaveBeenCalledWith(
+          "Skipping HTMLRewriter transform for response without body or HEAD request",
+        )
+        // CSP header should still be applied
+        expect(
+          mockContext.response.headers.has("content-security-policy"),
+        ).toBe(true)
+      })
+    })
+
+    describe("Content-Type Charset Preservation", () => {
+      it("should preserve original charset when present", async () => {
+        const middleware = useContentSecurityPolicy({
+          mode: "enforced",
+          directives: {
+            "default-src": ["'self'"],
+          },
+        })
+
+        const mockContext = {
+          request: new Request("https://example.com"),
+          response: new Response("<html></html>", {
+            headers: { "content-type": "text/html; charset=iso-8859-1" },
+          }),
+          hostname: "example.com",
+          waitUntil: vi.fn(),
+          debug: vi.fn(),
+        }
+
+        const next = vi.fn()
+        await middleware(mockContext, next)
+
+        expect(next).toHaveBeenCalled()
+        expect(mockContext.response.headers.get("content-type")).toBe(
+          "text/html; charset=iso-8859-1",
+        )
+      })
+
+      it("should add utf-8 charset when not present", async () => {
+        const middleware = useContentSecurityPolicy({
+          mode: "enforced",
+          directives: {
+            "default-src": ["'self'"],
+          },
+        })
+
+        const mockContext = {
+          request: new Request("https://example.com"),
+          response: new Response("<html></html>", {
+            headers: { "content-type": "text/html" },
+          }),
+          hostname: "example.com",
+          waitUntil: vi.fn(),
+          debug: vi.fn(),
+        }
+
+        const next = vi.fn()
+        await middleware(mockContext, next)
+
+        expect(next).toHaveBeenCalled()
+        expect(mockContext.response.headers.get("content-type")).toBe(
+          "text/html; charset=utf-8",
+        )
+      })
+
+      it("should set default content-type when not present", async () => {
+        const middleware = useContentSecurityPolicy({
+          mode: "enforced",
+          directives: {
+            "default-src": ["'self'"],
+          },
+        })
+
+        // Create a response without a Content-Type header
+        // Note: Response constructor may set a default content-type, so we need to remove it
+        const response = new Response("<html></html>")
+        response.headers.delete("content-type")
+
+        const mockContext = {
+          request: new Request("https://example.com"),
+          response,
+          hostname: "example.com",
+          waitUntil: vi.fn(),
+          debug: vi.fn(),
+        }
+
+        const next = vi.fn()
+        await middleware(mockContext, next)
+
+        expect(next).toHaveBeenCalled()
+        expect(mockContext.response.headers.get("content-type")).toBe(
+          "text/html; charset=utf-8",
+        )
+      })
+    })
   })
 })
