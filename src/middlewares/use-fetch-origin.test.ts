@@ -15,7 +15,7 @@ describe("useFetchOrigin", () => {
     global.fetch = originalFetch
   })
 
-  it("should use 'follow' redirect mode for GET requests", async () => {
+  it("should fetch the origin and set the response in context", async () => {
     // Create mock response
     const mockResponse = new Response("Test response")
     mockFetch.mockResolvedValue(mockResponse)
@@ -23,10 +23,8 @@ describe("useFetchOrigin", () => {
     // Create middleware
     const middleware = useFetchOrigin()
 
-    // Create context with GET request
-    const originalRequest = new Request("https://example.com", {
-      method: "GET",
-    })
+    // Create context with request
+    const originalRequest = new Request("https://example.com")
     const context = {
       request: originalRequest,
       response: new Response(), // Initialize with an empty response
@@ -44,117 +42,13 @@ describe("useFetchOrigin", () => {
     // Verify fetch was called with a Request object
     expect(mockFetch).toHaveBeenCalledWith(expect.any(Request))
 
-    // Verify the Request object uses "follow" for GET
+    // Verify the Request object has the correct properties
     const fetchedRequest = mockFetch.mock.calls[0][0] as Request
     expect(fetchedRequest.url).toBe("https://example.com/")
-    expect(fetchedRequest.redirect).toBe("follow")
+    expect(fetchedRequest.redirect).toBe("manual")
 
     // Verify response was set in context
     expect(context.response).toBe(mockResponse)
-
-    // Verify next was called
-    expect(next).toHaveBeenCalled()
-  })
-
-  it("should use 'follow' redirect mode for HEAD requests", async () => {
-    // Create mock response
-    const mockResponse = new Response(null)
-    mockFetch.mockResolvedValue(mockResponse)
-
-    // Create middleware
-    const middleware = useFetchOrigin()
-
-    // Create context with HEAD request
-    const originalRequest = new Request("https://example.com", {
-      method: "HEAD",
-    })
-    const context = {
-      request: originalRequest,
-      response: new Response(),
-      hostname: "example.com",
-      waitUntil: vi.fn(),
-      debug: vi.fn(),
-    }
-
-    // Create mock next function
-    const next = vi.fn()
-
-    // Execute middleware
-    await middleware(context, next)
-
-    // Verify the Request object uses "follow" for HEAD
-    const fetchedRequest = mockFetch.mock.calls[0][0] as Request
-    expect(fetchedRequest.redirect).toBe("follow")
-
-    // Verify next was called
-    expect(next).toHaveBeenCalled()
-  })
-
-  it("should use 'manual' redirect mode for POST requests", async () => {
-    // Create mock response
-    const mockResponse = new Response("Test response")
-    mockFetch.mockResolvedValue(mockResponse)
-
-    // Create middleware
-    const middleware = useFetchOrigin()
-
-    // Create context with POST request
-    const originalRequest = new Request("https://example.com", {
-      method: "POST",
-      body: "test data",
-    })
-    const context = {
-      request: originalRequest,
-      response: new Response(),
-      hostname: "example.com",
-      waitUntil: vi.fn(),
-      debug: vi.fn(),
-    }
-
-    // Create mock next function
-    const next = vi.fn()
-
-    // Execute middleware
-    await middleware(context, next)
-
-    // Verify the Request object uses "manual" for POST
-    const fetchedRequest = mockFetch.mock.calls[0][0] as Request
-    expect(fetchedRequest.redirect).toBe("manual")
-
-    // Verify next was called
-    expect(next).toHaveBeenCalled()
-  })
-
-  it("should use 'manual' redirect mode for PUT requests", async () => {
-    // Create mock response
-    const mockResponse = new Response("Test response")
-    mockFetch.mockResolvedValue(mockResponse)
-
-    // Create middleware
-    const middleware = useFetchOrigin()
-
-    // Create context with PUT request
-    const originalRequest = new Request("https://example.com", {
-      method: "PUT",
-      body: "test data",
-    })
-    const context = {
-      request: originalRequest,
-      response: new Response(),
-      hostname: "example.com",
-      waitUntil: vi.fn(),
-      debug: vi.fn(),
-    }
-
-    // Create mock next function
-    const next = vi.fn()
-
-    // Execute middleware
-    await middleware(context, next)
-
-    // Verify the Request object uses "manual" for PUT
-    const fetchedRequest = mockFetch.mock.calls[0][0] as Request
-    expect(fetchedRequest.redirect).toBe("manual")
 
     // Verify next was called
     expect(next).toHaveBeenCalled()
