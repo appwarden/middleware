@@ -45,7 +45,7 @@ describe("useFetchOrigin", () => {
     // Verify the Request object has the correct properties
     const fetchedRequest = mockFetch.mock.calls[0][0] as Request
     expect(fetchedRequest.url).toBe("https://example.com/")
-    expect(fetchedRequest.redirect).toBe("follow")
+    expect(fetchedRequest.redirect).toBe("manual")
 
     // Verify response was set in context
     expect(context.response).toBe(mockResponse)

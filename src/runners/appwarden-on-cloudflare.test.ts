@@ -62,7 +62,7 @@ describe("appwardenOnCloudflare", () => {
     mockRequest = new Request("https://example.com")
     mockEnv = {
       DEBUG: true,
-      LOCK_PAGE_SLUG: "/maintenance",
+      APPWARDEN_LOCK_PAGE_SLUG: "/maintenance",
       CSP_MODE: "report-only",
       CSP_DIRECTIVES: "{}",
       APPWARDEN_API_TOKEN: "test-token",
