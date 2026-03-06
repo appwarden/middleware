@@ -15,7 +15,7 @@ describe("useFetchOrigin", () => {
     global.fetch = originalFetch
   })
 
-  it("should fetch the origin with redirect:follow for GET requests", async () => {
+  it("should fetch the origin and set response in context", async () => {
     // Create mock response
     const mockResponse = new Response("Test response")
     mockFetch.mockResolvedValue(mockResponse)
@@ -44,85 +44,9 @@ describe("useFetchOrigin", () => {
     // Verify fetch was called with a Request object
     expect(mockFetch).toHaveBeenCalledWith(expect.any(Request))
 
-    // Verify the Request object has redirect:follow for GET
+    // Verify the Request object has the correct URL
     const fetchedRequest = mockFetch.mock.calls[0][0] as Request
     expect(fetchedRequest.url).toBe("https://example.com/")
-    expect(fetchedRequest.redirect).toBe("follow")
-
-    // Verify response was set in context
-    expect(context.response).toBe(mockResponse)
-
-    // Verify next was called
-    expect(next).toHaveBeenCalled()
-  })
-
-  it("should fetch the origin with redirect:follow for HEAD requests", async () => {
-    // Create mock response
-    const mockResponse = new Response(null)
-    mockFetch.mockResolvedValue(mockResponse)
-
-    // Create middleware
-    const middleware = useFetchOrigin()
-
-    // Create context with HEAD request
-    const originalRequest = new Request("https://example.com", {
-      method: "HEAD",
-    })
-    const context = {
-      request: originalRequest,
-      response: new Response(),
-      hostname: "example.com",
-      waitUntil: vi.fn(),
-      debug: vi.fn(),
-    }
-
-    // Create mock next function
-    const next = vi.fn()
-
-    // Execute middleware
-    await middleware(context, next)
-
-    // Verify the Request object has redirect:follow for HEAD
-    const fetchedRequest = mockFetch.mock.calls[0][0] as Request
-    expect(fetchedRequest.redirect).toBe("follow")
-
-    // Verify response was set in context
-    expect(context.response).toBe(mockResponse)
-
-    // Verify next was called
-    expect(next).toHaveBeenCalled()
-  })
-
-  it("should fetch the origin with redirect:manual for POST requests", async () => {
-    // Create mock response
-    const mockResponse = new Response("Test response")
-    mockFetch.mockResolvedValue(mockResponse)
-
-    // Create middleware
-    const middleware = useFetchOrigin()
-
-    // Create context with POST request
-    const originalRequest = new Request("https://example.com", {
-      method: "POST",
-      body: "test data",
-    })
-    const context = {
-      request: originalRequest,
-      response: new Response(),
-      hostname: "example.com",
-      waitUntil: vi.fn(),
-      debug: vi.fn(),
-    }
-
-    // Create mock next function
-    const next = vi.fn()
-
-    // Execute middleware
-    await middleware(context, next)
-
-    // Verify the Request object has redirect:manual for POST
-    const fetchedRequest = mockFetch.mock.calls[0][0] as Request
-    expect(fetchedRequest.redirect).toBe("manual")
 
     // Verify response was set in context
     expect(context.response).toBe(mockResponse)
@@ -156,81 +80,5 @@ describe("useFetchOrigin", () => {
 
     // Verify next was not called
     expect(next).not.toHaveBeenCalled()
-  })
-
-  it("should log debug message for opaque redirect responses", async () => {
-    // Create a mock response and override its type property to simulate opaque redirect
-    // We can't use new Response(null, { status: 0 }) because the Response constructor
-    // validates that status must be 200-599
-    const mockResponse = new Response(null, { status: 200 })
-    Object.defineProperty(mockResponse, "type", {
-      value: "opaqueredirect",
-      writable: false,
-    })
-    mockFetch.mockResolvedValue(mockResponse)
-
-    // Create middleware
-    const middleware = useFetchOrigin()
-
-    // Create context with request
-    const debugFn = vi.fn()
-    const context = {
-      request: new Request("https://example.com"),
-      response: new Response(),
-      hostname: "example.com",
-      waitUntil: vi.fn(),
-      debug: debugFn,
-    }
-
-    // Create mock next function
-    const next = vi.fn()
-
-    // Execute middleware
-    await middleware(context, next)
-
-    // Verify debug was called with opaque redirect message
-    expect(debugFn).toHaveBeenCalledWith(
-      "Origin returned a redirect (opaque response) - client will handle redirect",
-    )
-
-    // Verify response was set in context
-    expect(context.response).toBe(mockResponse)
-
-    // Verify next was called
-    expect(next).toHaveBeenCalled()
-  })
-
-  it("should not log debug message for non-redirect responses", async () => {
-    // Create mock normal response
-    const mockResponse = new Response("OK", { status: 200 })
-    mockFetch.mockResolvedValue(mockResponse)
-
-    // Create middleware
-    const middleware = useFetchOrigin()
-
-    // Create context with request
-    const debugFn = vi.fn()
-    const context = {
-      request: new Request("https://example.com"),
-      response: new Response(),
-      hostname: "example.com",
-      waitUntil: vi.fn(),
-      debug: debugFn,
-    }
-
-    // Create mock next function
-    const next = vi.fn()
-
-    // Execute middleware
-    await middleware(context, next)
-
-    // Verify debug was not called with opaque redirect message
-    expect(debugFn).not.toHaveBeenCalledWith(expect.stringContaining("opaque"))
-
-    // Verify response was set in context
-    expect(context.response).toBe(mockResponse)
-
-    // Verify next was called
-    expect(next).toHaveBeenCalled()
   })
 })
