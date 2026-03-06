@@ -414,8 +414,8 @@ describe("useAppwarden", () => {
       // Should not call checkLockStatus for OPTIONS
       expect(checkLockStatus).not.toHaveBeenCalled()
 
-      // Should not call next (early return)
-      expect(mockNext).not.toHaveBeenCalled()
+      // Should still call next to forward the request (CORS preflight)
+      expect(mockNext).toHaveBeenCalled()
     })
 
     it("should process GET requests normally", async () => {
