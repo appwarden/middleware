@@ -30,6 +30,10 @@ export function isHTMLRequest(request: Request): boolean {
     return false
   }
 
+  // Normalize to lowercase for case-insensitive comparison
+  // Per HTTP semantics, media types are case-insensitive
+  const normalizedAccept = accept.toLowerCase()
+
   // Determine if the Accept header is "wildcard-only", i.e. it only
   // contains */* (optionally with parameters or repeated entries).
   const isWildcardOnlyAccept = (value: string): boolean => {
@@ -58,10 +62,10 @@ export function isHTMLRequest(request: Request): boolean {
 
   // Wildcard-only Accept header = not an HTML request
   // This prevents favicon.ico and other static assets from being treated as HTML
-  if (isWildcardOnlyAccept(accept)) {
+  if (isWildcardOnlyAccept(normalizedAccept)) {
     return false
   }
 
   // Check if text/html is explicitly listed in the Accept header
-  return accept.includes("text/html")
+  return normalizedAccept.includes("text/html")
 }
