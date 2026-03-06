@@ -9,7 +9,7 @@ import {
 vi.mock("cloudflare:workers", () => ({
   env: {
     APPWARDEN_API_TOKEN: "test-token",
-    LOCK_PAGE_SLUG: "/maintenance",
+    APPWARDEN_LOCK_PAGE_SLUG: "/maintenance",
   } as unknown as CloudflareEnv,
   waitUntil: vi.fn(),
 }))
