@@ -3,6 +3,19 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [3.10.0](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.9.1...@appwarden/middleware@3.10.0) (2026-03-06)
+
+
+### Bug Fixes
+
+* remove generics from cloudflare env ([c7e1bf6](https://github.com/appwarden/middleware/commit/c7e1bf62c54e217e6a1743a52e55ad58f08d1dde))
+
+
+### Features
+
+* ensure CloudflareEnv correctly merges with Wrangler-generated types ([d002dbc](https://github.com/appwarden/middleware/commit/d002dbc11bd7c086fe5ca679830d8255bba8d05c))
+* update CloudflareEnv type to match Wrangler-generated bindings ([94899ac](https://github.com/appwarden/middleware/commit/94899ac0a6714ddcf1ecc28b026e240f3f77be75))
+
 ## [3.9.1](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.9.0...@appwarden/middleware@3.9.1) (2026-03-05)
 
 
