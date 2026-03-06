@@ -1,4 +1,23 @@
 /**
+ * Normalize an HTTP method to uppercase for consistent comparison.
+ * HTTP methods are case-sensitive per RFC 7231, but in practice they should
+ * be compared case-insensitively for robustness.
+ *
+ * @param method - The HTTP method string to normalize
+ * @returns The method in uppercase (e.g., "GET", "POST", "HEAD")
+ *
+ * @example
+ * ```typescript
+ * normalizeMethod("get")     // Returns: "GET"
+ * normalizeMethod("POST")    // Returns: "POST"
+ * normalizeMethod("Head")    // Returns: "HEAD"
+ * ```
+ */
+export function normalizeMethod(method: string): string {
+  return method.toUpperCase()
+}
+
+/**
  * Check if a response has an HTML Content-Type header.
  * This checks the response's Content-Type header for "text/html".
  *
