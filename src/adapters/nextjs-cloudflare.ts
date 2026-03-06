@@ -22,9 +22,11 @@ import { getNowMs } from "../utils/get-now"
 /**
  * Cloudflare runtime context provided by @opennextjs/cloudflare.
  * This is the shape of the context returned by getCloudflareContext().
+ *
+ * @template Env - The Cloudflare environment bindings type. Defaults to CloudflareEnv.
  */
-export interface NextJsCloudflareRuntime {
-  env: CloudflareEnv
+export interface NextJsCloudflareRuntime<Env = CloudflareEnv> {
+  env: Env
   ctx: ExecutionContext
 }
 
@@ -45,9 +47,11 @@ export type { NextJsCloudflareConfig, NextJsCloudflareConfigInput }
  * Configuration function that receives the Cloudflare runtime and returns the config.
  * This allows dynamic configuration based on environment variables.
  * Accepts pre-transformation input types (e.g., string | boolean for debug, string | object for CSP directives).
+ *
+ * @template Env - The Cloudflare environment bindings type. Defaults to CloudflareEnv.
  */
-export type NextJsCloudflareConfigFn = (
-  runtime: NextJsCloudflareRuntime,
+export type NextJsCloudflareConfigFn<Env = CloudflareEnv> = (
+  runtime: NextJsCloudflareRuntime<Env>,
 ) => NextJsCloudflareConfigInput
 
 /**
