@@ -59,9 +59,12 @@ describe("insertErrorLogs", () => {
       append: mockAppend,
     }
 
-    // Create mock context
+    // Create mock context with a request that has a body
     const mockContext = {
-      request: new Request("https://example.com"),
+      request: new Request("https://example.com", {
+        method: "POST",
+        body: "test body",
+      }),
     } as MiddlewareContext
 
     // Create mock ZodError
@@ -70,8 +73,13 @@ describe("insertErrorLogs", () => {
     // Call the function
     const result = await insertErrorLogs(mockContext, mockZodError)
 
-    // Verify fetch was called with the request
-    expect(global.fetch).toHaveBeenCalledWith(mockContext.request)
+    // Verify fetch was called with a cloned request (not the original)
+    expect(global.fetch).toHaveBeenCalledTimes(1)
+    const fetchedRequest = vi.mocked(global.fetch).mock.calls[0][0] as Request
+    expect(fetchedRequest.url).toBe(mockContext.request.url)
+    expect(fetchedRequest.method).toBe(mockContext.request.method)
+    // The cloned request should be a different instance
+    expect(fetchedRequest).not.toBe(mockContext.request)
 
     // Verify HTMLRewriter was used
     expect(mockOn).toHaveBeenCalledWith(
