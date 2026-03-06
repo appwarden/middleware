@@ -30,9 +30,35 @@ export function isHTMLRequest(request: Request): boolean {
     return false
   }
 
+  // Determine if the Accept header is "wildcard-only", i.e. it only
+  // contains */* (optionally with parameters or repeated entries).
+  const isWildcardOnlyAccept = (value: string): boolean => {
+    const mediaRanges = value.split(",")
+    let hasNonEmptyRange = false
+
+    for (const range of mediaRanges) {
+      // Ignore any parameters (e.g. ;q=0.8) and trim whitespace
+      const [typeSubtype] = range.split(";")
+      const trimmed = typeSubtype.trim()
+
+      if (!trimmed) {
+        continue
+      }
+
+      hasNonEmptyRange = true
+
+      // Only treat as wildcard if every non-empty range is */* or *
+      if (trimmed !== "*/*" && trimmed !== "*") {
+        return false
+      }
+    }
+
+    return hasNonEmptyRange
+  }
+
   // Wildcard-only Accept header = not an HTML request
   // This prevents favicon.ico and other static assets from being treated as HTML
-  if (accept === "*/*") {
+  if (isWildcardOnlyAccept(accept)) {
     return false
   }
 
