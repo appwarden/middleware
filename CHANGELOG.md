@@ -3,6 +3,24 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.10.2](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.10.1...@appwarden/middleware@3.10.2) (2026-03-06)
+
+
+### Bug Fixes
+
+* add comprehensive tests for isHTMLRequest wildcard handling ([c0046db](https://github.com/appwarden/middleware/commit/c0046db4e6f106c66792b5bd9162694b5d5d4be1))
+* add normalizeMethod utility and improve HTTP method handling ([2d1da9f](https://github.com/appwarden/middleware/commit/2d1da9f0c8f63d076854683b69252fbb4957d134))
+* address PR review comments ([e21156c](https://github.com/appwarden/middleware/commit/e21156c3c9038925072cd04032fab97c276431e1))
+* better redirect handling ([981ff9e](https://github.com/appwarden/middleware/commit/981ff9e0a2fb3ea5c0c13fe27ec93f7c72d6aada))
+* clone request in error logging to prevent body consumption errors ([b369b6c](https://github.com/appwarden/middleware/commit/b369b6c5314fd2a87fdb5201337366cfae14aad2))
+* env var typo ([6b5dca5](https://github.com/appwarden/middleware/commit/6b5dca5c4cb8ca67becb7ddc8c4a30a6ae7ab530))
+* improve Accept header parsing and HTTP spec compliance ([57f989c](https://github.com/appwarden/middleware/commit/57f989cf7cb6fdd8ecff546881b31702da539609))
+* improve HTTP handling for edge cases in middleware ([1719db5](https://github.com/appwarden/middleware/commit/1719db5cc12f8b62f2dd3cb6e7baa50b0e517ac1))
+* prevent redirect loops and streaming body errors ([da1ab2d](https://github.com/appwarden/middleware/commit/da1ab2dcb82d636bb5274a4b62a24ae430715e50))
+* simplify redirect handling by using default Request behavior ([b3a2a34](https://github.com/appwarden/middleware/commit/b3a2a34a381fbc26daab736c1730b97bbe7000d2))
+* use conditional redirect mode based on HTTP method ([9cbe1c4](https://github.com/appwarden/middleware/commit/9cbe1c49e927e9ca9aa8391f35fe11683c82bd3a))
+* use redirect manual for all requests ([b79d71e](https://github.com/appwarden/middleware/commit/b79d71e1773f05b45093e3f974315c7121ba3b73))
+
 ## [3.10.1](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.10.0...@appwarden/middleware@3.10.1) (2026-03-06)
 
 
