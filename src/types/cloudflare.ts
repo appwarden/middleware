@@ -16,7 +16,7 @@ import type { ContentSecurityPolicyType } from "./csp"
  */
 export type Bindings = {
   DEBUG?: string | boolean
-  LOCK_PAGE_SLUG?: string
+  APPWARDEN_LOCK_PAGE_SLUG?: string
   CSP_MODE?: "disabled" | "report-only" | "enforced"
   CSP_DIRECTIVES?: string | ContentSecurityPolicyType
   APPWARDEN_API_TOKEN?: string

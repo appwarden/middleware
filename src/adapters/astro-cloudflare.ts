@@ -72,7 +72,7 @@ export type AstroConfigFn = (
  * import { createAppwardenMiddleware } from "@appwarden/middleware/astro"
  *
  * const appwarden = createAppwardenMiddleware(({ env }) => ({
- *   lockPageSlug: env.LOCK_PAGE_SLUG,
+ *   lockPageSlug: env.APPWARDEN_LOCK_PAGE_SLUG,
  *   appwardenApiToken: env.APPWARDEN_API_TOKEN,
  * }))
  *
