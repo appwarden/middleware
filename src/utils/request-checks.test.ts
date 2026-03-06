@@ -1,5 +1,40 @@
 import { describe, expect, it } from "vitest"
-import { isHTMLRequest, isHTMLResponse } from "./request-checks"
+import {
+  isHTMLRequest,
+  isHTMLResponse,
+  normalizeMethod,
+} from "./request-checks"
+
+describe("normalizeMethod", () => {
+  it("should normalize lowercase methods to uppercase", () => {
+    expect(normalizeMethod("get")).toBe("GET")
+    expect(normalizeMethod("post")).toBe("POST")
+    expect(normalizeMethod("head")).toBe("HEAD")
+    expect(normalizeMethod("options")).toBe("OPTIONS")
+  })
+
+  it("should preserve uppercase methods", () => {
+    expect(normalizeMethod("GET")).toBe("GET")
+    expect(normalizeMethod("POST")).toBe("POST")
+    expect(normalizeMethod("HEAD")).toBe("HEAD")
+    expect(normalizeMethod("OPTIONS")).toBe("OPTIONS")
+  })
+
+  it("should normalize mixed-case methods to uppercase", () => {
+    expect(normalizeMethod("Get")).toBe("GET")
+    expect(normalizeMethod("PoSt")).toBe("POST")
+    expect(normalizeMethod("Head")).toBe("HEAD")
+    expect(normalizeMethod("OpTiOnS")).toBe("OPTIONS")
+  })
+
+  it("should handle all standard HTTP methods", () => {
+    expect(normalizeMethod("put")).toBe("PUT")
+    expect(normalizeMethod("delete")).toBe("DELETE")
+    expect(normalizeMethod("patch")).toBe("PATCH")
+    expect(normalizeMethod("connect")).toBe("CONNECT")
+    expect(normalizeMethod("trace")).toBe("TRACE")
+  })
+})
 
 describe("isHTMLResponse", () => {
   it("should return true for responses with text/html Content-Type", () => {

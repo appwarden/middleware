@@ -12,9 +12,9 @@ export const insertErrorLogs = async (
     console.log(printMessage(err as string))
   }
 
-  // Clone the request to avoid "body already used" errors
-  // This is necessary because the request body may have been consumed
-  // during validation or earlier in the middleware pipeline
+  // Clone the request so that fetch() operates on a copy and does not
+  // consume the original request body, which may be needed elsewhere
+  // in the middleware pipeline.
   return new HTMLRewriter()
     .on("body", {
       element: (elem) => {

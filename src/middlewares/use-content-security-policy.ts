@@ -51,11 +51,13 @@ export const useContentSecurityPolicy: (input: UseCSPInput) => Middleware = (
     // - 204 No Content and 304 Not Modified must not have a body per HTTP spec
     // - HEAD requests should not have a body
     // - Responses without a body cannot be transformed by HTMLRewriter
+    const method = context.request.method.toUpperCase()
+
     const shouldSkipTransform =
       !response.body ||
       response.status === 204 ||
       response.status === 304 ||
-      context.request.method === "HEAD"
+      method === "HEAD"
 
     if (shouldSkipTransform) {
       context.debug(
@@ -65,6 +67,24 @@ export const useContentSecurityPolicy: (input: UseCSPInput) => Middleware = (
       // Use null body for HEAD/204/304 to stay HTTP-spec compliant
       const nextResponse = new Response(null, response)
       nextResponse.headers.set(cspHeaderName, cspHeaderValue)
+
+      // Ensure a sensible Content-Type is present, matching transform branch behavior
+      const originalContentType = response.headers.get("content-type")
+      if (originalContentType) {
+        // Preserve existing charset if present; otherwise add utf-8
+        if (/charset\s*=/i.test(originalContentType)) {
+          nextResponse.headers.set("content-type", originalContentType)
+        } else {
+          nextResponse.headers.set(
+            "content-type",
+            `${originalContentType}; charset=utf-8`,
+          )
+        }
+      } else {
+        // No original Content-Type, set default for HTML
+        nextResponse.headers.set("content-type", "text/html; charset=utf-8")
+      }
+
       context.response = nextResponse
       return
     }
