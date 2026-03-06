@@ -6,7 +6,7 @@ declare namespace Cloudflare {
     mainModule: typeof import("./src/test/cloudflare-app")
   }
   interface Env {
-    APPWARDEN_LOCK_PAGE_SLUG: "/maintenance"
+    LOCK_PAGE_SLUG: "/maintenance"
     APPWARDEN_API_TOKEN: "123"
     APPWARDEN_API_HOSTNAME: "https://staging-api.appwarden.io"
     CSP_MODE: "report-only"
@@ -24,7 +24,7 @@ declare namespace NodeJS {
   interface ProcessEnv extends StringifyValues<
     Pick<
       Cloudflare.Env,
-      | "APPWARDEN_LOCK_PAGE_SLUG"
+      | "LOCK_PAGE_SLUG"
       | "APPWARDEN_API_TOKEN"
       | "APPWARDEN_API_HOSTNAME"
       | "CSP_MODE"

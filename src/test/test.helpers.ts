@@ -2,7 +2,7 @@ import * as cheerio from "cheerio"
 import { Bindings } from "../types"
 
 export const validBindings: Bindings = {
-  APPWARDEN_LOCK_PAGE_SLUG: "/maintenance",
+  LOCK_PAGE_SLUG: "/maintenance",
   APPWARDEN_API_TOKEN: "123",
   CSP_MODE: "report-only",
   CSP_DIRECTIVES: `{ "defaultSrc": ["{{nonce}}"] }`,
