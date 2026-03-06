@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [3.11.0](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.10.2...@appwarden/middleware@3.11.0) (2026-03-06)
+
+
+### Bug Fixes
+
+* pass resolved debug value to useAppwarden middleware ([b31fcca](https://github.com/appwarden/middleware/commit/b31fccaa0c7232c52cc3d970625a0c64ecbbe506))
+
+
+### Features
+
+* add per-domain debug mode configuration ([8cf5d6b](https://github.com/appwarden/middleware/commit/8cf5d6b804465e8bcc033e11dc2b25cf93baca8d))
+
 ## [3.10.2](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.10.1...@appwarden/middleware@3.10.2) (2026-03-06)
 
 
