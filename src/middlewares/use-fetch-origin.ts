@@ -1,13 +1,16 @@
 import { Middleware } from "../types"
 
 export const useFetchOrigin: () => Middleware = () => async (context, next) => {
-  // Use "manual" redirect mode to prevent errors with streaming POST request bodies
-  // When redirect: "follow" is used with a streaming body, the fetch API cannot
-  // retransmit the body on redirect, causing a TypeError
+  // Use "manual" redirect mode only for methods that can have streaming bodies
+  // (non-GET/HEAD) to prevent errors when the fetch API cannot retransmit
+  // a one-time-use body on redirect. For GET/HEAD, use "follow" to preserve
+  // normal redirect semantics.
+  const method = context.request.method.toUpperCase()
+  const canHaveStreamingBody = method !== "GET" && method !== "HEAD"
+
   context.response = await fetch(
     new Request(context.request, {
-      ...context.request,
-      redirect: "manual",
+      redirect: canHaveStreamingBody ? "manual" : "follow",
     }),
   )
 
