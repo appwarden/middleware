@@ -7,12 +7,12 @@ export default {
       // @ts-expect-error todo types aren't making it here
       (context) => ({
         debug: context.env.DEBUG,
-        lockPageSlug: context.env.LOCK_PAGE_SLUG,
+        lockPageSlug: context.env.APPWARDEN_LOCK_PAGE_SLUG,
         appwardenApiToken: context.env.APPWARDEN_API_TOKEN,
         appwardenApiHostname: context.env.APPWARDEN_API_HOSTNAME,
         multidomainConfig: {
           "appwarden.io": {
-            lockPageSlug: context.env.LOCK_PAGE_SLUG,
+            lockPageSlug: context.env.APPWARDEN_LOCK_PAGE_SLUG,
             contentSecurityPolicy: {
               mode: context.env.CSP_MODE,
               directives: context.env.CSP_DIRECTIVES,

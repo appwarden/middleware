@@ -96,7 +96,7 @@ describe("createAppwardenMiddleware (Astro)", () => {
     mockRuntime = {
       env: {
         APPWARDEN_API_TOKEN: "test-token",
-        LOCK_PAGE_SLUG: "/maintenance",
+        APPWARDEN_LOCK_PAGE_SLUG: "/maintenance",
       },
       cf: undefined,
       caches: {} as unknown as CacheStorage,
