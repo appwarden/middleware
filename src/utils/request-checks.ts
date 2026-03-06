@@ -14,7 +14,7 @@
  * ```
  */
 export function normalizeMethod(method: string): string {
-  return method.toUpperCase()
+  return method.trim().toUpperCase()
 }
 
 /**
