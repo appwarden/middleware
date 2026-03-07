@@ -106,6 +106,7 @@ export function createAppwardenMiddleware(
             requestUrl,
             cacheUrl: parsedConfig.cacheUrl,
             appwardenApiToken: parsedConfig.appwardenApiToken,
+            appwardenApiHostname: parsedConfig.appwardenApiHostname,
             vercelApiToken: parsedConfig.vercelApiToken,
             debug: debugFn,
           }),

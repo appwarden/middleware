@@ -315,6 +315,31 @@ describe("createAppwardenMiddleware", () => {
     expect(mockWaitUntil).toHaveBeenCalled()
   })
 
+  it("should pass appwardenApiHostname to syncEdgeValue when provided", async () => {
+    mockIsExpired.mockReturnValue(true)
+    mockMemoryCacheGet.mockReturnValue(undefined)
+
+    const configWithCustomHostname = {
+      ...mockConfig,
+      appwardenApiHostname: "https://custom-api.appwarden.io",
+    }
+    vi.mocked(AppwardenConfigSchemaMock.parse).mockReturnValue(
+      configWithCustomHostname,
+    )
+
+    const middleware = createAppwardenMiddleware(configWithCustomHostname)
+    const request = new Request("https://example.com/page", {
+      headers: { accept: "text/html" },
+    })
+    await middleware(request)
+
+    expect(syncEdgeValueMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        appwardenApiHostname: "https://custom-api.appwarden.io",
+      }),
+    )
+  })
+
   it("should not call syncEdgeValue when cache is valid", async () => {
     const validCacheValue: LockValueType = {
       isLocked: 0,
