@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.11.2](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.11.1...@appwarden/middleware@3.11.2) (2026-03-07)
+
+
+### Bug Fixes
+
+* share appwardenApiHostname schema ([047c68d](https://github.com/appwarden/middleware/commit/047c68d6a9b58856645653eda23200b050a88212))
+
 ## [3.11.1](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.11.0...@appwarden/middleware@3.11.1) (2026-03-07)
 
 
