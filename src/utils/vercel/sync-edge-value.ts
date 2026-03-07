@@ -11,7 +11,12 @@ class APIError extends Error {
 export const syncEdgeValue = async (
   context: Pick<
     VercelProviderContext,
-    "cacheUrl" | "requestUrl" | "vercelApiToken" | "appwardenApiToken" | "debug"
+    | "cacheUrl"
+    | "requestUrl"
+    | "vercelApiToken"
+    | "appwardenApiToken"
+    | "appwardenApiHostname"
+    | "debug"
   >,
 ) => {
   // we use this log to search vercel logs during testing (see packages/appwarden-vercel/edge-cache-testing-results.md)
@@ -19,7 +24,10 @@ export const syncEdgeValue = async (
 
   try {
     // @ts-expect-error config variables
-    const response = await fetch(new URL(API_PATHNAME, API_HOSTNAME), {
+    const apiHostname = context.appwardenApiHostname ?? API_HOSTNAME
+
+    // @ts-expect-error config variables
+    const response = await fetch(new URL(API_PATHNAME, apiHostname), {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({

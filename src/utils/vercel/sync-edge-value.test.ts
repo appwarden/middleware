@@ -13,7 +13,12 @@ let mockFetchResponse: Response
 
 type SyncEdgeContext = Pick<
   VercelProviderContext,
-  "cacheUrl" | "requestUrl" | "vercelApiToken" | "appwardenApiToken" | "debug"
+  | "cacheUrl"
+  | "requestUrl"
+  | "vercelApiToken"
+  | "appwardenApiToken"
+  | "appwardenApiHostname"
+  | "debug"
 >
 
 describe("syncEdgeValue", () => {
@@ -129,5 +134,16 @@ describe("syncEdgeValue", () => {
       expect.stringContaining("Invalid token"),
     )
     expect(printMessage).toHaveBeenCalled()
+  })
+
+  it("should use a custom appwarden API hostname when provided", async () => {
+    mockContext.appwardenApiHostname = "https://custom-api.appwarden.io"
+
+    await syncEdgeValue(mockContext)
+
+    expect(fetch).toHaveBeenCalledWith(
+      new URL("/v1/appwarden/status", "https://custom-api.appwarden.io"),
+      expect.any(Object),
+    )
   })
 })

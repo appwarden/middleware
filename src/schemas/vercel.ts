@@ -45,6 +45,7 @@ export const VercelCSPSchema = z.object({
 export const BaseNextJsConfigSchema = z.object({
   cacheUrl: z.string(),
   appwardenApiToken: z.string(),
+  appwardenApiHostname: z.string().optional(),
   vercelApiToken: z.string().optional(),
   debug: z.boolean().optional(),
   lockPageSlug: z
