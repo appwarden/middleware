@@ -1,6 +1,6 @@
 {
   "name": "@appwarden/middleware",
-  "version": "3.11.0",
+  "version": "3.11.1",
   "description": "Instantly disable all user interaction with your app deployed on Cloudflare or Vercel",
   "type": "module",
   "license": "MIT",
