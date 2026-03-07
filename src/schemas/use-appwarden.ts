@@ -1,5 +1,9 @@
 import { z } from "zod"
-import { AppwardenApiTokenSchema, BooleanSchema } from "./helpers"
+import {
+  AppwardenApiHostnameSchema,
+  AppwardenApiTokenSchema,
+  BooleanSchema,
+} from "./helpers"
 import { UseCSPInputSchema } from "./use-content-security-policy"
 
 export const AppwardenMultidomainConfigSchema = z.record(
@@ -21,7 +25,7 @@ export const UseAppwardenInputSchema = z.object({
   lockPageSlug: z.string().optional(),
   multidomainConfig: AppwardenMultidomainConfigSchema.optional(),
   appwardenApiToken: AppwardenApiTokenSchema,
-  appwardenApiHostname: z.string().optional(),
+  appwardenApiHostname: AppwardenApiHostnameSchema.optional(),
 })
 
 export type UseAppwardenInput = z.infer<typeof UseAppwardenInputSchema>

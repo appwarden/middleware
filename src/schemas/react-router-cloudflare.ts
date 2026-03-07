@@ -1,5 +1,9 @@
 import { z } from "zod"
-import { AppwardenApiTokenSchema, BooleanSchema } from "./helpers"
+import {
+  AppwardenApiHostnameSchema,
+  AppwardenApiTokenSchema,
+  BooleanSchema,
+} from "./helpers"
 import { UseCSPInputSchema } from "./use-content-security-policy"
 
 /**
@@ -12,7 +16,7 @@ export const ReactRouterCloudflareConfigSchema = z.object({
   /** The Appwarden API token for authentication */
   appwardenApiToken: AppwardenApiTokenSchema,
   /** Optional custom API hostname (defaults to https://api.appwarden.io) */
-  appwardenApiHostname: z.string().optional(),
+  appwardenApiHostname: AppwardenApiHostnameSchema.optional(),
   /** Enable debug logging */
   debug: BooleanSchema.default(false),
   /** Optional Content Security Policy configuration */
