@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.11.1](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.11.0...@appwarden/middleware@3.11.1) (2026-03-07)
+
+
+### Bug Fixes
+
+* support appwardenApiHostname in vercel middleware ([53161e9](https://github.com/appwarden/middleware/commit/53161e90d4e64a9b02f289a2a3e24708f76dc86b))
+
 # [3.11.0](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.10.2...@appwarden/middleware@3.11.0) (2026-03-06)
 
 
