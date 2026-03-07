@@ -63,6 +63,51 @@ describe("BaseNextJsConfigSchema", () => {
     expect(result.success).toBe(true)
   })
 
+  it("should retain a valid appwardenApiHostname", () => {
+    const config = {
+      cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
+      appwardenApiToken: "token123",
+      appwardenApiHostname: "https://api.custom.appwarden.io",
+      lockPageSlug: "maintenance",
+    }
+
+    const result = BaseNextJsConfigSchema.safeParse(config)
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data).toMatchObject({
+        ...config,
+        lockPageSlug: "/maintenance",
+      })
+    }
+  })
+
+  it.each([
+    [
+      "api.appwarden.io",
+      "Invalid `appwardenApiHostname`. Please provide an absolute URL",
+    ],
+    [
+      "http://api.appwarden.io",
+      "`appwardenApiHostname` must use the https:// scheme",
+    ],
+  ])("should reject invalid appwardenApiHostname: %s", (hostname, message) => {
+    const config = {
+      cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
+      appwardenApiToken: "token123",
+      appwardenApiHostname: hostname,
+      lockPageSlug: "maintenance",
+    }
+
+    const result = BaseNextJsConfigSchema.safeParse(config)
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      const issue = result.error.issues.find((entry) =>
+        entry.path.includes("appwardenApiHostname"),
+      )
+      expect(issue?.message).toContain(message)
+    }
+  })
+
   it("should require cacheUrl", () => {
     const config = {
       appwardenApiToken: "token123",

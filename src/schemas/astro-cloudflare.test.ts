@@ -74,6 +74,32 @@ describe("AstroCloudflareConfigSchema", () => {
     expect(result.success).toBe(false)
   })
 
+  it.each([
+    [
+      "api.appwarden.io",
+      "Invalid `appwardenApiHostname`. Please provide an absolute URL",
+    ],
+    [
+      "http://api.appwarden.io",
+      "`appwardenApiHostname` must use the https:// scheme",
+    ],
+  ])("should reject invalid appwardenApiHostname: %s", (hostname, message) => {
+    const invalidConfig = {
+      lockPageSlug: "/maintenance",
+      appwardenApiToken: "token123",
+      appwardenApiHostname: hostname,
+    }
+
+    const result = AstroCloudflareConfigSchema.safeParse(invalidConfig)
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      const issue = result.error.issues.find((entry) =>
+        entry.path.includes("appwardenApiHostname"),
+      )
+      expect(issue?.message).toContain(message)
+    }
+  })
+
   it("should reject invalid debug value", () => {
     const invalidConfig = {
       appwardenApiToken: "token123",
