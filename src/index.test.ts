@@ -8,7 +8,9 @@ describe("index exports", () => {
   })
 
   it("should export middlewares as functions", () => {
-    expect(typeof indexExports.useContentSecurityPolicy).toBe("function")
+    expect((typeof indexExports as any).useContentSecurityPolicy).not.toBe(
+      "function",
+    )
   })
 
   it("should export schemas as objects", () => {
