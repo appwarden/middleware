@@ -60,6 +60,7 @@
   "scripts": {
     "prepare": "node scripts/prepare-semantic-release.cjs && husky",
     "dev": "node scripts/dev-mode-package.cjs && pnpm build --watch",
+    "dev:exit": "node scripts/exit-dev-mode-package.cjs",
     "deploy:staging": "pnpm build && wrangler deploy -e staging",
     "release": "NODE_ENV=production pnpm build && node scripts/prepare-package.cjs && semantic-release",
     "build": "tsup",
