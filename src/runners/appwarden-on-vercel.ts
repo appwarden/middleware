@@ -37,6 +37,32 @@ export function createAppwardenMiddleware(
   config: VercelAppwardenConfig,
 ): VercelMiddlewareFunction {
   return async (request: Request): Promise<Response> => {
+    const requestUrl = new URL(request.url)
+
+    // Handle heartbeat requests BEFORE any other processing
+    // This must work even when the site is locked
+    if (requestUrl.pathname === "/_appwarden/heartbeat") {
+      const validationResult = AppwardenConfigSchema.safeParse(config)
+
+      // Import heartbeat utilities
+      const { handleHeartbeatRequest, sanitizeConfigErrors } =
+        await import("../utils")
+      const { HEARTBEAT_SERVICES } = await import("../constants")
+
+      // Return heartbeat response with config errors if validation failed
+      const configErrors = validationResult.success
+        ? []
+        : sanitizeConfigErrors(validationResult.error)
+
+      const response = handleHeartbeatRequest(
+        request,
+        HEARTBEAT_SERVICES.VERCEL,
+        configErrors,
+      )
+      // Convert Response to NextResponse
+      return new NextResponse(response.body, response)
+    }
+
     if (validateConfig(config, AppwardenConfigSchema)) {
       // Fail open - pass through to next middleware/handler
       return NextResponse.next()
@@ -59,7 +85,6 @@ export function createAppwardenMiddleware(
     }
 
     try {
-      const requestUrl = new URL(request.url)
       const isHTML = isHTMLRequest(request)
 
       debugFn(

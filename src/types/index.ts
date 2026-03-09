@@ -1,4 +1,5 @@
 export * from "./cloudflare"
 export * from "./csp"
+export * from "./heartbeat"
 export * from "./middleware"
 export * from "./vercel"

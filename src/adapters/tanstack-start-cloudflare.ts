@@ -155,6 +155,36 @@ export function createAppwardenMiddleware(
     }
 
     try {
+      requestUrl = new URL(request.url)
+
+      // Handle heartbeat requests BEFORE any other processing
+      // This must work even when the site is locked
+      if (requestUrl.pathname === "/_appwarden/heartbeat") {
+        // Get config from the config function (pre-transformation input)
+        const rawConfig = configFn()
+
+        // Validate config
+        const validationResult =
+          TanStackStartCloudflareConfigSchema.safeParse(rawConfig)
+
+        // Import heartbeat utilities
+        const { handleHeartbeatRequest, sanitizeConfigErrors } =
+          await import("../utils")
+        const { HEARTBEAT_SERVICES } = await import("../constants")
+
+        // Return heartbeat response with config errors if validation failed
+        const configErrors = validationResult.success
+          ? []
+          : sanitizeConfigErrors(validationResult.error)
+
+        // TanStack Start expects a TanStackStartNextResult, but we need to throw the Response
+        throw handleHeartbeatRequest(
+          request,
+          HEARTBEAT_SERVICES.CLOUDFLARE_TANSTACK_START,
+          configErrors,
+        )
+      }
+
       // Get config from the config function (pre-transformation input)
       const rawConfig = configFn()
 
@@ -173,7 +203,6 @@ export function createAppwardenMiddleware(
       // Use the validated and transformed config
       config = validationResult.data
       debugFn = debug(config.debug ?? false)
-      requestUrl = new URL(request.url)
       const isHTML = isHTMLRequest(request)
 
       debugFn(

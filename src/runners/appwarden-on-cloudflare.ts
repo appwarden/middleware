@@ -13,6 +13,28 @@ export const appwardenOnCloudflare =
 
     const requestUrl = new URL(request.url)
 
+    // Handle heartbeat requests BEFORE any other processing
+    // This must work even when the site is locked
+    if (requestUrl.pathname === "/_appwarden/heartbeat") {
+      const parsedInput = ConfigFnInputSchema.safeParse(inputFn)
+
+      // Import heartbeat utilities
+      const { handleHeartbeatRequest, sanitizeConfigErrors } =
+        await import("../utils")
+      const { HEARTBEAT_SERVICES } = await import("../constants")
+
+      // Return heartbeat response with config errors if validation failed
+      const configErrors = parsedInput.success
+        ? []
+        : sanitizeConfigErrors(parsedInput.error)
+
+      return handleHeartbeatRequest(
+        request,
+        HEARTBEAT_SERVICES.CLOUDFLARE,
+        configErrors,
+      )
+    }
+
     const parsedInput = ConfigFnInputSchema.safeParse(inputFn)
     if (!parsedInput.success) {
       // Create a temporary context for error logging (without debug since we don't have config yet)

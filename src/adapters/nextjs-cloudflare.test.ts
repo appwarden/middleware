@@ -86,7 +86,7 @@ describe("createAppwardenMiddleware (OpenNext Cloudflare)", () => {
       } as unknown as ExecutionContext,
     }
 
-    mockGetCloudflareContext.mockResolvedValue(mockRuntime)
+    mockGetCloudflareContext.mockReturnValue(mockRuntime)
 
     // Default request accepts HTML
     mockRequest = new Request("https://example.com/page", {
