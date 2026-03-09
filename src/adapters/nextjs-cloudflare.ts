@@ -90,9 +90,59 @@ export function createAppwardenMiddleware(
     const startTime = getNowMs()
 
     try {
+      const requestUrl = new URL(request.url)
+
+      // Handle heartbeat requests BEFORE any other processing
+      // This must work even when the site is locked
+      if (requestUrl.pathname === "/_appwarden/heartbeat") {
+        try {
+          // Dynamic import to avoid bundling issues
+          const { getCloudflareContext } =
+            await import("@opennextjs/cloudflare")
+          const { env, ctx } = getCloudflareContext()
+
+          // Get config from the config function (pre-transformation input)
+          const rawConfig = configFn({ env, ctx })
+
+          // Validate config
+          const validationResult =
+            NextJsCloudflareConfigSchema.safeParse(rawConfig)
+
+          // Import heartbeat utilities
+          const { handleHeartbeatRequest, sanitizeConfigErrors } =
+            await import("../utils")
+          const { HEARTBEAT_SERVICES } = await import("../constants")
+
+          // Return heartbeat response with config errors if validation failed
+          const configErrors = validationResult.success
+            ? []
+            : sanitizeConfigErrors(validationResult.error)
+
+          const response = handleHeartbeatRequest(
+            request,
+            HEARTBEAT_SERVICES.CLOUDFLARE_NEXTJS,
+            configErrors,
+          )
+          // Convert Response to NextResponse
+          return new NextResponse(response.body, response)
+        } catch (error) {
+          // If we can't get Cloudflare context, return heartbeat with error
+          const { handleHeartbeatRequest, sanitizeConfigErrors } =
+            await import("../utils")
+          const { HEARTBEAT_SERVICES } = await import("../constants")
+          const response = handleHeartbeatRequest(
+            request,
+            HEARTBEAT_SERVICES.CLOUDFLARE_NEXTJS,
+            sanitizeConfigErrors(undefined),
+          )
+          // Convert Response to NextResponse
+          return new NextResponse(response.body, response)
+        }
+      }
+
       // Dynamic import to avoid bundling issues
       const { getCloudflareContext } = await import("@opennextjs/cloudflare")
-      const { env, ctx } = await getCloudflareContext()
+      const { env, ctx } = getCloudflareContext()
 
       // Get config from the config function (pre-transformation input)
       const rawConfig = configFn({ env, ctx })
@@ -111,7 +161,6 @@ export function createAppwardenMiddleware(
       // Use the validated and transformed config
       const config = validationResult.data
       const debugFn = debug(config.debug)
-      const requestUrl = new URL(request.url)
       const isHTML = isHTMLRequest(request)
 
       debugFn(

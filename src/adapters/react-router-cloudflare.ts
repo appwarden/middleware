@@ -103,6 +103,35 @@ export function createAppwardenMiddleware(
     }
 
     try {
+      requestUrl = new URL(request.url)
+
+      // Handle heartbeat requests BEFORE any other processing
+      // This must work even when the site is locked
+      if (requestUrl.pathname === "/_appwarden/heartbeat") {
+        // Get config from the config function (using input type - will be validated)
+        const configInput = configFn()
+
+        // Validate config
+        const validationResult =
+          ReactRouterCloudflareConfigSchema.safeParse(configInput)
+
+        // Import heartbeat utilities
+        const { handleHeartbeatRequest, sanitizeConfigErrors } =
+          await import("../utils")
+        const { HEARTBEAT_SERVICES } = await import("../constants")
+
+        // Return heartbeat response with config errors if validation failed
+        const configErrors = validationResult.success
+          ? []
+          : sanitizeConfigErrors(validationResult.error)
+
+        return handleHeartbeatRequest(
+          request,
+          HEARTBEAT_SERVICES.CLOUDFLARE_REACT_ROUTER,
+          configErrors,
+        )
+      }
+
       // Get config from the config function (using input type - will be validated)
       const configInput = configFn()
 
@@ -120,7 +149,6 @@ export function createAppwardenMiddleware(
 
       config = validationResult.data
       debugFn = debug(config.debug)
-      requestUrl = new URL(request.url)
       const isHTML = isHTMLRequest(request)
 
       debugFn(

@@ -122,6 +122,49 @@ export function createAppwardenMiddleware(
     const locals = context.locals as LocalsWithRuntime
 
     try {
+      requestUrl = new URL(request.url)
+
+      // Handle heartbeat requests BEFORE any other processing
+      // This must work even when the site is locked
+      if (requestUrl.pathname === "/_appwarden/heartbeat") {
+        // Get Cloudflare runtime from Astro locals
+        const runtime = locals.runtime
+        if (!runtime) {
+          // If runtime is not available, return heartbeat with config error
+          const { handleHeartbeatRequest, sanitizeConfigErrors } =
+            await import("../utils")
+          const { HEARTBEAT_SERVICES } = await import("../constants")
+          return handleHeartbeatRequest(
+            request,
+            HEARTBEAT_SERVICES.CLOUDFLARE_ASTRO,
+            sanitizeConfigErrors(undefined),
+          )
+        }
+
+        // Get config from the config function (pre-transformation input)
+        const rawConfig = configFn(runtime)
+
+        // Validate config
+        const validationResult =
+          AstroCloudflareConfigSchema.safeParse(rawConfig)
+
+        // Import heartbeat utilities
+        const { handleHeartbeatRequest, sanitizeConfigErrors } =
+          await import("../utils")
+        const { HEARTBEAT_SERVICES } = await import("../constants")
+
+        // Return heartbeat response with config errors if validation failed
+        const configErrors = validationResult.success
+          ? []
+          : sanitizeConfigErrors(validationResult.error)
+
+        return handleHeartbeatRequest(
+          request,
+          HEARTBEAT_SERVICES.CLOUDFLARE_ASTRO,
+          configErrors,
+        )
+      }
+
       // Get Cloudflare runtime from Astro locals
       const runtime = locals.runtime
       if (!runtime) {
@@ -150,7 +193,6 @@ export function createAppwardenMiddleware(
       // Use the validated and transformed config
       config = validationResult.data
       debugFn = debug(config.debug)
-      requestUrl = new URL(request.url)
       const isHTML = isHTMLRequest(request)
 
       debugFn(
