@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.11.3](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.11.2...@appwarden/middleware@3.11.3) (2026-03-09)
+
+
+### Bug Fixes
+
+* auto-exit dev mode before lint-staged ([a3dc7f8](https://github.com/appwarden/middleware/commit/a3dc7f83ad20b9264f5ae60258a94ef321629cad))
+
 ## [3.11.2](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.11.1...@appwarden/middleware@3.11.2) (2026-03-07)
 
 
