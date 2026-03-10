@@ -1,3 +1,4 @@
+import { getCloudflareContext } from "@opennextjs/cloudflare"
 import {
   NextResponse,
   type NextFetchEvent,
@@ -21,6 +22,7 @@ import {
   sanitizeConfigErrors,
   TEMPORARY_REDIRECT_STATUS,
 } from "../utils"
+import { makeCSPHeader } from "../utils/cloudflare"
 import { getNowMs, logElapsed } from "../utils/get-now"
 
 /**
@@ -30,6 +32,57 @@ import { getNowMs, logElapsed } from "../utils/get-now"
 export interface NextJsCloudflareRuntime {
   env: CloudflareEnv
   ctx: ExecutionContext
+}
+
+const toNextResponse = (response: Response): NextResponse => {
+  return new NextResponse(response.body, response)
+}
+
+const createNextJsHeartbeatResponse = (
+  request: NextRequest,
+  configFn: NextJsCloudflareConfigFn,
+): NextResponse => {
+  let runtime: NextJsCloudflareRuntime
+
+  try {
+    runtime = getCloudflareContext()
+  } catch {
+    return toNextResponse(
+      handleHeartbeatRequest(request, HEARTBEAT_SERVICES.CLOUDFLARE_NEXTJS, [
+        createHeartbeatConfigError(
+          ["context"],
+          "custom",
+          "Cloudflare context unavailable",
+        ),
+      ]),
+    )
+  }
+
+  try {
+    const validationResult = NextJsCloudflareConfigSchema.safeParse(
+      configFn(runtime),
+    )
+
+    return toNextResponse(
+      handleHeartbeatRequest(
+        request,
+        HEARTBEAT_SERVICES.CLOUDFLARE_NEXTJS,
+        validationResult.success
+          ? []
+          : sanitizeConfigErrors(validationResult.error),
+      ),
+    )
+  } catch {
+    return toNextResponse(
+      handleHeartbeatRequest(request, HEARTBEAT_SERVICES.CLOUDFLARE_NEXTJS, [
+        createHeartbeatConfigError(
+          ["config"],
+          "custom",
+          "Appwarden config evaluation failed",
+        ),
+      ]),
+    )
+  }
 }
 
 /**
@@ -92,71 +145,13 @@ export function createAppwardenMiddleware(
 ): NextJsMiddlewareFunction {
   return async (request, _event) => {
     const startTime = getNowMs()
+    const requestUrl = new URL(request.url)
+
+    if (requestUrl.pathname === APPWARDEN_HEARTBEAT_ROUTE) {
+      return createNextJsHeartbeatResponse(request, configFn)
+    }
 
     try {
-      const requestUrl = new URL(request.url)
-
-      // Handle heartbeat requests BEFORE any other processing
-      // This must work even when the site is locked
-      if (requestUrl.pathname === APPWARDEN_HEARTBEAT_ROUTE) {
-        let runtime: NextJsCloudflareRuntime
-
-        try {
-          // Dynamic import to avoid bundling issues
-          const { getCloudflareContext } =
-            await import("@opennextjs/cloudflare")
-          runtime = getCloudflareContext()
-        } catch {
-          const response = handleHeartbeatRequest(
-            request,
-            HEARTBEAT_SERVICES.CLOUDFLARE_NEXTJS,
-            [
-              createHeartbeatConfigError(
-                ["context"],
-                "custom",
-                "Cloudflare context unavailable",
-              ),
-            ],
-          )
-          // Convert Response to NextResponse
-          return new NextResponse(response.body, response)
-        }
-
-        try {
-          // Get config from the config function (pre-transformation input)
-          const rawConfig = configFn(runtime)
-
-          // Validate config
-          const validationResult =
-            NextJsCloudflareConfigSchema.safeParse(rawConfig)
-
-          const response = handleHeartbeatRequest(
-            request,
-            HEARTBEAT_SERVICES.CLOUDFLARE_NEXTJS,
-            validationResult.success
-              ? []
-              : sanitizeConfigErrors(validationResult.error),
-          )
-          // Convert Response to NextResponse
-          return new NextResponse(response.body, response)
-        } catch {
-          const response = handleHeartbeatRequest(
-            request,
-            HEARTBEAT_SERVICES.CLOUDFLARE_NEXTJS,
-            [
-              createHeartbeatConfigError(
-                ["config"],
-                "custom",
-                "Appwarden config evaluation failed",
-              ),
-            ],
-          )
-          return new NextResponse(response.body, response)
-        }
-      }
-
-      // Dynamic import to avoid bundling issues
-      const { getCloudflareContext } = await import("@opennextjs/cloudflare")
       const { env, ctx } = getCloudflareContext()
 
       // Get config from the config function (pre-transformation input)
@@ -221,7 +216,6 @@ export function createAppwardenMiddleware(
         debugFn(
           `Applying CSP headers in ${config.contentSecurityPolicy.mode} mode`,
         )
-        const { makeCSPHeader } = await import("../utils/cloudflare")
         const [headerName, headerValue] = makeCSPHeader(
           "",
           config.contentSecurityPolicy.directives,

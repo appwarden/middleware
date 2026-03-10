@@ -3,6 +3,7 @@ import { waitUntil } from "cloudflare:workers"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { checkLockStatus } from "../core"
 import type { HeartbeatResponseBody } from "../types"
+import * as utils from "../utils"
 import { applyContentSecurityPolicyToResponse } from "../utils/apply-content-security-policy-to-response"
 import {
   AstroCloudflareRuntime,
@@ -308,6 +309,36 @@ describe("createAppwardenMiddleware (Astro)", () => {
     const middleware = createAppwardenMiddleware(() => {
       throw new Error("boom")
     })
+
+    const result = asResponse(
+      await middleware(asAPIContext(mockContext), mockNext),
+    )
+    const body = (await result.json()) as HeartbeatResponseBody
+
+    expect(result.status).toBe(200)
+    expect(body.configErrors).toEqual([
+      {
+        path: ["config"],
+        code: "custom",
+        message: "Appwarden config evaluation failed",
+      },
+    ])
+    expect(mockNext).not.toHaveBeenCalled()
+  })
+
+  it("should keep heartbeat deterministic when heartbeat sanitization throws", async () => {
+    mockContext.request = new Request(
+      "https://example.com/_appwarden/heartbeat",
+      { headers: { Accept: "application/json" } },
+    )
+    vi.spyOn(utils, "sanitizeConfigErrors").mockImplementation(() => {
+      throw new Error("boom")
+    })
+
+    const middleware = createAppwardenMiddleware(() => ({
+      lockPageSlug: "/maintenance",
+      appwardenApiToken: "",
+    }))
 
     const result = asResponse(
       await middleware(asAPIContext(mockContext), mockNext),

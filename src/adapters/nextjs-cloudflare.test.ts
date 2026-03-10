@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { checkLockStatus } from "../core"
 import type { HeartbeatResponseBody } from "../types"
+import * as utils from "../utils"
 import {
   createAppwardenMiddleware,
   NextJsCloudflareRuntime,
@@ -313,9 +314,9 @@ describe("createAppwardenMiddleware (OpenNext Cloudflare)", () => {
   })
 
   it("should handle getCloudflareContext errors gracefully", async () => {
-    mockGetCloudflareContext.mockRejectedValue(
-      new Error("Cloudflare context unavailable"),
-    )
+    mockGetCloudflareContext.mockImplementation(() => {
+      throw new Error("Cloudflare context unavailable")
+    })
 
     const middleware = createAppwardenMiddleware(() => ({
       lockPageSlug: "/maintenance",
@@ -364,6 +365,32 @@ describe("createAppwardenMiddleware (OpenNext Cloudflare)", () => {
     const middleware = createAppwardenMiddleware(() => {
       throw new Error("boom")
     })
+
+    const result = await middleware(mockRequest as any)
+    const body = (await result.json()) as HeartbeatResponseBody
+
+    expect(result.status).toBe(200)
+    expect(body.configErrors).toEqual([
+      {
+        path: ["config"],
+        code: "custom",
+        message: "Appwarden config evaluation failed",
+      },
+    ])
+  })
+
+  it("should keep heartbeat deterministic when heartbeat sanitization throws", async () => {
+    mockRequest = new Request("https://example.com/_appwarden/heartbeat", {
+      headers: { Accept: "application/json" },
+    })
+    vi.spyOn(utils, "sanitizeConfigErrors").mockImplementation(() => {
+      throw new Error("boom")
+    })
+
+    const middleware = createAppwardenMiddleware(() => ({
+      lockPageSlug: "/maintenance",
+      appwardenApiToken: "",
+    }))
 
     const result = await middleware(mockRequest as any)
     const body = (await result.json()) as HeartbeatResponseBody

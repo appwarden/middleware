@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { checkLockStatus } from "../core"
 import type { HeartbeatResponseBody } from "../types"
+import * as utils from "../utils"
 import { applyContentSecurityPolicyToResponse } from "../utils/apply-content-security-policy-to-response"
 import {
   createAppwardenMiddleware,
@@ -210,6 +211,34 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
     const middleware = createAppwardenMiddleware(() => {
       throw new Error("boom")
     })
+
+    const response = await getThrownResponse(middleware(mockArgs))
+    const body = (await response.json()) as HeartbeatResponseBody
+
+    expect(response.status).toBe(200)
+    expect(body.configErrors).toEqual([
+      {
+        path: ["config"],
+        code: "custom",
+        message: "Appwarden config evaluation failed",
+      },
+    ])
+    expect(mockNext).not.toHaveBeenCalled()
+    expect(checkLockStatus).not.toHaveBeenCalled()
+  })
+
+  it("should keep heartbeat deterministic when heartbeat sanitization throws", async () => {
+    mockArgs.request = new Request("https://example.com/_appwarden/heartbeat", {
+      headers: { Accept: "application/json" },
+    })
+    vi.spyOn(utils, "sanitizeConfigErrors").mockImplementation(() => {
+      throw new Error("boom")
+    })
+
+    const middleware = createAppwardenMiddleware(() => ({
+      lockPageSlug: "/maintenance",
+      appwardenApiToken: "",
+    }))
 
     const response = await getThrownResponse(middleware(mockArgs))
     const body = (await response.json()) as HeartbeatResponseBody
