@@ -1,8 +1,12 @@
 import { ZodError } from "zod"
 import {
   APPWARDEN_HEARTBEAT_ROUTE,
+  HEARTBEAT_CONFIG_ERROR_MAX_CODE_LENGTH,
+  HEARTBEAT_CONFIG_ERROR_MAX_COUNT,
+  HEARTBEAT_CONFIG_ERROR_MAX_MESSAGE_LENGTH,
   HEARTBEAT_CONFIG_ERROR_MAX_PATH_DEPTH,
   HEARTBEAT_CONFIG_ERROR_MAX_PATH_SEGMENT_LENGTH,
+  HEARTBEAT_CONTRACT_VERSION,
 } from "../constants"
 import type {
   HeartbeatConfigError,
@@ -10,24 +14,6 @@ import type {
   HeartbeatService,
 } from "../types/heartbeat"
 import { MIDDLEWARE_VERSION } from "../version"
-
-/**
- * Maximum number of config errors to include in heartbeat response.
- * This prevents unbounded response sizes.
- */
-const MAX_CONFIG_ERRORS = 10
-
-/**
- * Maximum length for error messages.
- * Prevents excessively long messages from being exposed.
- */
-const MAX_MESSAGE_LENGTH = 500
-
-/**
- * Maximum length for error codes.
- * Keeps error codes within the public contract bounds.
- */
-const MAX_CODE_LENGTH = 100
 
 /**
  * Creates a sanitized error message based on the Zod error code.
@@ -109,11 +95,13 @@ function sanitizePath(path: (string | number)[]): (string | number)[] {
 }
 
 function truncateMessage(message: string): string {
-  if (message.length <= MAX_MESSAGE_LENGTH) {
+  if (message.length <= HEARTBEAT_CONFIG_ERROR_MAX_MESSAGE_LENGTH) {
     return message
   }
 
-  return message.substring(0, MAX_MESSAGE_LENGTH - 3) + "..."
+  return (
+    message.substring(0, HEARTBEAT_CONFIG_ERROR_MAX_MESSAGE_LENGTH - 3) + "..."
+  )
 }
 
 /**
@@ -132,7 +120,7 @@ export function createHeartbeatConfigError(
 ): HeartbeatConfigError {
   return {
     path: sanitizePath(path),
-    code: code.substring(0, MAX_CODE_LENGTH),
+    code: code.substring(0, HEARTBEAT_CONFIG_ERROR_MAX_CODE_LENGTH),
     message: truncateMessage(message),
   }
 }
@@ -141,7 +129,7 @@ function normalizeHeartbeatConfigErrors(
   configErrors: HeartbeatConfigError[],
 ): HeartbeatConfigError[] {
   return configErrors
-    .slice(0, MAX_CONFIG_ERRORS)
+    .slice(0, HEARTBEAT_CONFIG_ERROR_MAX_COUNT)
     .map((configError) =>
       createHeartbeatConfigError(
         configError.path,
@@ -167,8 +155,8 @@ export function sanitizeConfigErrors(
 
   const errors: HeartbeatConfigError[] = []
 
-  // Take only the first MAX_CONFIG_ERRORS issues
-  const issues = error.issues.slice(0, MAX_CONFIG_ERRORS)
+  // Take only the first HEARTBEAT_CONFIG_ERROR_MAX_COUNT issues
+  const issues = error.issues.slice(0, HEARTBEAT_CONFIG_ERROR_MAX_COUNT)
 
   for (const issue of issues) {
     // Sanitize the path to prevent exposure of deeply nested or long paths
@@ -205,7 +193,7 @@ export function createHeartbeatResponseBody(
     app: "appwarden",
     kind: "heartbeat",
     status: "ok",
-    contractVersion: 1,
+    contractVersion: HEARTBEAT_CONTRACT_VERSION,
     service,
     version: MIDDLEWARE_VERSION,
     configErrors: normalizeHeartbeatConfigErrors(configErrors),
@@ -231,7 +219,7 @@ export function createHeartbeatResponse(
       "content-type": "application/json",
       "cache-control": "no-store",
       "x-appwarden-heartbeat": "1",
-      "x-appwarden-contract-version": "1",
+      "x-appwarden-contract-version": String(HEARTBEAT_CONTRACT_VERSION),
       "x-appwarden-service": service,
       "x-appwarden-version": MIDDLEWARE_VERSION,
     },

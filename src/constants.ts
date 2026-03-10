@@ -8,11 +8,31 @@ export const APPWARDEN_TEST_ROUTE = "/_appwarden/test"
 
 export const APPWARDEN_HEARTBEAT_ROUTE = "/_appwarden/heartbeat"
 
+export const HEARTBEAT_CONTRACT_VERSION = 1 as const
+
+/**
+ * Maximum number of public heartbeat config errors.
+ * Prevents unbounded response sizes.
+ */
+export const HEARTBEAT_CONFIG_ERROR_MAX_COUNT = 10
+
 /**
  * Maximum path depth for public heartbeat config errors.
  * Prevents deeply nested paths from being exposed.
  */
 export const HEARTBEAT_CONFIG_ERROR_MAX_PATH_DEPTH = 10
+
+/**
+ * Maximum length for public heartbeat config error codes.
+ * Keeps error codes within the contract bounds.
+ */
+export const HEARTBEAT_CONFIG_ERROR_MAX_CODE_LENGTH = 100
+
+/**
+ * Maximum length for public heartbeat config error messages.
+ * Prevents excessively long messages from being exposed.
+ */
+export const HEARTBEAT_CONFIG_ERROR_MAX_MESSAGE_LENGTH = 500
 
 /**
  * Maximum length for individual public heartbeat config error path segments.
