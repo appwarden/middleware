@@ -19,6 +19,7 @@ import {
   printMessage,
   sanitizeConfigErrors,
   TEMPORARY_REDIRECT_STATUS,
+  toNextResponse,
   validateConfig,
 } from "../utils"
 import { makeCSPHeader } from "../utils/cloudflare"
@@ -61,8 +62,7 @@ export function createAppwardenMiddleware(
         HEARTBEAT_SERVICES.VERCEL,
         configErrors,
       )
-      // Convert Response to NextResponse
-      return new NextResponse(response.body, response)
+      return toNextResponse(response)
     }
 
     if (validateConfig(config, AppwardenConfigSchema)) {

@@ -40,7 +40,7 @@ export interface HeartbeatResponseBody {
   /** Always "ok" for successful responses */
   status: "ok"
   /** Contract version (currently 1) */
-  contractVersion: 1
+  contractVersion: typeof HEARTBEAT_CONTRACT_VERSION
   /** Service identifier (e.g., "cloudflare-astro") */
   service: HeartbeatService
   /** Installed middleware package version */
