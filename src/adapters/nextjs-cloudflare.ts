@@ -21,6 +21,7 @@ import {
   printMessage,
   sanitizeConfigErrors,
   TEMPORARY_REDIRECT_STATUS,
+  toNextResponse,
 } from "../utils"
 import { makeCSPHeader } from "../utils/cloudflare"
 import { getNowMs, logElapsed } from "../utils/get-now"
@@ -32,10 +33,6 @@ import { getNowMs, logElapsed } from "../utils/get-now"
 export interface NextJsCloudflareRuntime {
   env: CloudflareEnv
   ctx: ExecutionContext
-}
-
-const toNextResponse = (response: Response): NextResponse => {
-  return new NextResponse(response.body, response)
 }
 
 const createNextJsHeartbeatResponse = (
