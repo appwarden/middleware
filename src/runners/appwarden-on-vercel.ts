@@ -1,6 +1,10 @@
 import { waitUntil } from "@vercel/functions"
 import { NextResponse } from "next/server"
-import { APPWARDEN_CACHE_KEY, globalErrors } from "../constants"
+import {
+  APPWARDEN_CACHE_KEY,
+  APPWARDEN_HEARTBEAT_ROUTE,
+  globalErrors,
+} from "../constants"
 import { LockValueType } from "../schemas"
 import { AppwardenConfigSchema, VercelAppwardenConfig } from "../schemas/vercel"
 import {
@@ -41,7 +45,7 @@ export function createAppwardenMiddleware(
 
     // Handle heartbeat requests BEFORE any other processing
     // This must work even when the site is locked
-    if (requestUrl.pathname === "/_appwarden/heartbeat") {
+    if (requestUrl.pathname === APPWARDEN_HEARTBEAT_ROUTE) {
       const validationResult = AppwardenConfigSchema.safeParse(config)
 
       // Import heartbeat utilities

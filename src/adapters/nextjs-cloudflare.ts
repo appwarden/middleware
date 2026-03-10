@@ -3,6 +3,7 @@ import {
   type NextFetchEvent,
   type NextRequest,
 } from "next/server"
+import { APPWARDEN_HEARTBEAT_ROUTE } from "../constants"
 import { checkLockStatus } from "../core"
 import type {
   NextJsCloudflareConfig,
@@ -94,7 +95,7 @@ export function createAppwardenMiddleware(
 
       // Handle heartbeat requests BEFORE any other processing
       // This must work even when the site is locked
-      if (requestUrl.pathname === "/_appwarden/heartbeat") {
+      if (requestUrl.pathname === APPWARDEN_HEARTBEAT_ROUTE) {
         try {
           // Dynamic import to avoid bundling issues
           const { getCloudflareContext } =

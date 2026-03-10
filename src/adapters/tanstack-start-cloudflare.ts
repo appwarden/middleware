@@ -1,4 +1,5 @@
 import { waitUntil } from "cloudflare:workers"
+import { APPWARDEN_HEARTBEAT_ROUTE } from "../constants"
 import { checkLockStatus } from "../core"
 import type {
   TanStackStartCloudflareConfig,
@@ -159,7 +160,7 @@ export function createAppwardenMiddleware(
 
       // Handle heartbeat requests BEFORE any other processing
       // This must work even when the site is locked
-      if (requestUrl.pathname === "/_appwarden/heartbeat") {
+      if (requestUrl.pathname === APPWARDEN_HEARTBEAT_ROUTE) {
         // Get config from the config function (pre-transformation input)
         const rawConfig = configFn()
 

@@ -31,7 +31,7 @@ describe("heartbeat utilities", () => {
       expect(result[0]).toEqual({
         path: ["lockPageSlug"],
         code: "invalid_type",
-        message: "Expected string, received number",
+        message: "Invalid type for lockPageSlug",
       })
     })
 
@@ -60,8 +60,8 @@ describe("heartbeat utilities", () => {
       ])
 
       const result = sanitizeConfigErrors(error)
-      expect(result[0].message).toHaveLength(500)
-      expect(result[0].message.endsWith("...")).toBe(true)
+      // The sanitized message is "Validation failed for test", which is much shorter
+      expect(result[0].message).toBe("Validation failed for test")
     })
   })
 
