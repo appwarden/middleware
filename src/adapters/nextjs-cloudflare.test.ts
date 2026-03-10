@@ -1,9 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { checkLockStatus } from "../core"
+import type { HeartbeatResponseBody } from "../types"
 import {
   createAppwardenMiddleware,
   NextJsCloudflareRuntime,
 } from "./nextjs-cloudflare"
+
+type MockedNextResponse = Response & {
+  mockType?: "next" | "redirect"
+  mockUrl?: string
+}
+
+const asMockedNextResponse = (response: Response): MockedNextResponse =>
+  response as MockedNextResponse
 
 // Mock dependencies
 vi.mock("../core", () => ({
@@ -40,18 +49,33 @@ vi.mock("../utils", async (importOriginal) => {
   }
 })
 
-// Mock next/server
-vi.mock("next/server", () => ({
-  NextResponse: {
-    next: vi.fn(() => ({ type: "next", status: 200 })),
-    redirect: vi.fn((url: URL, status: number) => ({
-      type: "redirect",
-      status,
-      url: url.toString(),
-      headers: new Headers({ Location: url.pathname }),
-    })),
-  },
-}))
+vi.mock("next/server", () => {
+  class MockNextResponse extends Response {
+    static next = vi.fn(() => {
+      const response = new MockNextResponse(null, {
+        status: 200,
+      }) as MockedNextResponse
+      response.mockType = "next"
+      return response
+    })
+
+    static redirect = vi.fn((url: string | URL, status = 302) => {
+      const targetUrl = url instanceof URL ? url : new URL(url)
+      const response = new MockNextResponse(null, {
+        status,
+        headers: { Location: targetUrl.pathname },
+      }) as MockedNextResponse
+
+      response.mockType = "redirect"
+      response.mockUrl = targetUrl.toString()
+      return response
+    })
+  }
+
+  return {
+    NextResponse: MockNextResponse,
+  }
+})
 
 // Mock @opennextjs/cloudflare
 const mockGetCloudflareContext = vi.fn()
@@ -112,7 +136,7 @@ describe("createAppwardenMiddleware (OpenNext Cloudflare)", () => {
 
     const result = await middleware(mockRequest as any)
 
-    expect(result.type).toBe("next")
+    expect(asMockedNextResponse(result).mockType).toBe("next")
   })
 
   it("should return NextResponse.next() when config validation fails (fail open)", async () => {
@@ -131,7 +155,7 @@ describe("createAppwardenMiddleware (OpenNext Cloudflare)", () => {
       expect.stringContaining("Config validation failed"),
     )
     expect(checkLockStatus).not.toHaveBeenCalled()
-    expect(result.type).toBe("next")
+    expect(asMockedNextResponse(result).mockType).toBe("next")
 
     consoleErrorSpy.mockRestore()
   })
@@ -149,7 +173,7 @@ describe("createAppwardenMiddleware (OpenNext Cloudflare)", () => {
 
     const result = await middleware(mockRequest as any)
 
-    expect(result.type).toBe("redirect")
+    expect(asMockedNextResponse(result).mockType).toBe("redirect")
     expect(result.status).toBe(302)
     expect(result.headers.get("Location")).toBe("/maintenance")
   })
@@ -184,7 +208,7 @@ describe("createAppwardenMiddleware (OpenNext Cloudflare)", () => {
     const result = await middleware(mockRequest as any)
 
     expect(checkLockStatus).not.toHaveBeenCalled()
-    expect(result.type).toBe("next")
+    expect(asMockedNextResponse(result).mockType).toBe("next")
   })
 
   it("should pass correct config to checkLockStatus", async () => {
@@ -252,7 +276,7 @@ describe("createAppwardenMiddleware (OpenNext Cloudflare)", () => {
     expect(consoleErrorSpy).toHaveBeenCalledWith(
       expect.stringContaining("Unhandled error:"),
     )
-    expect(result.type).toBe("next")
+    expect(asMockedNextResponse(result).mockType).toBe("next")
   })
 
   it("should use 302 status code for redirects (temporary redirect)", async () => {
@@ -303,7 +327,33 @@ describe("createAppwardenMiddleware (OpenNext Cloudflare)", () => {
     expect(consoleErrorSpy).toHaveBeenCalledWith(
       expect.stringContaining("Unhandled error:"),
     )
-    expect(result.type).toBe("next")
+    expect(asMockedNextResponse(result).mockType).toBe("next")
+  })
+
+  it("should return a heartbeat config error when Cloudflare context is unavailable", async () => {
+    mockRequest = new Request("https://example.com/_appwarden/heartbeat", {
+      headers: { Accept: "application/json" },
+    })
+    mockGetCloudflareContext.mockImplementation(() => {
+      throw new Error("Cloudflare context unavailable")
+    })
+
+    const middleware = createAppwardenMiddleware(() => ({
+      lockPageSlug: "/maintenance",
+      appwardenApiToken: "test-token",
+    }))
+
+    const result = await middleware(mockRequest as any)
+    const body = (await result.json()) as HeartbeatResponseBody
+
+    expect(result.status).toBe(200)
+    expect(body.configErrors).toEqual([
+      {
+        path: ["context"],
+        code: "custom",
+        message: "Cloudflare context unavailable",
+      },
+    ])
   })
 
   it("should not redirect when already on lock page to prevent infinite redirect loop", async () => {
@@ -326,7 +376,7 @@ describe("createAppwardenMiddleware (OpenNext Cloudflare)", () => {
 
     // Should return NextResponse.next() and NOT redirect
     expect(checkLockStatus).not.toHaveBeenCalled()
-    expect(result.type).toBe("next")
+    expect(asMockedNextResponse(result).mockType).toBe("next")
   })
 
   it("should not redirect when already on lock page (slug without leading slash)", async () => {
@@ -349,6 +399,6 @@ describe("createAppwardenMiddleware (OpenNext Cloudflare)", () => {
 
     // Should return NextResponse.next() and NOT redirect
     expect(checkLockStatus).not.toHaveBeenCalled()
-    expect(result.type).toBe("next")
+    expect(asMockedNextResponse(result).mockType).toBe("next")
   })
 })

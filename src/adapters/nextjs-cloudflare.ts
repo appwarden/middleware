@@ -127,14 +127,20 @@ export function createAppwardenMiddleware(
           // Convert Response to NextResponse
           return new NextResponse(response.body, response)
         } catch (error) {
-          // If we can't get Cloudflare context, return heartbeat with error
-          const { handleHeartbeatRequest, sanitizeConfigErrors } =
+          // If we can't get Cloudflare context, return heartbeat with a controlled error
+          const { createHeartbeatConfigError, handleHeartbeatRequest } =
             await import("../utils")
           const { HEARTBEAT_SERVICES } = await import("../constants")
           const response = handleHeartbeatRequest(
             request,
             HEARTBEAT_SERVICES.CLOUDFLARE_NEXTJS,
-            sanitizeConfigErrors(undefined),
+            [
+              createHeartbeatConfigError(
+                ["context"],
+                "custom",
+                "Cloudflare context unavailable",
+              ),
+            ],
           )
           // Convert Response to NextResponse
           return new NextResponse(response.body, response)

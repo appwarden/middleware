@@ -26,9 +26,21 @@ export const appwardenOnCloudflare =
       const { HEARTBEAT_SERVICES } = await import("../constants")
 
       // Return heartbeat response with config errors if validation failed
-      const configErrors = parsedInput.success
+      let configErrors = parsedInput.success
         ? []
         : sanitizeConfigErrors(parsedInput.error)
+
+      if (parsedInput.success) {
+        try {
+          parsedInput.data({ env, ctx, cf: {} })
+        } catch (error) {
+          if (error instanceof ZodError) {
+            configErrors = sanitizeConfigErrors(error)
+          } else {
+            throw error
+          }
+        }
+      }
 
       return handleHeartbeatRequest(
         request,

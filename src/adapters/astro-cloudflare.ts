@@ -131,14 +131,20 @@ export function createAppwardenMiddleware(
         // Get Cloudflare runtime from Astro locals
         const runtime = locals.runtime
         if (!runtime) {
-          // If runtime is not available, return heartbeat with config error
-          const { handleHeartbeatRequest, sanitizeConfigErrors } =
+          // If runtime is not available, return heartbeat with a controlled error
+          const { createHeartbeatConfigError, handleHeartbeatRequest } =
             await import("../utils")
           const { HEARTBEAT_SERVICES } = await import("../constants")
           return handleHeartbeatRequest(
             request,
             HEARTBEAT_SERVICES.CLOUDFLARE_ASTRO,
-            sanitizeConfigErrors(undefined),
+            [
+              createHeartbeatConfigError(
+                ["runtime"],
+                "custom",
+                "Cloudflare runtime unavailable",
+              ),
+            ],
           )
         }
 

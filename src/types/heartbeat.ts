@@ -1,16 +1,11 @@
 import { z } from "zod"
+import { HEARTBEAT_SERVICE_VALUES } from "../constants"
 
 /**
  * Service identifiers for different middleware adapters.
  * These are hardcoded per adapter bundle.
  */
-export type HeartbeatService =
-  | "cloudflare"
-  | "cloudflare-astro"
-  | "cloudflare-react-router"
-  | "cloudflare-tanstack-start"
-  | "cloudflare-nextjs"
-  | "vercel"
+export type HeartbeatService = (typeof HEARTBEAT_SERVICE_VALUES)[number]
 
 /**
  * Sanitized configuration error for public heartbeat response.
@@ -83,14 +78,7 @@ export const HeartbeatResponseBodySchema = z.object({
   kind: z.literal("heartbeat"),
   status: z.literal("ok"),
   contractVersion: z.literal(1),
-  service: z.enum([
-    "cloudflare",
-    "cloudflare-astro",
-    "cloudflare-react-router",
-    "cloudflare-tanstack-start",
-    "cloudflare-nextjs",
-    "vercel",
-  ]),
+  service: z.enum(HEARTBEAT_SERVICE_VALUES),
   version: z.string(),
   configErrors: z.array(HeartbeatConfigErrorSchema).max(10),
 })

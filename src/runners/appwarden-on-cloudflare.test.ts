@@ -31,17 +31,22 @@ vi.mock("../middlewares/use-fetch-origin", () => ({
 }))
 
 // Mock SchemaErrorKey and other utils exports
-vi.mock("../utils", () => ({
-  usePipeline: vi.fn(() => ({
-    execute: vi.fn(),
-  })),
-  SchemaErrorKey: {
-    DirectivesRequired: "DirectivesRequired",
-    DirectivesBadParse: "DirectivesBadParse",
-  },
-  getErrors: vi.fn(() => ["Error message"]),
-  debug: vi.fn(() => vi.fn()),
-}))
+vi.mock("../utils", async (importOriginal) => {
+  const actual = (await importOriginal()) as typeof import("../utils")
+
+  return {
+    ...actual,
+    usePipeline: vi.fn(() => ({
+      execute: vi.fn(),
+    })),
+    SchemaErrorKey: {
+      DirectivesRequired: "DirectivesRequired",
+      DirectivesBadParse: "DirectivesBadParse",
+    },
+    getErrors: vi.fn(() => ["Error message"]),
+    debug: vi.fn(() => vi.fn()),
+  }
+})
 
 vi.mock("../utils/cloudflare", () => ({
   insertErrorLogs: vi.fn(() => new Response("Error logs")),
@@ -134,6 +139,27 @@ describe("appwardenOnCloudflare", () => {
     expect(await result.text()).toBe("Error logs")
 
     mockSafeParse.mockRestore()
+  })
+
+  it("should include heartbeat config errors when config output is invalid", async () => {
+    mockRequest = new Request("https://example.com/_appwarden/heartbeat")
+    mockInputFn.mockReturnValueOnce({
+      lockPageSlug: "/maintenance",
+      appwardenApiToken: "",
+    })
+
+    const handler = appwardenOnCloudflare(mockInputFn) as any
+    const result = await handler(mockRequest, mockEnv, mockCtx)
+    const body = await result.json()
+
+    expect(result.status).toBe(200)
+    expect(body.service).toBe("cloudflare")
+    expect(body.configErrors).toHaveLength(1)
+    expect(body.configErrors[0]).toMatchObject({
+      path: expect.any(Array),
+      code: expect.any(String),
+      message: expect.any(String),
+    })
   })
 
   it("should execute the middleware pipeline with the correct middlewares", async () => {

@@ -20,6 +20,12 @@ const MAX_CONFIG_ERRORS = 10
 const MAX_MESSAGE_LENGTH = 500
 
 /**
+ * Maximum length for error codes.
+ * Keeps error codes within the public contract bounds.
+ */
+const MAX_CODE_LENGTH = 100
+
+/**
  * Maximum path depth for config errors.
  * Prevents deeply nested paths from being exposed.
  */
@@ -105,6 +111,35 @@ function sanitizePath(path: (string | number)[]): (string | number)[] {
   })
 }
 
+function truncateMessage(message: string): string {
+  if (message.length <= MAX_MESSAGE_LENGTH) {
+    return message
+  }
+
+  return message.substring(0, MAX_MESSAGE_LENGTH - 3) + "..."
+}
+
+/**
+ * Creates a controlled heartbeat config error.
+ * Useful for internal runtime/context failures that are not sourced from Zod.
+ *
+ * @param path - The logical field path for the failure
+ * @param code - A bounded error code
+ * @param message - An Appwarden-controlled error message
+ * @returns A sanitized heartbeat config error
+ */
+export function createHeartbeatConfigError(
+  path: (string | number)[],
+  code: string,
+  message: string,
+): HeartbeatConfigError {
+  return {
+    path: sanitizePath(path),
+    code: code.substring(0, MAX_CODE_LENGTH),
+    message: truncateMessage(message),
+  }
+}
+
 /**
  * Sanitizes Zod validation errors for public heartbeat response.
  * Maps errors to controlled messages and removes sensitive data.
@@ -130,12 +165,9 @@ export function sanitizeConfigErrors(
 
     // Create a controlled message based on the error code
     // This prevents exposure of user-provided values in error messages
-    let message = createSanitizedMessage(issue.code, sanitizedPath)
-
-    // Truncate message if too long (defensive measure)
-    if (message.length > MAX_MESSAGE_LENGTH) {
-      message = message.substring(0, MAX_MESSAGE_LENGTH - 3) + "..."
-    }
+    const message = truncateMessage(
+      createSanitizedMessage(issue.code, sanitizedPath),
+    )
 
     errors.push({
       path: sanitizedPath,

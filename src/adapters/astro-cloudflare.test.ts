@@ -2,6 +2,7 @@ import type { APIContext } from "astro"
 import { waitUntil } from "cloudflare:workers"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { checkLockStatus } from "../core"
+import type { HeartbeatResponseBody } from "../types"
 import { applyContentSecurityPolicyToResponse } from "../utils/apply-content-security-policy-to-response"
 import {
   AstroCloudflareRuntime,
@@ -268,6 +269,34 @@ describe("createAppwardenMiddleware (Astro)", () => {
       expect.stringContaining("Cloudflare runtime not found"),
     )
     expect(mockNext).toHaveBeenCalled()
+  })
+
+  it("should return a heartbeat config error when runtime is missing", async () => {
+    mockContext.request = new Request(
+      "https://example.com/_appwarden/heartbeat",
+      { headers: { Accept: "application/json" } },
+    )
+    mockContext.locals = {}
+
+    const middleware = createAppwardenMiddleware(() => ({
+      lockPageSlug: "/maintenance",
+      appwardenApiToken: "test-token",
+    }))
+
+    const result = asResponse(
+      await middleware(asAPIContext(mockContext), mockNext),
+    )
+    const body = (await result.json()) as HeartbeatResponseBody
+
+    expect(result.status).toBe(200)
+    expect(body.configErrors).toEqual([
+      {
+        path: ["runtime"],
+        code: "custom",
+        message: "Cloudflare runtime unavailable",
+      },
+    ])
+    expect(mockNext).not.toHaveBeenCalled()
   })
 
   it("should pass correct config to checkLockStatus", async () => {
