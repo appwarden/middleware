@@ -106,6 +106,26 @@ describe("heartbeat utilities", () => {
       const body = createHeartbeatResponseBody("cloudflare-astro", configErrors)
       expect(body.configErrors).toEqual(configErrors)
     })
+
+    it("should bound and sanitize provided config errors", () => {
+      const longSegment = "s".repeat(120)
+      const longCode = "c".repeat(120)
+      const longMessage = "m".repeat(520)
+      const configErrors = Array.from({ length: 12 }, (_, index) => ({
+        path: ["config", index, longSegment, "extra"],
+        code: longCode,
+        message: longMessage,
+      }))
+
+      const body = createHeartbeatResponseBody("cloudflare-astro", configErrors)
+
+      expect(body.configErrors).toHaveLength(10)
+      expect(body.configErrors[0]).toEqual({
+        path: ["config", 0, `${"s".repeat(97)}...`, "extra"],
+        code: "c".repeat(100),
+        message: `${"m".repeat(497)}...`,
+      })
+    })
   })
 
   describe("createHeartbeatResponse", () => {
