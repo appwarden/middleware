@@ -1,4 +1,5 @@
 import { ZodError } from "zod"
+import { APPWARDEN_HEARTBEAT_ROUTE } from "../constants"
 import type {
   HeartbeatConfigError,
   HeartbeatResponseBody,
@@ -13,8 +14,100 @@ import { MIDDLEWARE_VERSION } from "../version"
 const MAX_CONFIG_ERRORS = 10
 
 /**
+ * Maximum length for error messages.
+ * Prevents excessively long messages from being exposed.
+ */
+const MAX_MESSAGE_LENGTH = 500
+
+/**
+ * Maximum path depth for config errors.
+ * Prevents deeply nested paths from being exposed.
+ */
+const MAX_PATH_DEPTH = 10
+
+/**
+ * Maximum length for path segments.
+ * Prevents excessively long path segments.
+ */
+const MAX_PATH_SEGMENT_LENGTH = 100
+
+/**
+ * Creates a sanitized error message based on the Zod error code.
+ * This ensures only Appwarden-controlled messages are exposed, not user-provided values.
+ *
+ * @param code - The Zod error code
+ * @param path - The path to the field with the error
+ * @returns A sanitized error message
+ */
+function createSanitizedMessage(
+  code: string,
+  path: (string | number)[],
+): string {
+  const fieldName = path.length > 0 ? path[path.length - 1] : "field"
+
+  // Map Zod error codes to controlled messages
+  switch (code) {
+    case "invalid_type":
+      return `Invalid type for ${fieldName}`
+    case "invalid_literal":
+      return `Invalid value for ${fieldName}`
+    case "unrecognized_keys":
+      return `Unrecognized keys in ${fieldName}`
+    case "invalid_union":
+      return `Invalid union value for ${fieldName}`
+    case "invalid_enum_value":
+      return `Invalid enum value for ${fieldName}`
+    case "invalid_arguments":
+      return `Invalid arguments for ${fieldName}`
+    case "invalid_return_type":
+      return `Invalid return type for ${fieldName}`
+    case "invalid_date":
+      return `Invalid date for ${fieldName}`
+    case "invalid_string":
+      return `Invalid string format for ${fieldName}`
+    case "too_small":
+      return `Value too small for ${fieldName}`
+    case "too_big":
+      return `Value too large for ${fieldName}`
+    case "invalid_intersection_types":
+      return `Invalid intersection types for ${fieldName}`
+    case "not_multiple_of":
+      return `Value not a multiple of required value for ${fieldName}`
+    case "not_finite":
+      return `Value must be finite for ${fieldName}`
+    case "custom":
+      return `Validation failed for ${fieldName}`
+    default:
+      return `Validation error for ${fieldName}`
+  }
+}
+
+/**
+ * Sanitizes a path array to prevent exposure of sensitive data.
+ * Truncates path depth and segment lengths.
+ *
+ * @param path - The path array to sanitize
+ * @returns Sanitized path array
+ */
+function sanitizePath(path: (string | number)[]): (string | number)[] {
+  // Limit path depth
+  const truncatedPath = path.slice(0, MAX_PATH_DEPTH)
+
+  // Limit segment lengths
+  return truncatedPath.map((segment) => {
+    if (
+      typeof segment === "string" &&
+      segment.length > MAX_PATH_SEGMENT_LENGTH
+    ) {
+      return segment.substring(0, MAX_PATH_SEGMENT_LENGTH - 3) + "..."
+    }
+    return segment
+  })
+}
+
+/**
  * Sanitizes Zod validation errors for public heartbeat response.
- * Removes sensitive data and bounds the error array.
+ * Maps errors to controlled messages and removes sensitive data.
  *
  * @param error - The Zod validation error
  * @returns Array of sanitized config errors
@@ -32,17 +125,20 @@ export function sanitizeConfigErrors(
   const issues = error.issues.slice(0, MAX_CONFIG_ERRORS)
 
   for (const issue of issues) {
-    // Sanitize the error message to avoid exposing sensitive data
-    // Remove any potential config values from the message
-    let message = issue.message
+    // Sanitize the path to prevent exposure of deeply nested or long paths
+    const sanitizedPath = sanitizePath(issue.path)
 
-    // Truncate message if too long
-    if (message.length > 500) {
-      message = message.substring(0, 497) + "..."
+    // Create a controlled message based on the error code
+    // This prevents exposure of user-provided values in error messages
+    let message = createSanitizedMessage(issue.code, sanitizedPath)
+
+    // Truncate message if too long (defensive measure)
+    if (message.length > MAX_MESSAGE_LENGTH) {
+      message = message.substring(0, MAX_MESSAGE_LENGTH - 3) + "..."
     }
 
     errors.push({
-      path: issue.path,
+      path: sanitizedPath,
       code: issue.code,
       message,
     })
@@ -106,7 +202,7 @@ export function createHeartbeatResponse(
  * @returns True if the request is for the heartbeat endpoint
  */
 export function isHeartbeatRequest(url: URL): boolean {
-  return url.pathname === "/_appwarden/heartbeat"
+  return url.pathname === APPWARDEN_HEARTBEAT_ROUTE
 }
 
 /**

@@ -1,4 +1,5 @@
 import { ZodError } from "zod"
+import { APPWARDEN_HEARTBEAT_ROUTE } from "../constants"
 import { useAppwarden, useContentSecurityPolicy } from "../middlewares"
 import { useFetchOrigin } from "../middlewares/use-fetch-origin"
 import { CloudflareConfigFnType, ConfigFnInputSchema } from "../schemas"
@@ -13,11 +14,12 @@ export const appwardenOnCloudflare =
 
     const requestUrl = new URL(request.url)
 
+    // Parse config once before any processing
+    const parsedInput = ConfigFnInputSchema.safeParse(inputFn)
+
     // Handle heartbeat requests BEFORE any other processing
     // This must work even when the site is locked
-    if (requestUrl.pathname === "/_appwarden/heartbeat") {
-      const parsedInput = ConfigFnInputSchema.safeParse(inputFn)
-
+    if (requestUrl.pathname === APPWARDEN_HEARTBEAT_ROUTE) {
       // Import heartbeat utilities
       const { handleHeartbeatRequest, sanitizeConfigErrors } =
         await import("../utils")
@@ -34,8 +36,6 @@ export const appwardenOnCloudflare =
         configErrors,
       )
     }
-
-    const parsedInput = ConfigFnInputSchema.safeParse(inputFn)
     if (!parsedInput.success) {
       // Create a temporary context for error logging (without debug since we don't have config yet)
       const tempContext: MiddlewareContext = {

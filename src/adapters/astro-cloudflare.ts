@@ -1,6 +1,7 @@
 import type { Runtime } from "@astrojs/cloudflare"
 import type { MiddlewareHandler } from "astro"
 import { waitUntil } from "cloudflare:workers"
+import { APPWARDEN_HEARTBEAT_ROUTE } from "../constants"
 import { checkLockStatus } from "../core"
 import type {
   AstroCloudflareConfig,
@@ -126,7 +127,7 @@ export function createAppwardenMiddleware(
 
       // Handle heartbeat requests BEFORE any other processing
       // This must work even when the site is locked
-      if (requestUrl.pathname === "/_appwarden/heartbeat") {
+      if (requestUrl.pathname === APPWARDEN_HEARTBEAT_ROUTE) {
         // Get Cloudflare runtime from Astro locals
         const runtime = locals.runtime
         if (!runtime) {

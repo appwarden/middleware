@@ -47,11 +47,30 @@ export interface HeartbeatResponseBody {
 }
 
 /**
+ * Maximum path depth for config errors.
+ * Prevents deeply nested paths from being exposed.
+ */
+const MAX_PATH_DEPTH = 10
+
+/**
+ * Maximum length for path segments.
+ * Prevents excessively long path segments.
+ */
+const MAX_PATH_SEGMENT_LENGTH = 100
+
+/**
  * Schema for validating heartbeat config errors.
  * Ensures errors are bounded and sanitized.
  */
 export const HeartbeatConfigErrorSchema = z.object({
-  path: z.array(z.union([z.string(), z.number()])),
+  path: z
+    .array(
+      z.union([
+        z.string().max(MAX_PATH_SEGMENT_LENGTH),
+        z.number().int().nonnegative(),
+      ]),
+    )
+    .max(MAX_PATH_DEPTH),
   code: z.string().max(100),
   message: z.string().max(500),
 })
@@ -73,5 +92,5 @@ export const HeartbeatResponseBodySchema = z.object({
     "vercel",
   ]),
   version: z.string(),
-  configErrors: z.array(HeartbeatConfigErrorSchema),
+  configErrors: z.array(HeartbeatConfigErrorSchema).max(10),
 })
