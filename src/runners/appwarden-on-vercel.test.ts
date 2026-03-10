@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import { ZodError } from "zod"
 import { APPWARDEN_CACHE_KEY, globalErrors } from "../constants"
 import { LockValueType } from "../schemas"
+import type { HeartbeatResponseBody } from "../types"
 
 // Use vi.hoisted to define mocks before they're used in vi.mock (which is hoisted to top)
 const {
@@ -30,21 +32,27 @@ vi.mock("@vercel/functions", () => ({
 const NEXT_RESPONSE_MARKER = Symbol("NextResponse.next")
 
 // Mock next/server
-vi.mock("next/server", () => ({
-  NextResponse: {
-    next: () => {
+vi.mock("next/server", () => {
+  class MockNextResponse extends Response {
+    static next = vi.fn(() => {
       mockNextResponseNext()
-      // Return a Response with a custom header to identify it
-      const response = new Response(null, { status: 200 })
+      const response = new MockNextResponse(null, { status: 200 })
       ;(response as any)[NEXT_RESPONSE_MARKER] = true
       return response
-    },
-  },
-}))
+    })
+  }
+
+  return {
+    NextResponse: MockNextResponse,
+  }
+})
 
 // Mock dependencies - we need to mock MemoryCache before it's instantiated
-vi.mock("../utils", () => {
+vi.mock("../utils", async (importOriginal) => {
+  const actual = (await importOriginal()) as typeof import("../utils")
+
   return {
+    ...actual,
     buildLockPageUrl: vi.fn((slug: string, requestUrl: string) => {
       const normalizedSlug = slug.startsWith("/") ? slug : `/${slug}`
       return new URL(normalizedSlug, requestUrl)
@@ -166,6 +174,10 @@ describe("createAppwardenMiddleware", () => {
 
     // Mock AppwardenConfigSchema.parse to return the config by default
     vi.mocked(AppwardenConfigSchemaMock.parse).mockReturnValue(mockConfig)
+    vi.mocked(AppwardenConfigSchemaMock.safeParse).mockReturnValue({
+      success: true,
+      data: mockConfig,
+    })
 
     // Mock getLockValue to return not locked by default
     vi.mocked(getLockValueMock).mockResolvedValue({
@@ -185,6 +197,53 @@ describe("createAppwardenMiddleware", () => {
   it("should return a function", () => {
     const middleware = createAppwardenMiddleware(mockConfig)
     expect(typeof middleware).toBe("function")
+  })
+
+  it("should return a heartbeat response when config is valid", async () => {
+    const middleware = createAppwardenMiddleware(mockConfig)
+    const result = await middleware(
+      new Request("https://example.com/_appwarden/heartbeat", {
+        headers: { accept: "application/json" },
+      }),
+    )
+    const body = (await result.json()) as HeartbeatResponseBody
+
+    expect(result.status).toBe(200)
+    expect(body.service).toBe("vercel")
+    expect(body.configErrors).toEqual([])
+    expect(mockNextResponseNext).not.toHaveBeenCalled()
+    expect(getLockValueMock).not.toHaveBeenCalled()
+  })
+
+  it("should include heartbeat config errors when config validation fails", async () => {
+    vi.mocked(AppwardenConfigSchemaMock.safeParse).mockReturnValue({
+      success: false,
+      error: new ZodError([
+        {
+          code: "custom",
+          path: ["appwardenApiToken"],
+          message: "Invalid token",
+        },
+      ]),
+    })
+
+    const middleware = createAppwardenMiddleware(mockConfig)
+    const result = await middleware(
+      new Request("https://example.com/_appwarden/heartbeat", {
+        headers: { accept: "application/json" },
+      }),
+    )
+    const body = (await result.json()) as HeartbeatResponseBody
+
+    expect(result.status).toBe(200)
+    expect(body.configErrors).toHaveLength(1)
+    expect(body.configErrors[0]).toMatchObject({
+      path: expect.any(Array),
+      code: expect.any(String),
+      message: expect.any(String),
+    })
+    expect(mockNextResponseNext).not.toHaveBeenCalled()
+    expect(getLockValueMock).not.toHaveBeenCalled()
   })
 
   it("should call NextResponse.next() when config validation fails (fail open)", async () => {
@@ -650,6 +709,47 @@ describe("createAppwardenMiddleware", () => {
       expect(result.headers.get("Content-Security-Policy")).toBe(
         "default-src 'self'",
       )
+    })
+
+    it("should redirect locked requests with CSP without relying on Response.redirect", async () => {
+      const directives = { defaultSrc: ["self"] }
+      const configWithCSP = {
+        ...mockConfig,
+        contentSecurityPolicy: { mode: "enforced", directives },
+      }
+      vi.mocked(AppwardenConfigSchemaMock.parse).mockReturnValue(configWithCSP)
+      vi.mocked(getLockValueMock).mockResolvedValue({
+        lockValue: {
+          isLocked: 1,
+          isLockedTest: 0,
+          lastCheck: Date.now(),
+        },
+        shouldDeleteEdgeValue: false,
+      })
+
+      const responseRedirectSpy = vi
+        .spyOn(Response, "redirect")
+        .mockImplementation(() => {
+          throw new Error("Response.redirect should not be called")
+        })
+
+      const middleware = createAppwardenMiddleware(configWithCSP)
+      const result = await middleware(
+        new Request("https://example.com/page", {
+          headers: { accept: "text/html" },
+        }),
+      )
+
+      expect(result.status).toBe(302)
+      expect(result.headers.get("Location")).toBe(
+        "https://example.com/maintenance",
+      )
+      expect(result.headers.get("Content-Security-Policy")).toBe(
+        "default-src 'self'",
+      )
+      expect(mockNextResponseNext).not.toHaveBeenCalled()
+
+      responseRedirectSpy.mockRestore()
     })
 
     it("should add Content-Security-Policy-Report-Only header when mode is 'report-only'", async () => {

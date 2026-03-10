@@ -4,17 +4,20 @@ import {
   APPWARDEN_CACHE_KEY,
   APPWARDEN_HEARTBEAT_ROUTE,
   globalErrors,
+  HEARTBEAT_SERVICES,
 } from "../constants"
 import { LockValueType } from "../schemas"
 import { AppwardenConfigSchema, VercelAppwardenConfig } from "../schemas/vercel"
 import {
   buildLockPageUrl,
   debug,
+  handleHeartbeatRequest,
   isCacheUrl,
   isHTMLRequest,
   isOnLockPage,
   MemoryCache,
   printMessage,
+  sanitizeConfigErrors,
   TEMPORARY_REDIRECT_STATUS,
   validateConfig,
 } from "../utils"
@@ -47,11 +50,6 @@ export function createAppwardenMiddleware(
     // This must work even when the site is locked
     if (requestUrl.pathname === APPWARDEN_HEARTBEAT_ROUTE) {
       const validationResult = AppwardenConfigSchema.safeParse(config)
-
-      // Import heartbeat utilities
-      const { handleHeartbeatRequest, sanitizeConfigErrors } =
-        await import("../utils")
-      const { HEARTBEAT_SERVICES } = await import("../constants")
 
       // Return heartbeat response with config errors if validation failed
       const configErrors = validationResult.success
@@ -86,6 +84,15 @@ export function createAppwardenMiddleware(
         response.headers.set(headerName, headerValue)
       }
       return response
+    }
+
+    const createMutableRedirectResponse = (location: string): Response => {
+      return new Response(null, {
+        status: TEMPORARY_REDIRECT_STATUS,
+        headers: {
+          Location: location,
+        },
+      })
     }
 
     try {
@@ -161,9 +168,8 @@ export function createAppwardenMiddleware(
           parsedConfig.lockPageSlug,
           request.url,
         )
-        const redirectResponse = Response.redirect(
+        const redirectResponse = createMutableRedirectResponse(
           lockPageUrl.toString(),
-          TEMPORARY_REDIRECT_STATUS,
         )
         return applyCspHeaders(redirectResponse)
       }

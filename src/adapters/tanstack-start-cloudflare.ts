@@ -161,29 +161,46 @@ export function createAppwardenMiddleware(
       // Handle heartbeat requests BEFORE any other processing
       // This must work even when the site is locked
       if (requestUrl.pathname === APPWARDEN_HEARTBEAT_ROUTE) {
-        // Get config from the config function (pre-transformation input)
-        const rawConfig = configFn()
-
-        // Validate config
-        const validationResult =
-          TanStackStartCloudflareConfigSchema.safeParse(rawConfig)
-
-        // Import heartbeat utilities
-        const { handleHeartbeatRequest, sanitizeConfigErrors } =
-          await import("../utils")
+        const {
+          createHeartbeatConfigError,
+          handleHeartbeatRequest,
+          sanitizeConfigErrors,
+        } = await import("../utils")
         const { HEARTBEAT_SERVICES } = await import("../constants")
 
-        // Return heartbeat response with config errors if validation failed
-        const configErrors = validationResult.success
-          ? []
-          : sanitizeConfigErrors(validationResult.error)
+        try {
+          // Get config from the config function (pre-transformation input)
+          const rawConfig = configFn()
 
-        // TanStack Start expects a TanStackStartNextResult, but we need to throw the Response
-        throw handleHeartbeatRequest(
-          request,
-          HEARTBEAT_SERVICES.CLOUDFLARE_TANSTACK_START,
-          configErrors,
-        )
+          // Validate config
+          const validationResult =
+            TanStackStartCloudflareConfigSchema.safeParse(rawConfig)
+
+          // TanStack Start expects a TanStackStartNextResult, but we need to throw the Response
+          throw handleHeartbeatRequest(
+            request,
+            HEARTBEAT_SERVICES.CLOUDFLARE_TANSTACK_START,
+            validationResult.success
+              ? []
+              : sanitizeConfigErrors(validationResult.error),
+          )
+        } catch (error) {
+          if (isResponseLike(error)) {
+            throw error
+          }
+
+          throw handleHeartbeatRequest(
+            request,
+            HEARTBEAT_SERVICES.CLOUDFLARE_TANSTACK_START,
+            [
+              createHeartbeatConfigError(
+                ["config"],
+                "custom",
+                "Appwarden config evaluation failed",
+              ),
+            ],
+          )
+        }
       }
 
       // Get config from the config function (pre-transformation input)

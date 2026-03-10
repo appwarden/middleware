@@ -3,7 +3,7 @@ import {
   type NextFetchEvent,
   type NextRequest,
 } from "next/server"
-import { APPWARDEN_HEARTBEAT_ROUTE } from "../constants"
+import { APPWARDEN_HEARTBEAT_ROUTE, HEARTBEAT_SERVICES } from "../constants"
 import { checkLockStatus } from "../core"
 import type {
   NextJsCloudflareConfig,
@@ -12,10 +12,13 @@ import type {
 import { NextJsCloudflareConfigSchema } from "../schemas/nextjs-cloudflare"
 import {
   buildLockPageUrl,
+  createHeartbeatConfigError,
   debug,
+  handleHeartbeatRequest,
   isHTMLRequest,
   isOnLockPage,
   printMessage,
+  sanitizeConfigErrors,
   TEMPORARY_REDIRECT_STATUS,
 } from "../utils"
 import { getNowMs, logElapsed } from "../utils/get-now"
@@ -96,41 +99,14 @@ export function createAppwardenMiddleware(
       // Handle heartbeat requests BEFORE any other processing
       // This must work even when the site is locked
       if (requestUrl.pathname === APPWARDEN_HEARTBEAT_ROUTE) {
+        let runtime: NextJsCloudflareRuntime
+
         try {
           // Dynamic import to avoid bundling issues
           const { getCloudflareContext } =
             await import("@opennextjs/cloudflare")
-          const { env, ctx } = getCloudflareContext()
-
-          // Get config from the config function (pre-transformation input)
-          const rawConfig = configFn({ env, ctx })
-
-          // Validate config
-          const validationResult =
-            NextJsCloudflareConfigSchema.safeParse(rawConfig)
-
-          // Import heartbeat utilities
-          const { handleHeartbeatRequest, sanitizeConfigErrors } =
-            await import("../utils")
-          const { HEARTBEAT_SERVICES } = await import("../constants")
-
-          // Return heartbeat response with config errors if validation failed
-          const configErrors = validationResult.success
-            ? []
-            : sanitizeConfigErrors(validationResult.error)
-
-          const response = handleHeartbeatRequest(
-            request,
-            HEARTBEAT_SERVICES.CLOUDFLARE_NEXTJS,
-            configErrors,
-          )
-          // Convert Response to NextResponse
-          return new NextResponse(response.body, response)
-        } catch (error) {
-          // If we can't get Cloudflare context, return heartbeat with a controlled error
-          const { createHeartbeatConfigError, handleHeartbeatRequest } =
-            await import("../utils")
-          const { HEARTBEAT_SERVICES } = await import("../constants")
+          runtime = getCloudflareContext()
+        } catch {
           const response = handleHeartbeatRequest(
             request,
             HEARTBEAT_SERVICES.CLOUDFLARE_NEXTJS,
@@ -143,6 +119,38 @@ export function createAppwardenMiddleware(
             ],
           )
           // Convert Response to NextResponse
+          return new NextResponse(response.body, response)
+        }
+
+        try {
+          // Get config from the config function (pre-transformation input)
+          const rawConfig = configFn(runtime)
+
+          // Validate config
+          const validationResult =
+            NextJsCloudflareConfigSchema.safeParse(rawConfig)
+
+          const response = handleHeartbeatRequest(
+            request,
+            HEARTBEAT_SERVICES.CLOUDFLARE_NEXTJS,
+            validationResult.success
+              ? []
+              : sanitizeConfigErrors(validationResult.error),
+          )
+          // Convert Response to NextResponse
+          return new NextResponse(response.body, response)
+        } catch {
+          const response = handleHeartbeatRequest(
+            request,
+            HEARTBEAT_SERVICES.CLOUDFLARE_NEXTJS,
+            [
+              createHeartbeatConfigError(
+                ["config"],
+                "custom",
+                "Appwarden config evaluation failed",
+              ),
+            ],
+          )
           return new NextResponse(response.body, response)
         }
       }

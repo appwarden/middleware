@@ -1,5 +1,9 @@
 import { ZodError } from "zod"
-import { APPWARDEN_HEARTBEAT_ROUTE } from "../constants"
+import {
+  APPWARDEN_HEARTBEAT_ROUTE,
+  HEARTBEAT_CONFIG_ERROR_MAX_PATH_DEPTH,
+  HEARTBEAT_CONFIG_ERROR_MAX_PATH_SEGMENT_LENGTH,
+} from "../constants"
 import type {
   HeartbeatConfigError,
   HeartbeatResponseBody,
@@ -24,18 +28,6 @@ const MAX_MESSAGE_LENGTH = 500
  * Keeps error codes within the public contract bounds.
  */
 const MAX_CODE_LENGTH = 100
-
-/**
- * Maximum path depth for config errors.
- * Prevents deeply nested paths from being exposed.
- */
-const MAX_PATH_DEPTH = 10
-
-/**
- * Maximum length for path segments.
- * Prevents excessively long path segments.
- */
-const MAX_PATH_SEGMENT_LENGTH = 100
 
 /**
  * Creates a sanitized error message based on the Zod error code.
@@ -97,15 +89,20 @@ function createSanitizedMessage(
  */
 function sanitizePath(path: (string | number)[]): (string | number)[] {
   // Limit path depth
-  const truncatedPath = path.slice(0, MAX_PATH_DEPTH)
+  const truncatedPath = path.slice(0, HEARTBEAT_CONFIG_ERROR_MAX_PATH_DEPTH)
 
   // Limit segment lengths
   return truncatedPath.map((segment) => {
     if (
       typeof segment === "string" &&
-      segment.length > MAX_PATH_SEGMENT_LENGTH
+      segment.length > HEARTBEAT_CONFIG_ERROR_MAX_PATH_SEGMENT_LENGTH
     ) {
-      return segment.substring(0, MAX_PATH_SEGMENT_LENGTH - 3) + "..."
+      return (
+        segment.substring(
+          0,
+          HEARTBEAT_CONFIG_ERROR_MAX_PATH_SEGMENT_LENGTH - 3,
+        ) + "..."
+      )
     }
     return segment
   })

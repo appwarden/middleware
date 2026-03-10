@@ -8,6 +8,18 @@ export const APPWARDEN_TEST_ROUTE = "/_appwarden/test"
 
 export const APPWARDEN_HEARTBEAT_ROUTE = "/_appwarden/heartbeat"
 
+/**
+ * Maximum path depth for public heartbeat config errors.
+ * Prevents deeply nested paths from being exposed.
+ */
+export const HEARTBEAT_CONFIG_ERROR_MAX_PATH_DEPTH = 10
+
+/**
+ * Maximum length for individual public heartbeat config error path segments.
+ * Prevents excessively long path segments from being exposed.
+ */
+export const HEARTBEAT_CONFIG_ERROR_MAX_PATH_SEGMENT_LENGTH = 100
+
 export const APPWARDEN_CACHE_KEY = "appwarden-lock" as const
 
 export const HEARTBEAT_SERVICE_VALUES = [

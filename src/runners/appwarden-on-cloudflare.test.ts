@@ -1,7 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { ZodError } from "zod"
 import { ConfigFnInputSchema } from "../schemas"
-import { Bindings, MiddlewareContext } from "../types"
+import type {
+  Bindings,
+  HeartbeatResponseBody,
+  MiddlewareContext,
+} from "../types"
 import { usePipeline } from "../utils"
 import { insertErrorLogs } from "../utils/cloudflare"
 import { appwardenOnCloudflare } from "./appwarden-on-cloudflare"
@@ -160,6 +164,26 @@ describe("appwardenOnCloudflare", () => {
       code: expect.any(String),
       message: expect.any(String),
     })
+  })
+
+  it("should return a controlled heartbeat error when config evaluation throws", async () => {
+    mockRequest = new Request("https://example.com/_appwarden/heartbeat")
+    mockInputFn.mockImplementationOnce(() => {
+      throw new Error("boom")
+    })
+
+    const handler = appwardenOnCloudflare(mockInputFn) as any
+    const result = await handler(mockRequest, mockEnv, mockCtx)
+    const body = (await result.json()) as HeartbeatResponseBody
+
+    expect(result.status).toBe(200)
+    expect(body.configErrors).toEqual([
+      {
+        path: ["config"],
+        code: "custom",
+        message: "Appwarden config evaluation failed",
+      },
+    ])
   })
 
   it("should execute the middleware pipeline with the correct middlewares", async () => {

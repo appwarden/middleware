@@ -299,6 +299,32 @@ describe("createAppwardenMiddleware (Astro)", () => {
     expect(mockNext).not.toHaveBeenCalled()
   })
 
+  it("should return a controlled heartbeat error when config evaluation throws", async () => {
+    mockContext.request = new Request(
+      "https://example.com/_appwarden/heartbeat",
+      { headers: { Accept: "application/json" } },
+    )
+
+    const middleware = createAppwardenMiddleware(() => {
+      throw new Error("boom")
+    })
+
+    const result = asResponse(
+      await middleware(asAPIContext(mockContext), mockNext),
+    )
+    const body = (await result.json()) as HeartbeatResponseBody
+
+    expect(result.status).toBe(200)
+    expect(body.configErrors).toEqual([
+      {
+        path: ["config"],
+        code: "custom",
+        message: "Appwarden config evaluation failed",
+      },
+    ])
+    expect(mockNext).not.toHaveBeenCalled()
+  })
+
   it("should pass correct config to checkLockStatus", async () => {
     const middleware = createAppwardenMiddleware(() => ({
       lockPageSlug: "/maintenance",

@@ -356,6 +356,28 @@ describe("createAppwardenMiddleware (OpenNext Cloudflare)", () => {
     ])
   })
 
+  it("should return a heartbeat config error when config evaluation throws", async () => {
+    mockRequest = new Request("https://example.com/_appwarden/heartbeat", {
+      headers: { Accept: "application/json" },
+    })
+
+    const middleware = createAppwardenMiddleware(() => {
+      throw new Error("boom")
+    })
+
+    const result = await middleware(mockRequest as any)
+    const body = (await result.json()) as HeartbeatResponseBody
+
+    expect(result.status).toBe(200)
+    expect(body.configErrors).toEqual([
+      {
+        path: ["config"],
+        code: "custom",
+        message: "Appwarden config evaluation failed",
+      },
+    ])
+  })
+
   it("should not redirect when already on lock page to prevent infinite redirect loop", async () => {
     vi.mocked(checkLockStatus).mockResolvedValue({
       isLocked: true,

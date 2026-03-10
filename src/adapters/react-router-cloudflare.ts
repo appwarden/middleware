@@ -109,28 +109,41 @@ export function createAppwardenMiddleware(
       // Handle heartbeat requests BEFORE any other processing
       // This must work even when the site is locked
       if (requestUrl.pathname === APPWARDEN_HEARTBEAT_ROUTE) {
-        // Get config from the config function (using input type - will be validated)
-        const configInput = configFn()
-
-        // Validate config
-        const validationResult =
-          ReactRouterCloudflareConfigSchema.safeParse(configInput)
-
-        // Import heartbeat utilities
-        const { handleHeartbeatRequest, sanitizeConfigErrors } =
-          await import("../utils")
+        const {
+          createHeartbeatConfigError,
+          handleHeartbeatRequest,
+          sanitizeConfigErrors,
+        } = await import("../utils")
         const { HEARTBEAT_SERVICES } = await import("../constants")
 
-        // Return heartbeat response with config errors if validation failed
-        const configErrors = validationResult.success
-          ? []
-          : sanitizeConfigErrors(validationResult.error)
+        try {
+          // Get config from the config function (using input type - will be validated)
+          const configInput = configFn()
 
-        return handleHeartbeatRequest(
-          request,
-          HEARTBEAT_SERVICES.CLOUDFLARE_REACT_ROUTER,
-          configErrors,
-        )
+          // Validate config
+          const validationResult =
+            ReactRouterCloudflareConfigSchema.safeParse(configInput)
+
+          return handleHeartbeatRequest(
+            request,
+            HEARTBEAT_SERVICES.CLOUDFLARE_REACT_ROUTER,
+            validationResult.success
+              ? []
+              : sanitizeConfigErrors(validationResult.error),
+          )
+        } catch {
+          return handleHeartbeatRequest(
+            request,
+            HEARTBEAT_SERVICES.CLOUDFLARE_REACT_ROUTER,
+            [
+              createHeartbeatConfigError(
+                ["config"],
+                "custom",
+                "Appwarden config evaluation failed",
+              ),
+            ],
+          )
+        }
       }
 
       // Get config from the config function (using input type - will be validated)
