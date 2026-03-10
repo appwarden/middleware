@@ -1,5 +1,9 @@
 import { z } from "zod"
-import { HEARTBEAT_SERVICE_VALUES } from "../constants"
+import {
+  HEARTBEAT_CONFIG_ERROR_MAX_PATH_DEPTH,
+  HEARTBEAT_CONFIG_ERROR_MAX_PATH_SEGMENT_LENGTH,
+  HEARTBEAT_SERVICE_VALUES,
+} from "../constants"
 
 /**
  * Service identifiers for different middleware adapters.
@@ -42,18 +46,6 @@ export interface HeartbeatResponseBody {
 }
 
 /**
- * Maximum path depth for config errors.
- * Prevents deeply nested paths from being exposed.
- */
-const MAX_PATH_DEPTH = 10
-
-/**
- * Maximum length for path segments.
- * Prevents excessively long path segments.
- */
-const MAX_PATH_SEGMENT_LENGTH = 100
-
-/**
  * Schema for validating heartbeat config errors.
  * Ensures errors are bounded and sanitized.
  */
@@ -61,11 +53,11 @@ export const HeartbeatConfigErrorSchema = z.object({
   path: z
     .array(
       z.union([
-        z.string().max(MAX_PATH_SEGMENT_LENGTH),
+        z.string().max(HEARTBEAT_CONFIG_ERROR_MAX_PATH_SEGMENT_LENGTH),
         z.number().int().nonnegative(),
       ]),
     )
-    .max(MAX_PATH_DEPTH),
+    .max(HEARTBEAT_CONFIG_ERROR_MAX_PATH_DEPTH),
   code: z.string().max(100),
   message: z.string().max(500),
 })

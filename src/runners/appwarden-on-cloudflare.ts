@@ -1,10 +1,16 @@
 import { ZodError } from "zod"
-import { APPWARDEN_HEARTBEAT_ROUTE } from "../constants"
+import { APPWARDEN_HEARTBEAT_ROUTE, HEARTBEAT_SERVICES } from "../constants"
 import { useAppwarden, useContentSecurityPolicy } from "../middlewares"
 import { useFetchOrigin } from "../middlewares/use-fetch-origin"
 import { CloudflareConfigFnType, ConfigFnInputSchema } from "../schemas"
 import { Bindings, MiddlewareContext } from "../types"
-import { debug, usePipeline } from "../utils"
+import {
+  createHeartbeatConfigError,
+  debug,
+  handleHeartbeatRequest,
+  sanitizeConfigErrors,
+  usePipeline,
+} from "../utils"
 import { insertErrorLogs } from "../utils/cloudflare"
 
 export const appwardenOnCloudflare =
@@ -20,11 +26,6 @@ export const appwardenOnCloudflare =
     // Handle heartbeat requests BEFORE any other processing
     // This must work even when the site is locked
     if (requestUrl.pathname === APPWARDEN_HEARTBEAT_ROUTE) {
-      // Import heartbeat utilities
-      const { handleHeartbeatRequest, sanitizeConfigErrors } =
-        await import("../utils")
-      const { HEARTBEAT_SERVICES } = await import("../constants")
-
       // Return heartbeat response with config errors if validation failed
       let configErrors = parsedInput.success
         ? []
@@ -37,7 +38,13 @@ export const appwardenOnCloudflare =
           if (error instanceof ZodError) {
             configErrors = sanitizeConfigErrors(error)
           } else {
-            throw error
+            configErrors = [
+              createHeartbeatConfigError(
+                ["config"],
+                "custom",
+                "Appwarden config evaluation failed",
+              ),
+            ]
           }
         }
       }

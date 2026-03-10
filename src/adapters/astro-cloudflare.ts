@@ -128,13 +128,17 @@ export function createAppwardenMiddleware(
       // Handle heartbeat requests BEFORE any other processing
       // This must work even when the site is locked
       if (requestUrl.pathname === APPWARDEN_HEARTBEAT_ROUTE) {
+        const {
+          createHeartbeatConfigError,
+          handleHeartbeatRequest,
+          sanitizeConfigErrors,
+        } = await import("../utils")
+        const { HEARTBEAT_SERVICES } = await import("../constants")
+
         // Get Cloudflare runtime from Astro locals
         const runtime = locals.runtime
         if (!runtime) {
           // If runtime is not available, return heartbeat with a controlled error
-          const { createHeartbeatConfigError, handleHeartbeatRequest } =
-            await import("../utils")
-          const { HEARTBEAT_SERVICES } = await import("../constants")
           return handleHeartbeatRequest(
             request,
             HEARTBEAT_SERVICES.CLOUDFLARE_ASTRO,
@@ -148,28 +152,34 @@ export function createAppwardenMiddleware(
           )
         }
 
-        // Get config from the config function (pre-transformation input)
-        const rawConfig = configFn(runtime)
+        try {
+          // Get config from the config function (pre-transformation input)
+          const rawConfig = configFn(runtime)
 
-        // Validate config
-        const validationResult =
-          AstroCloudflareConfigSchema.safeParse(rawConfig)
+          // Validate config
+          const validationResult =
+            AstroCloudflareConfigSchema.safeParse(rawConfig)
 
-        // Import heartbeat utilities
-        const { handleHeartbeatRequest, sanitizeConfigErrors } =
-          await import("../utils")
-        const { HEARTBEAT_SERVICES } = await import("../constants")
-
-        // Return heartbeat response with config errors if validation failed
-        const configErrors = validationResult.success
-          ? []
-          : sanitizeConfigErrors(validationResult.error)
-
-        return handleHeartbeatRequest(
-          request,
-          HEARTBEAT_SERVICES.CLOUDFLARE_ASTRO,
-          configErrors,
-        )
+          return handleHeartbeatRequest(
+            request,
+            HEARTBEAT_SERVICES.CLOUDFLARE_ASTRO,
+            validationResult.success
+              ? []
+              : sanitizeConfigErrors(validationResult.error),
+          )
+        } catch {
+          return handleHeartbeatRequest(
+            request,
+            HEARTBEAT_SERVICES.CLOUDFLARE_ASTRO,
+            [
+              createHeartbeatConfigError(
+                ["config"],
+                "custom",
+                "Appwarden config evaluation failed",
+              ),
+            ],
+          )
+        }
       }
 
       // Get Cloudflare runtime from Astro locals

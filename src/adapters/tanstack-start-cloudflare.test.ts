@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { checkLockStatus } from "../core"
+import type { HeartbeatResponseBody } from "../types"
 import { applyContentSecurityPolicyToResponse } from "../utils/apply-content-security-policy-to-response"
 import {
   createAppwardenMiddleware,
@@ -72,6 +73,14 @@ beforeEach(() => {
 afterEach(() => {
   consoleErrorSpy.mockRestore()
 })
+
+const getThrownResponse = async (
+  promise: Promise<unknown>,
+): Promise<Response> => {
+  const result = await promise.catch((error: unknown) => error)
+  expect(result).toBeInstanceOf(Response)
+  return result as Response
+}
 
 describe("createAppwardenMiddleware (TanStack Start)", () => {
   let mockArgs: TanStackStartMiddlewareArgs
@@ -147,6 +156,74 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
     expect((result as any).response.status).toBe(200)
 
     consoleErrorSpy.mockRestore()
+  })
+
+  it("should throw a heartbeat response when config is valid", async () => {
+    mockArgs.request = new Request("https://example.com/_appwarden/heartbeat", {
+      headers: { Accept: "application/json" },
+    })
+
+    const middleware = createAppwardenMiddleware(() => ({
+      lockPageSlug: "/maintenance",
+      appwardenApiToken: "test-token",
+    }))
+
+    const response = await getThrownResponse(middleware(mockArgs))
+    const body = (await response.json()) as HeartbeatResponseBody
+
+    expect(response.status).toBe(200)
+    expect(body.service).toBe("cloudflare-tanstack-start")
+    expect(body.configErrors).toEqual([])
+    expect(mockNext).not.toHaveBeenCalled()
+    expect(checkLockStatus).not.toHaveBeenCalled()
+  })
+
+  it("should throw heartbeat config errors when config validation fails", async () => {
+    mockArgs.request = new Request("https://example.com/_appwarden/heartbeat", {
+      headers: { Accept: "application/json" },
+    })
+
+    const middleware = createAppwardenMiddleware(() => ({
+      lockPageSlug: "/maintenance",
+      appwardenApiToken: "",
+    }))
+
+    const response = await getThrownResponse(middleware(mockArgs))
+    const body = (await response.json()) as HeartbeatResponseBody
+
+    expect(response.status).toBe(200)
+    expect(body.configErrors).toHaveLength(1)
+    expect(body.configErrors[0]).toMatchObject({
+      path: expect.any(Array),
+      code: expect.any(String),
+      message: expect.any(String),
+    })
+    expect(mockNext).not.toHaveBeenCalled()
+    expect(checkLockStatus).not.toHaveBeenCalled()
+  })
+
+  it("should throw a controlled heartbeat error when config evaluation throws", async () => {
+    mockArgs.request = new Request("https://example.com/_appwarden/heartbeat", {
+      headers: { Accept: "application/json" },
+    })
+
+    const middleware = createAppwardenMiddleware(() => {
+      throw new Error("boom")
+    })
+
+    const response = await getThrownResponse(middleware(mockArgs))
+    const body = (await response.json()) as HeartbeatResponseBody
+
+    expect(response.status).toBe(200)
+    expect(body.configErrors).toEqual([
+      {
+        path: ["config"],
+        code: "custom",
+        message: "Appwarden config evaluation failed",
+      },
+    ])
+    expect(mockNext).not.toHaveBeenCalled()
+    expect(checkLockStatus).not.toHaveBeenCalled()
   })
 
   it("should throw a redirect response when site is locked", async () => {
