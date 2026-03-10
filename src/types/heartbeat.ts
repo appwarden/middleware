@@ -1,7 +1,11 @@
 import { z } from "zod"
 import {
+  HEARTBEAT_CONFIG_ERROR_MAX_CODE_LENGTH,
+  HEARTBEAT_CONFIG_ERROR_MAX_COUNT,
+  HEARTBEAT_CONFIG_ERROR_MAX_MESSAGE_LENGTH,
   HEARTBEAT_CONFIG_ERROR_MAX_PATH_DEPTH,
   HEARTBEAT_CONFIG_ERROR_MAX_PATH_SEGMENT_LENGTH,
+  HEARTBEAT_CONTRACT_VERSION,
   HEARTBEAT_SERVICE_VALUES,
 } from "../constants"
 
@@ -58,8 +62,8 @@ export const HeartbeatConfigErrorSchema = z.object({
       ]),
     )
     .max(HEARTBEAT_CONFIG_ERROR_MAX_PATH_DEPTH),
-  code: z.string().max(100),
-  message: z.string().max(500),
+  code: z.string().max(HEARTBEAT_CONFIG_ERROR_MAX_CODE_LENGTH),
+  message: z.string().max(HEARTBEAT_CONFIG_ERROR_MAX_MESSAGE_LENGTH),
 })
 
 /**
@@ -69,8 +73,10 @@ export const HeartbeatResponseBodySchema = z.object({
   app: z.literal("appwarden"),
   kind: z.literal("heartbeat"),
   status: z.literal("ok"),
-  contractVersion: z.literal(1),
+  contractVersion: z.literal(HEARTBEAT_CONTRACT_VERSION),
   service: z.enum(HEARTBEAT_SERVICE_VALUES),
   version: z.string(),
-  configErrors: z.array(HeartbeatConfigErrorSchema).max(10),
+  configErrors: z
+    .array(HeartbeatConfigErrorSchema)
+    .max(HEARTBEAT_CONFIG_ERROR_MAX_COUNT),
 })

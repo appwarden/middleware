@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest"
 import { ZodError } from "zod"
 import {
+  HEARTBEAT_CONFIG_ERROR_MAX_CODE_LENGTH,
+  HEARTBEAT_CONFIG_ERROR_MAX_COUNT,
+  HEARTBEAT_CONFIG_ERROR_MAX_MESSAGE_LENGTH,
+  HEARTBEAT_CONTRACT_VERSION,
+} from "../constants"
+import {
   createHeartbeatConfigError,
   createHeartbeatResponse,
   createHeartbeatResponseBody,
@@ -36,18 +42,21 @@ describe("heartbeat utilities", () => {
       })
     })
 
-    it("should limit errors to MAX_CONFIG_ERRORS (10)", () => {
-      const issues = Array.from({ length: 15 }, (_, i) => ({
-        code: "invalid_type" as const,
-        expected: "string" as const,
-        received: "number" as const,
-        path: [`field${i}`],
-        message: `Error ${i}`,
-      }))
+    it("should limit errors to the contract max", () => {
+      const issues = Array.from(
+        { length: HEARTBEAT_CONFIG_ERROR_MAX_COUNT + 5 },
+        (_, i) => ({
+          code: "invalid_type" as const,
+          expected: "string" as const,
+          received: "number" as const,
+          path: [`field${i}`],
+          message: `Error ${i}`,
+        }),
+      )
 
       const error = new ZodError(issues)
       const result = sanitizeConfigErrors(error)
-      expect(result).toHaveLength(10)
+      expect(result).toHaveLength(HEARTBEAT_CONFIG_ERROR_MAX_COUNT)
     })
 
     it("should ignore raw Zod messages and use controlled sanitization", () => {
@@ -88,7 +97,7 @@ describe("heartbeat utilities", () => {
         app: "appwarden",
         kind: "heartbeat",
         status: "ok",
-        contractVersion: 1,
+        contractVersion: HEARTBEAT_CONTRACT_VERSION,
         service: "cloudflare",
         configErrors: [],
       })
@@ -119,11 +128,11 @@ describe("heartbeat utilities", () => {
 
       const body = createHeartbeatResponseBody("cloudflare-astro", configErrors)
 
-      expect(body.configErrors).toHaveLength(10)
+      expect(body.configErrors).toHaveLength(HEARTBEAT_CONFIG_ERROR_MAX_COUNT)
       expect(body.configErrors[0]).toEqual({
         path: ["config", 0, `${"s".repeat(97)}...`, "extra"],
-        code: "c".repeat(100),
-        message: `${"m".repeat(497)}...`,
+        code: "c".repeat(HEARTBEAT_CONFIG_ERROR_MAX_CODE_LENGTH),
+        message: `${"m".repeat(HEARTBEAT_CONFIG_ERROR_MAX_MESSAGE_LENGTH - 3)}...`,
       })
     })
   })
@@ -135,7 +144,9 @@ describe("heartbeat utilities", () => {
       expect(response.headers.get("content-type")).toBe("application/json")
       expect(response.headers.get("cache-control")).toBe("no-store")
       expect(response.headers.get("x-appwarden-heartbeat")).toBe("1")
-      expect(response.headers.get("x-appwarden-contract-version")).toBe("1")
+      expect(response.headers.get("x-appwarden-contract-version")).toBe(
+        String(HEARTBEAT_CONTRACT_VERSION),
+      )
       expect(response.headers.get("x-appwarden-service")).toBe(
         "cloudflare-nextjs",
       )
@@ -149,7 +160,7 @@ describe("heartbeat utilities", () => {
         app: "appwarden",
         kind: "heartbeat",
         status: "ok",
-        contractVersion: 1,
+        contractVersion: HEARTBEAT_CONTRACT_VERSION,
         service: "vercel",
       })
     })

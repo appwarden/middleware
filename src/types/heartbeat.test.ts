@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest"
-import { HEARTBEAT_SERVICE_VALUES } from "../constants"
+import {
+  HEARTBEAT_CONFIG_ERROR_MAX_CODE_LENGTH,
+  HEARTBEAT_CONFIG_ERROR_MAX_MESSAGE_LENGTH,
+  HEARTBEAT_CONTRACT_VERSION,
+  HEARTBEAT_SERVICE_VALUES,
+} from "../constants"
 import {
   HeartbeatConfigErrorSchema,
   HeartbeatResponseBodySchema,
@@ -32,7 +37,7 @@ describe("heartbeat types", () => {
     it("should reject error with code longer than 100 chars", () => {
       const invalidError = {
         path: ["lockPageSlug"],
-        code: "a".repeat(101),
+        code: "a".repeat(HEARTBEAT_CONFIG_ERROR_MAX_CODE_LENGTH + 1),
         message: "Error message",
       }
 
@@ -44,7 +49,7 @@ describe("heartbeat types", () => {
       const invalidError = {
         path: ["lockPageSlug"],
         code: "invalid_type",
-        message: "a".repeat(501),
+        message: "a".repeat(HEARTBEAT_CONFIG_ERROR_MAX_MESSAGE_LENGTH + 1),
       }
 
       const result = HeartbeatConfigErrorSchema.safeParse(invalidError)
@@ -69,7 +74,7 @@ describe("heartbeat types", () => {
         app: "appwarden",
         kind: "heartbeat",
         status: "ok",
-        contractVersion: 1,
+        contractVersion: HEARTBEAT_CONTRACT_VERSION,
         service: "cloudflare",
         version: "1.0.0",
         configErrors: [],
@@ -84,7 +89,7 @@ describe("heartbeat types", () => {
         app: "appwarden",
         kind: "heartbeat",
         status: "ok",
-        contractVersion: 1,
+        contractVersion: HEARTBEAT_CONTRACT_VERSION,
         service: "cloudflare-astro",
         version: "1.0.0",
         configErrors: [
@@ -105,7 +110,7 @@ describe("heartbeat types", () => {
         app: "wrong",
         kind: "heartbeat",
         status: "ok",
-        contractVersion: 1,
+        contractVersion: HEARTBEAT_CONTRACT_VERSION,
         service: "cloudflare",
         version: "1.0.0",
         configErrors: [],
@@ -120,7 +125,7 @@ describe("heartbeat types", () => {
         app: "appwarden",
         kind: "wrong",
         status: "ok",
-        contractVersion: 1,
+        contractVersion: HEARTBEAT_CONTRACT_VERSION,
         service: "cloudflare",
         version: "1.0.0",
         configErrors: [],
@@ -135,7 +140,7 @@ describe("heartbeat types", () => {
         app: "appwarden",
         kind: "heartbeat",
         status: "ok",
-        contractVersion: 2,
+        contractVersion: HEARTBEAT_CONTRACT_VERSION + 1,
         service: "cloudflare",
         version: "1.0.0",
         configErrors: [],
@@ -150,7 +155,7 @@ describe("heartbeat types", () => {
         app: "appwarden",
         kind: "heartbeat",
         status: "ok",
-        contractVersion: 1,
+        contractVersion: HEARTBEAT_CONTRACT_VERSION,
         service: "invalid-service",
         version: "1.0.0",
         configErrors: [],
@@ -167,7 +172,7 @@ describe("heartbeat types", () => {
           app: "appwarden",
           kind: "heartbeat",
           status: "ok",
-          contractVersion: 1,
+          contractVersion: HEARTBEAT_CONTRACT_VERSION,
           service,
           version: "1.0.0",
           configErrors: [],
