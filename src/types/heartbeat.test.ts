@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest"
+import { HEARTBEAT_SERVICE_VALUES } from "../constants"
 import {
   HeartbeatConfigErrorSchema,
   HeartbeatResponseBodySchema,
@@ -159,17 +160,9 @@ describe("heartbeat types", () => {
       expect(result.success).toBe(false)
     })
 
-    it("should accept all valid service types", () => {
-      const services = [
-        "cloudflare",
-        "cloudflare-astro",
-        "cloudflare-react-router",
-        "cloudflare-tanstack-start",
-        "cloudflare-nextjs",
-        "vercel",
-      ]
-
-      for (const service of services) {
+    it.each(HEARTBEAT_SERVICE_VALUES)(
+      "should accept %s as a valid service type",
+      (service) => {
         const validResponse = {
           app: "appwarden",
           kind: "heartbeat",
@@ -182,7 +175,7 @@ describe("heartbeat types", () => {
 
         const result = HeartbeatResponseBodySchema.safeParse(validResponse)
         expect(result.success).toBe(true)
-      }
-    })
+      },
+    )
   })
 })

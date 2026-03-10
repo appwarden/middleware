@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { ZodError } from "zod"
 import {
+  createHeartbeatConfigError,
   createHeartbeatResponse,
   createHeartbeatResponseBody,
   handleHeartbeatRequest,
@@ -49,7 +50,7 @@ describe("heartbeat utilities", () => {
       expect(result).toHaveLength(10)
     })
 
-    it("should truncate long error messages", () => {
+    it("should ignore raw Zod messages and use controlled sanitization", () => {
       const longMessage = "a".repeat(600)
       const error = new ZodError([
         {
@@ -60,8 +61,23 @@ describe("heartbeat utilities", () => {
       ])
 
       const result = sanitizeConfigErrors(error)
-      // The sanitized message is "Validation failed for test", which is much shorter
       expect(result[0].message).toBe("Validation failed for test")
+    })
+  })
+
+  describe("createHeartbeatConfigError", () => {
+    it("should create a controlled heartbeat config error", () => {
+      const result = createHeartbeatConfigError(
+        ["runtime"],
+        "custom",
+        "Cloudflare runtime unavailable",
+      )
+
+      expect(result).toEqual({
+        path: ["runtime"],
+        code: "custom",
+        message: "Cloudflare runtime unavailable",
+      })
     })
   })
 

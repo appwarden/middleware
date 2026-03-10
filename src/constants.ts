@@ -10,15 +10,33 @@ export const APPWARDEN_HEARTBEAT_ROUTE = "/_appwarden/heartbeat"
 
 export const APPWARDEN_CACHE_KEY = "appwarden-lock" as const
 
+export const HEARTBEAT_SERVICE_VALUES = [
+  "cloudflare",
+  "cloudflare-astro",
+  "cloudflare-react-router",
+  "cloudflare-tanstack-start",
+  "cloudflare-nextjs",
+  "vercel",
+] as const
+
+const [
+  CLOUDFLARE,
+  CLOUDFLARE_ASTRO,
+  CLOUDFLARE_REACT_ROUTER,
+  CLOUDFLARE_TANSTACK_START,
+  CLOUDFLARE_NEXTJS,
+  VERCEL,
+] = HEARTBEAT_SERVICE_VALUES
+
 /**
  * Service identifiers for different middleware adapters.
  * These are hardcoded per adapter bundle.
  */
 export const HEARTBEAT_SERVICES = {
-  CLOUDFLARE: "cloudflare" as const,
-  CLOUDFLARE_ASTRO: "cloudflare-astro" as const,
-  CLOUDFLARE_REACT_ROUTER: "cloudflare-react-router" as const,
-  CLOUDFLARE_TANSTACK_START: "cloudflare-tanstack-start" as const,
-  CLOUDFLARE_NEXTJS: "cloudflare-nextjs" as const,
-  VERCEL: "vercel" as const,
-}
+  CLOUDFLARE,
+  CLOUDFLARE_ASTRO,
+  CLOUDFLARE_REACT_ROUTER,
+  CLOUDFLARE_TANSTACK_START,
+  CLOUDFLARE_NEXTJS,
+  VERCEL,
+} as const
