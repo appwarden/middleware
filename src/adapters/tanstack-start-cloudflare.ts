@@ -1,5 +1,5 @@
 import { waitUntil } from "cloudflare:workers"
-import { APPWARDEN_HEARTBEAT_ROUTE } from "../constants"
+import { APPWARDEN_HEARTBEAT_ROUTE, HEARTBEAT_SERVICES } from "../constants"
 import { checkLockStatus } from "../core"
 import type {
   TanStackStartCloudflareConfig,
@@ -8,15 +8,48 @@ import type {
 import { TanStackStartCloudflareConfigSchema } from "../schemas/tanstack-start-cloudflare"
 import {
   buildLockPageUrl,
+  createHeartbeatConfigError,
   createRedirect,
   debug,
+  handleHeartbeatRequest,
   isHTMLRequest,
   isOnLockPage,
   printMessage,
+  sanitizeConfigErrors,
 } from "../utils"
 import { applyContentSecurityPolicyToResponse } from "../utils/apply-content-security-policy-to-response"
 import { getNowMs, logElapsed } from "../utils/get-now"
 import { isResponseLike } from "../utils/is-response-like"
+
+const createTanStackHeartbeatResponse = (
+  request: Request,
+  configFn: TanStackStartConfigFn,
+): Response => {
+  try {
+    const validationResult =
+      TanStackStartCloudflareConfigSchema.safeParse(configFn())
+
+    return handleHeartbeatRequest(
+      request,
+      HEARTBEAT_SERVICES.CLOUDFLARE_TANSTACK_START,
+      validationResult.success
+        ? []
+        : sanitizeConfigErrors(validationResult.error),
+    )
+  } catch {
+    return handleHeartbeatRequest(
+      request,
+      HEARTBEAT_SERVICES.CLOUDFLARE_TANSTACK_START,
+      [
+        createHeartbeatConfigError(
+          ["config"],
+          "custom",
+          "Appwarden config evaluation failed",
+        ),
+      ],
+    )
+  }
+}
 
 // Re-export the config types so consumers can reference them from this adapter
 // without importing from the internal schema module.
@@ -127,7 +160,7 @@ export function createAppwardenMiddleware(
     const { request, next } = args
     let config: TanStackStartCloudflareConfig
     let debugFn: ReturnType<typeof debug>
-    let requestUrl: URL
+    const requestUrl = new URL(request.url)
 
     const applyCspToResponse = async (
       response: Response,
@@ -155,54 +188,11 @@ export function createAppwardenMiddleware(
       }
     }
 
+    if (requestUrl.pathname === APPWARDEN_HEARTBEAT_ROUTE) {
+      throw createTanStackHeartbeatResponse(request, configFn)
+    }
+
     try {
-      requestUrl = new URL(request.url)
-
-      // Handle heartbeat requests BEFORE any other processing
-      // This must work even when the site is locked
-      if (requestUrl.pathname === APPWARDEN_HEARTBEAT_ROUTE) {
-        const {
-          createHeartbeatConfigError,
-          handleHeartbeatRequest,
-          sanitizeConfigErrors,
-        } = await import("../utils")
-        const { HEARTBEAT_SERVICES } = await import("../constants")
-
-        try {
-          // Get config from the config function (pre-transformation input)
-          const rawConfig = configFn()
-
-          // Validate config
-          const validationResult =
-            TanStackStartCloudflareConfigSchema.safeParse(rawConfig)
-
-          // TanStack Start expects a TanStackStartNextResult, but we need to throw the Response
-          throw handleHeartbeatRequest(
-            request,
-            HEARTBEAT_SERVICES.CLOUDFLARE_TANSTACK_START,
-            validationResult.success
-              ? []
-              : sanitizeConfigErrors(validationResult.error),
-          )
-        } catch (error) {
-          if (isResponseLike(error)) {
-            throw error
-          }
-
-          throw handleHeartbeatRequest(
-            request,
-            HEARTBEAT_SERVICES.CLOUDFLARE_TANSTACK_START,
-            [
-              createHeartbeatConfigError(
-                ["config"],
-                "custom",
-                "Appwarden config evaluation failed",
-              ),
-            ],
-          )
-        }
-      }
-
       // Get config from the config function (pre-transformation input)
       const rawConfig = configFn()
 

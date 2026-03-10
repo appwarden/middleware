@@ -1,5 +1,5 @@
 import { waitUntil } from "cloudflare:workers"
-import { APPWARDEN_HEARTBEAT_ROUTE } from "../constants"
+import { APPWARDEN_HEARTBEAT_ROUTE, HEARTBEAT_SERVICES } from "../constants"
 import { checkLockStatus } from "../core"
 import type { ReactRouterCloudflareConfig } from "../schemas/react-router-cloudflare"
 import {
@@ -8,15 +8,54 @@ import {
 } from "../schemas/react-router-cloudflare"
 import {
   buildLockPageUrl,
+  createHeartbeatConfigError,
   createRedirect,
   debug,
+  handleHeartbeatRequest,
   isHTMLRequest,
   isOnLockPage,
   printMessage,
+  sanitizeConfigErrors,
 } from "../utils"
 import { applyContentSecurityPolicyToResponse } from "../utils/apply-content-security-policy-to-response"
 import { getNowMs, logElapsed } from "../utils/get-now"
 import { isResponseLike } from "../utils/is-response-like"
+
+const createConfigEvaluationHeartbeatResponse = (
+  request: Request,
+): Response => {
+  return handleHeartbeatRequest(
+    request,
+    HEARTBEAT_SERVICES.CLOUDFLARE_REACT_ROUTER,
+    [
+      createHeartbeatConfigError(
+        ["config"],
+        "custom",
+        "Appwarden config evaluation failed",
+      ),
+    ],
+  )
+}
+
+const handleReactRouterHeartbeatRequest = (
+  request: Request,
+  configFn: ReactRouterConfigFn,
+): Response => {
+  try {
+    const validationResult =
+      ReactRouterCloudflareConfigSchema.safeParse(configFn())
+
+    return handleHeartbeatRequest(
+      request,
+      HEARTBEAT_SERVICES.CLOUDFLARE_REACT_ROUTER,
+      validationResult.success
+        ? []
+        : sanitizeConfigErrors(validationResult.error),
+    )
+  } catch {
+    return createConfigEvaluationHeartbeatResponse(request)
+  }
+}
 
 /**
  * Configuration function that returns the config.
@@ -75,7 +114,7 @@ export function createAppwardenMiddleware(
     const { request } = args
     let config: ReactRouterCloudflareConfig
     let debugFn: ReturnType<typeof debug>
-    let requestUrl: URL
+    const requestUrl = new URL(request.url)
 
     const applyCspToResponse = async (
       response: Response,
@@ -103,49 +142,11 @@ export function createAppwardenMiddleware(
       }
     }
 
+    if (requestUrl.pathname === APPWARDEN_HEARTBEAT_ROUTE) {
+      return handleReactRouterHeartbeatRequest(request, configFn)
+    }
+
     try {
-      requestUrl = new URL(request.url)
-
-      // Handle heartbeat requests BEFORE any other processing
-      // This must work even when the site is locked
-      if (requestUrl.pathname === APPWARDEN_HEARTBEAT_ROUTE) {
-        const {
-          createHeartbeatConfigError,
-          handleHeartbeatRequest,
-          sanitizeConfigErrors,
-        } = await import("../utils")
-        const { HEARTBEAT_SERVICES } = await import("../constants")
-
-        try {
-          // Get config from the config function (using input type - will be validated)
-          const configInput = configFn()
-
-          // Validate config
-          const validationResult =
-            ReactRouterCloudflareConfigSchema.safeParse(configInput)
-
-          return handleHeartbeatRequest(
-            request,
-            HEARTBEAT_SERVICES.CLOUDFLARE_REACT_ROUTER,
-            validationResult.success
-              ? []
-              : sanitizeConfigErrors(validationResult.error),
-          )
-        } catch {
-          return handleHeartbeatRequest(
-            request,
-            HEARTBEAT_SERVICES.CLOUDFLARE_REACT_ROUTER,
-            [
-              createHeartbeatConfigError(
-                ["config"],
-                "custom",
-                "Appwarden config evaluation failed",
-              ),
-            ],
-          )
-        }
-      }
-
       // Get config from the config function (using input type - will be validated)
       const configInput = configFn()
 
