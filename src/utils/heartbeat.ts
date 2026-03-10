@@ -140,6 +140,20 @@ export function createHeartbeatConfigError(
   }
 }
 
+function normalizeHeartbeatConfigErrors(
+  configErrors: HeartbeatConfigError[],
+): HeartbeatConfigError[] {
+  return configErrors
+    .slice(0, MAX_CONFIG_ERRORS)
+    .map((configError) =>
+      createHeartbeatConfigError(
+        configError.path,
+        configError.code,
+        configError.message,
+      ),
+    )
+}
+
 /**
  * Sanitizes Zod validation errors for public heartbeat response.
  * Maps errors to controlled messages and removes sensitive data.
@@ -197,7 +211,7 @@ export function createHeartbeatResponseBody(
     contractVersion: 1,
     service,
     version: MIDDLEWARE_VERSION,
-    configErrors,
+    configErrors: normalizeHeartbeatConfigErrors(configErrors),
   }
 }
 
