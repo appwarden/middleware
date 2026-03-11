@@ -3,6 +3,7 @@ import {
   createAppwardenMiddleware,
   useContentSecurityPolicy,
 } from "./cloudflare"
+import type { RequestContext } from "../types"
 
 describe("cloudflare bundle", () => {
   describe("createAppwardenMiddleware export", () => {
@@ -11,7 +12,7 @@ describe("cloudflare bundle", () => {
     })
 
     it("should return a fetch handler when called with config function", () => {
-      const configFn = (_context: any) => ({
+      const configFn = (_context: RequestContext) => ({
         debug: true,
         lockPageSlug: "/maintenance",
         appwardenApiToken: "test-token",
@@ -22,7 +23,7 @@ describe("cloudflare bundle", () => {
     })
 
     it("should create handler that accepts Request, env, and ctx", () => {
-      const configFn = (_context: any) => ({
+      const configFn = (_context: RequestContext) => ({
         debug: true,
         lockPageSlug: "/maintenance",
         appwardenApiToken: "test-token",
