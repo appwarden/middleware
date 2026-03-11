@@ -15,15 +15,9 @@ All notable changes to this project will be documented in this file. See
 
 ### Bug Fixes
 
+* auto-exit dev mode before lint-staged ([a3dc7f8](https://github.com/appwarden/middleware/commit/a3dc7f83ad20b9264f5ae60258a94ef321629cad))
 * **cloudflare:** type middleware api as config function ([f86247e](https://github.com/appwarden/middleware/commit/f86247e861273626802d965414b5c361ac8e157b))
 * **cloudflare:** use RequestContext/Bindings types in tests and app, remove redundant tar override ([668309c](https://github.com/appwarden/middleware/commit/668309c4f1de5748dea21e2a448894e03a86b1a8))
-
-## [3.11.3](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.11.2...@appwarden/middleware@3.11.3) (2026-03-09)
-
-
-### Bug Fixes
-
-* auto-exit dev mode before lint-staged ([a3dc7f8](https://github.com/appwarden/middleware/commit/a3dc7f83ad20b9264f5ae60258a94ef321629cad))
 
 ## [3.11.2](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.11.1...@appwarden/middleware@3.11.2) (2026-03-07)
 
