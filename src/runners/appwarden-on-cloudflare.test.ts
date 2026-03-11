@@ -189,6 +189,21 @@ describe("appwardenOnCloudflare", () => {
     ])
   })
 
+  it("should return error logs when config evaluation throws a ZodError", async () => {
+    mockInputFn.mockReturnValueOnce({
+      lockPageSlug: "/maintenance",
+      appwardenApiToken: "",
+    })
+
+    const handler = appwardenOnCloudflare(mockInputFn) as any
+    const result = await handler(mockRequest, mockEnv, mockCtx)
+
+    expect(insertErrorLogs).toHaveBeenCalled()
+    expect(mockPipelineExecute).not.toHaveBeenCalled()
+    expect(result).toBeInstanceOf(Response)
+    expect(await result.text()).toBe("Error logs")
+  })
+
   it("should run non-GET heartbeat requests through the normal pipeline", async () => {
     mockRequest = new Request("https://example.com/_appwarden/heartbeat", {
       method: "POST",
