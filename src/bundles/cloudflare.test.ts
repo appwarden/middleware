@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest"
+import type { RequestContext } from "../types"
 import {
   createAppwardenMiddleware,
   useContentSecurityPolicy,
 } from "./cloudflare"
-import type { RequestContext } from "../types"
 
 describe("cloudflare bundle", () => {
   describe("createAppwardenMiddleware export", () => {
