@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.11.4](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.11.3...@appwarden/middleware@3.11.4) (2026-03-11)
+
+
+### Bug Fixes
+
+* apply top-level Cloudflare CSP config ([55059c2](https://github.com/appwarden/middleware/commit/55059c2c2dd0317511bd8fa59c470ed55d5ce83c))
+
 ## [3.11.3](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.11.2...@appwarden/middleware@3.11.3) (2026-03-11)
 
 
