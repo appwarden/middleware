@@ -17,7 +17,7 @@ import {
   TEMPORARY_REDIRECT_STATUS,
 } from "../utils"
 import { applyContentSecurityPolicyToResponse } from "../utils/apply-content-security-policy-to-response"
-import { getNowMs } from "../utils/get-now"
+import { getElapsedMs, getNowMs } from "../utils/get-now"
 import { isResponseLike } from "../utils/is-response-like"
 
 /**
@@ -93,7 +93,7 @@ export function createAppwardenMiddleware(
     let requestUrl: URL
 
     const logElapsed = () => {
-      const elapsed = Math.round(getNowMs() - startTime)
+      const elapsed = getElapsedMs(startTime)
       debugFn(`Middleware executed in ${elapsed}ms`)
     }
 

@@ -17,7 +17,7 @@ import {
   printMessage,
   TEMPORARY_REDIRECT_STATUS,
 } from "../utils"
-import { getNowMs } from "../utils/get-now"
+import { getElapsedMs, getNowMs } from "../utils/get-now"
 
 /**
  * Cloudflare runtime context provided by @opennextjs/cloudflare.
@@ -166,13 +166,13 @@ export function createAppwardenMiddleware(
 
         const response = NextResponse.next()
         response.headers.set(headerName, headerValue)
-        const elapsed = Math.round(getNowMs() - startTime)
+        const elapsed = getElapsedMs(startTime)
         debugFn(`Middleware executed in ${elapsed}ms`)
         return response
       }
 
       // Continue to next handler
-      const elapsed = Math.round(getNowMs() - startTime)
+      const elapsed = getElapsedMs(startTime)
       debugFn(`Middleware executed in ${elapsed}ms`)
       return NextResponse.next()
     } catch (error) {
