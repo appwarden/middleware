@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { checkLockStatus } from "../core"
+import { applyContentSecurityPolicyToResponse } from "../utils/apply-content-security-policy-to-response"
 import { createAppwardenMiddleware } from "./react-router-cloudflare"
 
 // Mock cloudflare:workers module
@@ -15,6 +16,20 @@ vi.mock("cloudflare:workers", () => ({
 vi.mock("../core", () => ({
   checkLockStatus: vi.fn(),
 }))
+
+vi.mock(
+  "../utils/apply-content-security-policy-to-response",
+  async (importOriginal) => {
+    const actual =
+      (await importOriginal()) as typeof import("../utils/apply-content-security-policy-to-response")
+    return {
+      ...actual,
+      applyContentSecurityPolicyToResponse: vi.fn(
+        actual.applyContentSecurityPolicyToResponse,
+      ),
+    }
+  },
+)
 
 vi.mock("../utils", async (importOriginal) => {
   const actual = (await importOriginal()) as typeof import("../utils")
@@ -246,6 +261,36 @@ describe("createAppwardenMiddleware", () => {
     expect(result).toEqual({ status: 200 })
   })
 
+  it("should return the original response when CSP post-processing fails", async () => {
+    const originalResponse = new Response("<html></html>", {
+      status: 200,
+      headers: { "content-type": "text/html" },
+    })
+    mockNext = vi.fn().mockResolvedValue(originalResponse)
+    vi.mocked(applyContentSecurityPolicyToResponse).mockRejectedValueOnce(
+      new Error("CSP error"),
+    )
+
+    const middleware = createAppwardenMiddleware(() => ({
+      lockPageSlug: "/maintenance",
+      appwardenApiToken: "test-token",
+      contentSecurityPolicy: {
+        mode: "enforced",
+        directives: {
+          "script-src": ["'self'", "{{nonce}}"],
+        },
+      },
+    }))
+
+    const result = await middleware(mockArgs, mockNext)
+
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("Failed to apply content security policy:"),
+    )
+    expect(mockNext).toHaveBeenCalledTimes(1)
+    expect(result).toBe(originalResponse)
+  })
+
   it("should re-throw Response errors (redirects)", async () => {
     const redirectResponse = new Response(null, {
       status: 302,
@@ -302,6 +347,35 @@ describe("createAppwardenMiddleware", () => {
     expect(mockNext).toHaveBeenCalled()
     expect(checkLockStatus).not.toHaveBeenCalled()
     expect(result).toEqual({ status: 200 })
+  })
+
+  it("should apply CSP when already on the lock page", async () => {
+    mockArgs.request = new Request("https://example.com/maintenance", {
+      headers: { Accept: "text/html,application/xhtml+xml" },
+    })
+    mockNext = vi.fn().mockResolvedValue(
+      new Response("<html><body>Maintenance</body></html>", {
+        status: 200,
+        headers: { "content-type": "text/html" },
+      }),
+    )
+
+    const middleware = createAppwardenMiddleware(() => ({
+      lockPageSlug: "/maintenance",
+      appwardenApiToken: "test-token",
+      contentSecurityPolicy: {
+        mode: "enforced",
+        directives: {
+          "script-src": ["'self'", "{{nonce}}"],
+        },
+      },
+    }))
+
+    const response = (await middleware(mockArgs, mockNext)) as Response
+
+    expect(checkLockStatus).not.toHaveBeenCalled()
+    expect(mockNext).toHaveBeenCalledTimes(1)
+    expect(response.headers.get("Content-Security-Policy")).toBeTruthy()
   })
 
   it("should not redirect when already on lock page (slug without leading slash)", async () => {
