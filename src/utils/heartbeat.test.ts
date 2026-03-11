@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest"
 import { ZodError } from "zod"
 import {
-  HEARTBEAT_CONFIG_ERROR_MAX_CODE_LENGTH,
   HEARTBEAT_CONFIG_ERROR_MAX_COUNT,
-  HEARTBEAT_CONFIG_ERROR_MAX_MESSAGE_LENGTH,
+  HEARTBEAT_CONFIG_ERROR_MAX_PATH_DEPTH,
+  HEARTBEAT_CONFIG_ERROR_MAX_PATH_SEGMENT_LENGTH,
+  HEARTBEAT_CONFIG_ERRORS_MAX_SERIALIZED_BYTES,
   HEARTBEAT_CONTRACT_VERSION,
 } from "../constants"
+import { HeartbeatResponseBodySchema } from "../types/heartbeat"
 import {
   createHeartbeatConfigError,
   createHeartbeatResponse,
@@ -14,6 +16,23 @@ import {
   isHeartbeatRequest,
   sanitizeConfigErrors,
 } from "./heartbeat"
+
+const getSerializedJsonByteLength = (value: unknown) =>
+  new TextEncoder().encode(JSON.stringify(value)).length
+
+const getOversizedConfigErrors = () =>
+  Array.from({ length: HEARTBEAT_CONFIG_ERROR_MAX_COUNT }, (_, index) => ({
+    path: Array.from(
+      { length: HEARTBEAT_CONFIG_ERROR_MAX_PATH_DEPTH },
+      (_, segmentIndex) =>
+        `${index}-${segmentIndex}`.padEnd(
+          HEARTBEAT_CONFIG_ERROR_MAX_PATH_SEGMENT_LENGTH,
+          "p",
+        ),
+    ),
+    code: `code-${index}`,
+    message: "m".repeat(500),
+  }))
 
 describe("heartbeat utilities", () => {
   describe("sanitizeConfigErrors", () => {
@@ -88,11 +107,31 @@ describe("heartbeat utilities", () => {
         message: "Cloudflare runtime unavailable",
       })
     })
+
+    it("should never emit empty code or message", () => {
+      const result = createHeartbeatConfigError(["runtime"], "   ", "   ")
+
+      expect(result.code).toBe("custom")
+      expect(result.message).toBe("Appwarden configuration validation failed")
+      expect(
+        HeartbeatResponseBodySchema.safeParse({
+          app: "appwarden",
+          kind: "heartbeat",
+          status: "ok",
+          contractVersion: HEARTBEAT_CONTRACT_VERSION,
+          service: "cloudflare",
+          version: "1.0.0",
+          configErrors: [result],
+        }).success,
+      ).toBe(true)
+    })
   })
 
   describe("createHeartbeatResponseBody", () => {
-    it("should create a valid heartbeat response body", () => {
+    it("should always return a schema-valid heartbeat response body", () => {
       const body = createHeartbeatResponseBody("cloudflare")
+
+      expect(HeartbeatResponseBodySchema.safeParse(body).success).toBe(true)
       expect(body).toMatchObject({
         app: "appwarden",
         kind: "heartbeat",
@@ -104,36 +143,44 @@ describe("heartbeat utilities", () => {
       expect(body.version).toBeDefined()
     })
 
-    it("should include config errors when provided", () => {
+    it("should normalize config errors within all schema limits", () => {
+      const longSegment = "s".repeat(120)
       const configErrors = [
         {
-          path: ["lockPageSlug"],
-          code: "invalid_type",
-          message: "Expected string",
+          path: ["config", -5.9, longSegment, { nested: true }] as any,
+          code: "   ",
+          message: "   ",
         },
       ]
+
       const body = createHeartbeatResponseBody("cloudflare-astro", configErrors)
-      expect(body.configErrors).toEqual(configErrors)
+
+      expect(body.configErrors).toEqual([
+        {
+          path: ["config", 0, `${"s".repeat(97)}...`, "[object Object]"],
+          code: "custom",
+          message: "Appwarden configuration validation failed",
+        },
+      ])
+      expect(HeartbeatResponseBodySchema.safeParse(body).success).toBe(true)
     })
 
-    it("should bound and sanitize provided config errors", () => {
-      const longSegment = "s".repeat(120)
-      const longCode = "c".repeat(120)
-      const longMessage = "m".repeat(520)
-      const configErrors = Array.from({ length: 12 }, (_, index) => ({
-        path: ["config", index, longSegment, "extra"],
-        code: longCode,
-        message: longMessage,
-      }))
+    it("should trim config errors to stay within the serialized byte budget", () => {
+      const oversizedConfigErrors = getOversizedConfigErrors()
 
-      const body = createHeartbeatResponseBody("cloudflare-astro", configErrors)
+      expect(
+        getSerializedJsonByteLength(oversizedConfigErrors),
+      ).toBeGreaterThan(HEARTBEAT_CONFIG_ERRORS_MAX_SERIALIZED_BYTES)
 
-      expect(body.configErrors).toHaveLength(HEARTBEAT_CONFIG_ERROR_MAX_COUNT)
-      expect(body.configErrors[0]).toEqual({
-        path: ["config", 0, `${"s".repeat(97)}...`, "extra"],
-        code: "c".repeat(HEARTBEAT_CONFIG_ERROR_MAX_CODE_LENGTH),
-        message: `${"m".repeat(HEARTBEAT_CONFIG_ERROR_MAX_MESSAGE_LENGTH - 3)}...`,
-      })
+      const body = createHeartbeatResponseBody(
+        "cloudflare-astro",
+        oversizedConfigErrors,
+      )
+
+      expect(HeartbeatResponseBodySchema.safeParse(body).success).toBe(true)
+      expect(
+        getSerializedJsonByteLength(body.configErrors),
+      ).toBeLessThanOrEqual(HEARTBEAT_CONFIG_ERRORS_MAX_SERIALIZED_BYTES)
     })
   })
 
@@ -155,7 +202,8 @@ describe("heartbeat utilities", () => {
 
     it("should include valid JSON body", async () => {
       const response = createHeartbeatResponse("vercel")
-      const body = await response.json()
+      const body = HeartbeatResponseBodySchema.parse(await response.json())
+
       expect(body).toMatchObject({
         app: "appwarden",
         kind: "heartbeat",
@@ -163,6 +211,7 @@ describe("heartbeat utilities", () => {
         contractVersion: HEARTBEAT_CONTRACT_VERSION,
         service: "vercel",
       })
+      expect(response.headers.get("x-appwarden-version")).toBe(body.version)
     })
   })
 

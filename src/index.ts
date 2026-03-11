@@ -7,7 +7,18 @@ export {
   UseAppwardenInputSchema,
 } from "./schemas"
 export type { LockValueType } from "./schemas"
-export type { Bindings, Middleware } from "./types"
+export {
+  HeartbeatConfigErrorSchema,
+  HeartbeatResponseBodySchema,
+  validateHeartbeatResponseBody,
+} from "./types"
+export type {
+  Bindings,
+  HeartbeatConfigError,
+  HeartbeatResponseBody,
+  HeartbeatService,
+  Middleware,
+} from "./types"
 export {
   getEdgeConfigId,
   isCacheUrl,
