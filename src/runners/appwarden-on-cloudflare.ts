@@ -73,7 +73,24 @@ export const appwardenOnCloudflare =
       return insertErrorLogs(tempContext, parsedInput.error)
     }
 
-    const input = parsedInput.data(requestContext)
+    let input
+    try {
+      input = parsedInput.data(requestContext)
+    } catch (error) {
+      if (error instanceof ZodError) {
+        // Create a temporary context for error logging (without debug since we don't have config yet)
+        const tempContext: MiddlewareContext = {
+          request,
+          hostname: requestUrl.hostname,
+          response: new Response("Unhandled response"),
+          waitUntil: (fn: any) => ctx.waitUntil(fn),
+          debug: () => {}, // no-op debug for error case
+        }
+        return insertErrorLogs(tempContext, error)
+      }
+
+      throw error
+    }
 
     // Resolve debug value per-domain: check multidomainConfig[hostname].debug first,
     // then fall back to top-level debug
