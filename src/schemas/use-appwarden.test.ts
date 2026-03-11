@@ -12,6 +12,12 @@ describe("UseAppwardenInputSchema", () => {
     const validInput = {
       debug: true,
       lockPageSlug: "/maintenance",
+      contentSecurityPolicy: {
+        mode: "report-only",
+        directives: {
+          "default-src": ["'self'"],
+        },
+      },
       appwardenApiToken: "token123",
     }
 
@@ -95,6 +101,27 @@ describe("UseAppwardenInputSchema", () => {
     if (result.success) {
       expect(result.data.multidomainConfig).toEqual(
         validInput.multidomainConfig,
+      )
+    }
+  })
+
+  it("should accept a top-level contentSecurityPolicy configuration", () => {
+    const validInput = {
+      lockPageSlug: "/maintenance",
+      appwardenApiToken: "token123",
+      contentSecurityPolicy: {
+        mode: "report-only",
+        directives: {
+          "default-src": ["'self'"],
+        },
+      },
+    }
+
+    const result = UseAppwardenInputSchema.safeParse(validInput)
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.contentSecurityPolicy).toEqual(
+        validInput.contentSecurityPolicy,
       )
     }
   })

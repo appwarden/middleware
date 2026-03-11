@@ -52,9 +52,11 @@ export const appwardenOnCloudflare =
         useFetchOrigin(),
       ]
 
-      // Add CSP middleware after origin if configured for this hostname via multidomainConfig.
+      // Add CSP middleware after origin using per-domain config first,
+      // then fall back to the top-level configuration.
       const cspConfig =
-        input.multidomainConfig?.[requestUrl.hostname]?.contentSecurityPolicy
+        input.multidomainConfig?.[requestUrl.hostname]?.contentSecurityPolicy ??
+        input.contentSecurityPolicy
 
       if (cspConfig) {
         pipeline.push(useContentSecurityPolicy(cspConfig))

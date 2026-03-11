@@ -23,6 +23,7 @@ export type AppwardenMultidomainConfig = z.infer<
 export const UseAppwardenInputSchema = z.object({
   debug: BooleanSchema.default(false),
   lockPageSlug: z.string().optional(),
+  contentSecurityPolicy: z.lazy(() => UseCSPInputSchema).optional(),
   multidomainConfig: AppwardenMultidomainConfigSchema.optional(),
   appwardenApiToken: AppwardenApiTokenSchema,
   appwardenApiHostname: AppwardenApiHostnameSchema.optional(),
