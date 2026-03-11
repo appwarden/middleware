@@ -169,6 +169,7 @@ export function createAppwardenMiddleware(
     }
     // Cast locals to include runtime property added by @astrojs/cloudflare
     const locals = context.locals as LocalsWithRuntime
+    requestUrl = new URL(request.url)
 
     if (requestUrl.pathname === APPWARDEN_HEARTBEAT_ROUTE) {
       return createAstroHeartbeatResponse(request, locals.runtime, configFn)
