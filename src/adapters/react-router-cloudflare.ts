@@ -1,5 +1,5 @@
 import { waitUntil } from "cloudflare:workers"
-import { APPWARDEN_HEARTBEAT_ROUTE, HEARTBEAT_SERVICES } from "../constants"
+import { HEARTBEAT_SERVICES } from "../constants"
 import { checkLockStatus } from "../core"
 import type { ReactRouterCloudflareConfig } from "../schemas/react-router-cloudflare"
 import {
@@ -13,6 +13,8 @@ import {
   debug,
   handleHeartbeatRequest,
   isHTMLRequest,
+  isHeartbeatRequest,
+  isHeartbeatRoute,
   isOnLockPage,
   printMessage,
   sanitizeConfigErrors,
@@ -142,7 +144,14 @@ export function createAppwardenMiddleware(
       }
     }
 
-    if (requestUrl.pathname === APPWARDEN_HEARTBEAT_ROUTE) {
+    if (isHeartbeatRoute(requestUrl)) {
+      if (!isHeartbeatRequest(request, requestUrl)) {
+        return handleHeartbeatRequest(
+          request,
+          HEARTBEAT_SERVICES.CLOUDFLARE_REACT_ROUTER,
+        )
+      }
+
       return handleReactRouterHeartbeatRequest(request, configFn)
     }
 

@@ -12,6 +12,7 @@ import {
   createHeartbeatResponseBody,
   handleHeartbeatRequest,
   isHeartbeatRequest,
+  isHeartbeatRoute,
   sanitizeConfigErrors,
 } from "./heartbeat"
 
@@ -166,20 +167,64 @@ describe("heartbeat utilities", () => {
     })
   })
 
-  describe("isHeartbeatRequest", () => {
-    it("should return true for heartbeat route", () => {
+  describe("isHeartbeatRoute", () => {
+    it("should return true for the heartbeat route", () => {
       const url = new URL("https://example.com/_appwarden/heartbeat")
-      expect(isHeartbeatRequest(url)).toBe(true)
+
+      expect(isHeartbeatRoute(url)).toBe(true)
     })
 
     it("should return false for other routes", () => {
       const url = new URL("https://example.com/")
-      expect(isHeartbeatRequest(url)).toBe(false)
+
+      expect(isHeartbeatRoute(url)).toBe(false)
     })
 
     it("should return false for similar routes", () => {
       const url = new URL("https://example.com/_appwarden/heartbeat/extra")
-      expect(isHeartbeatRequest(url)).toBe(false)
+
+      expect(isHeartbeatRoute(url)).toBe(false)
+    })
+  })
+
+  describe("isHeartbeatRequest", () => {
+    it("should return true for GET requests to the heartbeat route", () => {
+      const request = new Request("https://example.com/_appwarden/heartbeat", {
+        method: "GET",
+      })
+      const url = new URL(request.url)
+
+      expect(isHeartbeatRequest(request, url)).toBe(true)
+    })
+
+    it("should return false for other routes", () => {
+      const request = new Request("https://example.com/", {
+        method: "GET",
+      })
+      const url = new URL(request.url)
+
+      expect(isHeartbeatRequest(request, url)).toBe(false)
+    })
+
+    it("should return false for similar routes", () => {
+      const request = new Request(
+        "https://example.com/_appwarden/heartbeat/extra",
+        {
+          method: "GET",
+        },
+      )
+      const url = new URL(request.url)
+
+      expect(isHeartbeatRequest(request, url)).toBe(false)
+    })
+
+    it("should return false for non-GET requests to the heartbeat route", () => {
+      const request = new Request("https://example.com/_appwarden/heartbeat", {
+        method: "POST",
+      })
+      const url = new URL(request.url)
+
+      expect(isHeartbeatRequest(request, url)).toBe(false)
     })
   })
 

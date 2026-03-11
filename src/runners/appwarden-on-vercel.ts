@@ -2,7 +2,6 @@ import { waitUntil } from "@vercel/functions"
 import { NextResponse } from "next/server"
 import {
   APPWARDEN_CACHE_KEY,
-  APPWARDEN_HEARTBEAT_ROUTE,
   globalErrors,
   HEARTBEAT_SERVICES,
 } from "../constants"
@@ -13,16 +12,18 @@ import {
   debug,
   handleHeartbeatRequest,
   isCacheUrl,
+  isHeartbeatRequest,
+  isHeartbeatRoute,
   isHTMLRequest,
   isOnLockPage,
   MemoryCache,
   printMessage,
   sanitizeConfigErrors,
   TEMPORARY_REDIRECT_STATUS,
-  toNextResponse,
   validateConfig,
 } from "../utils"
 import { makeCSPHeader } from "../utils/cloudflare"
+import { toNextResponse } from "../utils/to-next-response"
 import { getLockValue, syncEdgeValue } from "../utils/vercel"
 
 const memoryCache = new MemoryCache<string, LockValueType>({ maxSize: 1 })
@@ -49,7 +50,13 @@ export function createAppwardenMiddleware(
 
     // Handle heartbeat requests BEFORE any other processing
     // This must work even when the site is locked
-    if (requestUrl.pathname === APPWARDEN_HEARTBEAT_ROUTE) {
+    if (isHeartbeatRoute(requestUrl)) {
+      if (!isHeartbeatRequest(request, requestUrl)) {
+        return toNextResponse(
+          handleHeartbeatRequest(request, HEARTBEAT_SERVICES.VERCEL),
+        )
+      }
+
       const validationResult = AppwardenConfigSchema.safeParse(config)
 
       // Return heartbeat response with config errors if validation failed

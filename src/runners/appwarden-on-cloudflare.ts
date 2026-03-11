@@ -1,5 +1,5 @@
 import { ZodError } from "zod"
-import { APPWARDEN_HEARTBEAT_ROUTE, HEARTBEAT_SERVICES } from "../constants"
+import { HEARTBEAT_SERVICES } from "../constants"
 import { useAppwarden, useContentSecurityPolicy } from "../middlewares"
 import { useFetchOrigin } from "../middlewares/use-fetch-origin"
 import { CloudflareConfigFnType, ConfigFnInputSchema } from "../schemas"
@@ -8,6 +8,8 @@ import {
   createHeartbeatConfigError,
   debug,
   handleHeartbeatRequest,
+  isHeartbeatRequest,
+  isHeartbeatRoute,
   sanitizeConfigErrors,
   usePipeline,
 } from "../utils"
@@ -20,12 +22,25 @@ export const appwardenOnCloudflare =
 
     const requestUrl = new URL(request.url)
 
+    if (
+      isHeartbeatRoute(requestUrl) &&
+      !isHeartbeatRequest(request, requestUrl)
+    ) {
+      return handleHeartbeatRequest(request, HEARTBEAT_SERVICES.CLOUDFLARE)
+    }
+
+    const requestContext = {
+      env,
+      ctx,
+      cf: (request as Request & { cf?: unknown }).cf ?? {},
+    }
+
     // Parse config once before any processing
     const parsedInput = ConfigFnInputSchema.safeParse(inputFn)
 
     // Handle heartbeat requests BEFORE any other processing
     // This must work even when the site is locked
-    if (requestUrl.pathname === APPWARDEN_HEARTBEAT_ROUTE) {
+    if (isHeartbeatRequest(request, requestUrl)) {
       // Return heartbeat response with config errors if validation failed
       let configErrors = parsedInput.success
         ? []
@@ -33,7 +48,7 @@ export const appwardenOnCloudflare =
 
       if (parsedInput.success) {
         try {
-          parsedInput.data({ env, ctx, cf: {} })
+          parsedInput.data(requestContext)
         } catch (error) {
           if (error instanceof ZodError) {
             configErrors = sanitizeConfigErrors(error)
@@ -67,7 +82,7 @@ export const appwardenOnCloudflare =
       return insertErrorLogs(tempContext, parsedInput.error)
     }
 
-    const input = parsedInput.data({ env, ctx, cf: {} })
+    const input = parsedInput.data(requestContext)
 
     // Resolve debug value per-domain: check multidomainConfig[hostname].debug first,
     // then fall back to top-level debug

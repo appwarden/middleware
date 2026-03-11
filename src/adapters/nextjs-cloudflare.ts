@@ -4,7 +4,7 @@ import {
   type NextFetchEvent,
   type NextRequest,
 } from "next/server"
-import { APPWARDEN_HEARTBEAT_ROUTE, HEARTBEAT_SERVICES } from "../constants"
+import { HEARTBEAT_SERVICES } from "../constants"
 import { checkLockStatus } from "../core"
 import type {
   NextJsCloudflareConfig,
@@ -16,15 +16,17 @@ import {
   createHeartbeatConfigError,
   debug,
   handleHeartbeatRequest,
+  isHeartbeatRequest,
+  isHeartbeatRoute,
   isHTMLRequest,
   isOnLockPage,
   printMessage,
   sanitizeConfigErrors,
   TEMPORARY_REDIRECT_STATUS,
-  toNextResponse,
 } from "../utils"
 import { makeCSPHeader } from "../utils/cloudflare"
 import { getNowMs, logElapsed } from "../utils/get-now"
+import { toNextResponse } from "../utils/to-next-response"
 
 /**
  * Cloudflare runtime context provided by @opennextjs/cloudflare.
@@ -144,7 +146,13 @@ export function createAppwardenMiddleware(
     const startTime = getNowMs()
     const requestUrl = new URL(request.url)
 
-    if (requestUrl.pathname === APPWARDEN_HEARTBEAT_ROUTE) {
+    if (isHeartbeatRoute(requestUrl)) {
+      if (!isHeartbeatRequest(request, requestUrl)) {
+        return toNextResponse(
+          handleHeartbeatRequest(request, HEARTBEAT_SERVICES.CLOUDFLARE_NEXTJS),
+        )
+      }
+
       return createNextJsHeartbeatResponse(request, configFn)
     }
 
