@@ -251,7 +251,6 @@ export function isHeartbeatRequest(request: Request, url: URL): boolean {
 
 /**
  * Handles a heartbeat request.
- * Returns a 405 Method Not Allowed for non-GET requests.
  *
  * @param request - The incoming request
  * @param service - The service identifier for this adapter
@@ -263,15 +262,5 @@ export function handleHeartbeatRequest(
   service: HeartbeatService,
   configErrors: HeartbeatConfigError[] = [],
 ): Response {
-  // Only allow GET requests
-  if (request.method !== "GET") {
-    return new Response("Method Not Allowed", {
-      status: 405,
-      headers: {
-        allow: "GET",
-      },
-    })
-  }
-
   return createHeartbeatResponse(service, configErrors)
 }

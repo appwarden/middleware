@@ -208,15 +208,6 @@ describe("heartbeat utilities", () => {
   })
 
   describe("handleHeartbeatRequest", () => {
-    it("should return 405 for non-GET requests", () => {
-      const request = new Request("https://example.com/_appwarden/heartbeat", {
-        method: "POST",
-      })
-      const response = handleHeartbeatRequest(request, "cloudflare", [])
-      expect(response.status).toBe(405)
-      expect(response.headers.get("allow")).toBe("GET")
-    })
-
     it("should return heartbeat response for GET requests", () => {
       const request = new Request("https://example.com/_appwarden/heartbeat", {
         method: "GET",
