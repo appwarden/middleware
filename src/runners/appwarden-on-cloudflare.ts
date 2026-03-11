@@ -1,13 +1,13 @@
 import { ZodError } from "zod"
 import { useAppwarden, useContentSecurityPolicy } from "../middlewares"
 import { useFetchOrigin } from "../middlewares/use-fetch-origin"
-import { CloudflareConfigType, ConfigFnInputSchema } from "../schemas"
+import { CloudflareConfigFnType, ConfigFnInputSchema } from "../schemas"
 import { Bindings, MiddlewareContext } from "../types"
 import { debug, usePipeline } from "../utils"
 import { insertErrorLogs } from "../utils/cloudflare"
 
 export const appwardenOnCloudflare =
-  (inputFn: CloudflareConfigType): ExportedHandlerFetchHandler<Bindings> =>
+  (inputFn: CloudflareConfigFnType): ExportedHandlerFetchHandler<Bindings> =>
   async (request, env, ctx) => {
     ctx.passThroughOnException()
 
