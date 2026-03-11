@@ -11,25 +11,9 @@ import { insertErrorLogs } from "../utils/cloudflare"
 import { appwardenOnCloudflare } from "./appwarden-on-cloudflare"
 
 // Mock the ExportedHandlerFetchHandler type to avoid importing from Cloudflare
-type MockRequest = Request & { cf?: unknown }
 type MockExecutionContext = {
   passThroughOnException: () => void
   waitUntil: (promise: Promise<any>) => void
-}
-
-function createRequestWithCf(
-  url: string,
-  cf: unknown,
-  init?: RequestInit,
-): MockRequest {
-  const request = new Request(url, init)
-
-  Object.defineProperty(request, "cf", {
-    value: cf,
-    configurable: true,
-  })
-
-  return request as MockRequest
 }
 
 // Mock dependencies
@@ -72,7 +56,7 @@ vi.mock("../utils/cloudflare", () => ({
 }))
 
 describe("appwardenOnCloudflare", () => {
-  let mockRequest: MockRequest
+  let mockRequest: Request
   let mockEnv: Bindings
   let mockCtx: MockExecutionContext
   let mockInputFn: any
@@ -161,11 +145,7 @@ describe("appwardenOnCloudflare", () => {
   })
 
   it("should include heartbeat config errors when config output is invalid", async () => {
-    const requestCf = { colo: "IAD" }
-    mockRequest = createRequestWithCf(
-      "https://example.com/_appwarden/heartbeat",
-      requestCf,
-    )
+    mockRequest = new Request("https://example.com/_appwarden/heartbeat")
     mockInputFn.mockReturnValueOnce({
       lockPageSlug: "/maintenance",
       appwardenApiToken: "",
@@ -186,7 +166,6 @@ describe("appwardenOnCloudflare", () => {
     expect(mockInputFn).toHaveBeenCalledWith({
       env: mockEnv,
       ctx: mockCtx,
-      cf: requestCf,
     })
   })
 
@@ -276,9 +255,6 @@ describe("appwardenOnCloudflare", () => {
   })
 
   it("should pass the correct input to the middleware pipeline", async () => {
-    const requestCf = { colo: "SFO" }
-    mockRequest = createRequestWithCf("https://example.com", requestCf)
-
     // Type assertion to make TypeScript happy
     const handler = appwardenOnCloudflare(mockInputFn) as any
     await handler(mockRequest, mockEnv, mockCtx)
@@ -287,7 +263,6 @@ describe("appwardenOnCloudflare", () => {
     expect(mockInputFn).toHaveBeenCalledWith({
       env: mockEnv,
       ctx: mockCtx,
-      cf: requestCf,
     })
   })
 
