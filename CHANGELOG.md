@@ -12,7 +12,7 @@ All notable changes to this project will be documented in this file. See
 * address heartbeat review feedback ([6b60f13](https://github.com/appwarden/middleware/commit/6b60f130f13f8f24db6d993b18ef091698bfe9ce))
 * address heartbeat review feedback ([8529f72](https://github.com/appwarden/middleware/commit/8529f7280440bc05264d8b29364f437cb7a6bb1d))
 * centralize heartbeat contract constants ([c2e86da](https://github.com/appwarden/middleware/commit/c2e86dab09bf519eaf3717bf308bc30a0907d7dc))
-* dont 405 on non GET heartbeats ([7cae663](https://github.com/appwarden/middleware/commit/7cae66305d359b69a7fbbcc327423f025402fd16))
+* don't 405 on non-GET heartbeats ([7cae663](https://github.com/appwarden/middleware/commit/7cae66305d359b69a7fbbcc327423f025402fd16))
 * handle cloudflare config evaluation zod errors ([80cbfca](https://github.com/appwarden/middleware/commit/80cbfca0f8b23d8a75ba350598f57a730df79c29))
 * harden heartbeat adapters ([6f8d77d](https://github.com/appwarden/middleware/commit/6f8d77dca526f64e574d03552226404823025717))
 * harden heartbeat handling ([f74f077](https://github.com/appwarden/middleware/commit/f74f0772bd5b1c5401c02657d011b50abe5d37c8))
