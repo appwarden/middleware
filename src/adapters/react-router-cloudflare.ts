@@ -1,6 +1,6 @@
 import { waitUntil } from "cloudflare:workers"
 import { checkLockStatus } from "../core"
-import { useContentSecurityPolicy } from "../middlewares"
+import type { ReactRouterCloudflareConfig } from "../schemas/react-router-cloudflare"
 import {
   type ReactRouterAppwardenConfigInput,
   ReactRouterCloudflareConfigSchema,
@@ -13,6 +13,7 @@ import {
   isOnLockPage,
   printMessage,
 } from "../utils"
+import { applyContentSecurityPolicyToResponse } from "../utils/apply-content-security-policy-to-response"
 import { getNowMs } from "../utils/get-now"
 import { isResponseLike } from "../utils/is-response-like"
 
@@ -52,7 +53,7 @@ export type ReactRouterMiddlewareFunction = (
  * ```typescript
  * // app/root.tsx
  * import { env } from "cloudflare:workers"
- * import { createAppwardenMiddleware } from "@appwarden/middleware/react-router"
+ * import { createAppwardenMiddleware } from "@appwarden/middleware/cloudflare/react-router"
  *
  * export const unstable_middleware = [
  *   createAppwardenMiddleware(() => ({
@@ -71,6 +72,40 @@ export function createAppwardenMiddleware(
   return async (args, next) => {
     const startTime = getNowMs()
     const { request } = args
+    let config: ReactRouterCloudflareConfig
+    let debugFn: ReturnType<typeof debug>
+    let requestUrl: URL
+
+    const logElapsed = () => {
+      const elapsed = Math.round(getNowMs() - startTime)
+      debugFn(`Middleware executed in ${elapsed}ms`)
+    }
+
+    const applyCspToResponse = async (
+      response: Response,
+    ): Promise<Response> => {
+      if (!config.contentSecurityPolicy || !isResponseLike(response)) {
+        return response
+      }
+
+      try {
+        return await applyContentSecurityPolicyToResponse({
+          request,
+          response,
+          hostname: requestUrl.hostname,
+          waitUntil,
+          debug: debugFn,
+          contentSecurityPolicy: config.contentSecurityPolicy,
+        })
+      } catch (error) {
+        console.error(
+          printMessage(
+            `Failed to apply content security policy: ${error instanceof Error ? error.message : String(error)}`,
+          ),
+        )
+        return response
+      }
+    }
 
     try {
       // Get config from the config function (using input type - will be validated)
@@ -88,9 +123,9 @@ export function createAppwardenMiddleware(
         return next()
       }
 
-      const config = validationResult.data
-      const debugFn = debug(config.debug)
-      const requestUrl = new URL(request.url)
+      config = validationResult.data
+      debugFn = debug(config.debug)
+      requestUrl = new URL(request.url)
       const isHTML = isHTMLRequest(request)
 
       debugFn(
@@ -103,58 +138,28 @@ export function createAppwardenMiddleware(
         return next()
       }
 
-      // Skip if already on lock page to prevent infinite redirect loop
       if (isOnLockPage(config.lockPageSlug, request.url)) {
-        debugFn("Already on lock page - skipping")
-        return next()
-      }
-
-      // Check lock status
-      const result = await checkLockStatus({
-        request,
-        appwardenApiToken: config.appwardenApiToken,
-        appwardenApiHostname: config.appwardenApiHostname,
-        debug: config.debug,
-        lockPageSlug: config.lockPageSlug,
-        waitUntil,
-      })
-
-      // If locked, redirect to lock page
-      if (result.isLocked) {
-        const lockPageUrl = buildLockPageUrl(config.lockPageSlug, request.url)
-        debugFn(`Website is locked - redirecting to ${lockPageUrl.pathname}`)
-        throw createRedirect(lockPageUrl)
-      }
-
-      debugFn("Website is unlocked")
-
-      // Continue to next middleware/loader and get the response
-      const response = await next()
-
-      // Apply CSP if configured (runs after origin)
-      if (config.contentSecurityPolicy && isResponseLike(response)) {
-        // Create a mini context for CSP middleware
-        const cspContext = {
+        debugFn("Already on lock page - skipping lock status check")
+      } else {
+        // Check lock status
+        const result = await checkLockStatus({
           request,
-          response,
-          hostname: requestUrl.hostname,
+          appwardenApiToken: config.appwardenApiToken,
+          appwardenApiHostname: config.appwardenApiHostname,
+          debug: config.debug,
+          lockPageSlug: config.lockPageSlug,
           waitUntil,
-          debug: debugFn,
+        })
+
+        // If locked, redirect to lock page
+        if (result.isLocked) {
+          const lockPageUrl = buildLockPageUrl(config.lockPageSlug, request.url)
+          debugFn(`Website is locked - redirecting to ${lockPageUrl.pathname}`)
+          throw createRedirect(lockPageUrl)
         }
 
-        await useContentSecurityPolicy(config.contentSecurityPolicy)(
-          cspContext,
-          async () => {}, // no-op next
-        )
-
-        const elapsed = Math.round(getNowMs() - startTime)
-        debugFn(`Middleware executed in ${elapsed}ms`)
-        return cspContext.response
+        debugFn("Website is unlocked")
       }
-
-      const elapsed = Math.round(getNowMs() - startTime)
-      debugFn(`Middleware executed in ${elapsed}ms`)
-      return response
     } catch (error) {
       // Re-throw redirects and responses
       if (isResponseLike(error)) {
@@ -169,5 +174,12 @@ export function createAppwardenMiddleware(
       )
       return next()
     }
+
+    const response = await next()
+    const finalResponse = isResponseLike(response)
+      ? await applyCspToResponse(response)
+      : response
+    logElapsed()
+    return finalResponse
   }
 }
