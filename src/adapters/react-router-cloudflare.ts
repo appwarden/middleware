@@ -12,9 +12,8 @@ import {
   createRedirect,
   debug,
   handleHeartbeatRequest,
-  isHTMLRequest,
   isHeartbeatRequest,
-  isHeartbeatRoute,
+  isHTMLRequest,
   isOnLockPage,
   printMessage,
   sanitizeConfigErrors,
@@ -144,14 +143,7 @@ export function createAppwardenMiddleware(
       }
     }
 
-    if (isHeartbeatRoute(requestUrl)) {
-      if (!isHeartbeatRequest(request, requestUrl)) {
-        return handleHeartbeatRequest(
-          request,
-          HEARTBEAT_SERVICES.CLOUDFLARE_REACT_ROUTER,
-        )
-      }
-
+    if (isHeartbeatRequest(request, requestUrl)) {
       return handleReactRouterHeartbeatRequest(request, configFn)
     }
 

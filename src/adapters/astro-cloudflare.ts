@@ -15,7 +15,6 @@ import {
   debug,
   handleHeartbeatRequest,
   isHeartbeatRequest,
-  isHeartbeatRoute,
   isHTMLRequest,
   isOnLockPage,
   printMessage,
@@ -172,14 +171,7 @@ export function createAppwardenMiddleware(
     // Cast locals to include runtime property added by @astrojs/cloudflare
     const locals = context.locals as LocalsWithRuntime
 
-    if (isHeartbeatRoute(requestUrl)) {
-      if (!isHeartbeatRequest(request, requestUrl)) {
-        return handleHeartbeatRequest(
-          request,
-          HEARTBEAT_SERVICES.CLOUDFLARE_ASTRO,
-        )
-      }
-
+    if (isHeartbeatRequest(request, requestUrl)) {
       return createAstroHeartbeatResponse(request, locals.runtime, configFn)
     }
 

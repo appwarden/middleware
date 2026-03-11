@@ -215,7 +215,7 @@ describe("createAppwardenMiddleware", () => {
     expect(getLockValueMock).not.toHaveBeenCalled()
   })
 
-  it("should return 405 for non-GET heartbeat requests without validating config", async () => {
+  it("should pass through non-GET heartbeat requests via normal non-HTML flow", async () => {
     const middleware = createAppwardenMiddleware(mockConfig)
     const result = await middleware(
       new Request("https://example.com/_appwarden/heartbeat", {
@@ -224,12 +224,12 @@ describe("createAppwardenMiddleware", () => {
       }),
     )
 
-    expect(result.status).toBe(405)
-    expect(result.headers.get("allow")).toBe("GET")
+    expect(result.status).toBe(200)
+    expect(mockValidateConfig).toHaveBeenCalled()
     expect(
       vi.mocked(AppwardenConfigSchemaMock.safeParse),
     ).not.toHaveBeenCalled()
-    expect(mockNextResponseNext).not.toHaveBeenCalled()
+    expect(mockNextResponseNext).toHaveBeenCalled()
     expect(getLockValueMock).not.toHaveBeenCalled()
   })
 

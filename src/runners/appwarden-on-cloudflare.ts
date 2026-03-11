@@ -9,7 +9,6 @@ import {
   debug,
   handleHeartbeatRequest,
   isHeartbeatRequest,
-  isHeartbeatRoute,
   sanitizeConfigErrors,
   usePipeline,
 } from "../utils"
@@ -21,13 +20,6 @@ export const appwardenOnCloudflare =
     ctx.passThroughOnException()
 
     const requestUrl = new URL(request.url)
-
-    if (
-      isHeartbeatRoute(requestUrl) &&
-      !isHeartbeatRequest(request, requestUrl)
-    ) {
-      return handleHeartbeatRequest(request, HEARTBEAT_SERVICES.CLOUDFLARE)
-    }
 
     const requestContext = {
       env,

@@ -255,7 +255,7 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
     expect(checkLockStatus).not.toHaveBeenCalled()
   })
 
-  it("should return 405 for non-GET heartbeat requests without evaluating config", async () => {
+  it("should pass through non-GET heartbeat requests via normal non-HTML flow", async () => {
     mockArgs.request = new Request("https://example.com/_appwarden/heartbeat", {
       method: "POST",
       headers: { Accept: "application/json" },
@@ -267,12 +267,14 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
     }))
     const middleware = createAppwardenMiddleware(configFn)
 
-    const response = await getThrownResponse(middleware(mockArgs))
+    const result = await middleware(mockArgs)
 
-    expect(response.status).toBe(405)
-    expect(response.headers.get("allow")).toBe("GET")
-    expect(configFn).not.toHaveBeenCalled()
-    expect(mockNext).not.toHaveBeenCalled()
+    expect(result).toMatchObject({
+      response: expect.any(Response),
+    })
+    expect(result.response.status).toBe(200)
+    expect(configFn).toHaveBeenCalledTimes(1)
+    expect(mockNext).toHaveBeenCalledTimes(1)
     expect(checkLockStatus).not.toHaveBeenCalled()
   })
 

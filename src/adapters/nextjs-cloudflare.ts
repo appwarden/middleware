@@ -17,7 +17,6 @@ import {
   debug,
   handleHeartbeatRequest,
   isHeartbeatRequest,
-  isHeartbeatRoute,
   isHTMLRequest,
   isOnLockPage,
   printMessage,
@@ -146,13 +145,7 @@ export function createAppwardenMiddleware(
     const startTime = getNowMs()
     const requestUrl = new URL(request.url)
 
-    if (isHeartbeatRoute(requestUrl)) {
-      if (!isHeartbeatRequest(request, requestUrl)) {
-        return toNextResponse(
-          handleHeartbeatRequest(request, HEARTBEAT_SERVICES.CLOUDFLARE_NEXTJS),
-        )
-      }
-
+    if (isHeartbeatRequest(request, requestUrl)) {
       return createNextJsHeartbeatResponse(request, configFn)
     }
 

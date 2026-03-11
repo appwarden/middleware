@@ -13,7 +13,6 @@ import {
   handleHeartbeatRequest,
   isCacheUrl,
   isHeartbeatRequest,
-  isHeartbeatRoute,
   isHTMLRequest,
   isOnLockPage,
   MemoryCache,
@@ -50,13 +49,7 @@ export function createAppwardenMiddleware(
 
     // Handle heartbeat requests BEFORE any other processing
     // This must work even when the site is locked
-    if (isHeartbeatRoute(requestUrl)) {
-      if (!isHeartbeatRequest(request, requestUrl)) {
-        return toNextResponse(
-          handleHeartbeatRequest(request, HEARTBEAT_SERVICES.VERCEL),
-        )
-      }
-
+    if (isHeartbeatRequest(request, requestUrl)) {
       const validationResult = AppwardenConfigSchema.safeParse(config)
 
       // Return heartbeat response with config errors if validation failed

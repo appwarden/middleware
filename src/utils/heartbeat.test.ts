@@ -12,7 +12,6 @@ import {
   createHeartbeatResponseBody,
   handleHeartbeatRequest,
   isHeartbeatRequest,
-  isHeartbeatRoute,
   sanitizeConfigErrors,
 } from "./heartbeat"
 
@@ -164,26 +163,6 @@ describe("heartbeat utilities", () => {
         contractVersion: HEARTBEAT_CONTRACT_VERSION,
         service: "vercel",
       })
-    })
-  })
-
-  describe("isHeartbeatRoute", () => {
-    it("should return true for the heartbeat route", () => {
-      const url = new URL("https://example.com/_appwarden/heartbeat")
-
-      expect(isHeartbeatRoute(url)).toBe(true)
-    })
-
-    it("should return false for other routes", () => {
-      const url = new URL("https://example.com/")
-
-      expect(isHeartbeatRoute(url)).toBe(false)
-    })
-
-    it("should return false for similar routes", () => {
-      const url = new URL("https://example.com/_appwarden/heartbeat/extra")
-
-      expect(isHeartbeatRoute(url)).toBe(false)
     })
   })
 
