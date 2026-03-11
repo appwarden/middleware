@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.11.6](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.11.5...@appwarden/middleware@3.11.6) (2026-03-11)
+
+
+### Bug Fixes
+
+* harden cloudflare adapter response handling ([1fcf299](https://github.com/appwarden/middleware/commit/1fcf29949ee94b7f81cc26a840516baef89e3090))
+
 ## [3.11.5](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.11.4...@appwarden/middleware@3.11.5) (2026-03-11)
 
 
