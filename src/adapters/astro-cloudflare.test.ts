@@ -356,6 +356,31 @@ describe("createAppwardenMiddleware (Astro)", () => {
     expect(mockNext).not.toHaveBeenCalled()
   })
 
+  it("should return 405 for non-GET heartbeat requests without evaluating config", async () => {
+    mockContext.request = new Request(
+      "https://example.com/_appwarden/heartbeat",
+      {
+        method: "POST",
+        headers: { Accept: "application/json" },
+      },
+    )
+
+    const configFn = vi.fn(() => ({
+      lockPageSlug: "/maintenance",
+      appwardenApiToken: "test-token",
+    }))
+    const middleware = createAppwardenMiddleware(configFn)
+
+    const result = asResponse(
+      await middleware(asAPIContext(mockContext), mockNext),
+    )
+
+    expect(result.status).toBe(405)
+    expect(result.headers.get("allow")).toBe("GET")
+    expect(configFn).not.toHaveBeenCalled()
+    expect(mockNext).not.toHaveBeenCalled()
+  })
+
   it("should pass correct config to checkLockStatus", async () => {
     const middleware = createAppwardenMiddleware(() => ({
       lockPageSlug: "/maintenance",

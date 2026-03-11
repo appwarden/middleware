@@ -227,13 +227,26 @@ export function createHeartbeatResponse(
 }
 
 /**
+ * Checks if a URL targets the heartbeat endpoint.
+ *
+ * @param url - The request URL
+ * @returns True if the URL pathname is the heartbeat route
+ */
+export function isHeartbeatRoute(url: URL): boolean {
+  return url.pathname === APPWARDEN_HEARTBEAT_ROUTE
+}
+
+/**
  * Checks if a request is for the heartbeat endpoint.
  *
+ * Only GET requests should be treated as heartbeat requests.
+ *
+ * @param request - The incoming request
  * @param url - The request URL
  * @returns True if the request is for the heartbeat endpoint
  */
-export function isHeartbeatRequest(url: URL): boolean {
-  return url.pathname === APPWARDEN_HEARTBEAT_ROUTE
+export function isHeartbeatRequest(request: Request, url: URL): boolean {
+  return request.method === "GET" && isHeartbeatRoute(url)
 }
 
 /**

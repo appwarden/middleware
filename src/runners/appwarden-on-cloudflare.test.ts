@@ -11,10 +11,25 @@ import { insertErrorLogs } from "../utils/cloudflare"
 import { appwardenOnCloudflare } from "./appwarden-on-cloudflare"
 
 // Mock the ExportedHandlerFetchHandler type to avoid importing from Cloudflare
-type MockRequest = Request
+type MockRequest = Request & { cf?: unknown }
 type MockExecutionContext = {
   passThroughOnException: () => void
   waitUntil: (promise: Promise<any>) => void
+}
+
+function createRequestWithCf(
+  url: string,
+  cf: unknown,
+  init?: RequestInit,
+): MockRequest {
+  const request = new Request(url, init)
+
+  Object.defineProperty(request, "cf", {
+    value: cf,
+    configurable: true,
+  })
+
+  return request as MockRequest
 }
 
 // Mock dependencies
@@ -146,7 +161,11 @@ describe("appwardenOnCloudflare", () => {
   })
 
   it("should include heartbeat config errors when config output is invalid", async () => {
-    mockRequest = new Request("https://example.com/_appwarden/heartbeat")
+    const requestCf = { colo: "IAD" }
+    mockRequest = createRequestWithCf(
+      "https://example.com/_appwarden/heartbeat",
+      requestCf,
+    )
     mockInputFn.mockReturnValueOnce({
       lockPageSlug: "/maintenance",
       appwardenApiToken: "",
@@ -163,6 +182,11 @@ describe("appwardenOnCloudflare", () => {
       path: expect.any(Array),
       code: expect.any(String),
       message: expect.any(String),
+    })
+    expect(mockInputFn).toHaveBeenCalledWith({
+      env: mockEnv,
+      ctx: mockCtx,
+      cf: requestCf,
     })
   })
 
@@ -184,6 +208,20 @@ describe("appwardenOnCloudflare", () => {
         message: "Appwarden config evaluation failed",
       },
     ])
+  })
+
+  it("should return 405 for non-GET heartbeat requests without evaluating config", async () => {
+    mockRequest = new Request("https://example.com/_appwarden/heartbeat", {
+      method: "POST",
+    })
+
+    const handler = appwardenOnCloudflare(mockInputFn) as any
+    const result = await handler(mockRequest, mockEnv, mockCtx)
+
+    expect(result.status).toBe(405)
+    expect(result.headers.get("allow")).toBe("GET")
+    expect(mockInputFn).not.toHaveBeenCalled()
+    expect(mockPipelineExecute).not.toHaveBeenCalled()
   })
 
   it("should execute the middleware pipeline with the correct middlewares", async () => {
@@ -238,6 +276,9 @@ describe("appwardenOnCloudflare", () => {
   })
 
   it("should pass the correct input to the middleware pipeline", async () => {
+    const requestCf = { colo: "SFO" }
+    mockRequest = createRequestWithCf("https://example.com", requestCf)
+
     // Type assertion to make TypeScript happy
     const handler = appwardenOnCloudflare(mockInputFn) as any
     await handler(mockRequest, mockEnv, mockCtx)
@@ -246,7 +287,7 @@ describe("appwardenOnCloudflare", () => {
     expect(mockInputFn).toHaveBeenCalledWith({
       env: mockEnv,
       ctx: mockCtx,
-      cf: {},
+      cf: requestCf,
     })
   })
 

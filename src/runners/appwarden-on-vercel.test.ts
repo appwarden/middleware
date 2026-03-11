@@ -215,6 +215,24 @@ describe("createAppwardenMiddleware", () => {
     expect(getLockValueMock).not.toHaveBeenCalled()
   })
 
+  it("should return 405 for non-GET heartbeat requests without validating config", async () => {
+    const middleware = createAppwardenMiddleware(mockConfig)
+    const result = await middleware(
+      new Request("https://example.com/_appwarden/heartbeat", {
+        method: "POST",
+        headers: { accept: "application/json" },
+      }),
+    )
+
+    expect(result.status).toBe(405)
+    expect(result.headers.get("allow")).toBe("GET")
+    expect(
+      vi.mocked(AppwardenConfigSchemaMock.safeParse),
+    ).not.toHaveBeenCalled()
+    expect(mockNextResponseNext).not.toHaveBeenCalled()
+    expect(getLockValueMock).not.toHaveBeenCalled()
+  })
+
   it("should include heartbeat config errors when config validation fails", async () => {
     vi.mocked(AppwardenConfigSchemaMock.safeParse).mockReturnValue({
       success: false,

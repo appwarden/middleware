@@ -239,6 +239,30 @@ describe("createAppwardenMiddleware", () => {
     expect(checkLockStatus).not.toHaveBeenCalled()
   })
 
+  it("should return 405 for non-GET heartbeat requests without evaluating config", async () => {
+    mockArgs.request = new Request("https://example.com/_appwarden/heartbeat", {
+      method: "POST",
+      headers: { Accept: "application/json" },
+    })
+
+    const configFn = vi.fn(() => ({
+      lockPageSlug: "/maintenance",
+      appwardenApiToken: "test-token",
+    }))
+    const middleware = createAppwardenMiddleware(configFn)
+
+    const result = await middleware(mockArgs, mockNext)
+    expect(result).toBeInstanceOf(Response)
+
+    const response = result as Response
+
+    expect(response.status).toBe(405)
+    expect(response.headers.get("allow")).toBe("GET")
+    expect(configFn).not.toHaveBeenCalled()
+    expect(mockNext).not.toHaveBeenCalled()
+    expect(checkLockStatus).not.toHaveBeenCalled()
+  })
+
   it("should throw a redirect response when site is locked", async () => {
     vi.mocked(checkLockStatus).mockResolvedValue({
       isLocked: true,

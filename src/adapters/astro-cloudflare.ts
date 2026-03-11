@@ -1,7 +1,7 @@
 import type { Runtime } from "@astrojs/cloudflare"
 import type { MiddlewareHandler } from "astro"
 import { waitUntil } from "cloudflare:workers"
-import { APPWARDEN_HEARTBEAT_ROUTE, HEARTBEAT_SERVICES } from "../constants"
+import { HEARTBEAT_SERVICES } from "../constants"
 import { checkLockStatus } from "../core"
 import type {
   AstroCloudflareConfig,
@@ -14,6 +14,8 @@ import {
   createRedirect,
   debug,
   handleHeartbeatRequest,
+  isHeartbeatRequest,
+  isHeartbeatRoute,
   isHTMLRequest,
   isOnLockPage,
   printMessage,
@@ -170,7 +172,14 @@ export function createAppwardenMiddleware(
     // Cast locals to include runtime property added by @astrojs/cloudflare
     const locals = context.locals as LocalsWithRuntime
 
-    if (requestUrl.pathname === APPWARDEN_HEARTBEAT_ROUTE) {
+    if (isHeartbeatRoute(requestUrl)) {
+      if (!isHeartbeatRequest(request, requestUrl)) {
+        return handleHeartbeatRequest(
+          request,
+          HEARTBEAT_SERVICES.CLOUDFLARE_ASTRO,
+        )
+      }
+
       return createAstroHeartbeatResponse(request, locals.runtime, configFn)
     }
 
