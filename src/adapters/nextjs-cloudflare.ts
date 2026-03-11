@@ -17,7 +17,7 @@ import {
   printMessage,
   TEMPORARY_REDIRECT_STATUS,
 } from "../utils"
-import { getElapsedMs, getNowMs } from "../utils/get-now"
+import { getNowMs, logElapsed } from "../utils/get-now"
 
 /**
  * Cloudflare runtime context provided by @opennextjs/cloudflare.
@@ -166,14 +166,12 @@ export function createAppwardenMiddleware(
 
         const response = NextResponse.next()
         response.headers.set(headerName, headerValue)
-        const elapsed = getElapsedMs(startTime)
-        debugFn(`Middleware executed in ${elapsed}ms`)
+        logElapsed(debugFn, startTime)
         return response
       }
 
       // Continue to next handler
-      const elapsed = getElapsedMs(startTime)
-      debugFn(`Middleware executed in ${elapsed}ms`)
+      logElapsed(debugFn, startTime)
       return NextResponse.next()
     } catch (error) {
       // Log errors but don't block the request

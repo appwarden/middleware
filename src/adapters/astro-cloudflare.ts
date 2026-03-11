@@ -17,7 +17,7 @@ import {
   TEMPORARY_REDIRECT_STATUS,
 } from "../utils"
 import { applyContentSecurityPolicyToResponse } from "../utils/apply-content-security-policy-to-response"
-import { getElapsedMs, getNowMs } from "../utils/get-now"
+import { getNowMs, logElapsed } from "../utils/get-now"
 import { isResponseLike } from "../utils/is-response-like"
 
 /**
@@ -91,11 +91,6 @@ export function createAppwardenMiddleware(
     let config: AstroCloudflareConfig
     let debugFn: ReturnType<typeof debug>
     let requestUrl: URL
-
-    const logElapsed = () => {
-      const elapsed = getElapsedMs(startTime)
-      debugFn(`Middleware executed in ${elapsed}ms`)
-    }
 
     const applyCspToResponse = async (
       response: Response,
@@ -215,7 +210,7 @@ export function createAppwardenMiddleware(
 
     const response = await next()
     const finalResponse = await applyCspToResponse(response)
-    logElapsed()
+    logElapsed(debugFn, startTime)
     return finalResponse
   }
 }

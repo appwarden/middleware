@@ -14,7 +14,7 @@ import {
   printMessage,
 } from "../utils"
 import { applyContentSecurityPolicyToResponse } from "../utils/apply-content-security-policy-to-response"
-import { getElapsedMs, getNowMs } from "../utils/get-now"
+import { getNowMs, logElapsed } from "../utils/get-now"
 import { isResponseLike } from "../utils/is-response-like"
 
 // Re-export the config types so consumers can reference them from this adapter
@@ -128,11 +128,6 @@ export function createAppwardenMiddleware(
     let debugFn: ReturnType<typeof debug>
     let requestUrl: URL
 
-    const logElapsed = () => {
-      const elapsed = getElapsedMs(startTime)
-      debugFn(`Middleware executed in ${elapsed}ms`)
-    }
-
     const applyCspToResponse = async (
       response: Response,
     ): Promise<Response> => {
@@ -213,7 +208,7 @@ export function createAppwardenMiddleware(
             createRedirect(lockPageUrl),
           )
 
-          logElapsed()
+          logElapsed(debugFn, startTime)
           throw redirectResponse
         }
 
@@ -239,7 +234,7 @@ export function createAppwardenMiddleware(
       ? await applyCspToResponse(result.response)
       : result.response
 
-    logElapsed()
+    logElapsed(debugFn, startTime)
     return response === result.response ? result : { ...result, response }
   }
 
