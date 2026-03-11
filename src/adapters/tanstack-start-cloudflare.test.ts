@@ -371,14 +371,12 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
       },
     }))
 
-    await expect(middleware(mockArgs)).rejects.toMatchObject({
-      status: 302,
-    })
-
     try {
       await middleware(mockArgs)
+      expect.fail("Expected middleware to throw")
     } catch (error) {
       const response = error as Response
+      expect(response).toMatchObject({ status: 302 })
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         expect.stringContaining("Failed to apply content security policy:"),
       )
