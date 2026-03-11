@@ -115,7 +115,6 @@ describe("createAppwardenMiddleware (Astro)", () => {
         APPWARDEN_API_TOKEN: "test-token",
         APPWARDEN_LOCK_PAGE_SLUG: "/maintenance",
       },
-      cf: undefined,
       caches: {} as unknown as CacheStorage,
       ctx: {
         waitUntil: vi.fn(),

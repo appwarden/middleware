@@ -24,7 +24,6 @@ export const appwardenOnCloudflare =
     const requestContext = {
       env,
       ctx,
-      cf: (request as Request & { cf?: unknown }).cf ?? {},
     }
 
     // Parse config once before any processing

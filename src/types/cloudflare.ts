@@ -49,7 +49,6 @@ declare global {
 export type RequestContext = {
   env: Bindings
   ctx: ExecutionContext
-  cf: unknown
 }
 
 export type CloudflareProviderContext = Omit<
