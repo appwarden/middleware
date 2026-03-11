@@ -1,6 +1,5 @@
 import { waitUntil } from "cloudflare:workers"
 import { checkLockStatus } from "../core"
-import { useContentSecurityPolicy } from "../middlewares"
 import type {
   TanStackStartCloudflareConfig,
   TanStackStartCloudflareConfigInput,
@@ -14,6 +13,7 @@ import {
   isOnLockPage,
   printMessage,
 } from "../utils"
+import { applyContentSecurityPolicyToResponse } from "../utils/apply-content-security-policy-to-response"
 import { getNowMs } from "../utils/get-now"
 import { isResponseLike } from "../utils/is-response-like"
 
@@ -124,6 +124,40 @@ export function createAppwardenMiddleware(
   const middleware: TanStackStartMiddlewareFunction = async (args) => {
     const startTime = getNowMs()
     const { request, next } = args
+    let config: TanStackStartCloudflareConfig
+    let debugFn: ReturnType<typeof debug>
+    let requestUrl: URL
+
+    const logElapsed = () => {
+      const elapsed = Math.round(getNowMs() - startTime)
+      debugFn(`Middleware executed in ${elapsed}ms`)
+    }
+
+    const applyCspToResponse = async (
+      response: Response,
+    ): Promise<Response> => {
+      if (!config.contentSecurityPolicy || !isResponseLike(response)) {
+        return response
+      }
+
+      try {
+        return await applyContentSecurityPolicyToResponse({
+          request,
+          response,
+          hostname: requestUrl.hostname,
+          waitUntil,
+          debug: debugFn,
+          contentSecurityPolicy: config.contentSecurityPolicy,
+        })
+      } catch (error) {
+        console.error(
+          printMessage(
+            `Failed to apply content security policy: ${error instanceof Error ? error.message : String(error)}`,
+          ),
+        )
+        return response
+      }
+    }
 
     try {
       // Get config from the config function (pre-transformation input)
@@ -142,9 +176,9 @@ export function createAppwardenMiddleware(
       }
 
       // Use the validated and transformed config
-      const config = validationResult.data
-      const debugFn = debug(config.debug ?? false)
-      const requestUrl = new URL(request.url)
+      config = validationResult.data
+      debugFn = debug(config.debug ?? false)
+      requestUrl = new URL(request.url)
       const isHTML = isHTMLRequest(request)
 
       debugFn(
@@ -157,86 +191,34 @@ export function createAppwardenMiddleware(
         return next()
       }
 
-      // Skip if already on lock page to prevent infinite redirect loop
       if (isOnLockPage(config.lockPageSlug, request.url)) {
-        debugFn("Already on lock page - skipping")
-        return next()
-      }
+        debugFn("Already on lock page - skipping lock status check")
+      } else {
+        // Check lock status
+        const lockStatus = await checkLockStatus({
+          request,
+          appwardenApiToken: config.appwardenApiToken,
+          appwardenApiHostname: config.appwardenApiHostname,
+          debug: config.debug,
+          lockPageSlug: config.lockPageSlug,
+          waitUntil,
+        })
 
-      // Check lock status
-      const lockStatus = await checkLockStatus({
-        request,
-        appwardenApiToken: config.appwardenApiToken,
-        appwardenApiHostname: config.appwardenApiHostname,
-        debug: config.debug,
-        lockPageSlug: config.lockPageSlug,
-        waitUntil,
-      })
+        // If locked, redirect to the lock page (quarantine) and apply CSP when configured
+        if (lockStatus.isLocked) {
+          const lockPageUrl = buildLockPageUrl(config.lockPageSlug, request.url)
+          debugFn(`Website is locked - redirecting to ${lockPageUrl.pathname}`)
 
-      // If locked, redirect to the lock page (quarantine) and apply CSP when configured
-      if (lockStatus.isLocked) {
-        const lockPageUrl = buildLockPageUrl(config.lockPageSlug, request.url)
-        debugFn(`Website is locked - redirecting to ${lockPageUrl.pathname}`)
-
-        const redirectResponse = createRedirect(lockPageUrl)
-
-        if (config.contentSecurityPolicy && isResponseLike(redirectResponse)) {
-          const cspContext = {
-            request,
-            response: redirectResponse,
-            hostname: requestUrl.hostname,
-            waitUntil,
-            debug: debugFn,
-          }
-
-          await useContentSecurityPolicy(config.contentSecurityPolicy)(
-            cspContext,
-            async () => {},
+          const redirectResponse = await applyCspToResponse(
+            createRedirect(lockPageUrl),
           )
 
-          const elapsed = Math.round(getNowMs() - startTime)
-          debugFn(`Middleware executed in ${elapsed}ms`)
-          throw cspContext.response
+          logElapsed()
+          throw redirectResponse
         }
 
-        const elapsed = Math.round(getNowMs() - startTime)
-        debugFn(`Middleware executed in ${elapsed}ms`)
-        throw redirectResponse
+        debugFn("Website is unlocked")
       }
-
-      debugFn("Website is unlocked")
-
-      // Continue to next middleware/handler and get the result object
-      const result = await next()
-      const { response } = result
-
-      // Apply CSP if configured (runs after origin)
-      if (config.contentSecurityPolicy && isResponseLike(response)) {
-        // Create a mini context for CSP middleware
-        const cspContext = {
-          request,
-          response,
-          hostname: requestUrl.hostname,
-          waitUntil,
-          debug: debugFn,
-        }
-
-        await useContentSecurityPolicy(config.contentSecurityPolicy)(
-          cspContext,
-          async () => {}, // no-op next
-        )
-
-        const elapsed = Math.round(getNowMs() - startTime)
-        debugFn(`Middleware executed in ${elapsed}ms`)
-        return {
-          ...result,
-          response: cspContext.response,
-        }
-      }
-
-      const elapsed = Math.round(getNowMs() - startTime)
-      debugFn(`Middleware executed in ${elapsed}ms`)
-      return result
     } catch (error) {
       // Re-throw redirects and responses
       if (isResponseLike(error)) {
@@ -251,6 +233,14 @@ export function createAppwardenMiddleware(
       )
       return next()
     }
+
+    const result = await next()
+    const response = isResponseLike(result.response)
+      ? await applyCspToResponse(result.response)
+      : result.response
+
+    logElapsed()
+    return response === result.response ? result : { ...result, response }
   }
 
   return middleware
