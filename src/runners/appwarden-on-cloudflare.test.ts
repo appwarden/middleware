@@ -271,6 +271,59 @@ describe("appwardenOnCloudflare", () => {
     expect(usePipelineArgs).toHaveLength(2)
   })
 
+  it("should include CSP middleware when top-level contentSecurityPolicy is configured", async () => {
+    mockInputFn.mockReturnValueOnce({
+      debug: true,
+      lockPageSlug: "/maintenance",
+      appwardenApiToken: "test-token",
+      contentSecurityPolicy: {
+        mode: "report-only",
+        directives: {
+          "default-src": ["'self'"],
+        },
+      },
+    })
+
+    const handler = appwardenOnCloudflare(mockInputFn) as any
+    await handler(mockRequest, mockEnv, mockCtx)
+
+    const usePipelineArgs = (usePipeline as any).mock.calls[0]
+    expect(usePipelineArgs).toHaveLength(3)
+  })
+
+  it("should prefer domain-specific CSP over top-level contentSecurityPolicy", async () => {
+    const topLevelCsp = {
+      mode: "report-only",
+      directives: {
+        "default-src": ["'self'"],
+      },
+    }
+    const domainCsp = {
+      mode: "enforced",
+      directives: {
+        "script-src": ["'self'"],
+      },
+    }
+
+    mockInputFn.mockReturnValueOnce({
+      debug: true,
+      appwardenApiToken: "test-token",
+      contentSecurityPolicy: topLevelCsp,
+      multidomainConfig: {
+        "example.com": {
+          lockPageSlug: "/maintenance-example",
+          contentSecurityPolicy: domainCsp,
+        },
+      },
+    })
+
+    const handler = appwardenOnCloudflare(mockInputFn) as any
+    await handler(mockRequest, mockEnv, mockCtx)
+
+    const { useContentSecurityPolicy } = await import("../middlewares")
+    expect(useContentSecurityPolicy).toHaveBeenCalledWith(domainCsp)
+  })
+
   describe("per-domain debug configuration", () => {
     it("should use domain-specific debug:true when configured in multidomainConfig", async () => {
       mockInputFn.mockReturnValueOnce({
