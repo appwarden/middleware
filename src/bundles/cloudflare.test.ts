@@ -15,12 +15,9 @@ describe("cloudflare bundle", () => {
         debug: true,
         lockPageSlug: "/maintenance",
         appwardenApiToken: "test-token",
-        middleware: {
-          before: [] as any[],
-        },
       })
 
-      const handler = createAppwardenMiddleware(configFn as any)
+      const handler = createAppwardenMiddleware(configFn)
       expect(typeof handler).toBe("function")
     })
 
@@ -29,12 +26,9 @@ describe("cloudflare bundle", () => {
         debug: true,
         lockPageSlug: "/maintenance",
         appwardenApiToken: "test-token",
-        middleware: {
-          before: [] as any[],
-        },
       })
 
-      const handler = createAppwardenMiddleware(configFn as any)
+      const handler = createAppwardenMiddleware(configFn)
       // Handler should accept 3 parameters (request, env, ctx)
       expect(handler.length).toBe(3)
     })

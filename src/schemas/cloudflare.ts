@@ -10,6 +10,6 @@ export const ConfigFnInputSchema = z
   .args(z.custom<RequestContext>())
   .returns(z.lazy(() => lockPageSlugRefinement(UseAppwardenInputSchema)))
 
-// Define the return type explicitly since ZodEffects (from .refine())
-// loses type inference when used with ReturnType<z.infer<...>>
 export type CloudflareConfigType = z.infer<typeof UseAppwardenInputSchema>
+
+export type CloudflareConfigFnType = z.input<typeof ConfigFnInputSchema>
