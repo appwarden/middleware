@@ -14,7 +14,7 @@ import {
   printMessage,
 } from "../utils"
 import { applyContentSecurityPolicyToResponse } from "../utils/apply-content-security-policy-to-response"
-import { getNowMs } from "../utils/get-now"
+import { getElapsedMs, getNowMs } from "../utils/get-now"
 import { isResponseLike } from "../utils/is-response-like"
 
 // Re-export the config types so consumers can reference them from this adapter
@@ -129,7 +129,7 @@ export function createAppwardenMiddleware(
     let requestUrl: URL
 
     const logElapsed = () => {
-      const elapsed = Math.round(getNowMs() - startTime)
+      const elapsed = getElapsedMs(startTime)
       debugFn(`Middleware executed in ${elapsed}ms`)
     }
 
