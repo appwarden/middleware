@@ -232,7 +232,7 @@ export function createHeartbeatResponse(
  * @param url - The request URL
  * @returns True if the URL pathname is the heartbeat route
  */
-export function isHeartbeatRoute(url: URL): boolean {
+function isHeartbeatRoute(url: URL): boolean {
   return url.pathname === APPWARDEN_HEARTBEAT_ROUTE
 }
 

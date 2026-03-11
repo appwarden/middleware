@@ -356,7 +356,7 @@ describe("createAppwardenMiddleware (Astro)", () => {
     expect(mockNext).not.toHaveBeenCalled()
   })
 
-  it("should return 405 for non-GET heartbeat requests without evaluating config", async () => {
+  it("should pass through non-GET heartbeat requests via normal non-HTML flow", async () => {
     mockContext.request = new Request(
       "https://example.com/_appwarden/heartbeat",
       {
@@ -375,10 +375,10 @@ describe("createAppwardenMiddleware (Astro)", () => {
       await middleware(asAPIContext(mockContext), mockNext),
     )
 
-    expect(result.status).toBe(405)
-    expect(result.headers.get("allow")).toBe("GET")
-    expect(configFn).not.toHaveBeenCalled()
-    expect(mockNext).not.toHaveBeenCalled()
+    expect(result.status).toBe(200)
+    expect(configFn).toHaveBeenCalledTimes(1)
+    expect(mockNext).toHaveBeenCalledTimes(1)
+    expect(checkLockStatus).not.toHaveBeenCalled()
   })
 
   it("should pass correct config to checkLockStatus", async () => {

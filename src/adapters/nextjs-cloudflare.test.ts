@@ -405,22 +405,24 @@ describe("createAppwardenMiddleware (OpenNext Cloudflare)", () => {
     ])
   })
 
-  it("should return 405 for non-GET heartbeat requests without evaluating config", async () => {
+  it("should pass through non-GET heartbeat requests via normal non-HTML flow", async () => {
     mockRequest = new Request("https://example.com/_appwarden/heartbeat", {
       method: "POST",
       headers: { Accept: "application/json" },
     })
 
-    const middleware = createAppwardenMiddleware(() => ({
+    const configFn = vi.fn(() => ({
       lockPageSlug: "/maintenance",
       appwardenApiToken: "test-token",
     }))
+    const middleware = createAppwardenMiddleware(configFn)
 
     const result = await middleware(mockRequest as any)
 
-    expect(result.status).toBe(405)
-    expect(result.headers.get("allow")).toBe("GET")
-    expect(mockGetCloudflareContext).not.toHaveBeenCalled()
+    expect(result.status).toBe(200)
+    expect(asMockedNextResponse(result).mockType).toBe("next")
+    expect(configFn).toHaveBeenCalledTimes(1)
+    expect(mockGetCloudflareContext).toHaveBeenCalledTimes(1)
     expect(checkLockStatus).not.toHaveBeenCalled()
   })
 

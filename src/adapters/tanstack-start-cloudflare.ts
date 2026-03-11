@@ -12,9 +12,8 @@ import {
   createRedirect,
   debug,
   handleHeartbeatRequest,
-  isHTMLRequest,
   isHeartbeatRequest,
-  isHeartbeatRoute,
+  isHTMLRequest,
   isOnLockPage,
   printMessage,
   sanitizeConfigErrors,
@@ -190,14 +189,7 @@ export function createAppwardenMiddleware(
       }
     }
 
-    if (isHeartbeatRoute(requestUrl)) {
-      if (!isHeartbeatRequest(request, requestUrl)) {
-        throw handleHeartbeatRequest(
-          request,
-          HEARTBEAT_SERVICES.CLOUDFLARE_TANSTACK_START,
-        )
-      }
-
+    if (isHeartbeatRequest(request, requestUrl)) {
       throw createTanStackHeartbeatResponse(request, configFn)
     }
 

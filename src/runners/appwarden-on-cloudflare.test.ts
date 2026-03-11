@@ -210,7 +210,7 @@ describe("appwardenOnCloudflare", () => {
     ])
   })
 
-  it("should return 405 for non-GET heartbeat requests without evaluating config", async () => {
+  it("should run non-GET heartbeat requests through the normal pipeline", async () => {
     mockRequest = new Request("https://example.com/_appwarden/heartbeat", {
       method: "POST",
     })
@@ -218,10 +218,10 @@ describe("appwardenOnCloudflare", () => {
     const handler = appwardenOnCloudflare(mockInputFn) as any
     const result = await handler(mockRequest, mockEnv, mockCtx)
 
-    expect(result.status).toBe(405)
-    expect(result.headers.get("allow")).toBe("GET")
-    expect(mockInputFn).not.toHaveBeenCalled()
-    expect(mockPipelineExecute).not.toHaveBeenCalled()
+    expect(result).toBeInstanceOf(Response)
+    expect(result.status).toBe(200)
+    expect(mockInputFn).toHaveBeenCalledTimes(1)
+    expect(mockPipelineExecute).toHaveBeenCalledTimes(1)
   })
 
   it("should execute the middleware pipeline with the correct middlewares", async () => {
