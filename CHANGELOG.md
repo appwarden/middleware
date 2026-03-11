@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [3.13.0](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.12.0...@appwarden/middleware@3.13.0) (2026-03-11)
+
+
+### Features
+
+* tighten heartbeat schema contract ([48c3258](https://github.com/appwarden/middleware/commit/48c32583afff355afa7ba47e931eeba813ba9751))
+
 # [3.12.0](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.11.6...@appwarden/middleware@3.12.0) (2026-03-11)
 
 
