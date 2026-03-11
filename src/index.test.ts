@@ -7,7 +7,7 @@ describe("index exports", () => {
     expect(indexExports.LOCKDOWN_TEST_EXPIRY_MS).toBe(5 * 60 * 1000) // 5 minutes
   })
 
-  it("should export middlewares as functions", () => {
+  it("should not export middlewares from the root entry", () => {
     expect((typeof indexExports as any).useContentSecurityPolicy).not.toBe(
       "function",
     )
@@ -18,6 +18,11 @@ describe("index exports", () => {
     expect(indexExports.CSPDirectivesSchema.parse).toBeDefined()
     expect(indexExports.CSPModeSchema).toBeDefined()
     expect(indexExports.CSPModeSchema.parse).toBeDefined()
+    expect(indexExports.HeartbeatConfigErrorSchema).toBeDefined()
+    expect(indexExports.HeartbeatConfigErrorSchema.parse).toBeDefined()
+    expect(indexExports.HeartbeatResponseBodySchema).toBeDefined()
+    expect(indexExports.HeartbeatResponseBodySchema.parse).toBeDefined()
+    expect(typeof indexExports.validateHeartbeatResponseBody).toBe("function")
   })
 
   it("should export utility functions", () => {

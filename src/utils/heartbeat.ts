@@ -6,14 +6,24 @@ import {
   HEARTBEAT_CONFIG_ERROR_MAX_MESSAGE_LENGTH,
   HEARTBEAT_CONFIG_ERROR_MAX_PATH_DEPTH,
   HEARTBEAT_CONFIG_ERROR_MAX_PATH_SEGMENT_LENGTH,
+  HEARTBEAT_CONFIG_ERRORS_MAX_SERIALIZED_BYTES,
   HEARTBEAT_CONTRACT_VERSION,
+  HEARTBEAT_RESPONSE_BODY_MAX_SERIALIZED_BYTES,
 } from "../constants"
 import type {
   HeartbeatConfigError,
   HeartbeatResponseBody,
   HeartbeatService,
 } from "../types/heartbeat"
+import { validateHeartbeatResponseBody } from "../types/heartbeat"
 import { MIDDLEWARE_VERSION } from "../version"
+
+const DEFAULT_HEARTBEAT_CONFIG_ERROR_CODE = "custom"
+const DEFAULT_HEARTBEAT_CONFIG_ERROR_MESSAGE =
+  "Appwarden configuration validation failed"
+const HEARTBEAT_CONSTRUCTION_FAILURE_BODY = JSON.stringify({
+  error: "appwarden_heartbeat_construction_failed",
+})
 
 /**
  * Creates a sanitized error message based on the Zod error code.
@@ -73,34 +83,81 @@ function createSanitizedMessage(
  * @param path - The path array to sanitize
  * @returns Sanitized path array
  */
-function sanitizePath(path: (string | number)[]): (string | number)[] {
+function truncateWithEllipsis(value: string, maxLength: number): string {
+  if (value.length <= maxLength) {
+    return value
+  }
+
+  if (maxLength <= 3) {
+    return value.substring(0, maxLength)
+  }
+
+  return value.substring(0, maxLength - 3) + "..."
+}
+
+function sanitizePathSegment(segment: unknown): string | number {
+  if (typeof segment === "number" && Number.isFinite(segment)) {
+    return Number.isSafeInteger(segment)
+      ? Math.max(0, segment)
+      : Math.max(0, Math.trunc(segment))
+  }
+
+  return truncateWithEllipsis(
+    typeof segment === "string" ? segment : String(segment),
+    HEARTBEAT_CONFIG_ERROR_MAX_PATH_SEGMENT_LENGTH,
+  )
+}
+
+function sanitizePath(path: readonly unknown[]): (string | number)[] {
   // Limit path depth
   const truncatedPath = path.slice(0, HEARTBEAT_CONFIG_ERROR_MAX_PATH_DEPTH)
 
   // Limit segment lengths
-  return truncatedPath.map((segment) => {
-    if (
-      typeof segment === "string" &&
-      segment.length > HEARTBEAT_CONFIG_ERROR_MAX_PATH_SEGMENT_LENGTH
-    ) {
-      return (
-        segment.substring(
-          0,
-          HEARTBEAT_CONFIG_ERROR_MAX_PATH_SEGMENT_LENGTH - 3,
-        ) + "..."
-      )
-    }
-    return segment
-  })
+  return truncatedPath.map(sanitizePathSegment)
 }
 
 function truncateMessage(message: string): string {
-  if (message.length <= HEARTBEAT_CONFIG_ERROR_MAX_MESSAGE_LENGTH) {
-    return message
+  return truncateWithEllipsis(
+    message,
+    HEARTBEAT_CONFIG_ERROR_MAX_MESSAGE_LENGTH,
+  )
+}
+
+function truncateCode(code: string): string {
+  return truncateWithEllipsis(code, HEARTBEAT_CONFIG_ERROR_MAX_CODE_LENGTH)
+}
+
+function normalizeNonEmptyString(
+  value: string,
+  fallback: string,
+  truncate: (value: string) => string,
+): string {
+  const normalizedValue = truncate(value.trim())
+
+  if (normalizedValue.length > 0) {
+    return normalizedValue
   }
 
+  return truncate(fallback)
+}
+
+function getSerializedJsonByteLength(value: unknown): number {
+  return new TextEncoder().encode(JSON.stringify(value)).length
+}
+
+function isConfigErrorsWithinByteBudget(
+  configErrors: HeartbeatConfigError[],
+): boolean {
   return (
-    message.substring(0, HEARTBEAT_CONFIG_ERROR_MAX_MESSAGE_LENGTH - 3) + "..."
+    getSerializedJsonByteLength(configErrors) <=
+    HEARTBEAT_CONFIG_ERRORS_MAX_SERIALIZED_BYTES
+  )
+}
+
+function isResponseBodyWithinByteBudget(body: HeartbeatResponseBody): boolean {
+  return (
+    getSerializedJsonByteLength(body) <=
+    HEARTBEAT_RESPONSE_BODY_MAX_SERIALIZED_BYTES
   )
 }
 
@@ -120,15 +177,23 @@ export function createHeartbeatConfigError(
 ): HeartbeatConfigError {
   return {
     path: sanitizePath(path),
-    code: code.substring(0, HEARTBEAT_CONFIG_ERROR_MAX_CODE_LENGTH),
-    message: truncateMessage(message),
+    code: normalizeNonEmptyString(
+      code,
+      DEFAULT_HEARTBEAT_CONFIG_ERROR_CODE,
+      truncateCode,
+    ),
+    message: normalizeNonEmptyString(
+      message,
+      DEFAULT_HEARTBEAT_CONFIG_ERROR_MESSAGE,
+      truncateMessage,
+    ),
   }
 }
 
 function normalizeHeartbeatConfigErrors(
   configErrors: HeartbeatConfigError[],
 ): HeartbeatConfigError[] {
-  return configErrors
+  const normalizedConfigErrors = configErrors
     .slice(0, HEARTBEAT_CONFIG_ERROR_MAX_COUNT)
     .map((configError) =>
       createHeartbeatConfigError(
@@ -137,6 +202,15 @@ function normalizeHeartbeatConfigErrors(
         configError.message,
       ),
     )
+
+  while (
+    normalizedConfigErrors.length > 0 &&
+    !isConfigErrorsWithinByteBudget(normalizedConfigErrors)
+  ) {
+    normalizedConfigErrors.pop()
+  }
+
+  return normalizedConfigErrors
 }
 
 /**
@@ -189,15 +263,35 @@ export function createHeartbeatResponseBody(
   service: HeartbeatService,
   configErrors: HeartbeatConfigError[] = [],
 ): HeartbeatResponseBody {
-  return {
+  const normalizedConfigErrors = normalizeHeartbeatConfigErrors(configErrors)
+  const body: HeartbeatResponseBody = {
     app: "appwarden",
     kind: "heartbeat",
     status: "ok",
     contractVersion: HEARTBEAT_CONTRACT_VERSION,
     service,
     version: MIDDLEWARE_VERSION,
-    configErrors: normalizeHeartbeatConfigErrors(configErrors),
+    configErrors: normalizedConfigErrors,
   }
+
+  while (
+    body.configErrors.length > 0 &&
+    !isResponseBodyWithinByteBudget(body)
+  ) {
+    body.configErrors.pop()
+  }
+
+  return validateHeartbeatResponseBody(body)
+}
+
+function createHeartbeatConstructionFailureResponse(): Response {
+  return new Response(HEARTBEAT_CONSTRUCTION_FAILURE_BODY, {
+    status: 500,
+    headers: {
+      "content-type": "application/json",
+      "cache-control": "no-store",
+    },
+  })
 }
 
 /**
@@ -211,19 +305,23 @@ export function createHeartbeatResponse(
   service: HeartbeatService,
   configErrors: HeartbeatConfigError[] = [],
 ): Response {
-  const body = createHeartbeatResponseBody(service, configErrors)
+  try {
+    const body = createHeartbeatResponseBody(service, configErrors)
 
-  return new Response(JSON.stringify(body), {
-    status: 200,
-    headers: {
-      "content-type": "application/json",
-      "cache-control": "no-store",
-      "x-appwarden-heartbeat": "1",
-      "x-appwarden-contract-version": String(HEARTBEAT_CONTRACT_VERSION),
-      "x-appwarden-service": service,
-      "x-appwarden-version": MIDDLEWARE_VERSION,
-    },
-  })
+    return new Response(JSON.stringify(body), {
+      status: 200,
+      headers: {
+        "content-type": "application/json",
+        "cache-control": "no-store",
+        "x-appwarden-heartbeat": "1",
+        "x-appwarden-contract-version": String(HEARTBEAT_CONTRACT_VERSION),
+        "x-appwarden-service": service,
+        "x-appwarden-version": MIDDLEWARE_VERSION,
+      },
+    })
+  } catch {
+    return createHeartbeatConstructionFailureResponse()
+  }
 }
 
 /**
