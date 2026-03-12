@@ -1,96 +1,78 @@
 import { describe, expect, it } from "vitest"
-import {
-  APPWARDEN_CACHE_KEY,
-  APPWARDEN_HEARTBEAT_ROUTE,
-  HEARTBEAT_CONFIG_ERRORS_MAX_SERIALIZED_BYTES,
-  HEARTBEAT_CONFIG_ERROR_MAX_CODE_LENGTH,
-  HEARTBEAT_CONFIG_ERROR_MAX_COUNT,
-  HEARTBEAT_CONFIG_ERROR_MAX_MESSAGE_LENGTH,
-  HEARTBEAT_CONFIG_ERROR_MAX_PATH_DEPTH,
-  HEARTBEAT_CONFIG_ERROR_MAX_PATH_SEGMENT_LENGTH,
-  HEARTBEAT_CONTRACT_VERSION,
-  HEARTBEAT_RESPONSE_BODY_MAX_SERIALIZED_BYTES,
-  HEARTBEAT_SERVICES,
-  HEARTBEAT_SERVICE_VALUES,
-  HEARTBEAT_VERSION_MAX_LENGTH,
-  LOCKDOWN_TEST_EXPIRY_MS,
-} from "./constants"
 import * as indexExports from "./index"
 
 describe("index exports", () => {
   it("should export constants with correct values", () => {
-    expect(indexExports.APPWARDEN_CACHE_KEY).toBe(APPWARDEN_CACHE_KEY)
-    expect(indexExports.LOCKDOWN_TEST_EXPIRY_MS).toBe(LOCKDOWN_TEST_EXPIRY_MS)
+    expect(indexExports.APPWARDEN_CACHE_KEY).toBe("appwarden-lock")
+    expect(indexExports.LOCKDOWN_TEST_EXPIRY_MS).toBe(5 * 60 * 1000) // 5 minutes
   })
 
   it("should export heartbeat route constant", () => {
-    expect(indexExports.APPWARDEN_HEARTBEAT_ROUTE).toBe(
-      APPWARDEN_HEARTBEAT_ROUTE,
-    )
+    expect(indexExports.APPWARDEN_HEARTBEAT_ROUTE).toBe("/_appwarden/heartbeat")
   })
 
   it("should export heartbeat contract version constant", () => {
-    expect(indexExports.HEARTBEAT_CONTRACT_VERSION).toBe(
-      HEARTBEAT_CONTRACT_VERSION,
-    )
+    expect(indexExports.HEARTBEAT_CONTRACT_VERSION).toBe(1)
   })
 
   it("should export heartbeat version max length constant", () => {
-    expect(indexExports.HEARTBEAT_VERSION_MAX_LENGTH).toBe(
-      HEARTBEAT_VERSION_MAX_LENGTH,
-    )
+    expect(indexExports.HEARTBEAT_VERSION_MAX_LENGTH).toBe(128)
   })
 
   it("should export heartbeat config error max count constant", () => {
-    expect(indexExports.HEARTBEAT_CONFIG_ERROR_MAX_COUNT).toBe(
-      HEARTBEAT_CONFIG_ERROR_MAX_COUNT,
-    )
+    expect(indexExports.HEARTBEAT_CONFIG_ERROR_MAX_COUNT).toBe(10)
   })
 
   it("should export heartbeat config error max path depth constant", () => {
-    expect(indexExports.HEARTBEAT_CONFIG_ERROR_MAX_PATH_DEPTH).toBe(
-      HEARTBEAT_CONFIG_ERROR_MAX_PATH_DEPTH,
-    )
+    expect(indexExports.HEARTBEAT_CONFIG_ERROR_MAX_PATH_DEPTH).toBe(10)
   })
 
   it("should export heartbeat config error max code length constant", () => {
-    expect(indexExports.HEARTBEAT_CONFIG_ERROR_MAX_CODE_LENGTH).toBe(
-      HEARTBEAT_CONFIG_ERROR_MAX_CODE_LENGTH,
-    )
+    expect(indexExports.HEARTBEAT_CONFIG_ERROR_MAX_CODE_LENGTH).toBe(100)
   })
 
   it("should export heartbeat config error max message length constant", () => {
-    expect(indexExports.HEARTBEAT_CONFIG_ERROR_MAX_MESSAGE_LENGTH).toBe(
-      HEARTBEAT_CONFIG_ERROR_MAX_MESSAGE_LENGTH,
-    )
+    expect(indexExports.HEARTBEAT_CONFIG_ERROR_MAX_MESSAGE_LENGTH).toBe(500)
   })
 
   it("should export heartbeat config errors max serialized bytes constant", () => {
     expect(indexExports.HEARTBEAT_CONFIG_ERRORS_MAX_SERIALIZED_BYTES).toBe(
-      HEARTBEAT_CONFIG_ERRORS_MAX_SERIALIZED_BYTES,
+      12 * 1024,
     )
   })
 
   it("should export heartbeat response body max serialized bytes constant", () => {
     expect(indexExports.HEARTBEAT_RESPONSE_BODY_MAX_SERIALIZED_BYTES).toBe(
-      HEARTBEAT_RESPONSE_BODY_MAX_SERIALIZED_BYTES,
+      32 * 1024,
     )
   })
 
   it("should export heartbeat config error max path segment length constant", () => {
     expect(indexExports.HEARTBEAT_CONFIG_ERROR_MAX_PATH_SEGMENT_LENGTH).toBe(
-      HEARTBEAT_CONFIG_ERROR_MAX_PATH_SEGMENT_LENGTH,
+      100,
     )
   })
 
   it("should export heartbeat service values array", () => {
-    expect(indexExports.HEARTBEAT_SERVICE_VALUES).toEqual(
-      HEARTBEAT_SERVICE_VALUES,
-    )
+    expect(indexExports.HEARTBEAT_SERVICE_VALUES).toEqual([
+      "cloudflare",
+      "cloudflare-astro",
+      "cloudflare-react-router",
+      "cloudflare-tanstack-start",
+      "cloudflare-nextjs",
+      "vercel",
+    ])
   })
 
   it("should export heartbeat services object", () => {
-    expect(indexExports.HEARTBEAT_SERVICES).toEqual(HEARTBEAT_SERVICES)
+    expect(indexExports.HEARTBEAT_SERVICES).toEqual({
+      CLOUDFLARE: "cloudflare",
+      CLOUDFLARE_ASTRO: "cloudflare-astro",
+      CLOUDFLARE_REACT_ROUTER: "cloudflare-react-router",
+      CLOUDFLARE_TANSTACK_START: "cloudflare-tanstack-start",
+      CLOUDFLARE_NEXTJS: "cloudflare-nextjs",
+      VERCEL: "vercel",
+    })
   })
 
   it("should not export middlewares from the root entry", () => {
