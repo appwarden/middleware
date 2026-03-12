@@ -7,12 +7,6 @@
 ![Test Coverage](https://img.shields.io/badge/coverage-94.02%25-brightgreen)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-## Versioning & dependencies
-
-- This project uses Conventional Commits and automated release tooling to keep versions and the changelog up to date.
-- Patch releases may include bug fixes and internal maintenance or dependency updates (for example, Cloudflare Workers types, Wrangler, and GitHub Action tooling). New features are shipped in minor releases.
-- See `CHANGELOG.md` for the complete release history.
-
 ## Core Features
 
 - **Discord Integration**: Quarantine your website via Discord commands (`/quarantine [un]lock`)
@@ -325,6 +319,12 @@ pnpm test
 Please review our [security policy](SECURITY.md) for details on how we handle vulnerabilities and how to report a security issue.
 
 This package is published with npm trusted publishers, to prevent npm token exfiltration, and provenance enabled, which provides a verifiable link between the published package and its source code. For more information, see [npm provenance documentation](https://docs.npmjs.com/generating-provenance-statements).
+
+## Versioning & dependencies
+
+- This project uses Conventional Commits and automated release tooling to keep versions and the changelog up to date.
+- Patch releases may include bug fixes and internal maintenance or dependency updates (for example, Cloudflare Workers types, Wrangler, and GitHub Action tooling). New features are shipped in minor releases.
+- See `CHANGELOG.md` for the complete release history.
 
 ## License
 
