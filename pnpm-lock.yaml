@@ -13979,7 +13979,7 @@ snapshots:
       defu: 6.1.4
       destr: 2.0.5
       dot-prop: 10.1.0
-      esbuild: 0.27.3
+      esbuild: 0.27.4
       escape-string-regexp: 5.0.0
       etag: 1.8.1
       exsolve: 1.0.8
@@ -15743,7 +15743,7 @@ snapshots:
       dax-sh: 0.39.2
       defu: 6.1.4
       es-module-lexer: 1.7.0
-      esbuild: 0.27.3
+      esbuild: 0.27.4
       fast-glob: 3.3.3
       get-port-please: 3.2.0
       h3: 1.15.5
