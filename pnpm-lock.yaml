@@ -34,13 +34,13 @@ importers:
     dependencies:
       '@astrojs/cloudflare':
         specifier: '>=11.0.0'
-        version: 12.6.12(@types/node@18.19.130)(astro@5.17.1(@types/node@18.19.130)(@upstash/redis@1.36.3)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(db0@0.3.4)(ioredis@5.9.3)(jiti@2.6.1)(rollup@4.59.0)(terser@5.46.0)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2))(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
+        version: 12.6.12(@types/node@18.19.130)(astro@5.17.1(@types/node@18.19.130)(@upstash/redis@1.36.4)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(db0@0.3.4)(ioredis@5.9.3)(jiti@2.6.1)(rollup@4.59.0)(terser@5.46.0)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2))(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
       '@opennextjs/cloudflare':
         specifier: '>=1.17.1'
-        version: 1.17.1(encoding@0.1.13)(next@16.1.5(@babel/core@7.28.6)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(wrangler@4.71.0(@cloudflare/workers-types@4.20260305.1))
+        version: 1.17.1(encoding@0.1.13)(next@16.1.5(@babel/core@7.28.6)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(wrangler@4.71.0(@cloudflare/workers-types@4.20260312.1))
       '@tanstack/start':
         specifier: ^1.120.20
-        version: 1.120.20(@types/node@18.19.130)(@upstash/redis@1.36.3)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(db0@0.3.4)(encoding@0.1.13)(ioredis@5.9.3)(jiti@2.6.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(terser@5.46.0)(tsx@4.21.0)(vite@7.3.1(@types/node@18.19.130)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))(yaml@2.8.2)
+        version: 1.120.20(@types/node@18.19.130)(@upstash/redis@1.36.4)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(db0@0.3.4)(encoding@0.1.13)(ioredis@5.9.3)(jiti@2.6.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(terser@5.46.0)(tsx@4.21.0)(vite@7.3.1(@types/node@18.19.130)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))(yaml@2.8.2)
       '@upstash/redis':
         specifier: ^1.36.4
         version: 1.36.4
@@ -49,7 +49,7 @@ importers:
         version: 1.4.3(next@16.1.5(@babel/core@7.28.6)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))
       astro:
         specifier: '>=4.0.0'
-        version: 5.17.1(@types/node@18.19.130)(@upstash/redis@1.36.3)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(db0@0.3.4)(ioredis@5.9.3)(jiti@2.6.1)(rollup@4.59.0)(terser@5.46.0)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
+        version: 5.17.1(@types/node@18.19.130)(@upstash/redis@1.36.4)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(db0@0.3.4)(ioredis@5.9.3)(jiti@2.6.1)(rollup@4.59.0)(terser@5.46.0)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
       next:
         specifier: '>=14'
         version: 16.1.5(@babel/core@7.28.6)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -62,10 +62,10 @@ importers:
         version: 3.17.0(semantic-release@25.0.3(typescript@5.9.3))
       '@cloudflare/vitest-pool-workers':
         specifier: ^0.12.21
-        version: 0.12.21(@cloudflare/workers-types@4.20260305.1)(@vitest/runner@4.0.18)(@vitest/snapshot@4.0.18)(vitest@3.2.4(@edge-runtime/vm@3.2.0)(@types/debug@4.1.12)(@types/node@18.19.130)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))
+        version: 0.12.21(@cloudflare/workers-types@4.20260312.1)(@vitest/runner@4.0.18)(@vitest/snapshot@4.0.18)(vitest@3.2.4(@edge-runtime/vm@3.2.0)(@types/debug@4.1.12)(@types/node@18.19.130)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))
       '@cloudflare/workers-types':
-        specifier: ^4.20260305.1
-        version: 4.20260305.1
+        specifier: ^4.20260312.1
+        version: 4.20260312.1
       '@commitlint/cli':
         specifier: ^20.4.3
         version: 20.4.3(@types/node@18.19.130)(typescript@5.9.3)
@@ -128,7 +128,7 @@ importers:
         version: 3.2.4(@edge-runtime/vm@3.2.0)(@types/debug@4.1.12)(@types/node@18.19.130)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
       wrangler:
         specifier: ^4.71.0
-        version: 4.71.0(@cloudflare/workers-types@4.20260305.1)
+        version: 4.71.0(@cloudflare/workers-types@4.20260312.1)
 
 packages:
 
@@ -810,11 +810,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@cloudflare/workers-types@4.20260305.0':
-    resolution: {integrity: sha512-sCgPFnQ03SVpC2OVW8wysONLZW/A8hlp9Mq2ckG/h1oId4kr9NawA6vUiOmOjCWRn2hIohejBYVQ+Vu20rCdKA==}
-
-  '@cloudflare/workers-types@4.20260305.1':
-    resolution: {integrity: sha512-835BZaIcgjuYIUqgOWJSpwQxFSJ8g/X1OCZFLO7bmirM6TGmVgIGwiGItBgkjUXXCPrYzJEldsJkuFuK7ePuMw==}
+  '@cloudflare/workers-types@4.20260312.1':
+    resolution: {integrity: sha512-ySoTKc2ZKpwHll4H6byPWkxI/vmCc86B4h+hKo077zSTmBqIcxvbFozmOcEY7dhudMMDBnCgwZ9FknRrJxyqiQ==}
 
   '@colors/colors@1.5.0':
     resolution: {integrity: sha512-ooWCrlZP11i8GImSjTHYHLkvFDP48nS4+204nGb1RiX/WXYHmJA2III9/e2DWVabCESdW7hBAEzHRqUn9OUVvQ==}
@@ -2859,9 +2856,6 @@ packages:
 
   '@ungap/structured-clone@1.3.0':
     resolution: {integrity: sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g==}
-
-  '@upstash/redis@1.36.3':
-    resolution: {integrity: sha512-wxo1ei4OHDHm4UGMgrNVz9QUEela9N/Iwi4p1JlHNSowQiPi+eljlGnfbZVkV0V4PIrjGtGFJt5GjWM5k28enA==}
 
   '@upstash/redis@1.36.4':
     resolution: {integrity: sha512-w4s/msmyMqxOxaVhC8TQ2whJ77+Zd8YaSFokXL4mULQopaYb4xNJcm/PedtFQyLJn65nneySw9IwYnlMBBmFHg==}
@@ -7305,15 +7299,15 @@ snapshots:
       '@ast-grep/napi-win32-ia32-msvc': 0.40.5
       '@ast-grep/napi-win32-x64-msvc': 0.40.5
 
-  '@astrojs/cloudflare@12.6.12(@types/node@18.19.130)(astro@5.17.1(@types/node@18.19.130)(@upstash/redis@1.36.3)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(db0@0.3.4)(ioredis@5.9.3)(jiti@2.6.1)(rollup@4.59.0)(terser@5.46.0)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2))(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)':
+  '@astrojs/cloudflare@12.6.12(@types/node@18.19.130)(astro@5.17.1(@types/node@18.19.130)(@upstash/redis@1.36.4)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(db0@0.3.4)(ioredis@5.9.3)(jiti@2.6.1)(rollup@4.59.0)(terser@5.46.0)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2))(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)':
     dependencies:
       '@astrojs/internal-helpers': 0.7.5
       '@astrojs/underscore-redirects': 1.0.0
-      '@cloudflare/workers-types': 4.20260305.0
-      astro: 5.17.1(@types/node@18.19.130)(@upstash/redis@1.36.3)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(db0@0.3.4)(ioredis@5.9.3)(jiti@2.6.1)(rollup@4.59.0)(terser@5.46.0)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
+      '@cloudflare/workers-types': 4.20260312.1
+      astro: 5.17.1(@types/node@18.19.130)(@upstash/redis@1.36.4)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(db0@0.3.4)(ioredis@5.9.3)(jiti@2.6.1)(rollup@4.59.0)(terser@5.46.0)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
       tinyglobby: 0.2.15
       vite: 6.4.1(@types/node@18.19.130)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
-      wrangler: 4.71.0(@cloudflare/workers-types@4.20260305.0)
+      wrangler: 4.71.0(@cloudflare/workers-types@4.20260312.1)
     transitivePeerDependencies:
       - '@types/node'
       - bufferutil
@@ -8467,7 +8461,7 @@ snapshots:
     optionalDependencies:
       workerd: 1.20260310.1
 
-  '@cloudflare/vitest-pool-workers@0.12.21(@cloudflare/workers-types@4.20260305.1)(@vitest/runner@4.0.18)(@vitest/snapshot@4.0.18)(vitest@3.2.4(@edge-runtime/vm@3.2.0)(@types/debug@4.1.12)(@types/node@18.19.130)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))':
+  '@cloudflare/vitest-pool-workers@0.12.21(@cloudflare/workers-types@4.20260312.1)(@vitest/runner@4.0.18)(@vitest/snapshot@4.0.18)(vitest@3.2.4(@edge-runtime/vm@3.2.0)(@types/debug@4.1.12)(@types/node@18.19.130)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))':
     dependencies:
       '@vitest/runner': 4.0.18
       '@vitest/snapshot': 4.0.18
@@ -8475,7 +8469,7 @@ snapshots:
       esbuild: 0.27.3
       miniflare: 4.20260310.0
       vitest: 3.2.4(@edge-runtime/vm@3.2.0)(@types/debug@4.1.12)(@types/node@18.19.130)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
-      wrangler: 4.72.0(@cloudflare/workers-types@4.20260305.1)
+      wrangler: 4.72.0(@cloudflare/workers-types@4.20260312.1)
     transitivePeerDependencies:
       - '@cloudflare/workers-types'
       - bufferutil
@@ -8511,9 +8505,7 @@ snapshots:
   '@cloudflare/workerd-windows-64@1.20260310.1':
     optional: true
 
-  '@cloudflare/workers-types@4.20260305.0': {}
-
-  '@cloudflare/workers-types@4.20260305.1': {}
+  '@cloudflare/workers-types@4.20260312.1': {}
 
   '@colors/colors@1.5.0':
     optional: true
@@ -9343,7 +9335,7 @@ snapshots:
       - aws-crt
       - supports-color
 
-  '@opennextjs/cloudflare@1.17.1(encoding@0.1.13)(next@16.1.5(@babel/core@7.28.6)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(wrangler@4.71.0(@cloudflare/workers-types@4.20260305.1))':
+  '@opennextjs/cloudflare@1.17.1(encoding@0.1.13)(next@16.1.5(@babel/core@7.28.6)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(wrangler@4.71.0(@cloudflare/workers-types@4.20260312.1))':
     dependencies:
       '@ast-grep/napi': 0.40.5
       '@dotenvx/dotenvx': 1.31.0
@@ -9354,7 +9346,7 @@ snapshots:
       glob: 12.0.0
       next: 16.1.5(@babel/core@7.28.6)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       ts-tqdm: 0.8.6
-      wrangler: 4.71.0(@cloudflare/workers-types@4.20260305.1)
+      wrangler: 4.71.0(@cloudflare/workers-types@4.20260312.1)
       yargs: 18.0.0
     transitivePeerDependencies:
       - aws-crt
@@ -10416,9 +10408,9 @@ snapshots:
       tiny-invariant: 1.3.3
       tiny-warning: 1.0.3
 
-  '@tanstack/react-start-plugin@1.131.50(@tanstack/react-router@1.163.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@upstash/redis@1.36.3)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(@vitejs/plugin-react@4.7.0(vite@7.3.1(@types/node@18.19.130)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)))(aws4fetch@1.0.20)(encoding@0.1.13)(vite@7.3.1(@types/node@18.19.130)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))':
+  '@tanstack/react-start-plugin@1.131.50(@tanstack/react-router@1.163.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@upstash/redis@1.36.4)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(@vitejs/plugin-react@4.7.0(vite@7.3.1(@types/node@18.19.130)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)))(aws4fetch@1.0.20)(encoding@0.1.13)(vite@7.3.1(@types/node@18.19.130)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))':
     dependencies:
-      '@tanstack/start-plugin-core': 1.131.50(@tanstack/react-router@1.163.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@upstash/redis@1.36.3)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(encoding@0.1.13)(vite@7.3.1(@types/node@18.19.130)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))
+      '@tanstack/start-plugin-core': 1.131.50(@tanstack/react-router@1.163.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@upstash/redis@1.36.4)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(encoding@0.1.13)(vite@7.3.1(@types/node@18.19.130)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))
       '@vitejs/plugin-react': 4.7.0(vite@7.3.1(@types/node@18.19.130)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))
       pathe: 2.0.3
       vite: 7.3.1(@types/node@18.19.130)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
@@ -10458,11 +10450,11 @@ snapshots:
       - webpack
       - xml2js
 
-  '@tanstack/react-start-router-manifest@1.120.19(@types/node@18.19.130)(@upstash/redis@1.36.3)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(db0@0.3.4)(encoding@0.1.13)(ioredis@5.9.3)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)':
+  '@tanstack/react-start-router-manifest@1.120.19(@types/node@18.19.130)(@upstash/redis@1.36.4)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(db0@0.3.4)(encoding@0.1.13)(ioredis@5.9.3)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)':
     dependencies:
       '@tanstack/router-core': 1.163.2
       tiny-invariant: 1.3.3
-      vinxi: 0.5.3(@types/node@18.19.130)(@upstash/redis@1.36.3)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(db0@0.3.4)(encoding@0.1.13)(ioredis@5.9.3)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
+      vinxi: 0.5.3(@types/node@18.19.130)(@upstash/redis@1.36.4)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(db0@0.3.4)(encoding@0.1.13)(ioredis@5.9.3)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
     transitivePeerDependencies:
       - '@azure/app-configuration'
       - '@azure/cosmos'
@@ -10686,11 +10678,11 @@ snapshots:
       - supports-color
       - vite
 
-  '@tanstack/start-api-routes@1.120.19(@types/node@18.19.130)(@upstash/redis@1.36.3)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(db0@0.3.4)(encoding@0.1.13)(ioredis@5.9.3)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)':
+  '@tanstack/start-api-routes@1.120.19(@types/node@18.19.130)(@upstash/redis@1.36.4)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(db0@0.3.4)(encoding@0.1.13)(ioredis@5.9.3)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)':
     dependencies:
       '@tanstack/router-core': 1.163.2
       '@tanstack/start-server-core': 1.163.2
-      vinxi: 0.5.3(@types/node@18.19.130)(@upstash/redis@1.36.3)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(db0@0.3.4)(encoding@0.1.13)(ioredis@5.9.3)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
+      vinxi: 0.5.3(@types/node@18.19.130)(@upstash/redis@1.36.4)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(db0@0.3.4)(encoding@0.1.13)(ioredis@5.9.3)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
     transitivePeerDependencies:
       - '@azure/app-configuration'
       - '@azure/cosmos'
@@ -10754,21 +10746,21 @@ snapshots:
       tiny-invariant: 1.3.3
       tiny-warning: 1.0.3
 
-  '@tanstack/start-config@1.120.20(@types/node@18.19.130)(@upstash/redis@1.36.3)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(db0@0.3.4)(encoding@0.1.13)(ioredis@5.9.3)(jiti@2.6.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(terser@5.46.0)(tsx@4.21.0)(vite@7.3.1(@types/node@18.19.130)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))(yaml@2.8.2)':
+  '@tanstack/start-config@1.120.20(@types/node@18.19.130)(@upstash/redis@1.36.4)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(db0@0.3.4)(encoding@0.1.13)(ioredis@5.9.3)(jiti@2.6.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(terser@5.46.0)(tsx@4.21.0)(vite@7.3.1(@types/node@18.19.130)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))(yaml@2.8.2)':
     dependencies:
       '@tanstack/react-router': 1.163.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      '@tanstack/react-start-plugin': 1.131.50(@tanstack/react-router@1.163.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@upstash/redis@1.36.3)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(@vitejs/plugin-react@4.7.0(vite@7.3.1(@types/node@18.19.130)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)))(aws4fetch@1.0.20)(encoding@0.1.13)(vite@7.3.1(@types/node@18.19.130)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))
+      '@tanstack/react-start-plugin': 1.131.50(@tanstack/react-router@1.163.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@upstash/redis@1.36.4)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(@vitejs/plugin-react@4.7.0(vite@7.3.1(@types/node@18.19.130)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)))(aws4fetch@1.0.20)(encoding@0.1.13)(vite@7.3.1(@types/node@18.19.130)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))
       '@tanstack/router-generator': 1.163.2
       '@tanstack/router-plugin': 1.163.2(@tanstack/react-router@1.163.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(vite@7.3.1(@types/node@18.19.130)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))
       '@tanstack/server-functions-plugin': 1.142.1(vite@7.3.1(@types/node@18.19.130)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))
       '@tanstack/start-server-functions-handler': 1.120.19
       '@vitejs/plugin-react': 4.7.0(vite@7.3.1(@types/node@18.19.130)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))
       import-meta-resolve: 4.2.0
-      nitropack: 2.13.1(@upstash/redis@1.36.3)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(encoding@0.1.13)
+      nitropack: 2.13.1(@upstash/redis@1.36.4)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(encoding@0.1.13)
       ofetch: 1.5.1
       react: 19.1.0
       react-dom: 19.1.0(react@19.1.0)
-      vinxi: 0.5.3(@types/node@18.19.130)(@upstash/redis@1.36.3)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(db0@0.3.4)(encoding@0.1.13)(ioredis@5.9.3)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
+      vinxi: 0.5.3(@types/node@18.19.130)(@upstash/redis@1.36.4)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(db0@0.3.4)(encoding@0.1.13)(ioredis@5.9.3)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
       vite: 7.3.1(@types/node@18.19.130)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
       zod: 3.25.76
     transitivePeerDependencies:
@@ -10822,7 +10814,7 @@ snapshots:
 
   '@tanstack/start-fn-stubs@1.161.4': {}
 
-  '@tanstack/start-plugin-core@1.131.50(@tanstack/react-router@1.163.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@upstash/redis@1.36.3)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(encoding@0.1.13)(vite@7.3.1(@types/node@18.19.130)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))':
+  '@tanstack/start-plugin-core@1.131.50(@tanstack/react-router@1.163.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@upstash/redis@1.36.4)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(encoding@0.1.13)(vite@7.3.1(@types/node@18.19.130)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))':
     dependencies:
       '@babel/code-frame': 7.26.2
       '@babel/core': 7.28.6
@@ -10838,7 +10830,7 @@ snapshots:
       babel-dead-code-elimination: 1.0.12
       cheerio: 1.2.0
       h3: 1.15.5
-      nitropack: 2.13.1(@upstash/redis@1.36.3)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(encoding@0.1.13)
+      nitropack: 2.13.1(@upstash/redis@1.36.4)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(encoding@0.1.13)
       pathe: 2.0.3
       ufo: 1.6.3
       vite: 7.3.1(@types/node@18.19.130)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
@@ -10954,13 +10946,13 @@ snapshots:
     dependencies:
       '@tanstack/router-core': 1.163.2
 
-  '@tanstack/start@1.120.20(@types/node@18.19.130)(@upstash/redis@1.36.3)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(db0@0.3.4)(encoding@0.1.13)(ioredis@5.9.3)(jiti@2.6.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(terser@5.46.0)(tsx@4.21.0)(vite@7.3.1(@types/node@18.19.130)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))(yaml@2.8.2)':
+  '@tanstack/start@1.120.20(@types/node@18.19.130)(@upstash/redis@1.36.4)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(db0@0.3.4)(encoding@0.1.13)(ioredis@5.9.3)(jiti@2.6.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(terser@5.46.0)(tsx@4.21.0)(vite@7.3.1(@types/node@18.19.130)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))(yaml@2.8.2)':
     dependencies:
       '@tanstack/react-start-client': 1.163.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      '@tanstack/react-start-router-manifest': 1.120.19(@types/node@18.19.130)(@upstash/redis@1.36.3)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(db0@0.3.4)(encoding@0.1.13)(ioredis@5.9.3)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
+      '@tanstack/react-start-router-manifest': 1.120.19(@types/node@18.19.130)(@upstash/redis@1.36.4)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(db0@0.3.4)(encoding@0.1.13)(ioredis@5.9.3)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
       '@tanstack/react-start-server': 1.163.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      '@tanstack/start-api-routes': 1.120.19(@types/node@18.19.130)(@upstash/redis@1.36.3)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(db0@0.3.4)(encoding@0.1.13)(ioredis@5.9.3)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
-      '@tanstack/start-config': 1.120.20(@types/node@18.19.130)(@upstash/redis@1.36.3)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(db0@0.3.4)(encoding@0.1.13)(ioredis@5.9.3)(jiti@2.6.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(terser@5.46.0)(tsx@4.21.0)(vite@7.3.1(@types/node@18.19.130)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))(yaml@2.8.2)
+      '@tanstack/start-api-routes': 1.120.19(@types/node@18.19.130)(@upstash/redis@1.36.4)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(db0@0.3.4)(encoding@0.1.13)(ioredis@5.9.3)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
+      '@tanstack/start-config': 1.120.20(@types/node@18.19.130)(@upstash/redis@1.36.4)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(db0@0.3.4)(encoding@0.1.13)(ioredis@5.9.3)(jiti@2.6.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(terser@5.46.0)(tsx@4.21.0)(vite@7.3.1(@types/node@18.19.130)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))(yaml@2.8.2)
       '@tanstack/start-server-functions-client': 1.131.50(vite@7.3.1(@types/node@18.19.130)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))
       '@tanstack/start-server-functions-handler': 1.120.19
       '@tanstack/start-server-functions-server': 1.131.2(vite@7.3.1(@types/node@18.19.130)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))
@@ -11100,11 +11092,6 @@ snapshots:
   '@types/unist@3.0.3': {}
 
   '@ungap/structured-clone@1.3.0': {}
-
-  '@upstash/redis@1.36.3':
-    dependencies:
-      uncrypto: 0.1.3
-    optional: true
 
   '@upstash/redis@1.36.4':
     dependencies:
@@ -11380,7 +11367,7 @@ snapshots:
 
   astral-regex@2.0.0: {}
 
-  astro@5.17.1(@types/node@18.19.130)(@upstash/redis@1.36.3)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(db0@0.3.4)(ioredis@5.9.3)(jiti@2.6.1)(rollup@4.59.0)(terser@5.46.0)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2):
+  astro@5.17.1(@types/node@18.19.130)(@upstash/redis@1.36.4)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(db0@0.3.4)(ioredis@5.9.3)(jiti@2.6.1)(rollup@4.59.0)(terser@5.46.0)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2):
     dependencies:
       '@astrojs/compiler': 2.13.1
       '@astrojs/internal-helpers': 0.7.5
@@ -11435,7 +11422,7 @@ snapshots:
       ultrahtml: 1.6.0
       unifont: 0.7.3
       unist-util-visit: 5.1.0
-      unstorage: 1.17.4(@upstash/redis@1.36.3)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(db0@0.3.4)(ioredis@5.9.3)
+      unstorage: 1.17.4(@upstash/redis@1.36.4)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(db0@0.3.4)(ioredis@5.9.3)
       vfile: 6.0.3
       vite: 6.4.1(@types/node@18.19.130)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
       vitefu: 1.1.1(vite@6.4.1(@types/node@18.19.130)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))
@@ -13967,7 +13954,7 @@ snapshots:
       - '@babel/core'
       - babel-plugin-macros
 
-  nitropack@2.13.1(@upstash/redis@1.36.3)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(encoding@0.1.13):
+  nitropack@2.13.1(@upstash/redis@1.36.4)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(encoding@0.1.13):
     dependencies:
       '@cloudflare/kv-asset-handler': 0.4.2
       '@rollup/plugin-alias': 6.0.0(rollup@4.59.0)
@@ -14034,7 +14021,7 @@ snapshots:
       unenv: 2.0.0-rc.24
       unimport: 5.6.0
       unplugin-utils: 0.3.1
-      unstorage: 1.17.4(@upstash/redis@1.36.3)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(db0@0.3.4)(ioredis@5.9.3)
+      unstorage: 1.17.4(@upstash/redis@1.36.4)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(db0@0.3.4)(ioredis@5.9.3)
       untyped: 2.0.0
       unwasm: 0.5.3
       youch: 4.1.0
@@ -15654,7 +15641,7 @@ snapshots:
       picomatch: 4.0.3
       webpack-virtual-modules: 0.6.2
 
-  unstorage@1.17.4(@upstash/redis@1.36.3)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(db0@0.3.4)(ioredis@5.9.3):
+  unstorage@1.17.4(@upstash/redis@1.36.4)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(db0@0.3.4)(ioredis@5.9.3):
     dependencies:
       anymatch: 3.1.3
       chokidar: 5.0.0
@@ -15665,7 +15652,7 @@ snapshots:
       ofetch: 1.5.1
       ufo: 1.6.3
     optionalDependencies:
-      '@upstash/redis': 1.36.3
+      '@upstash/redis': 1.36.4
       '@vercel/functions': 3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9)
       aws4fetch: 1.0.20
       db0: 0.3.4
@@ -15741,7 +15728,7 @@ snapshots:
       '@types/unist': 3.0.3
       vfile-message: 4.0.3
 
-  vinxi@0.5.3(@types/node@18.19.130)(@upstash/redis@1.36.3)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(db0@0.3.4)(encoding@0.1.13)(ioredis@5.9.3)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2):
+  vinxi@0.5.3(@types/node@18.19.130)(@upstash/redis@1.36.4)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(db0@0.3.4)(encoding@0.1.13)(ioredis@5.9.3)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2):
     dependencies:
       '@babel/core': 7.28.6
       '@babel/plugin-syntax-jsx': 7.28.6(@babel/core@7.28.6)
@@ -15763,7 +15750,7 @@ snapshots:
       hookable: 5.5.3
       http-proxy: 1.18.1
       micromatch: 4.0.8
-      nitropack: 2.13.1(@upstash/redis@1.36.3)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(encoding@0.1.13)
+      nitropack: 2.13.1(@upstash/redis@1.36.4)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(encoding@0.1.13)
       node-fetch-native: 1.6.7
       path-to-regexp: 8.3.0
       pathe: 1.1.2
@@ -15774,7 +15761,7 @@ snapshots:
       ufo: 1.6.3
       unctx: 2.5.0
       unenv: 1.10.0
-      unstorage: 1.17.4(@upstash/redis@1.36.3)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(db0@0.3.4)(ioredis@5.9.3)
+      unstorage: 1.17.4(@upstash/redis@1.36.4)(@vercel/functions@3.4.3(@aws-sdk/credential-provider-web-identity@3.972.9))(aws4fetch@1.0.20)(db0@0.3.4)(ioredis@5.9.3)
       vite: 6.4.1(@types/node@18.19.130)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
       zod: 3.25.76
     transitivePeerDependencies:
@@ -16004,7 +15991,7 @@ snapshots:
       '@cloudflare/workerd-linux-arm64': 1.20260310.1
       '@cloudflare/workerd-windows-64': 1.20260310.1
 
-  wrangler@4.71.0(@cloudflare/workers-types@4.20260305.0):
+  wrangler@4.71.0(@cloudflare/workers-types@4.20260312.1):
     dependencies:
       '@cloudflare/kv-asset-handler': 0.4.2
       '@cloudflare/unenv-preset': 2.15.0(unenv@2.0.0-rc.24)(workerd@1.20260301.1)
@@ -16015,30 +16002,13 @@ snapshots:
       unenv: 2.0.0-rc.24
       workerd: 1.20260301.1
     optionalDependencies:
-      '@cloudflare/workers-types': 4.20260305.0
+      '@cloudflare/workers-types': 4.20260312.1
       fsevents: 2.3.3
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
 
-  wrangler@4.71.0(@cloudflare/workers-types@4.20260305.1):
-    dependencies:
-      '@cloudflare/kv-asset-handler': 0.4.2
-      '@cloudflare/unenv-preset': 2.15.0(unenv@2.0.0-rc.24)(workerd@1.20260301.1)
-      blake3-wasm: 2.1.5
-      esbuild: 0.27.3
-      miniflare: 4.20260301.1
-      path-to-regexp: 6.3.0
-      unenv: 2.0.0-rc.24
-      workerd: 1.20260301.1
-    optionalDependencies:
-      '@cloudflare/workers-types': 4.20260305.1
-      fsevents: 2.3.3
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
-
-  wrangler@4.72.0(@cloudflare/workers-types@4.20260305.1):
+  wrangler@4.72.0(@cloudflare/workers-types@4.20260312.1):
     dependencies:
       '@cloudflare/kv-asset-handler': 0.4.2
       '@cloudflare/unenv-preset': 2.15.0(unenv@2.0.0-rc.24)(workerd@1.20260310.1)
@@ -16049,7 +16019,7 @@ snapshots:
       unenv: 2.0.0-rc.24
       workerd: 1.20260310.1
     optionalDependencies:
-      '@cloudflare/workers-types': 4.20260305.1
+      '@cloudflare/workers-types': 4.20260312.1
       fsevents: 2.3.3
     transitivePeerDependencies:
       - bufferutil
