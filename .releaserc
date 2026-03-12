@@ -8,8 +8,20 @@
   "debug": true,
   "tagFormat": "@appwarden/middleware@${version}",
   "plugins": [
-    "@semantic-release/commit-analyzer",
-    "@semantic-release/release-notes-generator",
+	[
+	  "@semantic-release/commit-analyzer",
+	  {
+	    "releaseRules": [
+	      { "type": "feat", "release": "minor" },
+	      { "type": "fix", "release": "patch" },
+	      { "type": "perf", "release": "patch" },
+	      { "type": "patch", "release": "patch" },
+	      { "type": "minor", "release": "minor" },
+	      { "type": "major", "release": "major" }
+	    ]
+	  }
+	],
+	"@semantic-release/release-notes-generator",
     [
       "@semantic-release/changelog",
       {
