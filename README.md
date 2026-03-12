@@ -10,7 +10,7 @@
 ## Versioning & dependencies
 
 - This project uses Conventional Commits and automated release tooling to keep versions and the changelog up to date.
-- Patch releases may include internal maintenance and dependency updates (for example, Cloudflare Workers types, Wrangler, and GitHub Action tooling) in addition to bug fixes and new features.
+- Patch releases may include bug fixes and internal maintenance or dependency updates (for example, Cloudflare Workers types, Wrangler, and GitHub Action tooling). New features are shipped in minor releases.
 - See `CHANGELOG.md` for the complete release history.
 
 ## Core Features
