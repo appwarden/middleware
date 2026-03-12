@@ -7,6 +7,12 @@
 ![Test Coverage](https://img.shields.io/badge/coverage-94.02%25-brightgreen)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
+## Versioning & dependencies
+
+- This project uses Conventional Commits and automated release tooling to keep versions and the changelog up to date.
+- Patch releases may include internal maintenance and dependency updates (for example, Cloudflare Workers types, Wrangler, and GitHub Action tooling) in addition to bug fixes and new features.
+- See `CHANGELOG.md` for the complete release history.
+
 ## Core Features
 
 - **Discord Integration**: Quarantine your website via Discord commands (`/quarantine [un]lock`)
