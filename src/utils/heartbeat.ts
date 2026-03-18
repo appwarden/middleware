@@ -1,4 +1,4 @@
-import { ZodError } from "zod"
+import { ZodError, ZodIssue } from "zod"
 import {
   APPWARDEN_HEARTBEAT_ROUTE,
   HEARTBEAT_CONFIG_ERROR_MAX_CODE_LENGTH,
@@ -26,35 +26,112 @@ const HEARTBEAT_CONSTRUCTION_FAILURE_BODY = JSON.stringify({
 })
 
 /**
+ * Gets the expected type from a Zod issue.
+ * For union errors, extracts all literal values and formats them as "value1 | value2 | value3".
+ *
+ * @param issue - The Zod issue
+ * @returns The expected type as a string, or undefined if not available
+ */
+function getExpectedType(issue: ZodIssue): string | undefined {
+  // For invalid_type errors, use the expected field
+  if ("expected" in issue && typeof issue.expected === "string") {
+    return issue.expected
+  }
+
+  // For invalid_union errors, extract all literal values from union errors
+  if (
+    issue.code === "invalid_union" &&
+    "unionErrors" in issue &&
+    Array.isArray(issue.unionErrors) &&
+    issue.unionErrors.length > 0
+  ) {
+    // Try to extract all literal values from the union
+    const literalValues: string[] = []
+    let allAreLiterals = true
+
+    for (const unionError of issue.unionErrors) {
+      if (
+        unionError &&
+        "issues" in unionError &&
+        Array.isArray(unionError.issues) &&
+        unionError.issues.length > 0
+      ) {
+        const firstIssue = unionError.issues[0]
+        if (firstIssue.code === "invalid_literal" && "expected" in firstIssue) {
+          literalValues.push(String(firstIssue.expected))
+        } else {
+          allAreLiterals = false
+          break
+        }
+      }
+    }
+
+    // If all union members are literals, return them formatted
+    if (allAreLiterals && literalValues.length > 0) {
+      return literalValues.join(" | ")
+    }
+
+    // Otherwise, fall back to generic "string" type
+    const firstUnionError = issue.unionErrors[0]
+    if (
+      firstUnionError &&
+      "issues" in firstUnionError &&
+      Array.isArray(firstUnionError.issues) &&
+      firstUnionError.issues.length > 0
+    ) {
+      const firstIssue = firstUnionError.issues[0]
+      if ("expected" in firstIssue && typeof firstIssue.expected === "string") {
+        return "string"
+      }
+    }
+  }
+
+  return undefined
+}
+
+/**
  * Creates a sanitized error message based on the Zod error code.
  * This ensures only Appwarden-controlled messages are exposed, not user-provided values.
  *
- * @param code - The Zod error code
+ * @param issue - The Zod issue
  * @param path - The path to the field with the error
  * @returns A sanitized error message
  */
 function createSanitizedMessage(
-  code: string,
+  issue: ZodIssue,
   path: (string | number)[],
 ): string {
   const fieldName = path.length > 0 ? path[path.length - 1] : "field"
+  const code = issue.code
 
   // Map Zod error codes to controlled messages
   switch (code) {
-    case "invalid_type":
-      return `Invalid type for ${fieldName}`
+    case "invalid_type": {
+      const expectedType = getExpectedType(issue)
+      return expectedType
+        ? `Invalid type for ${fieldName}. Expected ${expectedType}`
+        : `Invalid type for ${fieldName}`
+    }
     case "invalid_literal":
       return `Invalid value for ${fieldName}`
     case "unrecognized_keys":
       return `Unrecognized keys in ${fieldName}`
-    case "invalid_union":
-      return `Invalid union value for ${fieldName}`
+    case "invalid_union": {
+      const expectedType = getExpectedType(issue)
+      return expectedType
+        ? `Invalid type for ${fieldName}. Expected ${expectedType}`
+        : `Invalid union value for ${fieldName}`
+    }
     case "invalid_enum_value":
       return `Invalid enum value for ${fieldName}`
     case "invalid_arguments":
       return `Invalid arguments for ${fieldName}`
-    case "invalid_return_type":
-      return `Invalid return type for ${fieldName}`
+    case "invalid_return_type": {
+      const expectedType = getExpectedType(issue)
+      return expectedType
+        ? `Invalid return type for ${fieldName}. Expected ${expectedType}`
+        : `Invalid return type for ${fieldName}`
+    }
     case "invalid_date":
       return `Invalid date for ${fieldName}`
     case "invalid_string":
@@ -239,7 +316,7 @@ export function sanitizeConfigErrors(
     // Create a controlled message based on the error code
     // This prevents exposure of user-provided values in error messages
     const message = truncateMessage(
-      createSanitizedMessage(issue.code, sanitizedPath),
+      createSanitizedMessage(issue, sanitizedPath),
     )
 
     errors.push({
