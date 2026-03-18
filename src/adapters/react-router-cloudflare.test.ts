@@ -181,6 +181,43 @@ describe("createAppwardenMiddleware", () => {
     expect(checkLockStatus).not.toHaveBeenCalled()
   })
 
+  it("should return descriptive error when contentSecurityPolicy.mode is a number", async () => {
+    mockArgs.request = new Request("https://example.com/_appwarden/heartbeat", {
+      headers: { Accept: "application/json" },
+    })
+
+    const middleware = createAppwardenMiddleware(() => ({
+      lockPageSlug: "/maintenance",
+      appwardenApiToken: "valid-token",
+      contentSecurityPolicy: {
+        mode: 2 as any, // Invalid: should be a string
+        directives: {
+          "script-src": ["self"],
+        },
+      },
+    }))
+
+    const result = await middleware(mockArgs, mockNext)
+    expect(result).toBeInstanceOf(Response)
+
+    const response = result as Response
+    const body = (await response.json()) as HeartbeatResponseBody
+
+    expect(response.status).toBe(200)
+    expect(body.configErrors.length).toBeGreaterThan(0)
+
+    // Find the error for the mode field
+    const modeError = body.configErrors.find((error) =>
+      error.path.includes("mode"),
+    )
+    expect(modeError).toBeDefined()
+    expect(modeError?.code).toBe("invalid_union")
+    expect(modeError?.message).toBe(
+      "Invalid type for mode. Expected disabled | report-only | enforced",
+    )
+    expect(mockNext).not.toHaveBeenCalled()
+  })
+
   it("should return a controlled heartbeat error when config evaluation throws", async () => {
     mockArgs.request = new Request("https://example.com/_appwarden/heartbeat", {
       headers: { Accept: "application/json" },

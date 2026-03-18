@@ -57,7 +57,7 @@ describe("heartbeat utilities", () => {
       expect(result[0]).toEqual({
         path: ["lockPageSlug"],
         code: "invalid_type",
-        message: "Invalid type for lockPageSlug",
+        message: "Invalid type for lockPageSlug. Expected string",
       })
     })
 
@@ -90,6 +90,74 @@ describe("heartbeat utilities", () => {
 
       const result = sanitizeConfigErrors(error)
       expect(result[0].message).toBe("Validation failed for test")
+    })
+
+    it("should provide descriptive error for invalid_union with type mismatch", () => {
+      // Simulate the error when a number is passed to a union of string literals
+      const error = new ZodError([
+        {
+          code: "invalid_union",
+          unionErrors: [
+            new ZodError([
+              {
+                code: "invalid_literal",
+                expected: "disabled",
+                received: 2,
+                path: [],
+                message: 'Invalid literal value, expected "disabled"',
+              },
+            ]),
+            new ZodError([
+              {
+                code: "invalid_literal",
+                expected: "report-only",
+                received: 2,
+                path: [],
+                message: 'Invalid literal value, expected "report-only"',
+              },
+            ]),
+            new ZodError([
+              {
+                code: "invalid_literal",
+                expected: "enforced",
+                received: 2,
+                path: [],
+                message: 'Invalid literal value, expected "enforced"',
+              },
+            ]),
+          ],
+          path: ["mode"],
+          message: "Invalid input",
+        },
+      ])
+
+      const result = sanitizeConfigErrors(error)
+      expect(result).toHaveLength(1)
+      expect(result[0]).toEqual({
+        path: ["mode"],
+        code: "invalid_union",
+        message:
+          "Invalid type for mode. Expected disabled | report-only | enforced",
+      })
+    })
+
+    it("should handle invalid_return_type without expected type", () => {
+      const error = new ZodError([
+        {
+          code: "invalid_return_type",
+          path: ["config"],
+          message: "Invalid return type",
+          returnTypeError: new ZodError([]),
+        } as any,
+      ])
+
+      const result = sanitizeConfigErrors(error)
+      expect(result).toHaveLength(1)
+      expect(result[0]).toEqual({
+        path: ["config"],
+        code: "invalid_return_type",
+        message: "Invalid return type for config",
+      })
     })
   })
 

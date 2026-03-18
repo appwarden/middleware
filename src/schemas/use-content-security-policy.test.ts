@@ -30,6 +30,17 @@ describe("CSPModeSchema", () => {
     expect(() => CSPModeSchema.parse(123)).toThrow()
     expect(() => CSPModeSchema.parse({})).toThrow()
   })
+
+  it("should provide descriptive error when number is passed instead of string", () => {
+    try {
+      CSPModeSchema.parse(2)
+      throw new Error("Should have thrown")
+    } catch (error: any) {
+      expect(error.issues).toHaveLength(1)
+      expect(error.issues[0].code).toBe("invalid_union")
+      expect(error.issues[0].path).toEqual([])
+    }
+  })
 })
 
 describe("CSPDirectivesSchema", () => {
