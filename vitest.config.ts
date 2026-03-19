@@ -1,23 +1,23 @@
-import { defineWorkersProject } from "@cloudflare/vitest-pool-workers/config"
+import { defineWorkersConfig } from "@cloudflare/vitest-pool-workers/config"
 import tsconfigPaths from "vite-tsconfig-paths"
 import { defaultExclude } from "vitest/config"
 
-export default defineWorkersProject(() => ({
+export default defineWorkersConfig({
   plugins: [tsconfigPaths({ root: __dirname })],
   test: {
     globals: true,
     // Define build-time globals that are normally injected by tsup
     // These match the values in tsup.config.ts for non-production builds
     setupFiles: ["./vitest.setup.ts"],
+    exclude: [...defaultExclude, "./build/**"],
     poolOptions: {
       workers: {
-        singleWorker: true,
         wrangler: {
           configPath: "./wrangler.jsonc",
         },
+        singleWorker: true,
       },
     },
-    exclude: [...defaultExclude, "./build/**"],
     coverage: {
       provider: "istanbul", // V8 is not supported in Cloudflare Workers environment
       reporter: ["text", "json", "json-summary", "html", "lcov"],
@@ -36,4 +36,4 @@ export default defineWorkersProject(() => ({
       },
     },
   },
-}))
+})
