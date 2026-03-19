@@ -31,7 +31,7 @@ describe("CSPModeSchema", () => {
     expect(() => CSPModeSchema.parse({})).toThrow()
   })
 
-  it("should provide descriptive error when number is passed instead of string", () => {
+  it("should emit invalid_union issue when number is passed instead of string", () => {
     try {
       CSPModeSchema.parse(2)
       throw new Error("Should have thrown")
