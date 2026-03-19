@@ -109,7 +109,7 @@
   },
   "devDependencies": {
     "@amanda-mitchell/semantic-release-npm-multiple": "^3.17.0",
-    "@cloudflare/vitest-pool-workers": "^0.13.2",
+    "@cloudflare/vitest-pool-workers": "^0.8.49",
     "@cloudflare/workers-types": "^4.20260317.1",
     "@commitlint/cli": "^20.5.0",
     "@commitlint/config-conventional": "^20.5.0",
@@ -161,7 +161,16 @@
       "serialize-javascript@<=7.0.2": ">=7.0.3",
       "svgo@=4.0.0": ">=4.0.1",
       "@opennextjs/cloudflare@<1.17.1": ">=1.17.1",
-      "tar@<=7.5.10": ">=7.5.11"
+      "tar@<=7.5.10": ">=7.5.11",
+      "devalue@<5.6.4": ">=5.6.4",
+      "undici@>=7.0.0 <7.24.0": ">=7.24.0",
+      "next@>=10.0.0 <16.1.7": ">=16.1.7",
+      "fast-xml-parser@>=4.0.0-beta.3 <=5.5.5": ">=5.5.6",
+      "h3@<1.15.6": ">=1.15.6",
+      "h3@>=2.0.0-0 <2.0.1-rc.15": ">=2.0.1-rc.15",
+      "next@>=16.0.0-beta.0 <16.1.7": ">=16.1.7",
+      "h3@>=2.0.0 <=2.0.1-rc.14": ">=2.0.1-rc.15",
+      "@tanstack/start-server-core@1.163.2>h3-v2": "npm:h3@2.0.1-rc.16"
     }
   },
   "sideEffects": false
