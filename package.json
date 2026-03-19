@@ -75,7 +75,7 @@
     "commitlint": "commitlint --edit"
   },
   "dependencies": {
-    "@upstash/redis": "^1.36.4",
+    "@upstash/redis": "^1.37.0",
     "@vercel/edge-config": "^1.4.3",
     "zod": "^3.25.76"
   },
