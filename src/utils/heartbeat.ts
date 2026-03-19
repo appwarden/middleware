@@ -71,18 +71,26 @@ function getExpectedType(issue: ZodIssue): string | undefined {
       return literalValues.join(" | ")
     }
 
-    // Otherwise, fall back to generic "string" type
-    const firstUnionError = issue.unionErrors[0]
-    if (
-      firstUnionError &&
-      "issues" in firstUnionError &&
-      Array.isArray(firstUnionError.issues) &&
-      firstUnionError.issues.length > 0
-    ) {
-      const firstIssue = firstUnionError.issues[0]
-      if ("expected" in firstIssue && typeof firstIssue.expected === "string") {
-        return "string"
+    // Otherwise, derive expected types from union member issues when available
+    const expectedTypes = new Set<string>()
+
+    for (const unionError of issue.unionErrors) {
+      if (
+        unionError &&
+        "issues" in unionError &&
+        Array.isArray(unionError.issues) &&
+        unionError.issues.length > 0
+      ) {
+        const firstIssue = unionError.issues[0] as any
+
+        if (typeof firstIssue.expected === "string") {
+          expectedTypes.add(firstIssue.expected)
+        }
       }
+    }
+
+    if (expectedTypes.size > 0) {
+      return Array.from(expectedTypes).join(" | ")
     }
   }
 
