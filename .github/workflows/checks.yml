@@ -56,15 +56,14 @@ jobs:
         run: |
           pnpm prepare
 
-      - name: Run security checks
-        run: |
-          # Audit dependencies for security vulnerabilities
-          pnpm audit --audit-level high
-
       - name: Run code quality checks
         run: |
           pnpm check:ci
           pnpm test:coverage
+      - name: Run security checks
+        run: |
+          # Audit dependencies for security vulnerabilities
+          pnpm audit --audit-level high
 
       - name: Generate coverage badge
         if: github.ref == 'refs/heads/main'
