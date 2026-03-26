@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import type { LockValueType } from "../schemas"
 
 /**
@@ -80,6 +80,11 @@ describe("Vercel Integration Tests", () => {
         headers: { "Content-Type": "application/json" },
       }),
     )
+  })
+
+  afterEach(() => {
+    // Restore all mocks to prevent test pollution
+    vi.restoreAllMocks()
   })
 
   it("Cold Miss: should fetch from Edge Config when memory cache is empty", async () => {
