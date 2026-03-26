@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.13.4](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.13.3...@appwarden/middleware@3.13.4) (2026-03-26)
+
+
+### Bug Fixes
+* address PR 287 feedback ([32c6ef5](https://github.com/appwarden/middleware/commit/32c6ef53ccf0b6deec43019510b4212ea353ec92))
+* address PR review comments ([774086b](https://github.com/appwarden/middleware/commit/774086b5dbe67ae08f32e2ed8b76863eed9898fb))
+
 ## [3.13.3](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.13.2...@appwarden/middleware@3.13.3) (2026-03-26)
 
 
