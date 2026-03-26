@@ -67,10 +67,11 @@ describe("Cloudflare Cache Integration (Real Workers Runtime)", () => {
     })
 
     // Put into cache directly (no waitUntil)
-    await mockCacheStorage.default.put(testUrl, testResponse)
+    const cache = await mockCacheStorage.open("appwarden:lock")
+    await cache.put(testUrl, testResponse)
 
     // Try to match
-    const matched = await mockCacheStorage.default.match(testUrl)
+    const matched = await cache.match(testUrl)
     expect(matched).toBeDefined()
     expect(await matched!.json()).toEqual({ test: "value" })
   })
@@ -111,7 +112,8 @@ describe("Cloudflare Cache Integration (Real Workers Runtime)", () => {
     // Verify cache was populated
     const cacheKeyUrl = new URL(APPWARDEN_CACHE_KEY, "https://example.com")
     const cacheKeyRequest = new Request(cacheKeyUrl)
-    const cachedResponse = await mockCacheStorage.default.match(cacheKeyRequest)
+    const cache = await mockCacheStorage.open("appwarden:lock")
+    const cachedResponse = await cache.match(cacheKeyRequest)
     expect(cachedResponse).toBeDefined()
 
     const cachedValue = await cachedResponse!.json<LockValueType>()
@@ -131,7 +133,8 @@ describe("Cloudflare Cache Integration (Real Workers Runtime)", () => {
       lastCheck: Date.now(),
     }
 
-    await mockCacheStorage.default.put(
+    const cache = await mockCacheStorage.open("appwarden:lock")
+    await cache.put(
       cacheKeyRequest,
       new Response(JSON.stringify(freshValue), {
         headers: { "content-type": "application/json" },
@@ -159,7 +162,7 @@ describe("Cloudflare Cache Integration (Real Workers Runtime)", () => {
     const waitUntilPromises: Promise<unknown>[] = []
 
     // Pre-populate cache with stale value (older than CACHE_EXPIRY_MS)
-    const cache = mockCacheStorage.default
+    const cache = await mockCacheStorage.open("appwarden:lock")
     const cacheKeyUrl = new URL(APPWARDEN_CACHE_KEY, "https://example.com")
     const cacheKeyRequest = new Request(cacheKeyUrl)
     const staleValue: LockValueType = {
@@ -219,7 +222,7 @@ describe("Cloudflare Cache Integration (Real Workers Runtime)", () => {
     const waitUntilPromises: Promise<unknown>[] = []
 
     // Pre-populate cache with fresh locked value (simulating post-refresh state)
-    const cache = mockCacheStorage.default
+    const cache = await mockCacheStorage.open("appwarden:lock")
     const cacheKeyUrl = new URL(APPWARDEN_CACHE_KEY, "https://example.com")
     const cacheKeyRequest = new Request(cacheKeyUrl)
     const lockedValue: LockValueType = {
@@ -256,7 +259,7 @@ describe("Cloudflare Cache Integration (Real Workers Runtime)", () => {
     const waitUntilPromises: Promise<unknown>[] = []
 
     // Pre-populate cache with stale LOCKED value
-    const cache = mockCacheStorage.default
+    const cache = await mockCacheStorage.open("appwarden:lock")
     const cacheKeyUrl = new URL(APPWARDEN_CACHE_KEY, "https://example.com")
     const cacheKeyRequest = new Request(cacheKeyUrl)
     const staleLockedValue: LockValueType = {
