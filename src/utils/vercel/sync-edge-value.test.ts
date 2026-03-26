@@ -118,10 +118,10 @@ describe("syncEdgeValue", () => {
     await syncEdgeValue(mockContext)
 
     expect(consoleLogSpy).toHaveBeenCalledWith(
-      "[@appwarden/middleware] Verifying domain ownership...this will only take a few minutes.",
+      "[@appwarden/middleware] Verifying domain ownership... this will only take a few minutes.",
     )
     expect(printMessage).toHaveBeenCalledWith(
-      "Verifying domain ownership...this will only take a few minutes.",
+      "Verifying domain ownership... this will only take a few minutes.",
     )
   })
 

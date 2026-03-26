@@ -1,7 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { APPWARDEN_CACHE_KEY } from "../constants"
-import { createAppwardenMiddleware } from "../runners/appwarden-on-vercel"
-import { LockValueType } from "../schemas"
+import type { LockValueType } from "../schemas"
 
 /**
  * Vercel Integration Tests
@@ -71,11 +69,25 @@ describe("Vercel Integration Tests", () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    // Clear the memory cache between tests
+    // Clear the memory cache between tests by resetting modules
     vi.resetModules()
+
+    // Mock global fetch to prevent live network calls during tests
+    // This prevents syncEdgeValue from making real API calls in the background
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ isLocked: 0, isLockedTest: 0 }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    )
   })
 
   it("Cold Miss: should fetch from Edge Config when memory cache is empty", async () => {
+    // Dynamically import after resetModules to ensure fresh module state
+    const { createAppwardenMiddleware } =
+      await import("../runners/appwarden-on-vercel")
+    const { APPWARDEN_CACHE_KEY } = await import("../constants")
+
     const mockLockValue = createUnlockedValue()
 
     // Mock Edge Config to return the lock value
@@ -92,7 +104,11 @@ describe("Vercel Integration Tests", () => {
     expect(mockEdgeConfigClient.get).toHaveBeenCalledWith(APPWARDEN_CACHE_KEY)
   })
 
-  it("Fresh Hit: should serve from memory cache when not expired", async () => {
+  it("Cache Miss: should fetch from Edge Config on consecutive requests", async () => {
+    // Dynamically import after resetModules to ensure fresh module state
+    const { createAppwardenMiddleware } =
+      await import("../runners/appwarden-on-vercel")
+
     const mockLockValue = createUnlockedValue()
 
     // Mock Edge Config to return the lock value
@@ -116,6 +132,10 @@ describe("Vercel Integration Tests", () => {
   })
 
   it("Locked State: should redirect to lock page when locked", async () => {
+    // Dynamically import after resetModules to ensure fresh module state
+    const { createAppwardenMiddleware } =
+      await import("../runners/appwarden-on-vercel")
+
     const mockLockValue = createLockedValue()
 
     // Mock Edge Config to return locked state
@@ -133,6 +153,10 @@ describe("Vercel Integration Tests", () => {
   })
 
   it("Pass-through: should skip middleware for non-HTML requests", async () => {
+    // Dynamically import after resetModules to ensure fresh module state
+    const { createAppwardenMiddleware } =
+      await import("../runners/appwarden-on-vercel")
+
     const middleware = createAppwardenMiddleware(TEST_CONFIG)
     const request = createAPIRequest()
     const response = await middleware(request)

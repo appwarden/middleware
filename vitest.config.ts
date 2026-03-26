@@ -18,7 +18,11 @@ export default defineConfig({
     // Define build-time globals that are normally injected by tsup
     // These match the values in tsup.config.ts for non-production builds
     setupFiles: ["./vitest.setup.ts"],
-    exclude: [...defaultExclude, "./build/**"],
+    exclude: [
+      ...defaultExclude,
+      "./build/**",
+      "src/test/vercel-integration.test.ts",
+    ],
     coverage: {
       provider: "istanbul", // V8 is not supported in Cloudflare Workers environment
       reporter: ["text", "json", "json-summary", "html", "lcov"],

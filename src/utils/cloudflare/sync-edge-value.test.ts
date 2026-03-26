@@ -249,7 +249,7 @@ describe("syncEdgeValue", () => {
         `[@appwarden/middleware] GET ${mockContext.appwardenApiHostname} failed: 403 Forbidden`,
       )
       expect(consoleLogSpy).toHaveBeenCalledWith(
-        "[@appwarden/middleware] Verifying domain ownership...this will only take a few minutes.",
+        "[@appwarden/middleware] Verifying domain ownership... this will only take a few minutes.",
       )
       expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
     })

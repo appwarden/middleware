@@ -60,6 +60,7 @@ jobs:
         run: |
           pnpm check:ci
           pnpm test:coverage
+          pnpm test:vercel
       - name: Run security checks
         run: |
           # Audit dependencies for security vulnerabilities
