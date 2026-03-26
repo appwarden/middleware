@@ -5,5 +5,5 @@ import { vi } from "vitest"
 vi.stubGlobal("DEBUG", true)
 vi.stubGlobal("API_HOSTNAME", "https://staging-api.appwarden.io")
 vi.stubGlobal("API_PATHNAME", "/v1/appwarden/status")
-vi.stubGlobal("CACHE_EXPIRY_MS", 30_000)
+vi.stubGlobal("CACHE_EXPIRY_MS", 2_000)
 vi.stubGlobal("__PACKAGE_VERSION__", "0.0.0-test")

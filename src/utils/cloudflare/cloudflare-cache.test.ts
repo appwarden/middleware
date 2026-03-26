@@ -43,9 +43,11 @@ describe("cloudflare-cache", () => {
       // Call methods to trigger internal functions
       jsonStore.getValue()
 
-      // Verify cache.match was called with the correct URL
+      // Verify cache.match was called with a Request object with the correct URL
       expect(mockCache.match).toHaveBeenCalledWith(
-        new URL("/test-key", "https://example.com"),
+        expect.objectContaining({
+          url: "https://example.com/test-key",
+        }),
       )
     })
   })
@@ -91,9 +93,11 @@ describe("cloudflare-cache", () => {
 
       await jsonStore.updateValue(testData)
 
-      // Verify cache.put was called with the correct arguments
+      // Verify cache.put was called with a Request object and Response
       expect(mockCache.put).toHaveBeenCalledWith(
-        new URL("/test-key", "https://example.com"),
+        expect.objectContaining({
+          url: "https://example.com/test-key",
+        }),
         expect.any(Response),
       )
 
@@ -136,7 +140,9 @@ describe("cloudflare-cache", () => {
 
       expect(result).toBe(true)
       expect(mockCache.delete).toHaveBeenCalledWith(
-        new URL("/test-key", "https://example.com"),
+        expect.objectContaining({
+          url: "https://example.com/test-key",
+        }),
       )
     })
   })

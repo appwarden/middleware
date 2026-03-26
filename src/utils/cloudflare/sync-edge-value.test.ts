@@ -31,13 +31,16 @@ afterEach(() => {
   vi.clearAllMocks()
 })
 
-// Mock console.error
+// Mock console.error and console.log
 let consoleErrorSpy: ReturnType<typeof vi.spyOn>
+let consoleLogSpy: ReturnType<typeof vi.spyOn>
 beforeEach(() => {
   consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {})
+  consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {})
 })
 afterEach(() => {
   consoleErrorSpy.mockRestore()
+  consoleLogSpy.mockRestore()
 })
 
 // Define API constants that are normally injected at build time
@@ -244,6 +247,9 @@ describe("syncEdgeValue", () => {
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         `[@appwarden/middleware] GET ${mockContext.appwardenApiHostname} failed: 403 Forbidden`,
+      )
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        "[@appwarden/middleware] Verifying domain ownership...this will only take a few minutes.",
       )
       expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
     })

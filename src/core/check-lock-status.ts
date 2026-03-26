@@ -54,8 +54,9 @@ const createContext = async (
   const edgeCache = store.json<LockValueType>(
     {
       serviceOrigin: requestUrl.origin,
-      cache: (await caches.open("appwarden:lock")) as unknown as Cache,
+      cache: caches.default as unknown as Cache,
       debug: debugFn,
+      waitUntil: config.waitUntil,
     },
     keyName,
   )

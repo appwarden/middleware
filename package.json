@@ -68,6 +68,8 @@
     "check:prettier": "prettier --check .",
     "check:ci": "pnpm check:types && pnpm check:prettier && pnpm build",
     "test": "vitest --run",
+    "test:vercel": "vitest --run --config vitest.node.config.ts",
+    "test:all": "pnpm test && pnpm test:vercel",
     "test:coverage": "vitest --coverage",
     "coverage:badge": "node scripts/generate-coverage-badge.cjs",
     "sbom:generate": "cdxgen -o sbom.json -t js --spec-version 1.6 . && cdxgen -o sbom.xml -t js --spec-version 1.6 --output-format xml .",

@@ -22,9 +22,9 @@ export default defineConfig({
   clean: true,
   dts: true,
   // don't bundle split unless we're in prod
-  splitting: isProd,
+  splitting: true,
   external: ["cloudflare:workers"],
-  noExternal: isProd ? undefined : [/(.*)/],
+  noExternal: true ? undefined : [/(.*)/],
   esbuildOptions(options) {
     options.external = [...(options.external ?? []), "cloudflare:workers"]
   },

@@ -39,6 +39,15 @@ export const syncEdgeValue = async (
       }),
     })
 
+    // If the check endpoint returns 403, log a domain verification message
+    if (response.status === 403) {
+      console.log(
+        printMessage(
+          "Verifying domain ownership...this will only take a few minutes.",
+        ),
+      )
+    }
+
     if (response.status !== 200) {
       throw new Error(`${response.status} ${response.statusText}`)
     }

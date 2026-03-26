@@ -5,6 +5,7 @@ type Context = {
   cache: Cache
   debug: ReturnType<typeof debug>
   serviceOrigin: string
+  waitUntil?: (promise: Promise<unknown>) => void
 }
 
 export type JSONStore<T> = {
@@ -31,7 +32,9 @@ export const store = {
 }
 
 const getCacheValue = async (context: Context, cacheKey: URL) => {
-  const match = await context.cache.match(cacheKey)
+  // Use Request object for cache key to ensure proper matching
+  const request = new Request(cacheKey.href)
+  const match = await context.cache.match(request)
   return match ?? undefined
 }
 
@@ -48,18 +51,25 @@ const updateCacheValue = async (
     ttl ? `expires in ${ttl}s` : "",
   )
 
-  await context.cache.put(
-    cacheKey,
-    new Response(JSON.stringify(value), {
-      headers: {
-        "content-type": "application/json",
-        ...(ttl && {
-          "cache-control": `max-age=${ttl}`,
-        }),
-      },
-    }),
-  )
+  const response = new Response(JSON.stringify(value), {
+    headers: {
+      "content-type": "application/json",
+      ...(ttl && {
+        "cache-control": `max-age=${ttl}`,
+      }),
+    },
+  })
+
+  // Use Request object for cache key to ensure proper matching
+  // The Cache API requires a GET request as the key
+  const request = new Request(cacheKey.href, { method: "GET" })
+
+  // Always await the cache.put operation
+  // The caller can decide whether to use waitUntil or await this function
+  await context.cache.put(request, response)
 }
 
-const clearCache = (context: Context, cacheKey: URL) =>
-  context.cache.delete(cacheKey)
+const clearCache = (context: Context, cacheKey: URL) => {
+  const request = new Request(cacheKey.href)
+  return context.cache.delete(request)
+}

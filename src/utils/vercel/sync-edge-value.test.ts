@@ -22,12 +22,14 @@ type SyncEdgeContext = Pick<
 >
 
 describe("syncEdgeValue", () => {
-  // Mock console.error
+  // Mock console.error and console.log
   let consoleErrorSpy: ReturnType<typeof vi.spyOn>
+  let consoleLogSpy: ReturnType<typeof vi.spyOn>
   let mockContext: SyncEdgeContext
 
   beforeEach(() => {
     consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {})
+    consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {})
 
     // Setup mock fetch
     mockFetchResponse = new Response(JSON.stringify({}), {
@@ -58,6 +60,7 @@ describe("syncEdgeValue", () => {
 
   afterEach(() => {
     consoleErrorSpy.mockRestore()
+    consoleLogSpy.mockRestore()
     global.fetch = originalFetch
   })
 
@@ -100,6 +103,26 @@ describe("syncEdgeValue", () => {
       expect.stringContaining("Failed to fetch from check endpoint - 422"),
     )
     expect(printMessage).toHaveBeenCalled()
+  })
+
+  it("should log a domain verification message when the API returns 403", async () => {
+    // Mock 403 Forbidden response
+    mockFetchResponse = new Response("Forbidden", {
+      status: 403,
+      statusText: "Forbidden",
+      headers: { "content-type": "application/json" },
+    })
+
+    global.fetch = vi.fn().mockResolvedValue(mockFetchResponse)
+
+    await syncEdgeValue(mockContext)
+
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      "[@appwarden/middleware] Verifying domain ownership...this will only take a few minutes.",
+    )
+    expect(printMessage).toHaveBeenCalledWith(
+      "Verifying domain ownership...this will only take a few minutes.",
+    )
   })
 
   it("should handle network errors", async () => {
