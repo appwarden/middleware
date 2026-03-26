@@ -1,4 +1,3 @@
-import { Cache } from "@cloudflare/workers-types"
 import { describe, expect, it, vi } from "vitest"
 import { store } from "./cloudflare-cache"
 

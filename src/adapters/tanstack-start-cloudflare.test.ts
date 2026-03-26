@@ -98,7 +98,7 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
         headers: { Accept: "text/html,application/xhtml+xml" },
       }),
       pathname: "/page",
-      next: mockNext,
+      next: mockNext as any,
     }
 
     mockNext.mockResolvedValue({
@@ -455,7 +455,7 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
       pathname: new URL(mockArgs.request.url).pathname,
     }
     mockNext = vi.fn().mockResolvedValue(originalResult)
-    mockArgs.next = mockNext
+    mockArgs.next = mockNext as any
     vi.mocked(applyContentSecurityPolicyToResponse).mockRejectedValueOnce(
       new Error("CSP error"),
     )
@@ -614,7 +614,7 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
       }),
       pathname: "/maintenance",
     })
-    mockArgs.next = mockNext
+    mockArgs.next = mockNext as any
 
     const middleware = createAppwardenMiddleware(() => ({
       lockPageSlug: "/maintenance",

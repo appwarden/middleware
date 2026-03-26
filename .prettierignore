@@ -16,3 +16,4 @@ coverage
 
 # Generated files
 CHANGELOG.md
+worker-configuration.d.ts

@@ -19,9 +19,10 @@ vi.mock("../is-cache-url", () => ({
 
 // Mock @upstash/redis
 vi.mock("@upstash/redis", () => ({
-  Redis: vi.fn().mockImplementation(() => ({
-    del: vi.fn(),
-  })),
+  Redis: vi.fn(function (this: any) {
+    this.del = vi.fn()
+    return this
+  }),
 }))
 
 // Mock fetch
@@ -145,14 +146,16 @@ describe("deleteEdgeValue", () => {
   })
 
   it("should delete edge value for upstash provider", async () => {
-    // Mock Redis client
-    const mockRedis = {
-      del: vi.fn().mockResolvedValue(1),
-    }
+    // Create a mock del function
+    const mockDel = vi.fn().mockResolvedValue(1)
 
-    // Mock Redis constructor
+    // Get the Redis mock and configure it
     const { Redis } = await import("@upstash/redis")
-    vi.mocked(Redis).mockImplementation(() => mockRedis as any)
+    vi.mocked(Redis).mockClear()
+    vi.mocked(Redis).mockImplementation(function (this: any) {
+      this.del = mockDel
+      return this
+    })
 
     // Create mock context
     const mockContext = {
@@ -175,7 +178,7 @@ describe("deleteEdgeValue", () => {
     })
 
     // Verify del was called with correct key
-    expect(mockRedis.del).toHaveBeenCalledWith("appwarden-lock")
+    expect(mockDel).toHaveBeenCalledWith("appwarden-lock")
 
     // Verify console.error was not called
     expect(consoleErrorSpy).not.toHaveBeenCalled()

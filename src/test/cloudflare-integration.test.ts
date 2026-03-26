@@ -15,11 +15,7 @@
  * 4. Updated Hit: After background refresh → serve fresh updated value
  */
 
-import {
-  createExecutionContext,
-  fetchMock,
-  waitOnExecutionContext,
-} from "cloudflare:test"
+import { createExecutionContext, waitOnExecutionContext } from "cloudflare:test"
 import {
   afterEach,
   beforeAll,
@@ -37,11 +33,11 @@ import { MockCacheStorage } from "./mocks/cloudflare-cache-mock"
 // Create a mock cache storage instance to replace the broken native cache
 const mockCacheStorage = new MockCacheStorage()
 
+// Store mock responses for fetch
+const mockResponses = new Map<string, Response>()
+
 describe("Cloudflare Cache Integration (Real Workers Runtime)", () => {
   beforeAll(() => {
-    fetchMock.activate()
-    fetchMock.disableNetConnect()
-
     // Replace the global caches object with our mock
     vi.stubGlobal("caches", mockCacheStorage)
   })
@@ -50,14 +46,26 @@ describe("Cloudflare Cache Integration (Real Workers Runtime)", () => {
     // Clear the mock cache between tests
     mockCacheStorage.clearAll()
 
-    // Reset fetch mocks
-    fetchMock.deactivate()
-    fetchMock.activate()
-    fetchMock.disableNetConnect()
+    // Clear mock responses
+    mockResponses.clear()
+
+    // Mock fetch to intercept outbound requests
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+      const request = new Request(input, init)
+      const url = new URL(request.url)
+      const key = `${request.method}:${url.origin}${url.pathname}`
+
+      const mockResponse = mockResponses.get(key)
+      if (mockResponse) {
+        return mockResponse.clone()
+      }
+
+      throw new Error(`No mock found for ${key}`)
+    })
   })
 
   afterEach(() => {
-    fetchMock.deactivate()
+    vi.restoreAllMocks()
   })
 
   it("Minimal cache test: verify mock cache.put and cache.match work", async () => {
@@ -84,13 +92,13 @@ describe("Cloudflare Cache Integration (Real Workers Runtime)", () => {
     }
 
     // Mock the Appwarden API response
-    // Note: .get() sets the origin, method is specified in intercept()
-    fetchMock
-      .get("https://staging-api.appwarden.io")
-      .intercept({ path: "/v1/appwarden/status", method: "POST" })
-      .reply(200, JSON.stringify({ content: mockApiResponse }), {
+    mockResponses.set(
+      "POST:https://staging-api.appwarden.io/v1/appwarden/status",
+      new Response(JSON.stringify({ content: mockApiResponse }), {
+        status: 200,
         headers: { "content-type": "application/json" },
-      })
+      }),
+    )
 
     // Create execution context to track background tasks
     const ctx = createExecutionContext()
@@ -185,12 +193,13 @@ describe("Cloudflare Cache Integration (Real Workers Runtime)", () => {
     }
 
     // Mock the Appwarden API response for background refresh
-    fetchMock
-      .get("https://staging-api.appwarden.io")
-      .intercept({ path: "/v1/appwarden/status", method: "POST" })
-      .reply(200, JSON.stringify({ content: updatedApiResponse }), {
+    mockResponses.set(
+      "POST:https://staging-api.appwarden.io/v1/appwarden/status",
+      new Response(JSON.stringify({ content: updatedApiResponse }), {
+        status: 200,
         headers: { "content-type": "application/json" },
-      })
+      }),
+    )
 
     const result = await checkLockStatus({
       request: new Request("https://example.com/page"),
@@ -282,12 +291,13 @@ describe("Cloudflare Cache Integration (Real Workers Runtime)", () => {
     }
 
     // Mock the Appwarden API response for synchronous refresh
-    fetchMock
-      .get("https://staging-api.appwarden.io")
-      .intercept({ path: "/v1/appwarden/status", method: "POST" })
-      .reply(200, JSON.stringify({ content: updatedApiResponse }), {
+    mockResponses.set(
+      "POST:https://staging-api.appwarden.io/v1/appwarden/status",
+      new Response(JSON.stringify({ content: updatedApiResponse }), {
+        status: 200,
         headers: { "content-type": "application/json" },
-      })
+      }),
+    )
 
     const result = await checkLockStatus({
       request: new Request("https://example.com/page"),

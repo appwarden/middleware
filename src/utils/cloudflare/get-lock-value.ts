@@ -1,4 +1,3 @@
-import { Response } from "@cloudflare/workers-types"
 import { LockValue, LockValueType } from "../../schemas"
 import { CloudflareProviderContext } from "../../types"
 import { printMessage } from "../print-message"

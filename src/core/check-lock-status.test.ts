@@ -65,7 +65,7 @@ describe("checkLockStatus", () => {
       request: new Request("https://example.com/page"),
       appwardenApiToken: "test-token",
       lockPageSlug: "/maintenance",
-      waitUntil: mockWaitUntil,
+      waitUntil: mockWaitUntil as any,
     }
 
     // Default: cache exists, not expired, not locked

@@ -1,4 +1,3 @@
-import { Cache } from "@cloudflare/workers-types"
 import { debug } from "../debug"
 
 type Context = {

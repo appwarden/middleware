@@ -1,61 +1,72 @@
-import { fetchMock, SELF } from "cloudflare:test"
-import { afterEach, beforeAll, describe, expect, it } from "vitest"
+import { SELF } from "cloudflare:test"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+
+// Store mock response factories for fetch
+const mockResponses = new Map<string, () => Response>()
 
 describe("Integration Tests - Request/Response Flows", () => {
-  beforeAll(() => {
-    fetchMock.activate()
-    fetchMock.disableNetConnect()
+  beforeEach(() => {
+    // Clear mock responses
+    mockResponses.clear()
+
+    // Mock fetch to intercept outbound requests
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+      const request = new Request(input, init)
+      const url = new URL(request.url)
+      const key = `${request.method}:${url.origin}${url.pathname}`
+
+      const mockResponseFactory = mockResponses.get(key)
+      if (mockResponseFactory) {
+        return mockResponseFactory()
+      }
+
+      throw new Error(`No mock found for ${key}`)
+    })
   })
 
   afterEach(() => {
-    // Clear all mocks after each test
-    fetchMock.deactivate()
-    fetchMock.activate()
-    fetchMock.disableNetConnect()
+    vi.restoreAllMocks()
   })
 
   describe("Full middleware pipeline", () => {
     it("should process request through complete middleware stack", async () => {
       // Mock the Appwarden API response
-      fetchMock
-        .get("https://staging-api.appwarden.io")
-        .intercept({
-          method: "POST",
-          path: "/v1/appwarden/status",
-        })
-        .reply(
-          200,
-          {
-            content: {
-              isLocked: 0,
-              isLockedTest: 0,
-              code: "OK",
+      mockResponses.set(
+        "POST:https://staging-api.appwarden.io/v1/appwarden/status",
+        () =>
+          new Response(
+            JSON.stringify({
+              content: {
+                isLocked: 0,
+                isLockedTest: 0,
+                code: "OK",
+              },
+            }),
+            {
+              status: 200,
+              headers: { "content-type": "application/json" },
             },
-          },
-          {
-            headers: { "content-type": "application/json" },
-          },
-        )
-        .persist()
+          ),
+      )
 
       // Mock origin response
-      fetchMock
-        .get("https://appwarden.io")
-        .intercept({ path: "/" })
-        .reply(
-          200,
-          `<html>
+      mockResponses.set(
+        "GET:https://appwarden.io/",
+        () =>
+          new Response(
+            `<html>
             <head><title>Test</title></head>
             <body>
               <script src="test.js"></script>
               <h1>Hello World</h1>
             </body>
           </html>`,
-          {
-            headers: { "content-type": "text/html" },
-          },
-        )
-        .persist()
+            {
+              status: 200,
+              headers: { "content-type": "text/html" },
+            },
+          ),
+      )
 
       // Make request through the test app
       const response = await SELF.fetch("https://appwarden.io/", {
@@ -76,39 +87,33 @@ describe("Integration Tests - Request/Response Flows", () => {
 
     it("should handle non-HTML responses correctly", async () => {
       // Mock the Appwarden API response
-      fetchMock
-        .get("https://staging-api.appwarden.io")
-        .intercept({
-          method: "POST",
-          path: "/v1/appwarden/status",
-        })
-        .reply(
-          200,
-          {
-            content: {
-              isLocked: 0,
-              isLockedTest: 0,
-              code: "OK",
+      mockResponses.set(
+        "POST:https://staging-api.appwarden.io/v1/appwarden/status",
+        () =>
+          new Response(
+            JSON.stringify({
+              content: {
+                isLocked: 0,
+                isLockedTest: 0,
+                code: "OK",
+              },
+            }),
+            {
+              status: 200,
+              headers: { "content-type": "application/json" },
             },
-          },
-          {
-            headers: { "content-type": "application/json" },
-          },
-        )
-        .persist()
+          ),
+      )
 
       // Mock JSON API response
-      fetchMock
-        .get("https://appwarden.io")
-        .intercept({ path: "/api/data" })
-        .reply(
-          200,
-          { message: "Hello API" },
-          {
+      mockResponses.set(
+        "GET:https://appwarden.io/api/data",
+        () =>
+          new Response(JSON.stringify({ message: "Hello API" }), {
+            status: 200,
             headers: { "content-type": "application/json" },
-          },
-        )
-        .persist()
+          }),
+      )
 
       // Make request through the test app
       const response = await SELF.fetch("https://appwarden.io/api/data")
@@ -127,13 +132,14 @@ describe("Integration Tests - Request/Response Flows", () => {
 
     it("should handle errors gracefully", async () => {
       // Mock origin to return an error
-      fetchMock
-        .get("https://appwarden.io")
-        .intercept({ path: "/error" })
-        .reply(500, "Internal Server Error", {
-          headers: { "content-type": "text/plain" },
-        })
-        .persist()
+      mockResponses.set(
+        "GET:https://appwarden.io/error",
+        () =>
+          new Response("Internal Server Error", {
+            status: 500,
+            headers: { "content-type": "text/plain" },
+          }),
+      )
 
       // Make request through the test app
       const response = await SELF.fetch("https://appwarden.io/error")
@@ -148,35 +154,33 @@ describe("Integration Tests - Request/Response Flows", () => {
   describe("Middleware pipeline execution", () => {
     it("should execute middlewares in correct order", async () => {
       // Mock the Appwarden API response
-      fetchMock
-        .get("https://staging-api.appwarden.io")
-        .intercept({
-          method: "POST",
-          path: "/v1/appwarden/status",
-        })
-        .reply(
-          200,
-          {
-            content: {
-              isLocked: 0,
-              isLockedTest: 0,
-              code: "OK",
+      mockResponses.set(
+        "POST:https://staging-api.appwarden.io/v1/appwarden/status",
+        () =>
+          new Response(
+            JSON.stringify({
+              content: {
+                isLocked: 0,
+                isLockedTest: 0,
+                code: "OK",
+              },
+            }),
+            {
+              status: 200,
+              headers: { "content-type": "application/json" },
             },
-          },
-          {
-            headers: { "content-type": "application/json" },
-          },
-        )
-        .persist()
+          ),
+      )
 
       // Mock origin response
-      fetchMock
-        .get("https://appwarden.io")
-        .intercept({ path: "/pipeline-test" })
-        .reply(200, "<html><body>Pipeline Test</body></html>", {
-          headers: { "content-type": "text/html" },
-        })
-        .persist()
+      mockResponses.set(
+        "GET:https://appwarden.io/pipeline-test",
+        () =>
+          new Response("<html><body>Pipeline Test</body></html>", {
+            status: 200,
+            headers: { "content-type": "text/html" },
+          }),
+      )
 
       // Make request through the test app
       const response = await SELF.fetch("https://appwarden.io/pipeline-test", {
@@ -198,42 +202,39 @@ describe("Integration Tests - Request/Response Flows", () => {
 
     it("should pass context correctly through middleware chain", async () => {
       // Mock the Appwarden API response
-      fetchMock
-        .get("https://staging-api.appwarden.io")
-        .intercept({
-          method: "POST",
-          path: "/v1/appwarden/status",
-        })
-        .reply(
-          200,
-          {
-            content: {
-              isLocked: 0,
-              isLockedTest: 0,
-              code: "OK",
+      mockResponses.set(
+        "POST:https://staging-api.appwarden.io/v1/appwarden/status",
+        () =>
+          new Response(
+            JSON.stringify({
+              content: {
+                isLocked: 0,
+                isLockedTest: 0,
+                code: "OK",
+              },
+            }),
+            {
+              status: 200,
+              headers: { "content-type": "application/json" },
             },
-          },
-          {
-            headers: { "content-type": "application/json" },
-          },
-        )
-        .persist()
+          ),
+      )
 
       // Mock origin response with script tags
-      fetchMock
-        .get("https://appwarden.io")
-        .intercept({ path: "/context-test" })
-        .reply(
-          200,
-          `<html>
+      mockResponses.set(
+        "GET:https://appwarden.io/context-test",
+        () =>
+          new Response(
+            `<html>
             <head><script src="app.js"></script></head>
             <body><script>console.log('test')</script></body>
           </html>`,
-          {
-            headers: { "content-type": "text/html" },
-          },
-        )
-        .persist()
+            {
+              status: 200,
+              headers: { "content-type": "text/html" },
+            },
+          ),
+      )
 
       // Make request through the test app
       const response = await SELF.fetch("https://appwarden.io/context-test", {
@@ -250,12 +251,14 @@ describe("Integration Tests - Request/Response Flows", () => {
 
     it("should handle middleware errors gracefully", async () => {
       // Mock origin to return a 500 error
-      fetchMock
-        .get("https://appwarden.io")
-        .intercept({ path: "/middleware-error" })
-        .reply(500, "Internal Server Error", {
-          headers: { "content-type": "text/plain" },
-        })
+      mockResponses.set(
+        "GET:https://appwarden.io/middleware-error",
+        () =>
+          new Response("Internal Server Error", {
+            status: 500,
+            headers: { "content-type": "text/plain" },
+          }),
+      )
 
       // Make request through the test app
       // The middleware should pass through the error response
@@ -283,34 +286,30 @@ describe("Integration Tests - Request/Response Flows", () => {
   describe("CSP Mode Variations", () => {
     it("should inject nonces into style tags", async () => {
       // Mock the Appwarden API response
-      fetchMock
-        .get("https://staging-api.appwarden.io")
-        .intercept({
-          method: "POST",
-          path: "/v1/appwarden/status",
-        })
-        .reply(
-          200,
-          {
-            content: {
-              isLocked: 0,
-              isLockedTest: 0,
-              code: "OK",
+      mockResponses.set(
+        "POST:https://staging-api.appwarden.io/v1/appwarden/status",
+        () =>
+          new Response(
+            JSON.stringify({
+              content: {
+                isLocked: 0,
+                isLockedTest: 0,
+                code: "OK",
+              },
+            }),
+            {
+              status: 200,
+              headers: { "content-type": "application/json" },
             },
-          },
-          {
-            headers: { "content-type": "application/json" },
-          },
-        )
-        .persist()
+          ),
+      )
 
       // Mock origin response with style tags (use a different path to avoid mock conflicts)
-      fetchMock
-        .get("https://appwarden.io")
-        .intercept({ path: "/styles" })
-        .reply(
-          200,
-          `<html>
+      mockResponses.set(
+        "GET:https://appwarden.io/styles",
+        () =>
+          new Response(
+            `<html>
             <head>
               <title>Test</title>
               <style>body { color: red; }</style>
@@ -320,11 +319,12 @@ describe("Integration Tests - Request/Response Flows", () => {
               <h1>Hello World</h1>
             </body>
           </html>`,
-          {
-            headers: { "content-type": "text/html" },
-          },
-        )
-        .persist()
+            {
+              status: 200,
+              headers: { "content-type": "text/html" },
+            },
+          ),
+      )
 
       // Make request through the test app
       const response = await SELF.fetch("https://appwarden.io/styles", {
@@ -345,7 +345,7 @@ describe("Integration Tests - Request/Response Flows", () => {
       expect(styleMatches!.length).toBe(2) // We have 2 style tags in the mock
 
       // All style tags should have nonce attributes
-      styleMatches!.forEach((styleTag) => {
+      styleMatches!.forEach((styleTag: string) => {
         expect(styleTag).toMatch(/nonce="[^"]+"/)
       })
     })
@@ -354,30 +354,29 @@ describe("Integration Tests - Request/Response Flows", () => {
   describe("API Response Variations", () => {
     it("should handle API errors gracefully", async () => {
       // Mock the Appwarden API to return an error
-      fetchMock
-        .get("https://staging-api.appwarden.io")
-        .intercept({
-          method: "POST",
-          path: "/v1/appwarden/status",
-        })
-        .reply(500, { error: "Internal Server Error" })
-        .persist()
+      mockResponses.set(
+        "POST:https://staging-api.appwarden.io/v1/appwarden/status",
+        () =>
+          new Response(JSON.stringify({ error: "Internal Server Error" }), {
+            status: 500,
+          }),
+      )
 
       // Mock origin response
-      fetchMock
-        .get("https://appwarden.io")
-        .intercept({ path: "/api-error" })
-        .reply(
-          200,
-          `<html>
+      mockResponses.set(
+        "GET:https://appwarden.io/api-error",
+        () =>
+          new Response(
+            `<html>
             <head><title>Test</title></head>
             <body><h1>Hello World</h1></body>
           </html>`,
-          {
-            headers: { "content-type": "text/html" },
-          },
-        )
-        .persist()
+            {
+              status: 200,
+              headers: { "content-type": "text/html" },
+            },
+          ),
+      )
 
       // Make request through the test app
       const response = await SELF.fetch("https://appwarden.io/api-error", {
@@ -392,30 +391,29 @@ describe("Integration Tests - Request/Response Flows", () => {
 
     it("should handle API timeout gracefully", async () => {
       // Mock the Appwarden API to timeout (no response)
-      fetchMock
-        .get("https://staging-api.appwarden.io")
-        .intercept({
-          method: "POST",
-          path: "/v1/appwarden/status",
-        })
-        .reply(408, { error: "Request Timeout" })
-        .persist()
+      mockResponses.set(
+        "POST:https://staging-api.appwarden.io/v1/appwarden/status",
+        () =>
+          new Response(JSON.stringify({ error: "Request Timeout" }), {
+            status: 408,
+          }),
+      )
 
       // Mock origin response
-      fetchMock
-        .get("https://appwarden.io")
-        .intercept({ path: "/api-timeout" })
-        .reply(
-          200,
-          `<html>
+      mockResponses.set(
+        "GET:https://appwarden.io/api-timeout",
+        () =>
+          new Response(
+            `<html>
             <head><title>Test</title></head>
             <body><h1>Hello World</h1></body>
           </html>`,
-          {
-            headers: { "content-type": "text/html" },
-          },
-        )
-        .persist()
+            {
+              status: 200,
+              headers: { "content-type": "text/html" },
+            },
+          ),
+      )
 
       // Make request through the test app
       const response = await SELF.fetch("https://appwarden.io/api-timeout", {
@@ -432,39 +430,38 @@ describe("Integration Tests - Request/Response Flows", () => {
   describe("Edge Cases", () => {
     it("should handle responses without Content-Type header", async () => {
       // Mock the Appwarden API response
-      fetchMock
-        .get("https://staging-api.appwarden.io")
-        .intercept({
-          method: "POST",
-          path: "/v1/appwarden/status",
-        })
-        .reply(
-          200,
-          {
-            content: {
-              isLocked: 0,
-              isLockedTest: 0,
-              code: "OK",
+      mockResponses.set(
+        "POST:https://staging-api.appwarden.io/v1/appwarden/status",
+        () =>
+          new Response(
+            JSON.stringify({
+              content: {
+                isLocked: 0,
+                isLockedTest: 0,
+                code: "OK",
+              },
+            }),
+            {
+              status: 200,
+              headers: { "content-type": "application/json" },
             },
-          },
-          {
-            headers: { "content-type": "application/json" },
-          },
-        )
-        .persist()
+          ),
+      )
 
       // Mock origin response without Content-Type header
-      fetchMock
-        .get("https://appwarden.io")
-        .intercept({ path: "/no-content-type" })
-        .reply(
-          200,
-          `<html>
+      mockResponses.set(
+        "GET:https://appwarden.io/no-content-type",
+        () =>
+          new Response(
+            `<html>
             <head><title>Test</title></head>
             <body><h1>No Content-Type</h1></body>
           </html>`,
-        )
-        .persist()
+            {
+              status: 200,
+            },
+          ),
+      )
 
       // Make request through the test app
       const response = await SELF.fetch(
@@ -482,44 +479,41 @@ describe("Integration Tests - Request/Response Flows", () => {
 
     it("should generate unique nonces for multiple requests", async () => {
       // Mock the Appwarden API response
-      fetchMock
-        .get("https://staging-api.appwarden.io")
-        .intercept({
-          method: "POST",
-          path: "/v1/appwarden/status",
-        })
-        .reply(
-          200,
-          {
-            content: {
-              isLocked: 0,
-              isLockedTest: 0,
-              code: "OK",
+      mockResponses.set(
+        "POST:https://staging-api.appwarden.io/v1/appwarden/status",
+        () =>
+          new Response(
+            JSON.stringify({
+              content: {
+                isLocked: 0,
+                isLockedTest: 0,
+                code: "OK",
+              },
+            }),
+            {
+              status: 200,
+              headers: { "content-type": "application/json" },
             },
-          },
-          {
-            headers: { "content-type": "application/json" },
-          },
-        )
-        .persist()
+          ),
+      )
 
       // Mock origin response with script tag
-      fetchMock
-        .get("https://appwarden.io")
-        .intercept({ path: "/nonce-test" })
-        .reply(
-          200,
-          `<html>
+      mockResponses.set(
+        "GET:https://appwarden.io/nonce-test",
+        () =>
+          new Response(
+            `<html>
             <head><title>Test</title></head>
             <body>
               <script src="test.js"></script>
             </body>
           </html>`,
-          {
-            headers: { "content-type": "text/html" },
-          },
-        )
-        .persist()
+            {
+              status: 200,
+              headers: { "content-type": "text/html" },
+            },
+          ),
+      )
 
       // Make two requests
       const response1 = await SELF.fetch("https://appwarden.io/nonce-test", {
