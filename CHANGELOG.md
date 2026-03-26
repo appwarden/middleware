@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.13.3](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.13.2...@appwarden/middleware@3.13.3) (2026-03-26)
+
+
+### Bug Fixes
+
+* heartbeat formatting improvements ([412801c](https://github.com/appwarden/middleware/commit/412801c40c7e77738f9b2b3118b0fc3bfc8a6b5a))
+* improve config error messages ([6b083e8](https://github.com/appwarden/middleware/commit/6b083e85cc2b99ba51d443b4d8ca84fecf85999f))
+* improve config error messages and edge sync behavior ([59ba09b](https://github.com/appwarden/middleware/commit/59ba09b586a9dfcbe877dea0ae4a4a03efb456cd))
+* resolve picomatch security vulnerabilities ([c36128f](https://github.com/appwarden/middleware/commit/c36128f102229768dfa571be5b88e4a8f7ff08aa))
+* resolve vitest 4 compatibility and CI errors ([4b45d12](https://github.com/appwarden/middleware/commit/4b45d124d86bc77fcdb0ee88e9a6d011af6a997a))
+* use named cloudflare cache and expand mock cache tests ([d00e901](https://github.com/appwarden/middleware/commit/d00e901c36d62518052577b7531fd5358f3fe288))
+
 ## [3.13.2](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.13.1...@appwarden/middleware@3.13.2) (2026-03-19)
 
 
