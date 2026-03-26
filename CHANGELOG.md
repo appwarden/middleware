@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.13.2](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.13.1...@appwarden/middleware@3.13.2) (2026-03-19)
+
+
+### Bug Fixes
+
+* heartbeat formatting improvements ([63eae7d](https://github.com/appwarden/middleware/commit/63eae7d178d2d0a2259248597580175535a3f1d0))
+* improve config error messages ([bd24c9c](https://github.com/appwarden/middleware/commit/bd24c9cd6cd20955af41cfffaf77a0a9ce66c9d0))
+
 ## [3.13.1](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.13.0...@appwarden/middleware@3.13.1) (2026-03-12)
 
 # [3.13.0](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.12.0...@appwarden/middleware@3.13.0) (2026-03-11)
