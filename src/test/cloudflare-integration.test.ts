@@ -17,6 +17,7 @@
 
 import { createExecutionContext, waitOnExecutionContext } from "cloudflare:test"
 import {
+  afterAll,
   afterEach,
   beforeAll,
   beforeEach,
@@ -40,6 +41,11 @@ describe("Cloudflare Cache Integration (Real Workers Runtime)", () => {
   beforeAll(() => {
     // Replace the global caches object with our mock
     vi.stubGlobal("caches", mockCacheStorage)
+  })
+
+  afterAll(() => {
+    // Restore the original global caches object to avoid cross-test pollution
+    vi.unstubAllGlobals()
   })
 
   beforeEach(async () => {

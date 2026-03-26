@@ -1,50 +1,52 @@
 import { SELF } from "cloudflare:test"
-import { describe, expect, it, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { mockOriginResponse } from "../test/test.helpers"
 import { useContentSecurityPolicy } from "./use-content-security-policy"
 
 describe("use-content-security-policy", () => {
-  // NOTE: These tests are currently skipped and need to be updated to work with Vitest 4
-  // The fetchMock API was removed from @cloudflare/vitest-pool-workers
-  // TODO: Update these tests to use vi.spyOn(globalThis, "fetch") instead
+  beforeEach(() => {
+    // Mock global fetch to prevent live network calls
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const request = new Request(input)
+      const url = new URL(request.url)
 
-  it.skip("should attach a content-security-policy header", async () => {
+      // Mock Appwarden API response
+      if (url.pathname === "/v1/appwarden/status") {
+        return new Response(
+          JSON.stringify({
+            content: {
+              isLocked: 0,
+              isLockedTest: 0,
+              code: "OK",
+            },
+          }),
+          {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          },
+        )
+      }
+
+      // Mock origin response
+      if (url.hostname === "appwarden.io") {
+        return new Response(mockOriginResponse, {
+          status: 200,
+          headers: { "content-type": "text/html" },
+        })
+      }
+
+      throw new Error(`Unmocked fetch: ${request.url}`)
+    })
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it("should attach a content-security-policy header", async () => {
     // NOTE: This test uses the CSP_MODE from wrangler.jsonc ("report-only")
     // We cannot override env bindings per-test when using singleWorker: true
     const expectedHeader = "content-security-policy-report-only"
-
-    // Mock the Appwarden API response
-    // @ts-expect-error - fetchMock is not available in Vitest 4, this test needs to be updated
-    fetchMock
-      .get("https://staging-api.appwarden.io")
-      .intercept({
-        method: "POST",
-        path: "/v1/appwarden/status",
-      })
-      .reply(
-        200,
-        {
-          content: {
-            isLocked: 0,
-            isLockedTest: 0,
-            code: "OK",
-          },
-        },
-        {
-          headers: { "content-type": "application/json" },
-        },
-      )
-      .persist()
-
-    // Mock origin response
-    // @ts-expect-error - fetchMock is not available in Vitest 4, this test needs to be updated
-    fetchMock
-      .get("https://appwarden.io")
-      .intercept({ path: "/" })
-      .reply(200, mockOriginResponse, {
-        headers: { "content-type": "text/html" },
-      })
-      .persist()
 
     const responses = await Promise.all([
       SELF.fetch("https://appwarden.io", {

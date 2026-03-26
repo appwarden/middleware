@@ -43,7 +43,7 @@ export const syncEdgeValue = async (
     if (response.status === 403) {
       console.log(
         printMessage(
-          "Verifying domain ownership...this will only take a few minutes.",
+          "Verifying domain ownership... this will only take a few minutes.",
         ),
       )
     }
