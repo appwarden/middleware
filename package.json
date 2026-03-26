@@ -109,7 +109,7 @@
   },
   "devDependencies": {
     "@amanda-mitchell/semantic-release-npm-multiple": "^3.17.0",
-    "@cloudflare/vitest-pool-workers": "^0.8.49",
+    "@cloudflare/vitest-pool-workers": "^0.13.4",
     "@cloudflare/workers-types": "^4.20260317.1",
     "@commitlint/cli": "^20.5.0",
     "@commitlint/config-conventional": "^20.5.0",
