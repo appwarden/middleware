@@ -1,3 +1,5 @@
+import { MIDDLEWARE_VERSION } from "./version"
+
 export const LOCKDOWN_TEST_EXPIRY_MS = 5 * 60 * 1000
 
 export const errors = { badCacheConnection: "BAD_CACHE_CONNECTION" }
@@ -47,6 +49,10 @@ export const HEARTBEAT_RESPONSE_BODY_MAX_SERIALIZED_BYTES = 32 * 1024
 export const HEARTBEAT_CONFIG_ERROR_MAX_PATH_SEGMENT_LENGTH = 100
 
 export const APPWARDEN_CACHE_KEY = "appwarden-lock" as const
+
+export const APPWARDEN_MIDDLEWARE_USER_AGENT_PREFIX = `Appwarden/`
+
+export const APPWARDEN_MIDDLEWARE_USER_AGENT = `${APPWARDEN_MIDDLEWARE_USER_AGENT_PREFIX}${MIDDLEWARE_VERSION}`
 
 export const HEARTBEAT_SERVICE_VALUES = [
   "cloudflare",
