@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import { APPWARDEN_MIDDLEWARE_USER_AGENT } from "../../constants"
 import { LockValue } from "../../schemas"
 import { CloudflareProviderContext } from "../../types/cloudflare"
 import { syncEdgeValue } from "./sync-edge-value"
@@ -94,7 +95,10 @@ describe("syncEdgeValue", () => {
       new URL("/v1/appwarden/status", "https://staging-api.appwarden.io"),
       {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: {
+          "content-type": "application/json",
+          "user-agent": APPWARDEN_MIDDLEWARE_USER_AGENT,
+        },
         body: JSON.stringify({
           service: "cloudflare",
           provider: "cloudflare-cache",

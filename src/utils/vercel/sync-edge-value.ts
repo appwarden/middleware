@@ -1,3 +1,4 @@
+import { APPWARDEN_MIDDLEWARE_USER_AGENT } from "../../constants"
 import { VercelProviderContext } from "../../types"
 import { printMessage } from "../print-message"
 
@@ -29,7 +30,10 @@ export const syncEdgeValue = async (
     // @ts-expect-error config variables
     const response = await fetch(new URL(API_PATHNAME, apiHostname), {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: {
+        "content-type": "application/json",
+        "user-agent": APPWARDEN_MIDDLEWARE_USER_AGENT,
+      },
       body: JSON.stringify({
         service: "vercel",
         cacheUrl: context.cacheUrl,

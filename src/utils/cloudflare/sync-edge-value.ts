@@ -1,3 +1,4 @@
+import { APPWARDEN_MIDDLEWARE_USER_AGENT } from "../../constants"
 import { LockValue, LockValueType } from "../../schemas"
 import { CloudflareProviderContext } from "../../types/cloudflare"
 import { printMessage } from "../print-message"
@@ -20,7 +21,10 @@ export const syncEdgeValue = async (context: CloudflareProviderContext) => {
     // @ts-expect-error API_PATHNAME is a build-time config variable
     const response = await fetch(new URL(API_PATHNAME, apiHostname), {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: {
+        "content-type": "application/json",
+        "user-agent": APPWARDEN_MIDDLEWARE_USER_AGENT,
+      },
       body: JSON.stringify({
         service: "cloudflare",
         provider: context.provider,
