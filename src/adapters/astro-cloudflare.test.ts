@@ -10,8 +10,21 @@ import {
   createAppwardenMiddleware,
 } from "./astro-cloudflare"
 
-// Mock cloudflare:workers waitUntil so we can assert it's used
+const { mockCloudflareEnv, mockCaches } = vi.hoisted(() => ({
+  mockCloudflareEnv: {
+    APPWARDEN_API_TOKEN: "test-token",
+    APPWARDEN_LOCK_PAGE_SLUG: "/maintenance",
+    APPWARDEN_API_HOSTNAME: "https://staging-api.appwarden.io",
+    CSP_MODE: "report-only",
+    CSP_DIRECTIVES: '{ "default-src": ["{{nonce}}"] }',
+    DEBUG: true,
+  } as unknown as CloudflareEnv,
+  mockCaches: {} as CacheStorage,
+}))
+
+// Mock cloudflare:workers exports used by the adapter
 vi.mock("cloudflare:workers", () => ({
+  env: mockCloudflareEnv,
   waitUntil: vi.fn(),
 }))
 
@@ -22,7 +35,7 @@ vi.mock("cloudflare:workers", () => ({
 interface MockAstroContext {
   request: Request
   locals: {
-    runtime?: AstroCloudflareRuntime
+    cfContext?: ExecutionContext
     [key: string]: unknown
   }
   redirect: (path: string, status?: number) => Response
@@ -109,13 +122,11 @@ describe("createAppwardenMiddleware (Astro)", () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.stubGlobal("caches", mockCaches)
 
     mockRuntime = {
-      env: {
-        APPWARDEN_API_TOKEN: "test-token",
-        APPWARDEN_LOCK_PAGE_SLUG: "/maintenance",
-      },
-      caches: {} as unknown as CacheStorage,
+      env: mockCloudflareEnv,
+      caches: mockCaches,
       ctx: {
         waitUntil: vi.fn(),
         passThroughOnException: vi.fn(),
@@ -128,7 +139,7 @@ describe("createAppwardenMiddleware (Astro)", () => {
         headers: { Accept: "text/html,application/xhtml+xml" },
       }),
       locals: {
-        runtime: mockRuntime,
+        cfContext: mockRuntime.ctx,
       },
       redirect: vi.fn((path: string, status?: number) => {
         return new Response(null, {
@@ -149,6 +160,7 @@ describe("createAppwardenMiddleware (Astro)", () => {
 
   afterEach(() => {
     vi.resetAllMocks()
+    vi.unstubAllGlobals()
   })
 
   it("should call next() when site is not locked", async () => {
@@ -266,7 +278,7 @@ describe("createAppwardenMiddleware (Astro)", () => {
     await middleware(asAPIContext(mockContext), mockNext)
 
     expect(consoleErrorSpy).toHaveBeenCalledWith(
-      expect.stringContaining("Cloudflare runtime not found"),
+      expect.stringContaining("Cloudflare context not found"),
     )
     expect(mockNext).toHaveBeenCalled()
   })
