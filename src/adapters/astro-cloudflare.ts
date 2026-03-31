@@ -1,6 +1,5 @@
-import type { Runtime } from "@astrojs/cloudflare"
 import type { MiddlewareHandler } from "astro"
-import { waitUntil } from "cloudflare:workers"
+import { env as cloudflareEnv, waitUntil } from "cloudflare:workers"
 import { HEARTBEAT_SERVICES } from "../constants"
 import { checkLockStatus } from "../core"
 import type {
@@ -72,19 +71,25 @@ const createAstroHeartbeatResponse = (
 }
 
 /**
- * Cloudflare runtime context provided by Astro on Cloudflare Workers.
- * This is extracted from the locals object when using @astrojs/cloudflare adapter.
+ * Normalized Cloudflare runtime context exposed to Appwarden config functions.
  *
- * Note: Uses generic CloudflareEnv which should be defined in the user's project.
+ * Astro v6 no longer exposes the old `locals.runtime` shape, so we compose the
+ * runtime from current Cloudflare primitives instead:
+ * - bindings from `cloudflare:workers`
+ * - cache storage from the global `caches`
+ * - execution context from `context.locals.cfContext`
  */
-export type AstroCloudflareRuntime = Runtime<CloudflareEnv>["runtime"]
+export interface AstroCloudflareRuntime {
+  env: CloudflareEnv
+  caches: CacheStorage
+  ctx: ExecutionContext
+}
 
 /**
- * Locals interface with Cloudflare runtime.
- * This is the expected shape of context.locals when using @astrojs/cloudflare.
+ * Locals interface augmented by the current @astrojs/cloudflare adapter.
  */
 interface LocalsWithRuntime {
-  runtime?: AstroCloudflareRuntime
+  cfContext?: ExecutionContext
   [key: string]: unknown
 }
 
@@ -109,6 +114,20 @@ export type { AstroCloudflareConfig, AstroCloudflareConfigInput }
 export type AstroConfigFn = (
   runtime: AstroCloudflareRuntime,
 ) => AstroCloudflareConfigInput
+
+const getAstroCloudflareRuntime = (
+  locals: LocalsWithRuntime,
+): AstroCloudflareRuntime | undefined => {
+  if (!locals.cfContext) {
+    return undefined
+  }
+
+  return {
+    env: cloudflareEnv,
+    caches,
+    ctx: locals.cfContext,
+  }
+}
 
 /**
  * Creates an Appwarden middleware function for Astro.
@@ -168,20 +187,19 @@ export function createAppwardenMiddleware(
         return response
       }
     }
-    // Cast locals to include runtime property added by @astrojs/cloudflare
+    // Cast locals to include Cloudflare context added by @astrojs/cloudflare
     const locals = context.locals as LocalsWithRuntime
+    const runtime = getAstroCloudflareRuntime(locals)
 
     if (isHeartbeatRequest(request, requestUrl)) {
-      return createAstroHeartbeatResponse(request, locals.runtime, configFn)
+      return createAstroHeartbeatResponse(request, runtime, configFn)
     }
 
     try {
-      // Get Cloudflare runtime from Astro locals
-      const runtime = locals.runtime
       if (!runtime) {
         console.error(
           printMessage(
-            "Cloudflare runtime not found. Ensure @astrojs/cloudflare adapter is configured.",
+            "Cloudflare context not found. Ensure @astrojs/cloudflare adapter is configured.",
           ),
         )
         return next()
