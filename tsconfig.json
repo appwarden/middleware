@@ -9,6 +9,7 @@
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
     "outDir": "./build",
+    "rootDir": "./src",
     "moduleResolution": "Bundler",
     "types": [
       "./worker-configuration.d.ts",

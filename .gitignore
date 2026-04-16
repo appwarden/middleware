@@ -1,9 +1,21 @@
+# Artifacts
 .turbo
 .wrangler
 node_modules
 build
 coverage
 examples
+# Playwright
+playwright-report/
+test-results/
+# Agents
+.augment
+.claude
+.codex
+.cursorrules
+.opencode
+# Local environment files
+.env
 
 # SBOM files (generated artifacts)
 sbom.json
