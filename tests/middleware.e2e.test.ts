@@ -215,7 +215,11 @@ function verifyCspHeader(
     // Handle nonce placeholder - verify the directive exists and includes a nonce value
     if (values.includes("{{nonce}}")) {
       // Example we want to allow: "script-src 'self' 'nonce-abc123' ..."
-      const nonceRegex = new RegExp(`${directive}[^;]*'nonce-[^']+'`)
+      // Use (?:^|;\s*) to anchor the directive to a token boundary, preventing
+      // 'script-src' from matching 'script-src-elem' or other prefixed directives.
+      const nonceRegex = new RegExp(
+        `(?:^|;\\s*)${directive}\\s[^;]*'nonce-[^']+'`,
+      )
       expect(cspHeader).toMatch(nonceRegex)
     } else {
       for (const value of values) {
