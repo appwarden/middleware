@@ -27,7 +27,7 @@ The tests are configured in `playwright.config.ts` at the repository root. Key s
 
 - **Test Directory**: `./tests`
 - **Timeout**: 120 seconds per test (needed for quarantine propagation delays)
-- **Browsers**: Chromium, Firefox, and WebKit
+- **Browsers**: Chromium
 - **Retries**: 2 retries on CI, 0 locally
 
 ## Test Details
