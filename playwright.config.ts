@@ -30,7 +30,7 @@ export default defineConfig({
     trace: "on-first-retry",
   },
 
-  // Configure projects: run only in Chromium for faster and more stable E2E runs
+  // Configure projects: run in multiple browsers
   projects: [
     {
       name: "chromium",

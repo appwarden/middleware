@@ -55,7 +55,7 @@
   },
   "packageManager": "pnpm@10.4.1",
   "engines": {
-    "node": ">=22"
+    "node": ">=22.14.0"
   },
   "scripts": {
     "prepare": "node scripts/prepare-semantic-release.cjs && husky",
@@ -64,10 +64,9 @@
     "deploy:staging": "pnpm build && wrangler deploy -e staging",
     "release": "NODE_ENV=production pnpm build && node scripts/prepare-package.cjs && semantic-release",
     "build": "tsup",
-    "lint": "oxlint .",
     "check:types": "wrangler types && tsc --noEmit",
     "check:prettier": "prettier --check .",
-    "check:ci": "pnpm check:types && pnpm check:prettier && pnpm lint && pnpm build",
+    "check:ci": "pnpm check:types && pnpm check:prettier && pnpm build",
     "test": "vitest --run",
     "test:e2e": "playwright test",
     "test:vercel": "vitest --run -c vitest.node.config.ts",

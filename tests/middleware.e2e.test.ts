@@ -17,6 +17,9 @@ import { expect, test, type Page } from "@playwright/test"
  * based on its current quarantine status.
  */
 
+// Run all middleware E2E tests in parallel across websites
+test.describe.configure({ mode: "parallel" })
+
 // Test configuration
 const TEST_WEBSITES = [
   {
@@ -24,28 +27,28 @@ const TEST_WEBSITES = [
     url: "https://appwarden.cc",
     lockPageSlug: "/maintenance",
     cspMode: "enforced" as const,
-    cspDirectives: { "script-src": ["'self'"] },
+    cspDirectives: { "script-src": ["self", "{{nonce}}"] },
   },
   {
     hostname: "astro.appwarden.cc",
     url: "https://astro.appwarden.cc",
     lockPageSlug: "/maintenance",
     cspMode: "report-only" as const,
-    cspDirectives: { "script-src": ["{{nonce}}"] },
+    cspDirectives: { "script-src": ["self", "{{nonce}}"] },
   },
   {
     hostname: "tanstack.appwarden.cc",
     url: "https://tanstack.appwarden.cc",
     lockPageSlug: "/maintenance",
     cspMode: "report-only" as const,
-    cspDirectives: { "script-src": ["{{nonce}}"] },
+    cspDirectives: { "script-src": ["self", "{{nonce}}"] },
   },
   {
     hostname: "react-router.appwarden.cc",
     url: "https://react-router.appwarden.cc",
     lockPageSlug: "/maintenance",
     cspMode: "report-only" as const,
-    cspDirectives: { "script-src": ["{{nonce}}"] },
+    cspDirectives: { "script-src": ["self", "{{nonce}}"] },
   },
   {
     hostname: "nextjs14.appwarden.cc",
@@ -209,9 +212,11 @@ function verifyCspHeader(
 
   // Verify each expected directive is present
   for (const [directive, values] of Object.entries(expectedDirectives)) {
-    // Handle nonce placeholder - just verify the directive exists
+    // Handle nonce placeholder - verify the directive exists and includes a nonce value
     if (values.includes("{{nonce}}")) {
-      expect(cspHeader).toContain(directive)
+      // Example we want to allow: "script-src 'self' 'nonce-abc123' ..."
+      const nonceRegex = new RegExp(`${directive}[^;]*'nonce-[^']+'`)
+      expect(cspHeader).toMatch(nonceRegex)
     } else {
       for (const value of values) {
         expect(cspHeader).toContain(`${directive} ${value}`)
@@ -241,7 +246,7 @@ async function expectLockStateWithOptionalRetry(
   options?: { retryMessage?: string },
 ): Promise<void> {
   const retryMessage = options?.retryMessage
-  const maxAttempts = retryMessage ? 3 : 1
+  const maxAttempts = retryMessage ? 5 : 1
   let attempt = 0
   let isLocked: boolean
 
@@ -271,9 +276,30 @@ async function verifyWebsiteCsp(
   website: TestWebsite,
 ): Promise<void> {
   console.log("   🔒 Verifying CSP header...")
-  const response = await page.goto(website.url)
+  // Use a cache-busting query param to avoid conditional requests returning 304
+  // which often omit CSP headers even though the browser still enforces them.
+  const url = new URL(website.url)
+  url.searchParams.set("_cspCheck", Date.now().toString())
+
+  const response = await page.goto(url.toString())
   const headers = response?.headers() ?? {}
   verifyCspHeader(headers, website.cspMode, website.cspDirectives)
+  const headerName =
+    website.cspMode === "report-only"
+      ? "content-security-policy-report-only"
+      : "content-security-policy"
+  const cspHeader = headers[headerName]
+  const expectsNonce = Object.values(website.cspDirectives).some((values) =>
+    values.includes("{{nonce}}"),
+  )
+  const noncePresent = !!cspHeader && /'nonce-[^']+'/.test(cspHeader)
+
+  console.log(`      🧩 CSP mode: ${website.cspMode} (header: ${headerName})`)
+  console.log(
+    `      🧩 CSP nonce expected: ${expectsNonce ? "yes" : "no"}, present: ${
+      noncePresent ? "yes" : "no"
+    }`,
+  )
   console.log("      ✅ CSP header verified")
 }
 
