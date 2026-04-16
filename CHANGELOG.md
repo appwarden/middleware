@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.14.1](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.14.0...@appwarden/middleware@3.14.1) (2026-04-16)
+
+
+### Bug Fixes
+
+* tighten CSP nonce regex to avoid false positives on prefixed directives ([149652f](https://github.com/appwarden/middleware/commit/149652f7ab5ff8867563e3b19ff8f11b7af2899d))
+
 # [3.14.0](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.13.4...@appwarden/middleware@3.14.0) (2026-03-31)
 
 
