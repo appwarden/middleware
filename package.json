@@ -121,7 +121,7 @@
     "@semantic-release/git": "^10.0.1",
     "@semantic-release/github": "^12.0.6",
     "@semantic-release/npm": "^13.1.5",
-    "@types/node": "^25.5.0",
+    "@types/node": "^25.6.0",
     "@vercel/functions": "^3.4.3",
     "@vitest/coverage-istanbul": "^4.1.4",
     "cheerio": "^1.2.0",
@@ -135,7 +135,7 @@
     "typescript": "^5.9.3",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.4",
-    "wrangler": "^4.81.0"
+    "wrangler": "^4.83.0"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,json,md,yml,yaml}": [
@@ -175,7 +175,17 @@
       "tar@<=7.5.10": ">=7.5.11",
       "undici@<7.24.0": ">=7.24.0",
       "wrangler@>=4.0.0 <4.59.1": ">=4.59.1",
-      "@tanstack/start-server-core@1.163.2>h3-v2": "npm:h3@2.0.1-rc.16"
+      "@tanstack/start-server-core@1.163.2>h3-v2": "npm:h3@2.0.1-rc.16",
+      "h3@>=2.0.0-beta.0 <=2.0.1-rc.16": ">=2.0.1-rc.17",
+      "h3@>=2.0.0-beta.4 <2.0.1-rc.18": ">=2.0.1-rc.18",
+      "h3@>=2.0.1-alpha.0 <=2.0.1-rc.16": ">=2.0.1-rc.17",
+      "defu@<=6.1.4": ">=6.1.5",
+      "vite@<=6.4.1": ">=6.4.2",
+      "vite@>=7.0.0 <=7.3.1": ">=7.3.2",
+      "vite@>=7.1.0 <=7.3.1": ">=7.3.2",
+      "vite@>=6.0.0 <=6.4.1": ">=6.4.2",
+      "next@>=16.0.0-beta.0 <16.2.3": ">=16.2.3",
+      "follow-redirects@<=1.15.11": ">=1.16.0"
     }
   },
   "sideEffects": false
