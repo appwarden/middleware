@@ -22,6 +22,8 @@ export default defineConfig({
       ...defaultExclude,
       "./build/**",
       "src/test/vercel-integration.test.ts",
+      // Exclude Playwright E2E tests (run via `pnpm test:e2e`, not Vitest)
+      "tests/**/*.e2e.test.ts",
     ],
     coverage: {
       provider: "istanbul", // V8 is not supported in Cloudflare Workers environment
