@@ -114,7 +114,7 @@
     "@cloudflare/vitest-pool-workers": "^0.14.7",
     "@commitlint/cli": "^20.5.0",
     "@commitlint/config-conventional": "^20.5.0",
-    "@cyclonedx/cdxgen": "^12.1.5",
+    "@cyclonedx/cdxgen": "^12.2.0",
     "@playwright/test": "^1.59.1",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/exec": "^7.1.0",
