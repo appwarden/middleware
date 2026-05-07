@@ -27,7 +27,7 @@ jobs:
           token: ${{ env.MIDDLEWARE_GITHUB_TOKEN }}
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v5.0.0
+        uses: pnpm/action-setup@v6.0.5
 
       - name: Setup Node.js
         uses: actions/setup-node@v6.3.0

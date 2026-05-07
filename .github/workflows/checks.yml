@@ -30,7 +30,7 @@ jobs:
           persist-credentials: true
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v5.0.0
+        uses: pnpm/action-setup@v6.0.5
         # Version is automatically read from package.json packageManager field
 
       - name: Setup Node.js
