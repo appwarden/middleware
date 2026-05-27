@@ -364,7 +364,7 @@ describe("createAppwardenMiddleware", () => {
     const middleware = createAppwardenMiddleware(() => ({
       lockPageSlug: "/maintenance",
       appwardenApiToken: "test-token",
-      appwardenApiHostname: "https://custom-api.appwarden.io",
+      appwardenApiHostname: "https://api.appwarden.io",
       debug: true,
     }))
 
@@ -373,7 +373,7 @@ describe("createAppwardenMiddleware", () => {
     expect(checkLockStatus).toHaveBeenCalledWith({
       request: mockArgs.request,
       appwardenApiToken: "test-token",
-      appwardenApiHostname: "https://custom-api.appwarden.io",
+      appwardenApiHostname: "https://api.appwarden.io",
       debug: true,
       lockPageSlug: "/maintenance",
       waitUntil: expect.any(Function),

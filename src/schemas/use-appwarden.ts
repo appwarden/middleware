@@ -6,10 +6,16 @@ import {
 } from "./helpers"
 import { UseCSPInputSchema } from "./use-content-security-policy"
 
+const ValidLockPageSlugSchema = z
+  .string()
+  .refine((val) => !val.includes("://") && !val.startsWith("//"), {
+    message: "lockPageSlug must be a relative path",
+  })
+
 export const AppwardenMultidomainConfigSchema = z.record(
   z.string(),
   z.object({
-    lockPageSlug: z.string(),
+    lockPageSlug: ValidLockPageSlugSchema,
     contentSecurityPolicy: z.lazy(() => UseCSPInputSchema).optional(),
     debug: BooleanSchema.optional(),
   }),
@@ -22,7 +28,7 @@ export type AppwardenMultidomainConfig = z.infer<
 // Base schema without refinement - can be extended by other schemas
 export const UseAppwardenInputSchema = z.object({
   debug: BooleanSchema.default(false),
-  lockPageSlug: z.string().optional(),
+  lockPageSlug: ValidLockPageSlugSchema.optional(),
   contentSecurityPolicy: z.lazy(() => UseCSPInputSchema).optional(),
   multidomainConfig: AppwardenMultidomainConfigSchema.optional(),
   appwardenApiToken: AppwardenApiTokenSchema,

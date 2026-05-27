@@ -4,6 +4,20 @@ import { VercelProviderContext } from "../../types"
 import { printMessage } from "../print-message"
 import { syncEdgeValue } from "./sync-edge-value"
 
+vi.mock("../../schemas", () => ({
+  AppwardenApiHostnameSchema: {
+    safeParse: vi.fn((value) => {
+      if (
+        value === "https://api.appwarden.io" ||
+        value === "https://staging-api.appwarden.io"
+      ) {
+        return { success: true, data: value }
+      }
+      return { success: false }
+    }),
+  },
+}))
+
 vi.mock("../print-message", () => ({
   printMessage: vi.fn((message) => `[@appwarden/middleware] ${message}`),
 }))
@@ -83,6 +97,7 @@ describe("syncEdgeValue", () => {
           vercelApiToken: "vercel-token",
           appwardenApiToken: "test-token",
         }),
+        signal: expect.any(AbortSignal),
       },
     )
 
@@ -164,12 +179,23 @@ describe("syncEdgeValue", () => {
   })
 
   it("should use a custom appwarden API hostname when provided", async () => {
-    mockContext.appwardenApiHostname = "https://custom-api.appwarden.io"
+    mockContext.appwardenApiHostname = "https://staging-api.appwarden.io"
 
     await syncEdgeValue(mockContext)
 
     expect(fetch).toHaveBeenCalledWith(
-      new URL("/v1/appwarden/status", "https://custom-api.appwarden.io"),
+      new URL("/v1/appwarden/status", "https://staging-api.appwarden.io"),
+      expect.any(Object),
+    )
+  })
+
+  it("should fall back to default hostname when an invalid appwardenApiHostname is provided", async () => {
+    mockContext.appwardenApiHostname = "https://evil.com"
+
+    await syncEdgeValue(mockContext)
+
+    expect(fetch).toHaveBeenCalledWith(
+      new URL("/v1/appwarden/status", "https://staging-api.appwarden.io"),
       expect.any(Object),
     )
   })

@@ -1,5 +1,6 @@
 export {
   createAppwardenMiddleware,
+  getAppwardenConfiguration,
   type AstroAppwardenConfig,
   type AstroCloudflareConfig,
   type AstroCloudflareConfigInput,

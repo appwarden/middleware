@@ -1,5 +1,6 @@
 export {
   createAppwardenMiddleware,
+  getAppwardenConfiguration,
   type TanStackStartCloudflareConfig,
   type TanStackStartCloudflareConfigInput,
   type TanStackStartConfigFn,

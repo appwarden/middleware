@@ -22,6 +22,7 @@ export default defineConfig({
       ...defaultExclude,
       "./build/**",
       "src/test/vercel-integration.test.ts",
+      "scripts/generate-appwarden-config.test.ts",
       // Exclude Playwright E2E tests (run via `pnpm test:e2e`, not Vitest)
       "tests/**/*.e2e.test.ts",
     ],

@@ -19,8 +19,20 @@ import {
   sanitizeConfigErrors,
 } from "../utils"
 import { applyContentSecurityPolicyToResponse } from "../utils/apply-content-security-policy-to-response"
+import { parseMergedConfig } from "../utils/get-appwarden-configuration"
 import { getNowMs, logElapsed } from "../utils/get-now"
 import { isResponseLike } from "../utils/is-response-like"
+
+export function getAppwardenConfiguration(
+  generatedConfig: Record<string, unknown>,
+  config: Partial<ReactRouterAppwardenConfigInput>,
+): ReactRouterCloudflareConfig {
+  return parseMergedConfig(
+    generatedConfig,
+    config as Record<string, unknown>,
+    ReactRouterCloudflareConfigSchema.parse,
+  )
+}
 
 const createConfigEvaluationHeartbeatResponse = (
   request: Request,
@@ -68,7 +80,7 @@ const handleReactRouterHeartbeatRequest = (
  */
 export type ReactRouterConfigFn = (
   runtime?: unknown,
-) => ReactRouterAppwardenConfigInput
+) => ReactRouterAppwardenConfigInput | ReactRouterCloudflareConfig
 
 /**
  * React Router middleware function signature.

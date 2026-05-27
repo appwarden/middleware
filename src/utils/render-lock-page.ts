@@ -9,10 +9,15 @@ export interface RenderLockPageContext {
   requestUrl: URL
 }
 
-export const renderLockPage = (context: RenderLockPageContext) =>
-  fetch(new URL(context.lockPageSlug, context.requestUrl.origin), {
+export const renderLockPage = async (context: RenderLockPageContext) => {
+  const url = new URL(context.lockPageSlug, context.requestUrl.origin)
+  if (url.origin !== context.requestUrl.origin) {
+    throw new Error("lockPageSlug must be a relative path")
+  }
+  return fetch(url, {
     headers: {
       // no browser caching, otherwise we need to hard refresh to disable lock screen
       "Cache-Control": "no-store",
     },
   })
+}
