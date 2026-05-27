@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { ZodError } from "zod"
 import { MiddlewareContext } from "../../types"
 import { getErrors } from "../errors"
+import { printMessage } from "../print-message"
 import { insertErrorLogs } from "./insert-errors-logs"
 
 // Mock dependencies
@@ -29,6 +30,7 @@ describe("insertErrorLogs", () => {
   afterEach(() => {
     consoleLogSpy.mockRestore()
     global.fetch = originalFetch
+    vi.mocked(printMessage).mockImplementation((msg) => `[MOCK] ${msg}`)
   })
 
   it("should insert error logs into HTML response", async () => {
@@ -112,5 +114,66 @@ describe("insertErrorLogs", () => {
     )
     expect(mockAppend.mock.calls[0][0]).toContain("[MOCK] Error 1")
     expect(mockAppend.mock.calls[0][0]).toContain("[MOCK] Error 2")
+  })
+
+  it("should escape <script>, backticks, and ${} in error messages injected into HTML", async () => {
+    // Use the real printMessage so escaping is applied
+    const { printMessage: realPrintMessage } =
+      await vi.importActual<typeof import("../print-message")>(
+        "../print-message",
+      )
+    vi.mocked(printMessage).mockImplementation((msg) =>
+      realPrintMessage(msg as string),
+    )
+
+    const maliciousErrors = [
+      `</script><script>alert('xss')</script>`,
+      `\${alert("xss")}`,
+      `test \`backtick\` message`,
+    ]
+    vi.mocked(getErrors).mockReturnValue(maliciousErrors)
+
+    const mockResponse = new Response("<html><body>Test</body></html>")
+    global.fetch = vi.fn().mockResolvedValue(mockResponse)
+
+    const mockAppend = vi.fn()
+    const mockOn = vi.fn().mockReturnThis()
+    const mockTransform = vi.fn().mockReturnValue(new Response("transformed"))
+
+    class MockHTMLRewriter {
+      on = mockOn
+      transform = mockTransform
+    }
+
+    // @ts-ignore - mocking HTMLRewriter
+    global.HTMLRewriter = MockHTMLRewriter
+
+    const mockElement = {
+      append: mockAppend,
+    }
+
+    const mockContext = {
+      request: new Request("https://example.com"),
+    } as MiddlewareContext
+
+    const mockZodError = new ZodError([])
+    await insertErrorLogs(mockContext, mockZodError)
+
+    const elementHandler = mockOn.mock.calls[0][1]
+    elementHandler.element(mockElement)
+
+    const appendedHtml = mockAppend.mock.calls[0][0] as string
+
+    // </script> must be escaped so it does not close the injected script tag
+    expect(appendedHtml).not.toContain("</script><script>")
+    expect(appendedHtml).toContain("<\\/script>")
+
+    // Template literal interpolation must be escaped
+    expect(appendedHtml).not.toContain('${alert("xss")}')
+    expect(appendedHtml).toContain("\\${alert")
+
+    // Backticks must be escaped so they do not break the template literal
+    expect(appendedHtml).not.toContain("`backtick`")
+    expect(appendedHtml).toContain("\\`backtick\\`")
   })
 })

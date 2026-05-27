@@ -1,4 +1,18 @@
 /**
+ * Validates that a lock page slug is safe (no protocol-relative or absolute URLs).
+ *
+ * @param lockPageSlug - The slug to validate
+ * @returns True if the slug is safe
+ */
+export function isValidLockPageSlug(lockPageSlug: string): boolean {
+  return (
+    !lockPageSlug.includes("://") &&
+    !lockPageSlug.startsWith("//") &&
+    !lockPageSlug.includes("\\")
+  )
+}
+
+/**
  * Normalizes a lock page slug to ensure it starts with a forward slash.
  *
  * @param lockPageSlug - The slug/path of the lock page (e.g., "locked" or "/locked")
@@ -12,6 +26,11 @@
  * ```
  */
 export function normalizeLockPageSlug(lockPageSlug: string): string {
+  if (!isValidLockPageSlug(lockPageSlug)) {
+    throw new Error(
+      `Invalid lockPageSlug: "${lockPageSlug}". Absolute or protocol-relative URLs are not allowed.`,
+    )
+  }
   return lockPageSlug.startsWith("/") ? lockPageSlug : `/${lockPageSlug}`
 }
 

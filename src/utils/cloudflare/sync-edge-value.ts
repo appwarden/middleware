@@ -1,5 +1,9 @@
 import { APPWARDEN_MIDDLEWARE_USER_AGENT } from "../../constants"
-import { LockValue, LockValueType } from "../../schemas"
+import {
+  AppwardenApiHostnameSchema,
+  LockValue,
+  LockValueType,
+} from "../../schemas"
 import { CloudflareProviderContext } from "../../types/cloudflare"
 import { printMessage } from "../print-message"
 
@@ -11,11 +15,22 @@ class APIError extends Error {
 }
 
 const DEFAULT_API_HOSTNAME = "https://api.appwarden.io"
+const API_TIMEOUT_MS = 10_000
+
+function resolveApiHostname(hostname: string | undefined): string {
+  if (!hostname) return DEFAULT_API_HOSTNAME
+  const parsed = AppwardenApiHostnameSchema.safeParse(hostname)
+  if (!parsed.success) return DEFAULT_API_HOSTNAME
+  return parsed.data
+}
 
 export const syncEdgeValue = async (context: CloudflareProviderContext) => {
-  // Use runtime-configured hostname if provided, otherwise fall back to default
-  const apiHostname = context.appwardenApiHostname ?? DEFAULT_API_HOSTNAME
+  // Use runtime-configured hostname if provided and valid, otherwise fall back to default
+  const apiHostname = resolveApiHostname(context.appwardenApiHostname)
   context.debug(`GET ${apiHostname}`)
+
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), API_TIMEOUT_MS)
 
   try {
     // @ts-expect-error API_PATHNAME is a build-time config variable
@@ -31,6 +46,7 @@ export const syncEdgeValue = async (context: CloudflareProviderContext) => {
         fqdn: context.requestUrl.hostname,
         appwardenApiToken: context.appwardenApiToken,
       }),
+      signal: controller.signal,
     })
 
     // If the check endpoint returns 403, log a domain verification message
@@ -85,5 +101,7 @@ export const syncEdgeValue = async (context: CloudflareProviderContext) => {
             : message,
       ),
     )
+  } finally {
+    clearTimeout(timeout)
   }
 }

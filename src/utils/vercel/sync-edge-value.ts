@@ -1,4 +1,5 @@
 import { APPWARDEN_MIDDLEWARE_USER_AGENT } from "../../constants"
+import { AppwardenApiHostnameSchema } from "../../schemas"
 import { VercelProviderContext } from "../../types"
 import { printMessage } from "../print-message"
 
@@ -7,6 +8,21 @@ class APIError extends Error {
     super(message)
     this.name = "APIError"
   }
+}
+
+const API_TIMEOUT_MS = 10_000
+
+function resolveApiHostname(hostname: string | undefined): string {
+  if (!hostname) {
+    // @ts-expect-error config variables
+    return API_HOSTNAME
+  }
+  const parsed = AppwardenApiHostnameSchema.safeParse(hostname)
+  if (!parsed.success) {
+    // @ts-expect-error config variables
+    return API_HOSTNAME
+  }
+  return parsed.data
 }
 
 export const syncEdgeValue = async (
@@ -23,10 +39,11 @@ export const syncEdgeValue = async (
   // we use this log to search vercel logs during testing (see packages/appwarden-vercel/edge-cache-testing-results.md)
   context.debug("syncing with api")
 
-  try {
-    // @ts-expect-error config variables
-    const apiHostname = context.appwardenApiHostname ?? API_HOSTNAME
+  const apiHostname = resolveApiHostname(context.appwardenApiHostname)
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), API_TIMEOUT_MS)
 
+  try {
     // @ts-expect-error config variables
     const response = await fetch(new URL(API_PATHNAME, apiHostname), {
       method: "POST",
@@ -41,6 +58,7 @@ export const syncEdgeValue = async (
         vercelApiToken: context.vercelApiToken ?? "",
         appwardenApiToken: context.appwardenApiToken,
       }),
+      signal: controller.signal,
     })
 
     // If the check endpoint returns 403, log a domain verification message
@@ -74,5 +92,7 @@ export const syncEdgeValue = async (
             : message,
       ),
     )
+  } finally {
+    clearTimeout(timeout)
   }
 }

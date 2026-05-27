@@ -23,6 +23,9 @@
   ],
   "main": "./index.js",
   "types": "./index.d.ts",
+  "bin": {
+    "appwarden-link": "scripts/appwarden-link.cjs"
+  },
   "exports": {
     ".": {
       "types": "./index.d.ts",
@@ -79,6 +82,7 @@
   "dependencies": {
     "@upstash/redis": "^1.38.0",
     "@vercel/edge-config": "^1.4.3",
+    "acorn": "^8.16.0",
     "zod": "^3.25.76"
   },
   "peerDependencies": {
@@ -112,7 +116,7 @@
   "devDependencies": {
     "@amanda-mitchell/semantic-release-npm-multiple": "^3.17.0",
     "@astrojs/cloudflare": "^13.6.0",
-    "@cloudflare/vitest-pool-workers": "^0.16.4",
+    "@cloudflare/vitest-pool-workers": "^0.16.10",
     "@commitlint/cli": "^21.0.1",
     "@commitlint/config-conventional": "^21.0.1",
     "@cyclonedx/cdxgen": "^12.2.0",
@@ -123,6 +127,7 @@
     "@semantic-release/git": "^10.0.1",
     "@semantic-release/github": "^12.0.8",
     "@semantic-release/npm": "^13.1.5",
+    "@tanstack/start": "^1.120.20",
     "@types/node": "^25.9.1",
     "@vercel/functions": "^3.6.1",
     "@vitest/coverage-istanbul": "^4.1.6",
@@ -139,8 +144,8 @@
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
     "vite-tsconfig-paths": "^6.1.1",
-    "vitest": "^4.1.6",
-    "wrangler": "^4.84.1"
+    "vitest": "^4.1.7",
+    "wrangler": "^4.95.0"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,json,md,yml,yaml}": [

@@ -19,8 +19,20 @@ import {
   sanitizeConfigErrors,
 } from "../utils"
 import { applyContentSecurityPolicyToResponse } from "../utils/apply-content-security-policy-to-response"
+import { parseMergedConfig } from "../utils/get-appwarden-configuration"
 import { getNowMs, logElapsed } from "../utils/get-now"
 import { isResponseLike } from "../utils/is-response-like"
+
+export function getAppwardenConfiguration(
+  generatedConfig: Record<string, unknown>,
+  config: Partial<TanStackStartCloudflareConfigInput>,
+): TanStackStartCloudflareConfig {
+  return parseMergedConfig(
+    generatedConfig,
+    config as Record<string, unknown>,
+    TanStackStartCloudflareConfigSchema.parse,
+  )
+}
 
 const createTanStackHeartbeatResponse = (
   request: Request,
@@ -64,7 +76,9 @@ export type {
  * This allows dynamic configuration based on environment variables from cloudflare:workers.
  * Accepts pre-transformation input types (e.g., string | boolean for debug, string | object for CSP directives).
  */
-export type TanStackStartConfigFn = () => TanStackStartCloudflareConfigInput
+export type TanStackStartConfigFn = () =>
+  | TanStackStartCloudflareConfigInput
+  | TanStackStartCloudflareConfig
 
 /**
  * The result returned by the `next()` function in TanStack Start request middleware.

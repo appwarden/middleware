@@ -76,4 +76,42 @@ describe("renderLockPage", () => {
     // Check that the result is the response from fetch
     expect(result).toBe(mockResponse)
   })
+
+  it("should reject absolute URLs to prevent SSRF", async () => {
+    const mockContext: RenderLockPageContext = {
+      requestUrl: new URL("https://example.com/some-path"),
+      lockPageSlug: "https://evil.com",
+    }
+
+    await expect(renderLockPage(mockContext)).rejects.toThrow(
+      "lockPageSlug must be a relative path",
+    )
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
+  it("should reject protocol-relative URLs to prevent SSRF", async () => {
+    const mockContext: RenderLockPageContext = {
+      requestUrl: new URL("https://example.com/some-path"),
+      lockPageSlug: "//evil.com",
+    }
+
+    await expect(renderLockPage(mockContext)).rejects.toThrow(
+      "lockPageSlug must be a relative path",
+    )
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
+  it("should allow relative paths without leading slash", async () => {
+    const mockContext: RenderLockPageContext = {
+      requestUrl: new URL("https://example.com/some-path"),
+      lockPageSlug: "maintenance",
+    }
+
+    await renderLockPage(mockContext)
+
+    expect(fetch).toHaveBeenCalledWith(
+      new URL("/maintenance", "https://example.com"),
+      expect.any(Object),
+    )
+  })
 })

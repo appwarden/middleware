@@ -27,6 +27,23 @@ export const AppwardenApiHostnameSchema = z
     message:
       "`appwardenApiHostname` must use the https:// scheme (e.g. https://api.appwarden.io).",
   })
+  .refine(
+    (value) => {
+      try {
+        const hostname = new URL(value).hostname
+        return (
+          hostname === "api.appwarden.io" ||
+          hostname === "staging-api.appwarden.io"
+        )
+      } catch {
+        return false
+      }
+    },
+    {
+      message:
+        "`appwardenApiHostname` must be https://api.appwarden.io or https://staging-api.appwarden.io.",
+    },
+  )
 
 export const LockValue = z.object({
   isLocked: z.number(),

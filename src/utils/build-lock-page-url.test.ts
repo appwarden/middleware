@@ -2,8 +2,34 @@ import { describe, expect, it } from "vitest"
 import {
   buildLockPageUrl,
   isOnLockPage,
+  isValidLockPageSlug,
   normalizeLockPageSlug,
 } from "./build-lock-page-url"
+
+describe("isValidLockPageSlug", () => {
+  it("should return true for relative paths", () => {
+    expect(isValidLockPageSlug("locked")).toBe(true)
+    expect(isValidLockPageSlug("/locked")).toBe(true)
+    expect(isValidLockPageSlug("/maintenance/page")).toBe(true)
+  })
+
+  it("should return false for protocol-relative URLs", () => {
+    expect(isValidLockPageSlug("//evil.com")).toBe(false)
+    expect(isValidLockPageSlug("//evil.com/path")).toBe(false)
+  })
+
+  it("should return false for absolute URLs", () => {
+    expect(isValidLockPageSlug("https://evil.com")).toBe(false)
+    expect(isValidLockPageSlug("http://evil.com")).toBe(false)
+    expect(isValidLockPageSlug("ftp://evil.com")).toBe(false)
+  })
+
+  it("should return false for backslash characters", () => {
+    expect(isValidLockPageSlug("\\evil.com")).toBe(false)
+    expect(isValidLockPageSlug("/\\evil.com")).toBe(false)
+    expect(isValidLockPageSlug("/locked\\page")).toBe(false)
+  })
+})
 
 describe("normalizeLockPageSlug", () => {
   it("should add leading slash when slug does not start with /", () => {
@@ -20,6 +46,18 @@ describe("normalizeLockPageSlug", () => {
 
   it("should handle nested paths with leading slash", () => {
     expect(normalizeLockPageSlug("/maintenance/page")).toBe("/maintenance/page")
+  })
+
+  it("should throw for protocol-relative URLs", () => {
+    expect(() => normalizeLockPageSlug("//evil.com")).toThrow(
+      "Invalid lockPageSlug",
+    )
+  })
+
+  it("should throw for absolute URLs", () => {
+    expect(() => normalizeLockPageSlug("https://evil.com")).toThrow(
+      "Invalid lockPageSlug",
+    )
   })
 })
 
@@ -87,6 +125,18 @@ describe("buildLockPageUrl", () => {
       )
       expect(url.search).toBe("")
       expect(url.href).toBe("https://example.com/locked")
+    })
+
+    it("should throw for protocol-relative lockPageSlug", () => {
+      expect(() =>
+        buildLockPageUrl("//evil.com", "https://example.com/dashboard"),
+      ).toThrow("Invalid lockPageSlug")
+    })
+
+    it("should throw for absolute lockPageSlug", () => {
+      expect(() =>
+        buildLockPageUrl("https://evil.com", "https://example.com/dashboard"),
+      ).toThrow("Invalid lockPageSlug")
     })
   })
 })
@@ -205,6 +255,18 @@ describe("isOnLockPage", () => {
           "https://example.com/maintenance/page",
         ),
       ).toBe(true)
+    })
+
+    it("should throw for protocol-relative lockPageSlug", () => {
+      expect(() =>
+        isOnLockPage("//evil.com", "https://example.com/maintenance"),
+      ).toThrow("Invalid lockPageSlug")
+    })
+
+    it("should throw for absolute lockPageSlug", () => {
+      expect(() =>
+        isOnLockPage("https://evil.com", "https://example.com/maintenance"),
+      ).toThrow("Invalid lockPageSlug")
     })
   })
 })

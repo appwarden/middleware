@@ -6,7 +6,7 @@ describe("TanStackStartCloudflareConfigSchema", () => {
     const validConfig = {
       lockPageSlug: "/maintenance",
       appwardenApiToken: "token123",
-      appwardenApiHostname: "https://custom.api.com",
+      appwardenApiHostname: "https://api.appwarden.io",
       debug: true,
     }
 
@@ -82,6 +82,10 @@ describe("TanStackStartCloudflareConfigSchema", () => {
     [
       "http://api.appwarden.io",
       "`appwardenApiHostname` must use the https:// scheme",
+    ],
+    [
+      "https://evil.com",
+      "`appwardenApiHostname` must be https://api.appwarden.io or https://staging-api.appwarden.io.",
     ],
   ])("should reject invalid appwardenApiHostname: %s", (hostname, message) => {
     const invalidConfig = {

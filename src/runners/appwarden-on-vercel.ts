@@ -22,8 +22,20 @@ import {
   validateConfig,
 } from "../utils"
 import { makeCSPHeader } from "../utils/cloudflare"
+import { parseMergedConfig } from "../utils/get-appwarden-configuration"
 import { toNextResponse } from "../utils/to-next-response"
 import { getLockValue, syncEdgeValue } from "../utils/vercel"
+
+export function getAppwardenConfiguration(
+  generatedConfig: Record<string, unknown>,
+  config: Partial<VercelAppwardenConfig>,
+): ReturnType<typeof AppwardenConfigSchema.parse> {
+  return parseMergedConfig(
+    generatedConfig,
+    config as Record<string, unknown>,
+    AppwardenConfigSchema.parse,
+  )
+}
 
 const memoryCache = new MemoryCache<string, LockValueType>({ maxSize: 1 })
 

@@ -20,3 +20,7 @@ test-results/
 # SBOM files (generated artifacts)
 sbom.json
 sbom.xml
+
+# Generated website configs
+**/.appwarden/
+**/.astro/integrations/_astrojs_cloudflare/

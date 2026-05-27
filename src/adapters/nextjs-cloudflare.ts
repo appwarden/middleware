@@ -24,8 +24,20 @@ import {
   TEMPORARY_REDIRECT_STATUS,
 } from "../utils"
 import { makeCSPHeader } from "../utils/cloudflare"
+import { parseMergedConfig } from "../utils/get-appwarden-configuration"
 import { getNowMs, logElapsed } from "../utils/get-now"
 import { toNextResponse } from "../utils/to-next-response"
+
+export function getAppwardenConfiguration(
+  generatedConfig: Record<string, unknown>,
+  config: Partial<NextJsCloudflareConfigInput>,
+): NextJsCloudflareConfig {
+  return parseMergedConfig(
+    generatedConfig,
+    config as Record<string, unknown>,
+    NextJsCloudflareConfigSchema.parse,
+  )
+}
 
 /**
  * Cloudflare runtime context provided by @opennextjs/cloudflare.
@@ -103,7 +115,7 @@ export type { NextJsCloudflareConfig, NextJsCloudflareConfigInput }
  */
 export type NextJsCloudflareConfigFn = (
   runtime: NextJsCloudflareRuntime,
-) => NextJsCloudflareConfigInput
+) => NextJsCloudflareConfigInput | NextJsCloudflareConfig
 
 /**
  * Next.js middleware function signature.
