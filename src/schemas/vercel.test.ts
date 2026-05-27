@@ -67,7 +67,7 @@ describe("BaseNextJsConfigSchema", () => {
     const config = {
       cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
       appwardenApiToken: "token123",
-      appwardenApiHostname: "https://api.custom.appwarden.io",
+      appwardenApiHostname: "https://api.appwarden.io",
       lockPageSlug: "maintenance",
     }
 
@@ -89,6 +89,10 @@ describe("BaseNextJsConfigSchema", () => {
     [
       "http://api.appwarden.io",
       "`appwardenApiHostname` must use the https:// scheme",
+    ],
+    [
+      "https://evil.com",
+      "`appwardenApiHostname` must be https://api.appwarden.io or https://staging-api.appwarden.io.",
     ],
   ])("should reject invalid appwardenApiHostname: %s", (hostname, message) => {
     const config = {

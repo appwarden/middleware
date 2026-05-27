@@ -1,0 +1,90 @@
+name: Coverage Badge
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: coverage-badge-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  coverage-badge:
+    name: Generate coverage badge PR
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: true
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v5.0.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6.3.0
+        with:
+          node-version: "lts/*"
+          registry-url: https://registry.npmjs.org
+          cache: pnpm
+
+      - name: Install dependencies
+        run: |
+          npm config set ignore-scripts true
+          npm config set audit true
+          pnpm install --ignore-scripts --frozen-lockfile
+        env:
+          NPM_CONFIG_PROGRESS: "false"
+
+      - name: Run post-install scripts
+        run: |
+          pnpm prepare
+
+      - name: Run code quality checks
+        run: |
+          pnpm check:ci
+          pnpm test:coverage
+          pnpm test:vercel
+
+      - name: Generate coverage badge
+        run: |
+          pnpm coverage:badge
+
+      - name: Create PR for updated README with coverage badge
+        run: |
+          if [[ -n $(git status --porcelain README.md) ]]; then
+            EXISTING_PR=$(gh pr list --base main --label "documentation" --search "update coverage badge" --state open --json number --jq '.[0].number')
+
+            if [[ -n "$EXISTING_PR" ]]; then
+              echo "An open PR (#$EXISTING_PR) already exists for coverage badge update. Skipping PR creation."
+              exit 0
+            fi
+
+            git config --local user.email "github-actions[bot]@users.noreply.github.com"
+            git config --local user.name "github-actions[bot]"
+
+            BRANCH_NAME="update-coverage-badge-$(date +%Y%m%d%H%M%S)"
+            git checkout -b $BRANCH_NAME
+
+            git add README.md
+            git commit -m "docs: update coverage badge [skip ci]"
+
+            gh repo set-default "${{ github.repository }}"
+            git push origin "$BRANCH_NAME"
+
+            gh pr create \
+              --base main \
+              --head "$BRANCH_NAME" \
+              --title "docs: update coverage badge" \
+              --body "Automatically generated PR to update the coverage badge in README.md" \
+              --label "documentation"
+          else
+            echo "No changes to README.md, skipping PR creation"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -2,7 +2,11 @@ import { ZodError } from "zod"
 import { HEARTBEAT_SERVICES } from "../constants"
 import { useAppwarden, useContentSecurityPolicy } from "../middlewares"
 import { useFetchOrigin } from "../middlewares/use-fetch-origin"
-import { CloudflareConfigFnType, ConfigFnInputSchema } from "../schemas"
+import {
+  CloudflareConfigFnType,
+  ConfigFnInputSchema,
+  UseAppwardenInputSchema,
+} from "../schemas"
 import { Bindings, MiddlewareContext } from "../types"
 import {
   createHeartbeatConfigError,
@@ -13,6 +17,18 @@ import {
   usePipeline,
 } from "../utils"
 import { insertErrorLogs } from "../utils/cloudflare"
+import { parseMergedConfig } from "../utils/get-appwarden-configuration"
+
+export function getAppwardenConfiguration(
+  generatedConfig: Record<string, unknown>,
+  config: Partial<ReturnType<typeof UseAppwardenInputSchema.parse>>,
+): ReturnType<typeof UseAppwardenInputSchema.parse> {
+  return parseMergedConfig(
+    generatedConfig,
+    config as Record<string, unknown>,
+    UseAppwardenInputSchema.parse,
+  )
+}
 
 export const appwardenOnCloudflare =
   (inputFn: CloudflareConfigFnType): ExportedHandlerFetchHandler<Bindings> =>

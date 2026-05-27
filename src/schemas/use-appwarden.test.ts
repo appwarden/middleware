@@ -48,7 +48,7 @@ describe("UseAppwardenInputSchema", () => {
     const validInput = {
       lockPageSlug: "/maintenance",
       appwardenApiToken: "token123",
-      appwardenApiHostname: "https://api.custom.appwarden.io",
+      appwardenApiHostname: "https://api.appwarden.io",
     }
 
     const result = UseAppwardenInputSchema.safeParse(validInput)
@@ -58,6 +58,33 @@ describe("UseAppwardenInputSchema", () => {
         validInput.appwardenApiHostname,
       )
     }
+  })
+
+  it("should accept staging api hostname", () => {
+    const validInput = {
+      lockPageSlug: "/maintenance",
+      appwardenApiToken: "token123",
+      appwardenApiHostname: "https://staging-api.appwarden.io",
+    }
+
+    const result = UseAppwardenInputSchema.safeParse(validInput)
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.appwardenApiHostname).toBe(
+        validInput.appwardenApiHostname,
+      )
+    }
+  })
+
+  it("should reject an untrusted appwardenApiHostname", () => {
+    const invalidInput = {
+      lockPageSlug: "/maintenance",
+      appwardenApiToken: "token123",
+      appwardenApiHostname: "https://api.custom.appwarden.io",
+    }
+
+    const result = UseAppwardenInputSchema.safeParse(invalidInput)
+    expect(result.success).toBe(false)
   })
 
   it("should default debug to false when not provided", () => {
@@ -193,6 +220,10 @@ describe("UseAppwardenInputSchema", () => {
       "http://api.appwarden.io",
       "`appwardenApiHostname` must use the https:// scheme",
     ],
+    [
+      "https://evil.com",
+      "`appwardenApiHostname` must be https://api.appwarden.io or https://staging-api.appwarden.io.",
+    ],
   ])("should reject invalid appwardenApiHostname: %s", (hostname, message) => {
     const invalidInput = {
       lockPageSlug: "/maintenance",
@@ -210,17 +241,47 @@ describe("UseAppwardenInputSchema", () => {
     }
   })
 
-  it("should reject invalid debug values", () => {
-    // The actual implementation throws an error for invalid debug values
-    // This test is adjusted to match the actual behavior
+  it("should reject invalid lockPageSlug values", () => {
+    const invalidInputs = [
+      { lockPageSlug: "//evil.com" },
+      { lockPageSlug: "https://evil.com" },
+      { lockPageSlug: "http://evil.com" },
+      { lockPageSlug: "ftp://evil.com" },
+    ]
+
+    for (const invalid of invalidInputs) {
+      const input = {
+        debug: true,
+        appwardenApiToken: "token123",
+        ...invalid,
+      }
+      const result = UseAppwardenInputSchema.safeParse(input)
+      expect(result.success).toBe(false)
+      if (!result.success) {
+        const issue = result.error.issues.find((entry) =>
+          entry.path.includes("lockPageSlug"),
+        )
+        expect(issue?.message).toContain("relative path")
+      }
+    }
+  })
+
+  it("should reject invalid multidomainConfig lockPageSlug values", () => {
     const invalidInput = {
-      debug: "not-a-boolean",
-      lockPageSlug: "/maintenance",
+      debug: true,
       appwardenApiToken: "token123",
+      multidomainConfig: {
+        "example.com": { lockPageSlug: "//evil.com" },
+      },
     }
 
-    expect(() => UseAppwardenInputSchema.parse(invalidInput)).toThrow(
-      "Invalid value",
-    )
+    const result = UseAppwardenInputSchema.safeParse(invalidInput)
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      const issue = result.error.issues.find((entry) =>
+        entry.path.includes("lockPageSlug"),
+      )
+      expect(issue?.message).toContain("relative path")
+    }
   })
 })

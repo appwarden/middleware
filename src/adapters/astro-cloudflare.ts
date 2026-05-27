@@ -1,4 +1,4 @@
-import type { MiddlewareHandler } from "astro"
+import type { APIContext } from "astro"
 import { env as cloudflareEnv, waitUntil } from "cloudflare:workers"
 import { HEARTBEAT_SERVICES } from "../constants"
 import { checkLockStatus } from "../core"
@@ -21,8 +21,26 @@ import {
   TEMPORARY_REDIRECT_STATUS,
 } from "../utils"
 import { applyContentSecurityPolicyToResponse } from "../utils/apply-content-security-policy-to-response"
+import { parseMergedConfig } from "../utils/get-appwarden-configuration"
 import { getNowMs, logElapsed } from "../utils/get-now"
 import { isResponseLike } from "../utils/is-response-like"
+
+/**
+ * Build-time helper that merges generated config with call-site overrides.
+ *
+ * Call-site config has highest priority, followed by framework headers,
+ * then remote Appwarden configuration.
+ */
+export function getAppwardenConfiguration(
+  generatedConfig: Record<string, unknown>,
+  config: Partial<AstroCloudflareConfigInput>,
+): AstroCloudflareConfig {
+  return parseMergedConfig(
+    generatedConfig,
+    config as Record<string, unknown>,
+    AstroCloudflareConfigSchema.parse,
+  )
+}
 
 const createAstroHeartbeatResponse = (
   request: Request,
@@ -113,7 +131,7 @@ export type { AstroCloudflareConfig, AstroCloudflareConfigInput }
  */
 export type AstroConfigFn = (
   runtime: AstroCloudflareRuntime,
-) => AstroCloudflareConfigInput
+) => AstroCloudflareConfigInput | AstroCloudflareConfig
 
 const getAstroCloudflareRuntime = (
   locals: LocalsWithRuntime,
@@ -152,10 +170,8 @@ const getAstroCloudflareRuntime = (
  * @param configFn - A function that receives the Cloudflare runtime and returns the config
  * @returns An Astro middleware function
  */
-export function createAppwardenMiddleware(
-  configFn: AstroConfigFn,
-): MiddlewareHandler {
-  return async (context, next) => {
+export function createAppwardenMiddleware(configFn: AstroConfigFn) {
+  return async (context: APIContext, next: () => Promise<Response>) => {
     const startTime = getNowMs()
     const { request } = context
     let config: AstroCloudflareConfig

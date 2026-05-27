@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import {
   createAppwardenMiddleware,
+  getAppwardenConfiguration,
   type VercelMiddlewareFunction,
 } from "./vercel"
 
@@ -44,6 +45,34 @@ describe("vercel bundle", () => {
         return new Response("OK")
       }
       expect(typeof middlewareFn).toBe("function")
+    })
+  })
+
+  describe("getAppwardenConfiguration export", () => {
+    it("should export getAppwardenConfiguration as a function", () => {
+      expect(typeof getAppwardenConfiguration).toBe("function")
+    })
+
+    it("should return a valid config when call-site config is provided", () => {
+      const config = getAppwardenConfiguration(
+        {},
+        {
+          lockPageSlug: "/maintenance",
+          appwardenApiToken: "test-token",
+          cacheUrl: validUpstashUrl,
+        },
+      )
+
+      expect(config.lockPageSlug).toBe("/maintenance")
+      expect(config.appwardenApiToken).toBe("test-token")
+    })
+
+    it("should throw when required fields are missing", () => {
+      expect(() =>
+        getAppwardenConfiguration({}, {
+          lockPageSlug: "/maintenance",
+        } as any),
+      ).toThrow()
     })
   })
 })

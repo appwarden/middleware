@@ -1,5 +1,6 @@
 export {
   createAppwardenMiddleware,
+  getAppwardenConfiguration,
   type ReactRouterConfigFn,
   type ReactRouterMiddlewareArgs,
   type ReactRouterMiddlewareFunction,

@@ -1,0 +1,222 @@
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.7 [39m[90m/Users/michael/Code/appwarden/appwarden-middleware[39m
+
+Using secrets defined in .env
+Using secrets defined in .env
+Using secrets defined in .env
+Using secrets defined in .env
+Using secrets defined in .env
+Using secrets defined in .env
+Using secrets defined in .env
+Using secrets defined in .env
+Using secrets defined in .env
+*** Received signal #11: Segmentation fault: 11
+Using secrets defined in .env
+ [32m✓[39m src/utils/middleware.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 33[2mms[22m[39m
+Using secrets defined in .env
+ [32m✓[39m src/utils/cloudflare/insert-errors-logs.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+Using secrets defined in .env
+ [32m✓[39m src/types/heartbeat.test.ts [2m([22m[2m28 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+Using secrets defined in .env
+ [32m✓[39m src/runners/appwarden-on-vercel.test.ts [2m([22m[2m33 tests[22m[2m)[22m[32m 131[2mms[22m[39m
+Using secrets defined in .env
+ [32m✓[39m src/utils/debug.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+Using secrets defined in .env
+[90mstdout[2m | src/test/integration.test.ts[2m > [22m[2mIntegration Tests - Request/Response Flows[2m > [22m[2mFull middleware pipeline[2m > [22m[2mshould process request through complete middleware stack
+[22m[39m[@appwarden/middleware] Applying CSP in report-only mode
+
+[90mstdout[2m | src/middlewares/use-content-security-policy.test.ts[2m > [22m[2muse-content-security-policy[2m > [22m[2mshould attach a content-security-policy header
+[22m[39m[@appwarden/middleware] Applying CSP in report-only mode
+
+[90mstdout[2m | src/middlewares/use-content-security-policy.test.ts[2m > [22m[2muse-content-security-policy[2m > [22m[2mshould attach a content-security-policy header
+[22m[39m[@appwarden/middleware] Applying CSP in report-only mode
+
+[90mstdout[2m | src/middlewares/use-content-security-policy.test.ts[2m > [22m[2muse-content-security-policy[2m > [22m[2mshould attach a content-security-policy header
+[22m[39m[@appwarden/middleware] Applying CSP in report-only mode
+
+[90mstdout[2m | src/test/integration.test.ts[2m > [22m[2mIntegration Tests - Request/Response Flows[2m > [22m[2mMiddleware pipeline execution[2m > [22m[2mshould execute middlewares in correct order
+[22m[39m[@appwarden/middleware] Applying CSP in report-only mode
+
+[90mstdout[2m | src/test/integration.test.ts[2m > [22m[2mIntegration Tests - Request/Response Flows[2m > [22m[2mMiddleware pipeline execution[2m > [22m[2mshould pass context correctly through middleware chain
+[22m[39m[@appwarden/middleware] Applying CSP in report-only mode
+
+[90mstdout[2m | src/adapters/astro-cloudflare.test.ts[2m > [22m[2mcreateAppwardenMiddleware (Astro)[2m > [22m[2mshould pass correct config to checkLockStatus
+[22m[39m[@appwarden/middleware] Appwarden middleware invoked for /page isHTML: true
+
+[90mstdout[2m | src/adapters/astro-cloudflare.test.ts[2m > [22m[2mcreateAppwardenMiddleware (Astro)[2m > [22m[2mshould pass correct config to checkLockStatus
+[22m[39m[@appwarden/middleware] Website is unlocked
+
+[90mstdout[2m | src/test/integration.test.ts[2m > [22m[2mIntegration Tests - Request/Response Flows[2m > [22m[2mCSP Mode Variations[2m > [22m[2mshould inject nonces into style tags
+[22m[39m[@appwarden/middleware] Applying CSP in report-only mode
+
+[90mstdout[2m | src/adapters/astro-cloudflare.test.ts[2m > [22m[2mcreateAppwardenMiddleware (Astro)[2m > [22m[2mshould pass correct config to checkLockStatus
+[22m[39m[@appwarden/middleware] Middleware executed in 1ms
+
+ [32m✓[39m src/middlewares/use-content-security-policy.test.ts [2m([22m[2m26 tests[22m[2m)[22m[32m 38[2mms[22m[39m
+Using secrets defined in .env
+[90mstdout[2m | src/test/integration.test.ts[2m > [22m[2mIntegration Tests - Request/Response Flows[2m > [22m[2mAPI Response Variations[2m > [22m[2mshould handle API errors gracefully
+[22m[39m[@appwarden/middleware] Applying CSP in report-only mode
+
+ [32m✓[39m src/adapters/astro-cloudflare.test.ts [2m([22m[2m22 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+Using secrets defined in .env
+[90mstdout[2m | src/test/integration.test.ts[2m > [22m[2mIntegration Tests - Request/Response Flows[2m > [22m[2mAPI Response Variations[2m > [22m[2mshould handle API timeout gracefully
+[22m[39m[@appwarden/middleware] Applying CSP in report-only mode
+
+[90mstdout[2m | src/test/integration.test.ts[2m > [22m[2mIntegration Tests - Request/Response Flows[2m > [22m[2mEdge Cases[2m > [22m[2mshould generate unique nonces for multiple requests
+[22m[39m[@appwarden/middleware] Applying CSP in report-only mode
+
+[90mstdout[2m | src/test/integration.test.ts[2m > [22m[2mIntegration Tests - Request/Response Flows[2m > [22m[2mEdge Cases[2m > [22m[2mshould generate unique nonces for multiple requests
+[22m[39m[@appwarden/middleware] Applying CSP in report-only mode
+
+ [32m✓[39m src/test/integration.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 84[2mms[22m[39m
+Using secrets defined in .env
+[90mstdout[2m | src/adapters/react-router-cloudflare.test.ts[2m > [22m[2mcreateAppwardenMiddleware[2m > [22m[2mshould pass correct config to checkLockStatus
+[22m[39m[@appwarden/middleware] Appwarden middleware invoked for /page isHTML: true
+
+[90mstdout[2m | src/adapters/react-router-cloudflare.test.ts[2m > [22m[2mcreateAppwardenMiddleware[2m > [22m[2mshould pass correct config to checkLockStatus
+[22m[39m[@appwarden/middleware] Website is unlocked
+
+[90mstdout[2m | src/adapters/react-router-cloudflare.test.ts[2m > [22m[2mcreateAppwardenMiddleware[2m > [22m[2mshould pass correct config to checkLockStatus
+[22m[39m[@appwarden/middleware] Middleware executed in 1ms
+
+ [32m✓[39m src/adapters/react-router-cloudflare.test.ts [2m([22m[2m21 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+Using secrets defined in .env
+ [32m✓[39m src/runners/appwarden-on-cloudflare.test.ts [2m([22m[2m24 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+Using secrets defined in .env
+ [32m✓[39m src/middlewares/use-appwarden.test.ts [2m([22m[2m19 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+[90mstdout[2m | src/adapters/tanstack-start-cloudflare.test.ts[2m > [22m[2mcreateAppwardenMiddleware (TanStack Start)[2m > [22m[2mshould pass correct config to checkLockStatus
+[22m[39m[@appwarden/middleware] Appwarden middleware invoked for /page isHTML: true
+
+[90mstdout[2m | src/adapters/tanstack-start-cloudflare.test.ts[2m > [22m[2mcreateAppwardenMiddleware (TanStack Start)[2m > [22m[2mshould pass correct config to checkLockStatus
+[22m[39m[@appwarden/middleware] Website is unlocked
+
+[90mstdout[2m | src/adapters/tanstack-start-cloudflare.test.ts[2m > [22m[2mcreateAppwardenMiddleware (TanStack Start)[2m > [22m[2mshould pass correct config to checkLockStatus
+[22m[39m[@appwarden/middleware] Middleware executed in 0ms
+
+Using secrets defined in .env
+ [32m✓[39m src/adapters/tanstack-start-cloudflare.test.ts [2m([22m[2m23 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+Using secrets defined in .env
+ [32m✓[39m src/utils/cloudflare/sync-edge-value.test.ts [2m([22m[2m19 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+Using secrets defined in .env
+ [32m✓[39m src/utils/vercel/get-lock-value.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+Using secrets defined in .env
+[90mstdout[2m | src/adapters/nextjs-cloudflare.test.ts[2m > [22m[2mcreateAppwardenMiddleware (OpenNext Cloudflare)[2m > [22m[2mshould pass correct config to checkLockStatus
+[22m[39m[@appwarden/middleware] Appwarden middleware invoked for /page isHTML: true
+
+[90mstdout[2m | src/adapters/nextjs-cloudflare.test.ts[2m > [22m[2mcreateAppwardenMiddleware (OpenNext Cloudflare)[2m > [22m[2mshould pass correct config to checkLockStatus
+[22m[39m[@appwarden/middleware] Site is unlocked
+[@appwarden/middleware] Middleware executed in 1ms
+
+ [32m✓[39m src/adapters/nextjs-cloudflare.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+Using secrets defined in .env
+ [32m✓[39m src/core/check-lock-status.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+Using secrets defined in .env
+ [32m✓[39m src/utils/heartbeat.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+Using secrets defined in .env
+ [32m✓[39m src/schemas/vercel.test.ts [2m([22m[2m29 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+Using secrets defined in .env
+ [32m✓[39m src/utils/cloudflare/make-csp-header.test.ts [2m([22m[2m27 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+Using secrets defined in .env
+ [32m✓[39m src/schemas/use-content-security-policy.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+Using secrets defined in .env
+ [32m✓[39m src/schemas/use-appwarden.test.ts [2m([22m[2m19 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+Using secrets defined in .env
+ [32m✓[39m src/schemas/helpers.test.ts [2m([22m[2m23 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+Using secrets defined in .env
+ [32m✓[39m src/utils/build-lock-page-url.test.ts [2m([22m[2m40 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+Using secrets defined in .env
+ [32m✓[39m src/utils/is-cache-url.test.ts [2m([22m[2m47 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+Using secrets defined in .env
+ [32m✓[39m src/test/cloudflare-integration.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+Using secrets defined in .env
+ [32m✓[39m src/schemas/tanstack-start-cloudflare.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+Using secrets defined in .env
+ [32m✓[39m src/schemas/nextjs-cloudflare.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/bundles/cloudflare.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+Using secrets defined in .env
+Using secrets defined in .env
+ [32m✓[39m src/utils/render-lock-page.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+Using secrets defined in .env
+ [32m✓[39m src/test/mocks/cloudflare-cache-mock.test.ts [2m([22m[2m26 tests[22m[2m)[22m[33m 4417[2mms[22m[39m
+       [33m[2m✓[22m[39m should respect max-age from Cache-Control header [33m 1102[2mms[22m[39m
+       [33m[2m✓[22m[39m should parse max-age correctly from complex Cache-Control headers [33m 2102[2mms[22m[39m
+       [33m[2m✓[22m[39m should handle TTL independently in different named caches [33m 1102[2mms[22m[39m
+Using secrets defined in .env
+ [32m✓[39m src/utils/request-checks.test.ts [2m([22m[2m48 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+Using secrets defined in .env
+ [32m✓[39m src/utils/cloudflare/get-lock-value.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+Using secrets defined in .env
+ [32m✓[39m src/utils/cloudflare/csp-keywords.test.ts [2m([22m[2m83 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+Using secrets defined in .env
+ [32m✓[39m src/utils/vercel/delete-edge-value.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+Using secrets defined in .env
+ [32m✓[39m src/utils/vercel/sync-edge-value.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+Using secrets defined in .env
+ [32m✓[39m src/middlewares/use-fetch-origin.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+Using secrets defined in .env
+ [32m✓[39m src/index.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+Using secrets defined in .env
+ [32m✓[39m src/utils/cache-poisoning.security.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+Using secrets defined in .env
+ [32m✓[39m src/bundles/react-router-cloudflare.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+Using secrets defined in .env
+ [32m✓[39m src/bundles/astro-cloudflare.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+Using secrets defined in .env
+ [32m✓[39m src/bundles/tanstack-start-cloudflare.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+Using secrets defined in .env
+ [32m✓[39m src/schemas/astro-cloudflare.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+Using secrets defined in .env
+ [32m✓[39m src/schemas/react-router-cloudflare.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+Using secrets defined in .env
+ [32m✓[39m src/utils/handle-vercel-request.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+Using secrets defined in .env
+ [32m✓[39m src/utils/errors.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+Using secrets defined in .env
+ [32m✓[39m src/utils/memory-cache.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m src/bundles/vercel.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m src/utils/cloudflare/cloudflare-cache.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m src/utils/cloudflare/delete-edge-value.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m src/utils/print-message.test.ts [2m([22m[2m20 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m src/utils/get-appwarden-configuration.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m src/utils/is-response-like.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m src/schemas/cloudflare.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m src/bundles/nextjs-cloudflare.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Unhandled Errors [49m[22m[31m⎯⎯⎯⎯⎯⎯[39m
+[31m[1m
+Vitest caught 1 unhandled error during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Unhandled Error [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+[31m[1mError[22m: [vitest-pool]: Worker cloudflare-pool emitted error.[39m
+[90m [2m❯[22m EventEmitter.<anonymous> node_modules/.pnpm/vitest@4.1.7_@edge-runtime+vm@3.2.0_@types+node@25.6.0_@vitest+coverage-istanbul@4.1.4__e1e55febe3f4472f815317aca98032b0/node_modules/vitest/dist/chunks/cli-api.C6CiCDM3.js:[2m3446:22[22m[39m
+[90m [2m❯[22m EventEmitter.emit node:events:[2m508:28[22m[39m
+[90m [2m❯[22m EventEmitter.emit node:domain:[2m489:12[22m[39m
+[90m [2m❯[22m _WebSocket.emitUnexpectedExit node_modules/.pnpm/vitest@4.1.7_@edge-runtime+vm@3.2.0_@types+node@25.6.0_@vitest+coverage-istanbul@4.1.4__e1e55febe3f4472f815317aca98032b0/node_modules/vitest/dist/chunks/cli-api.C6CiCDM3.js:[2m3013:22[22m[39m
+[90m [2m❯[22m _WebSocket.[nodejs.internal.kHybridDispatch] node:internal/event_target:[2m845:20[22m[39m
+[90m [2m❯[22m _WebSocket.dispatchEvent node:internal/event_target:[2m778:26[22m[39m
+[90m [2m❯[22m _WebSocket.dispatchEvent node_modules/.pnpm/miniflare@4.20260526.0/node_modules/miniflare/dist/src/index.js:[2m58819:18[22m[39m
+[90m [2m❯[22m _WebSocket.#queuingDispatchToPair node_modules/.pnpm/miniflare@4.20260526.0/node_modules/miniflare/dist/src/index.js:[2m59110:12[22m[39m
+[90m [2m❯[22m _WebSocket.[kClose] node_modules/.pnpm/miniflare@4.20260526.0/node_modules/miniflare/dist/src/index.js:[2m59168:37[22m[39m
+[90m [2m❯[22m WebSocket.<anonymous> node_modules/.pnpm/miniflare@4.20260526.0/node_modules/miniflare/dist/src/index.js:[2m59204:19[22m[39m
+
+[31m[1mCaused by: Error[22m: Worker exited unexpectedly[39m
+[90m [2m❯[22m _WebSocket.emitUnexpectedExit node_modules/.pnpm/vitest@4.1.7_@edge-runtime+vm@3.2.0_@types+node@25.6.0_@vitest+coverage-istanbul@4.1.4__e1e55febe3f4472f815317aca98032b0/node_modules/vitest/dist/chunks/cli-api.C6CiCDM3.js:[2m3012:33[22m[39m
+[90m [2m❯[22m _WebSocket.[nodejs.internal.kHybridDispatch] node:internal/event_target:[2m845:20[22m[39m
+[90m [2m❯[22m _WebSocket.dispatchEvent node:internal/event_target:[2m778:26[22m[39m
+[90m [2m❯[22m _WebSocket.dispatchEvent node_modules/.pnpm/miniflare@4.20260526.0/node_modules/miniflare/dist/src/index.js:[2m58819:18[22m[39m
+[90m [2m❯[22m _WebSocket.#queuingDispatchToPair node_modules/.pnpm/miniflare@4.20260526.0/node_modules/miniflare/dist/src/index.js:[2m59110:12[22m[39m
+[90m [2m❯[22m _WebSocket.[kClose] node_modules/.pnpm/miniflare@4.20260526.0/node_modules/miniflare/dist/src/index.js:[2m59168:37[22m[39m
+[90m [2m❯[22m WebSocket.<anonymous> node_modules/.pnpm/miniflare@4.20260526.0/node_modules/miniflare/dist/src/index.js:[2m59204:19[22m[39m
+[90m [2m❯[22m WebSocket.emit node:events:[2m508:28[22m[39m
+[90m [2m❯[22m WebSocket.emit node:domain:[2m489:12[22m[39m
+[90m [2m❯[22m WebSocket.emitClose node_modules/.pnpm/ws@8.20.1/node_modules/ws/lib/websocket.js:[2m273:10[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[39m
+
+
+[2m Test Files [22m [1m[32m54 passed[39m[22m[90m (55)[39m
+[2m      Tests [22m [1m[32m896 passed[39m[22m[90m (896)[39m
+[2m     Errors [22m [1m[31m1 error[39m[22m
+[2m   Start at [22m 15:25:30
+[2m   Duration [22m 8.97s[2m (transform 2.77s, setup 2.20s, import 25.14s, tests 5.09s, environment 2ms)[22m
+

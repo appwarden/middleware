@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import {
   createAppwardenMiddleware,
+  getAppwardenConfiguration,
   type AstroAppwardenConfig,
   type AstroCloudflareConfig,
   type AstroCloudflareConfigInput,
@@ -74,6 +75,35 @@ describe("astro-cloudflare bundle", () => {
         appwardenApiToken: "test-token",
       })
       expect(typeof configFn).toBe("function")
+    })
+  })
+
+  describe("getAppwardenConfiguration export", () => {
+    it("should export getAppwardenConfiguration as a function", () => {
+      expect(typeof getAppwardenConfiguration).toBe("function")
+    })
+
+    it("should return a valid config when call-site config is provided", () => {
+      const config = getAppwardenConfiguration(
+        {},
+        {
+          lockPageSlug: "/maintenance",
+          appwardenApiToken: "test-token",
+          debug: true,
+        },
+      )
+
+      expect(config.lockPageSlug).toBe("/maintenance")
+      expect(config.appwardenApiToken).toBe("test-token")
+      expect(config.debug).toBe(true)
+    })
+
+    it("should throw when required fields are missing", () => {
+      expect(() =>
+        getAppwardenConfiguration({}, {
+          lockPageSlug: "/maintenance",
+        } as any),
+      ).toThrow()
     })
   })
 })

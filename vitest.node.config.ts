@@ -14,8 +14,11 @@ export default defineConfig({
     globals: true,
     environment: "node",
     setupFiles: ["./vitest.setup.ts"],
-    // Only run Vercel integration tests with this config
-    include: ["src/test/vercel-integration.test.ts"],
+    // Run Vercel integration tests and postbuild script tests
+    include: [
+      "src/test/vercel-integration.test.ts",
+      "scripts/appwarden-link.test.ts",
+    ],
     exclude: [...defaultExclude, "./build/**"],
     coverage: {
       provider: "v8",

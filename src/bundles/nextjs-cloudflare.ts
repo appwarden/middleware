@@ -1,5 +1,6 @@
 export {
   createAppwardenMiddleware,
+  getAppwardenConfiguration,
   type NextJsCloudflareAppwardenConfig,
   type NextJsCloudflareConfig,
   type NextJsCloudflareConfigFn,

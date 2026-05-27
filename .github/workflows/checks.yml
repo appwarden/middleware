@@ -18,10 +18,6 @@ jobs:
     name: Run checks and tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    # Job-level permissions following the principle of least privilege
-    permissions:
-      contents: write # Needed to push coverage badge updates
-      pull-requests: write # Needed to create pull requests for coverage badge
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6.0.1
@@ -65,50 +61,3 @@ jobs:
         run: |
           # Audit dependencies for security vulnerabilities
           pnpm audit --audit-level high
-
-      - name: Generate coverage badge
-        if: github.ref == 'refs/heads/main'
-        run: |
-          pnpm coverage:badge
-
-      - name: Create PR for updated README with coverage badge
-        if: github.ref == 'refs/heads/main'
-        run: |
-          # Check if README was modified
-          if [[ -n $(git status --porcelain README.md) ]]; then
-            # Check if there's already an open PR for coverage badge update
-            EXISTING_PR=$(gh pr list --base main --label "documentation" --search "update coverage badge" --state open --json number --jq '.[0].number')
-
-            if [[ -n "$EXISTING_PR" ]]; then
-              echo "An open PR (#$EXISTING_PR) already exists for coverage badge update. Skipping PR creation."
-              exit 0
-            fi
-
-            # Configure git
-            git config --local user.email "github-actions[bot]@users.noreply.github.com"
-            git config --local user.name "github-actions[bot]"
-
-            # Create a new branch with timestamp to ensure uniqueness
-            BRANCH_NAME="update-coverage-badge-$(date +%Y%m%d%H%M%S)"
-            git checkout -b $BRANCH_NAME
-
-            # Add and commit changes to the new branch
-            git add README.md
-            git commit -m "docs: update coverage badge [skip ci]"
-
-            # Push using GitHub CLI which handles authentication securely via GITHUB_TOKEN env var
-            gh repo set-default "${{ github.repository }}"
-            git push origin "$BRANCH_NAME"
-
-            # Create a pull request using GitHub CLI
-            gh pr create \
-              --base main \
-              --head "$BRANCH_NAME" \
-              --title "docs: update coverage badge" \
-              --body "Automatically generated PR to update the coverage badge in README.md" \
-              --label "documentation"
-          else
-            echo "No changes to README.md, skipping PR creation"
-          fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

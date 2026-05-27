@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest"
-import { BoolOrStringSchema, BooleanSchema, LockValue } from "./helpers"
+import {
+  AppwardenApiHostnameSchema,
+  BoolOrStringSchema,
+  BooleanSchema,
+  LockValue,
+} from "./helpers"
 
 describe("BoolOrStringSchema", () => {
   it("should accept boolean values", () => {
@@ -125,5 +130,27 @@ describe("LockValue", () => {
         isLockedTest: 0,
       }),
     ).toThrow()
+  })
+})
+
+describe("AppwardenApiHostnameSchema", () => {
+  it.each([
+    "https://api.appwarden.io",
+    "https://staging-api.appwarden.io",
+    "https://api.appwarden.io/v1",
+  ])("should accept valid hostname: %s", (hostname) => {
+    expect(AppwardenApiHostnameSchema.parse(hostname)).toBe(hostname)
+  })
+
+  it.each([
+    "https://evil.com",
+    "https://api.custom.appwarden.io",
+    "https://sub.api.appwarden.io",
+    "https://appwarden.io",
+    "https://fake-api.appwarden.io.evil.com",
+  ])("should reject invalid hostname: %s", (hostname) => {
+    expect(() => AppwardenApiHostnameSchema.parse(hostname)).toThrow(
+      "`appwardenApiHostname` must be https://api.appwarden.io or https://staging-api.appwarden.io.",
+    )
   })
 })

@@ -23,6 +23,9 @@
   ],
   "main": "./index.js",
   "types": "./index.d.ts",
+  "bin": {
+    "appwarden-link": "scripts/appwarden-link.cjs"
+  },
   "exports": {
     ".": {
       "types": "./index.d.ts",
@@ -67,7 +70,7 @@
     "check:types": "wrangler types && tsc --noEmit",
     "check:prettier": "prettier --check .",
     "check:ci": "pnpm check:types && pnpm check:prettier && pnpm build",
-    "test": "vitest --run",
+    "test": "node scripts/test-vitest-wrapper.mjs",
     "test:e2e": "playwright test",
     "test:vercel": "vitest --run -c vitest.node.config.ts",
     "test:coverage": "vitest --coverage",
@@ -79,6 +82,7 @@
   "dependencies": {
     "@upstash/redis": "^1.37.0",
     "@vercel/edge-config": "^1.4.3",
+    "acorn": "^8.16.0",
     "zod": "^3.25.76"
   },
   "peerDependencies": {
@@ -111,19 +115,23 @@
   },
   "devDependencies": {
     "@amanda-mitchell/semantic-release-npm-multiple": "^3.17.0",
-    "@cloudflare/vitest-pool-workers": "^0.14.7",
+    "@astrojs/cloudflare": "^13.5.1",
+    "@cloudflare/vitest-pool-workers": "^0.16.10",
     "@commitlint/cli": "^20.5.0",
     "@commitlint/config-conventional": "^20.5.0",
     "@cyclonedx/cdxgen": "^12.1.5",
+    "@opennextjs/cloudflare": "^1.19.9",
     "@playwright/test": "^1.59.1",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/exec": "^7.1.0",
     "@semantic-release/git": "^10.0.1",
     "@semantic-release/github": "^12.0.6",
     "@semantic-release/npm": "^13.1.5",
+    "@tanstack/start": "^1.120.20",
     "@types/node": "^25.6.0",
     "@vercel/functions": "^3.4.3",
     "@vitest/coverage-istanbul": "^4.1.4",
+    "astro": "^6.3.2",
     "cheerio": "^1.2.0",
     "dotenv": "^17.4.2",
     "husky": "^9.1.7",
@@ -134,8 +142,8 @@
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
     "vite-tsconfig-paths": "^6.1.1",
-    "vitest": "^4.1.4",
-    "wrangler": "^4.83.0"
+    "vitest": "^4.1.7",
+    "wrangler": "^4.95.0"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,json,md,yml,yaml}": [

@@ -216,7 +216,7 @@ describe("createAppwardenMiddleware (OpenNext Cloudflare)", () => {
     const middleware = createAppwardenMiddleware(() => ({
       lockPageSlug: "/maintenance",
       appwardenApiToken: "test-token",
-      appwardenApiHostname: "https://custom-api.appwarden.io",
+      appwardenApiHostname: "https://api.appwarden.io",
       debug: true,
     }))
 
@@ -225,7 +225,7 @@ describe("createAppwardenMiddleware (OpenNext Cloudflare)", () => {
     expect(checkLockStatus).toHaveBeenCalledWith({
       request: mockRequest,
       appwardenApiToken: "test-token",
-      appwardenApiHostname: "https://custom-api.appwarden.io",
+      appwardenApiHostname: "https://api.appwarden.io",
       debug: true,
       lockPageSlug: "/maintenance",
       waitUntil: expect.any(Function),

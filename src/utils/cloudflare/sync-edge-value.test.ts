@@ -6,6 +6,17 @@ import { syncEdgeValue } from "./sync-edge-value"
 
 // Mock dependencies
 vi.mock("../../schemas", () => ({
+  AppwardenApiHostnameSchema: {
+    safeParse: vi.fn((value) => {
+      if (
+        value === "https://api.appwarden.io" ||
+        value === "https://staging-api.appwarden.io"
+      ) {
+        return { success: true, data: value }
+      }
+      return { success: false }
+    }),
+  },
   LockValue: {
     omit: vi.fn(() => ({
       parse: vi.fn((value) => value),
@@ -105,6 +116,7 @@ describe("syncEdgeValue", () => {
           fqdn: "example.com",
           appwardenApiToken: "test-token",
         }),
+        signal: expect.any(AbortSignal),
       },
     )
 
@@ -406,6 +418,17 @@ describe("syncEdgeValue", () => {
 
       // Should not attempt to parse non-JSON response
       expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
+    })
+
+    it("should fall back to default hostname when an invalid appwardenApiHostname is provided", async () => {
+      mockContext.appwardenApiHostname = "https://evil.com"
+
+      await syncEdgeValue(mockContext)
+
+      expect(fetch).toHaveBeenCalledWith(
+        new URL("/v1/appwarden/status", "https://api.appwarden.io"),
+        expect.any(Object),
+      )
     })
   })
 })

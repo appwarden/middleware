@@ -1,0 +1,222 @@
+
+ RUN  v4.1.7 /Users/michael/Code/appwarden/appwarden-middleware
+
+Using secrets defined in .env
+Using secrets defined in .env
+Using secrets defined in .env
+Using secrets defined in .env
+Using secrets defined in .env
+Using secrets defined in .env
+Using secrets defined in .env
+Using secrets defined in .env
+Using secrets defined in .env
+*** Received signal #11: Segmentation fault: 11
+Using secrets defined in .env
+ ✓ src/utils/middleware.test.ts (8 tests) 33ms
+Using secrets defined in .env
+ ✓ src/types/heartbeat.test.ts (28 tests) 19ms
+Using secrets defined in .env
+ ✓ src/runners/appwarden-on-vercel.test.ts (33 tests) 104ms
+Using secrets defined in .env
+ ✓ src/runners/appwarden-on-cloudflare.test.ts (24 tests) 18ms
+Using secrets defined in .env
+stdout | src/test/integration.test.ts > Integration Tests - Request/Response Flows > Full middleware pipeline > should process request through complete middleware stack
+[@appwarden/middleware] Applying CSP in report-only mode
+
+stdout | src/middlewares/use-content-security-policy.test.ts > use-content-security-policy > should attach a content-security-policy header
+[@appwarden/middleware] Applying CSP in report-only mode
+
+stdout | src/middlewares/use-content-security-policy.test.ts > use-content-security-policy > should attach a content-security-policy header
+[@appwarden/middleware] Applying CSP in report-only mode
+
+stdout | src/middlewares/use-content-security-policy.test.ts > use-content-security-policy > should attach a content-security-policy header
+[@appwarden/middleware] Applying CSP in report-only mode
+
+stdout | src/test/integration.test.ts > Integration Tests - Request/Response Flows > Middleware pipeline execution > should execute middlewares in correct order
+[@appwarden/middleware] Applying CSP in report-only mode
+
+stdout | src/test/integration.test.ts > Integration Tests - Request/Response Flows > Middleware pipeline execution > should pass context correctly through middleware chain
+[@appwarden/middleware] Applying CSP in report-only mode
+
+stdout | src/adapters/react-router-cloudflare.test.ts > createAppwardenMiddleware > should pass correct config to checkLockStatus
+[@appwarden/middleware] Appwarden middleware invoked for /page isHTML: true
+
+stdout | src/adapters/react-router-cloudflare.test.ts > createAppwardenMiddleware > should pass correct config to checkLockStatus
+[@appwarden/middleware] Website is unlocked
+
+stdout | src/adapters/react-router-cloudflare.test.ts > createAppwardenMiddleware > should pass correct config to checkLockStatus
+[@appwarden/middleware] Middleware executed in 1ms
+
+stdout | src/test/integration.test.ts > Integration Tests - Request/Response Flows > CSP Mode Variations > should inject nonces into style tags
+[@appwarden/middleware] Applying CSP in report-only mode
+
+ ✓ src/middlewares/use-content-security-policy.test.ts (26 tests) 90ms
+Using secrets defined in .env
+stdout | src/test/integration.test.ts > Integration Tests - Request/Response Flows > API Response Variations > should handle API errors gracefully
+[@appwarden/middleware] Applying CSP in report-only mode
+
+ ✓ src/adapters/react-router-cloudflare.test.ts (21 tests) 23ms
+Using secrets defined in .env
+stdout | src/test/integration.test.ts > Integration Tests - Request/Response Flows > API Response Variations > should handle API timeout gracefully
+[@appwarden/middleware] Applying CSP in report-only mode
+
+stdout | src/test/integration.test.ts > Integration Tests - Request/Response Flows > Edge Cases > should generate unique nonces for multiple requests
+[@appwarden/middleware] Applying CSP in report-only mode
+
+stdout | src/test/integration.test.ts > Integration Tests - Request/Response Flows > Edge Cases > should generate unique nonces for multiple requests
+[@appwarden/middleware] Applying CSP in report-only mode
+
+ ✓ src/test/integration.test.ts (11 tests) 196ms
+Using secrets defined in .env
+ ✓ src/utils/cloudflare/insert-errors-logs.test.ts (2 tests) 190ms
+Using secrets defined in .env
+stdout | src/adapters/astro-cloudflare.test.ts > createAppwardenMiddleware (Astro) > should pass correct config to checkLockStatus
+[@appwarden/middleware] Appwarden middleware invoked for /page isHTML: true
+
+stdout | src/adapters/astro-cloudflare.test.ts > createAppwardenMiddleware (Astro) > should pass correct config to checkLockStatus
+[@appwarden/middleware] Website is unlocked
+
+stdout | src/adapters/astro-cloudflare.test.ts > createAppwardenMiddleware (Astro) > should pass correct config to checkLockStatus
+[@appwarden/middleware] Middleware executed in 1ms
+
+ ✓ src/adapters/astro-cloudflare.test.ts (22 tests) 17ms
+ ✓ src/utils/debug.test.ts (5 tests) 15ms
+Using secrets defined in .env
+Using secrets defined in .env
+stdout | src/adapters/tanstack-start-cloudflare.test.ts > createAppwardenMiddleware (TanStack Start) > should pass correct config to checkLockStatus
+[@appwarden/middleware] Appwarden middleware invoked for /page isHTML: true
+
+stdout | src/adapters/tanstack-start-cloudflare.test.ts > createAppwardenMiddleware (TanStack Start) > should pass correct config to checkLockStatus
+[@appwarden/middleware] Website is unlocked
+
+stdout | src/adapters/tanstack-start-cloudflare.test.ts > createAppwardenMiddleware (TanStack Start) > should pass correct config to checkLockStatus
+[@appwarden/middleware] Middleware executed in 1ms
+
+ ✓ src/adapters/tanstack-start-cloudflare.test.ts (23 tests) 18ms
+Using secrets defined in .env
+ ✓ src/middlewares/use-appwarden.test.ts (19 tests) 11ms
+Using secrets defined in .env
+ ✓ src/utils/heartbeat.test.ts (18 tests) 8ms
+Using secrets defined in .env
+stdout | src/adapters/nextjs-cloudflare.test.ts > createAppwardenMiddleware (OpenNext Cloudflare) > should pass correct config to checkLockStatus
+[@appwarden/middleware] Appwarden middleware invoked for /page isHTML: true
+
+stdout | src/adapters/nextjs-cloudflare.test.ts > createAppwardenMiddleware (OpenNext Cloudflare) > should pass correct config to checkLockStatus
+[@appwarden/middleware] Site is unlocked
+[@appwarden/middleware] Middleware executed in 1ms
+
+ ✓ src/adapters/nextjs-cloudflare.test.ts (18 tests) 14ms
+Using secrets defined in .env
+ ✓ src/utils/cloudflare/sync-edge-value.test.ts (19 tests) 28ms
+Using secrets defined in .env
+ ✓ src/schemas/vercel.test.ts (29 tests) 13ms
+ ✓ src/utils/vercel/sync-edge-value.test.ts (6 tests) 8ms
+Using secrets defined in .env
+Using secrets defined in .env
+ ✓ src/core/check-lock-status.test.ts (11 tests) 7ms
+Using secrets defined in .env
+ ✓ src/schemas/use-appwarden.test.ts (19 tests) 7ms
+Using secrets defined in .env
+ ✓ src/schemas/nextjs-cloudflare.test.ts (10 tests) 6ms
+Using secrets defined in .env
+ ✓ src/utils/cloudflare/csp-keywords.test.ts (83 tests) 8ms
+Using secrets defined in .env
+ ✓ src/utils/vercel/get-lock-value.test.ts (5 tests) 9ms
+Using secrets defined in .env
+ ✓ src/utils/build-lock-page-url.test.ts (40 tests) 5ms
+Using secrets defined in .env
+ ✓ src/utils/memory-cache.test.ts (17 tests) 6ms
+Using secrets defined in .env
+ ✓ src/utils/cloudflare/make-csp-header.test.ts (27 tests) 7ms
+ ✓ src/schemas/use-content-security-policy.test.ts (16 tests) 9ms
+Using secrets defined in .env
+Using secrets defined in .env
+ ✓ src/utils/vercel/delete-edge-value.test.ts (5 tests) 8ms
+Using secrets defined in .env
+ ✓ src/test/mocks/cloudflare-cache-mock.test.ts (26 tests) 4417ms
+       ✓ should respect max-age from Cache-Control header  1102ms
+       ✓ should parse max-age correctly from complex Cache-Control headers  2102ms
+       ✓ should handle TTL independently in different named caches  1102ms
+Using secrets defined in .env
+ ✓ src/utils/is-cache-url.test.ts (47 tests) 5ms
+Using secrets defined in .env
+ ✓ src/utils/cache-poisoning.security.test.ts (10 tests) 6ms
+Using secrets defined in .env
+ ✓ src/utils/request-checks.test.ts (48 tests) 5ms
+Using secrets defined in .env
+ ✓ src/schemas/astro-cloudflare.test.ts (10 tests) 6ms
+Using secrets defined in .env
+ ✓ src/schemas/react-router-cloudflare.test.ts (10 tests) 5ms
+ ✓ src/bundles/cloudflare.test.ts (10 tests) 6ms
+Using secrets defined in .env
+Using secrets defined in .env
+ ✓ src/schemas/tanstack-start-cloudflare.test.ts (10 tests) 5ms
+Using secrets defined in .env
+ ✓ src/test/cloudflare-integration.test.ts (6 tests) 8ms
+Using secrets defined in .env
+ ✓ src/bundles/vercel.test.ts (7 tests) 4ms
+Using secrets defined in .env
+ ✓ src/utils/cloudflare/cloudflare-cache.test.ts (7 tests) 5ms
+Using secrets defined in .env
+ ✓ src/utils/render-lock-page.test.ts (6 tests) 6ms
+Using secrets defined in .env
+ ✓ src/utils/cloudflare/get-lock-value.test.ts (5 tests) 7ms
+Using secrets defined in .env
+ ✓ src/schemas/helpers.test.ts (23 tests) 8ms
+Using secrets defined in .env
+ ✓ src/utils/errors.test.ts (6 tests) 4ms
+Using secrets defined in .env
+ ✓ src/bundles/tanstack-start-cloudflare.test.ts (11 tests) 6ms
+Using secrets defined in .env
+ ✓ src/index.test.ts (16 tests) 4ms
+Using secrets defined in .env
+ ✓ src/utils/handle-vercel-request.test.ts (7 tests) 6ms
+Using secrets defined in .env
+ ✓ src/utils/print-message.test.ts (20 tests) 5ms
+ ✓ src/utils/cloudflare/delete-edge-value.test.ts (4 tests) 5ms
+ ✓ src/bundles/astro-cloudflare.test.ts (10 tests) 5ms
+ ✓ src/bundles/react-router-cloudflare.test.ts (11 tests) 6ms
+ ✓ src/utils/is-response-like.test.ts (18 tests) 4ms
+ ✓ src/middlewares/use-fetch-origin.test.ts (2 tests) 6ms
+ ✓ src/utils/get-appwarden-configuration.test.ts (7 tests) 5ms
+ ✓ src/bundles/nextjs-cloudflare.test.ts (11 tests) 5ms
+ ✓ src/schemas/cloudflare.test.ts (3 tests) 2ms
+⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+
+Vitest caught 1 unhandled error during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
+
+⎯⎯⎯⎯⎯⎯ Unhandled Error ⎯⎯⎯⎯⎯⎯⎯
+Error: [vitest-pool]: Worker cloudflare-pool emitted error.
+ ❯ EventEmitter.<anonymous> node_modules/.pnpm/vitest@4.1.7_@edge-runtime+vm@3.2.0_@types+node@25.6.0_@vitest+coverage-istanbul@4.1.4__e1e55febe3f4472f815317aca98032b0/node_modules/vitest/dist/chunks/cli-api.C6CiCDM3.js:3446:22
+ ❯ EventEmitter.emit node:events:508:28
+ ❯ EventEmitter.emit node:domain:489:12
+ ❯ _WebSocket.emitUnexpectedExit node_modules/.pnpm/vitest@4.1.7_@edge-runtime+vm@3.2.0_@types+node@25.6.0_@vitest+coverage-istanbul@4.1.4__e1e55febe3f4472f815317aca98032b0/node_modules/vitest/dist/chunks/cli-api.C6CiCDM3.js:3013:22
+ ❯ _WebSocket.[nodejs.internal.kHybridDispatch] node:internal/event_target:845:20
+ ❯ _WebSocket.dispatchEvent node:internal/event_target:778:26
+ ❯ _WebSocket.dispatchEvent node_modules/.pnpm/miniflare@4.20260526.0/node_modules/miniflare/dist/src/index.js:58819:18
+ ❯ _WebSocket.#queuingDispatchToPair node_modules/.pnpm/miniflare@4.20260526.0/node_modules/miniflare/dist/src/index.js:59110:12
+ ❯ _WebSocket.[kClose] node_modules/.pnpm/miniflare@4.20260526.0/node_modules/miniflare/dist/src/index.js:59168:37
+ ❯ WebSocket.<anonymous> node_modules/.pnpm/miniflare@4.20260526.0/node_modules/miniflare/dist/src/index.js:59204:19
+
+Caused by: Error: Worker exited unexpectedly
+ ❯ _WebSocket.emitUnexpectedExit node_modules/.pnpm/vitest@4.1.7_@edge-runtime+vm@3.2.0_@types+node@25.6.0_@vitest+coverage-istanbul@4.1.4__e1e55febe3f4472f815317aca98032b0/node_modules/vitest/dist/chunks/cli-api.C6CiCDM3.js:3012:33
+ ❯ _WebSocket.[nodejs.internal.kHybridDispatch] node:internal/event_target:845:20
+ ❯ _WebSocket.dispatchEvent node:internal/event_target:778:26
+ ❯ _WebSocket.dispatchEvent node_modules/.pnpm/miniflare@4.20260526.0/node_modules/miniflare/dist/src/index.js:58819:18
+ ❯ _WebSocket.#queuingDispatchToPair node_modules/.pnpm/miniflare@4.20260526.0/node_modules/miniflare/dist/src/index.js:59110:12
+ ❯ _WebSocket.[kClose] node_modules/.pnpm/miniflare@4.20260526.0/node_modules/miniflare/dist/src/index.js:59168:37
+ ❯ WebSocket.<anonymous> node_modules/.pnpm/miniflare@4.20260526.0/node_modules/miniflare/dist/src/index.js:59204:19
+ ❯ WebSocket.emit node:events:508:28
+ ❯ WebSocket.emit node:domain:489:12
+ ❯ WebSocket.emitClose node_modules/.pnpm/ws@8.20.1/node_modules/ws/lib/websocket.js:273:10
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+
+
+ Test Files  54 passed (55)
+      Tests  896 passed (896)
+     Errors  1 error
+   Start at  15:28:30
+   Duration  9.37s (transform 2.79s, setup 2.32s, import 27.54s, tests 5.43s, environment 2ms)
+
