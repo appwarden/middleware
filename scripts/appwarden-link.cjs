@@ -296,12 +296,10 @@ function parseCspHeaderValue(value) {
 function parseCloudflareHeaders(content) {
   const lines = content.split(/\r?\n/)
   const result = []
-  let currentUrl = null
   for (const line of lines) {
     const trimmed = line.trim()
     if (!trimmed || trimmed.startsWith("#")) continue
     if (!line.startsWith(" ") && !line.startsWith("\t")) {
-      currentUrl = trimmed
       continue
     }
     const colonIdx = trimmed.indexOf(":")
@@ -554,17 +552,17 @@ function sanitizeRemoteConfig(data, depth = 0) {
       continue
     }
     // Only accept primitive values, arrays of strings, and plain objects
-    if (
+    if (val === null || val === undefined) {
+      safe[key] = val
+    } else if (
       typeof val === "string" ||
       typeof val === "boolean" ||
-      typeof val === "number" ||
-      val === null ||
-      val === undefined
+      typeof val === "number"
     ) {
       safe[key] = val
     } else if (Array.isArray(val) && val.every((v) => typeof v === "string")) {
       safe[key] = val
-    } else if (typeof val === "object" && val !== null) {
+    } else if (typeof val === "object") {
       // Recursively sanitize nested objects (e.g. contentSecurityPolicy.directives)
       const nested = sanitizeRemoteConfig(val, depth + 1)
       if (nested) safe[key] = nested
@@ -684,19 +682,20 @@ function checkGitignore(cwd) {
   const root = path.parse(current).root
   while (current !== root) {
     const gitignorePath = path.join(current, ".gitignore")
-    if (fs.existsSync(gitignorePath)) {
+    try {
+      const resolved = fs.realpathSync(gitignorePath)
+      const resolvedDir = fs.realpathSync(current)
+      if (path.dirname(resolved) !== resolvedDir) {
+        warn(`Skipping suspicious gitignore symlink: ${resolved}`)
+        return false
+      }
+      if (!resolved.endsWith(path.sep + ".gitignore")) {
+        warn(`Skipping suspicious gitignore symlink: ${resolved}`)
+        return false
+      }
+      const fd = fs.openSync(resolved, "r")
       try {
-        const resolved = fs.realpathSync(gitignorePath)
-        const resolvedDir = fs.realpathSync(current)
-        if (path.dirname(resolved) !== resolvedDir) {
-          warn(`Skipping suspicious gitignore symlink: ${resolved}`)
-          return false
-        }
-        if (!resolved.endsWith(path.sep + ".gitignore")) {
-          warn(`Skipping suspicious gitignore symlink: ${resolved}`)
-          return false
-        }
-        const stats = fs.statSync(resolved)
+        const stats = fs.fstatSync(fd)
         if (!stats.isFile()) {
           warn(`Skipping non-file .gitignore: ${resolved}`)
           return false
@@ -705,9 +704,15 @@ function checkGitignore(cwd) {
           warn(`Skipping oversized .gitignore: ${resolved}`)
           return false
         }
-        const content = fs.readFileSync(resolved, "utf-8")
+        const content = fs.readFileSync(fd, "utf-8")
         return content.includes(CONFIG_PATH) || content.includes(".appwarden/")
-      } catch {
+      } finally {
+        fs.closeSync(fd)
+      }
+    } catch (err) {
+      if (err.code === "ENOENT") {
+        // .gitignore doesn't exist in this directory; continue searching up
+      } else {
         return false
       }
     }

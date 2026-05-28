@@ -70,7 +70,7 @@
     "test": "vitest --run",
     "test:e2e": "playwright test",
     "test:vercel": "vitest --run -c vitest.node.config.ts",
-    "test:coverage": "vitest --coverage",
+    "test:coverage": "node scripts/test-coverage-wrapper.mjs",
     "coverage:badge": "node scripts/generate-coverage-badge.cjs",
     "sbom:generate": "cdxgen -o sbom.json -t js --spec-version 1.6 . && cdxgen -o sbom.xml -t js --spec-version 1.6 --output-format xml .",
     "prepack": "pnpm build",
