@@ -28,6 +28,13 @@ const ALLOWED_REMOTE_CONFIG_KEYS = [
 
 const ALLOWED_API_HOSTNAMES = ["api.appwarden.io", "staging-api.appwarden.io"]
 
+const CSP_ENFORCED = "content-security-policy"
+const CSP_REPORT_ONLY = "content-security-policy-report-only"
+
+function isCspHeader(name) {
+  return name === CSP_ENFORCED || name === CSP_REPORT_ONLY
+}
+
 const BuildOutputSchema = z.object({
   lockPageSlug: z.string(),
   debug: z.boolean().optional(),
@@ -306,10 +313,7 @@ function parseCloudflareHeaders(content) {
     if (colonIdx === -1) continue
     const name = trimmed.slice(0, colonIdx).trim().toLowerCase()
     const value = trimmed.slice(colonIdx + 1).trim()
-    if (
-      name === "content-security-policy" ||
-      name === "content-security-policy-report-only"
-    ) {
+    if (isCspHeader(name)) {
       result.push({ key: name, value })
     }
   }
@@ -319,10 +323,7 @@ function parseCloudflareHeaders(content) {
 function pushCspHeaders(headers, rawHeaders) {
   for (const h of rawHeaders || []) {
     const key = (h.key || "").toLowerCase()
-    if (
-      key === "content-security-policy" ||
-      key === "content-security-policy-report-only"
-    ) {
+    if (isCspHeader(key)) {
       headers.push({ key: h.key, value: h.value })
     }
   }
@@ -440,13 +441,8 @@ function extractLocalHeadersConfig(cwd, framework) {
   if (vercelJsonContent) {
     try {
       const vj = JSON.parse(vercelJsonContent)
-      // Modern format: top-level headers array
-      for (const rule of vj.headers || []) {
+      for (const rule of [...(vj.headers || []), ...(vj.routes || [])]) {
         pushCspHeaders(headers, rule.headers)
-      }
-      // Legacy format: routes array with per-route headers
-      for (const route of vj.routes || []) {
-        pushCspHeaders(headers, route.headers)
       }
     } catch {}
   }
@@ -468,11 +464,9 @@ function extractLocalHeadersConfig(cwd, framework) {
     }
   }
   if (!headers.length) return null
-  const enforced = headers.find(
-    (h) => h.key.toLowerCase() === "content-security-policy",
-  )
+  const enforced = headers.find((h) => h.key.toLowerCase() === CSP_ENFORCED)
   const reportOnly = headers.find(
-    (h) => h.key.toLowerCase() === "content-security-policy-report-only",
+    (h) => h.key.toLowerCase() === CSP_REPORT_ONLY,
   )
   if (enforced) {
     return { mode: "enforced", directives: parseCspHeaderValue(enforced.value) }
@@ -494,33 +488,22 @@ function isAllowedApiHostname(value) {
   }
 }
 
-function normalizeRemoteConfigKeys(obj) {
+function mapKeys(obj, transform) {
   if (!obj || typeof obj !== "object" || Array.isArray(obj)) {
     return obj
   }
   const result = Object.create(null)
   for (const [key, value] of Object.entries(obj)) {
-    const camelKey = key.replace(/-([a-z])/g, (_, ch) => ch.toUpperCase())
-    result[camelKey] = value
+    result[transform(key)] = value
   }
   return result
 }
 
-function kebabCaseDirectives(directives) {
-  if (
-    !directives ||
-    typeof directives !== "object" ||
-    Array.isArray(directives)
-  ) {
-    return directives
-  }
-  const result = Object.create(null)
-  for (const [key, value] of Object.entries(directives)) {
-    const kebabKey = key.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase()
-    result[kebabKey] = value
-  }
-  return result
-}
+const normalizeRemoteConfigKeys = (obj) =>
+  mapKeys(obj, (key) => key.replace(/-([a-z])/g, (_, ch) => ch.toUpperCase()))
+
+const kebabCaseDirectives = (obj) =>
+  mapKeys(obj, (key) => key.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase())
 
 function sanitizeRemoteConfig(data, depth = 0) {
   if (depth > 5) {

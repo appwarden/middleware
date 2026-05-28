@@ -15,7 +15,10 @@ export default defineConfig({
     environment: "node",
     setupFiles: ["./vitest.setup.ts"],
     // Run Vercel integration tests and postbuild script tests
-    include: ["src/test/vercel-integration.test.ts"],
+    include: [
+      "src/test/vercel-integration.test.ts",
+      "scripts/appwarden-link.test.ts",
+    ],
     exclude: [...defaultExclude, "./build/**"],
     coverage: {
       provider: "v8",
