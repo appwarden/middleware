@@ -147,12 +147,9 @@ function detectFramework(cwd, explicit) {
 }
 
 function findNextConfig(cwd) {
-  const candidates = [
-    "next.config.js",
-    "next.config.mjs",
-    "next.config.ts",
-    "next.config.mts",
-  ]
+  // Only .js/.mjs because extractHeadersFromNextConfig uses plain Acorn,
+  // which cannot parse TypeScript syntax.
+  const candidates = ["next.config.js", "next.config.mjs"]
   for (const c of candidates) {
     const p = path.join(cwd, c)
     if (fs.existsSync(p)) return p
@@ -334,7 +331,14 @@ function parseCspHeaderValue(value) {
     if (!directiveValue) {
       directives[name] = true
     } else {
-      directives[name] = splitCspTokens(directiveValue)
+      directives[name] = splitCspTokens(directiveValue).map((token) => {
+        // Normalize quoted nonce placeholders so downstream makeCSPHeader
+        // does not produce double-quoted nonce sources.
+        if (token === "'{{nonce}}'" || token === '"{{nonce}}"') {
+          return "{{nonce}}"
+        }
+        return token
+      })
     }
   }
   return directives

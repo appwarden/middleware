@@ -136,7 +136,7 @@ describe("appwarden-link.cjs", () => {
       "'self'",
     )
     expect(config.contentSecurityPolicy.directives["script-src"]).toContain(
-      "'{{nonce}}'",
+      "{{nonce}}",
     )
 
     fs.rmSync(tmpDir, { recursive: true })
@@ -211,7 +211,7 @@ describe("appwarden-link.cjs", () => {
       "'self'",
     )
     expect(config.contentSecurityPolicy.directives["script-src"]).toContain(
-      "'{{nonce}}'",
+      "{{nonce}}",
     )
 
     fs.rmSync(tmpDir, { recursive: true })
