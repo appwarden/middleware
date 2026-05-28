@@ -120,4 +120,12 @@ describe("mergeAdapterConfig", () => {
     expect(result.lockPageSlug).toBe("/lock")
     expect(result.debug).toBe(false)
   })
+
+  it("should not create invalid CSP when call-site has contentSecurityPolicy: undefined", () => {
+    const result = mergeAdapterConfig(
+      { lockPageSlug: "/lock" },
+      { contentSecurityPolicy: undefined },
+    )
+    expect(result.contentSecurityPolicy).toBeUndefined()
+  })
 })

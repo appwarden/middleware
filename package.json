@@ -23,6 +23,9 @@
   ],
   "main": "./index.js",
   "types": "./index.d.ts",
+  "bin": {
+    "appwarden-link": "./scripts/appwarden-link.cjs"
+  },
   "exports": {
     ".": {
       "types": "./index.d.ts",

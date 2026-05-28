@@ -698,4 +698,308 @@ describe("appwarden-link.cjs", () => {
 
     fs.rmSync(tmpDir, { recursive: true })
   })
+
+  it("should reject non-HTTPS appwardenApiHostname from remote config", () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "appwarden-test-"))
+
+    fs.writeFileSync(
+      path.join(tmpDir, "package.json"),
+      JSON.stringify({ dependencies: { next: "^14" } }),
+    )
+
+    const wrapperPath = path.join(tmpDir, "mock-fetch-wrapper.cjs")
+    fs.writeFileSync(
+      wrapperPath,
+      "global.fetch = async () => {\n" +
+        "  const bodyText = JSON.stringify({\n" +
+        "    content: [{\n" +
+        '      url: "example.com",\n' +
+        "      options: {\n" +
+        '        lockPageSlug: "/maintenance",\n' +
+        '        appwardenApiHostname: "http://api.appwarden.io"\n' +
+        "      }\n" +
+        "    }]\n" +
+        "  });\n" +
+        "  return {\n" +
+        "    ok: true,\n" +
+        "    headers: { get: () => null },\n" +
+        "    body: {\n" +
+        "      getReader: () => {\n" +
+        "        let done = false;\n" +
+        "        return {\n" +
+        "          read: async () => {\n" +
+        "            if (done) return { done: true };\n" +
+        "            done = true;\n" +
+        "            return { done: false, value: new TextEncoder().encode(bodyText) };\n" +
+        "          },\n" +
+        "          cancel: async () => {},\n" +
+        "        };\n" +
+        "      },\n" +
+        "    },\n" +
+        "  };\n" +
+        "};\n" +
+        'process.env.APPWARDEN_API_TOKEN = "test-token";\n' +
+        'process.env.APPWARDEN_FQDN = "example.com";\n' +
+        'require("' +
+        scriptPath +
+        '");\n',
+    )
+
+    execSync(`node "${wrapperPath}"`, {
+      cwd: tmpDir,
+      encoding: "utf-8",
+      env: { ...process.env, APPWARDEN_SKIP_POSTBUILD: undefined },
+    })
+
+    const configPath = path.join(tmpDir, configDir, configName)
+    const config = JSON.parse(fs.readFileSync(configPath, "utf-8"))
+
+    // Non-HTTPS hostname should be stripped
+    expect(config.appwardenApiHostname).toBeUndefined()
+
+    fs.rmSync(tmpDir, { recursive: true })
+  })
+
+  it("should accept disabled CSP mode and boolean directive values", () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "appwarden-test-"))
+
+    fs.writeFileSync(
+      path.join(tmpDir, "package.json"),
+      JSON.stringify({ dependencies: { next: "^14" } }),
+    )
+
+    fs.writeFileSync(
+      path.join(tmpDir, "next.config.js"),
+      `module.exports = {
+        async headers() {
+          return [
+            {
+              source: "/(.*)",
+              headers: [
+                {
+                  key: "Content-Security-Policy",
+                  value: "default-src 'self'; upgrade-insecure-requests",
+                },
+              ],
+            },
+          ]
+        },
+      }`,
+    )
+
+    execSync(`node "${scriptPath}"`, {
+      cwd: tmpDir,
+      encoding: "utf-8",
+      env: { ...process.env, APPWARDEN_SKIP_POSTBUILD: undefined },
+    })
+
+    const configPath = path.join(tmpDir, configDir, configName)
+    const config = JSON.parse(fs.readFileSync(configPath, "utf-8"))
+    expect(config.contentSecurityPolicy).toBeDefined()
+    expect(config.contentSecurityPolicy.mode).toBe("enforced")
+    expect(
+      config.contentSecurityPolicy.directives["upgrade-insecure-requests"],
+    ).toBe(true)
+
+    fs.rmSync(tmpDir, { recursive: true })
+  })
+
+  it("should reject lockPageSlug that looks like an absolute URL", () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "appwarden-test-"))
+
+    fs.writeFileSync(
+      path.join(tmpDir, "package.json"),
+      JSON.stringify({ dependencies: { next: "^14" } }),
+    )
+
+    const wrapperPath = path.join(tmpDir, "mock-fetch-wrapper.cjs")
+    fs.writeFileSync(
+      wrapperPath,
+      "global.fetch = async () => {\n" +
+        "  const bodyText = JSON.stringify({\n" +
+        "    content: [{\n" +
+        '      url: "example.com",\n' +
+        "      options: {\n" +
+        '        lockPageSlug: "https://evil.com",\n' +
+        "      }\n" +
+        "    }]\n" +
+        "  });\n" +
+        "  return {\n" +
+        "    ok: true,\n" +
+        "    headers: { get: () => null },\n" +
+        "    body: {\n" +
+        "      getReader: () => {\n" +
+        "        let done = false;\n" +
+        "        return {\n" +
+        "          read: async () => {\n" +
+        "            if (done) return { done: true };\n" +
+        "            done = true;\n" +
+        "            return { done: false, value: new TextEncoder().encode(bodyText) };\n" +
+        "          },\n" +
+        "          cancel: async () => {},\n" +
+        "        };\n" +
+        "      },\n" +
+        "    },\n" +
+        "  };\n" +
+        "};\n" +
+        'process.env.APPWARDEN_API_TOKEN = "test-token";\n' +
+        'process.env.APPWARDEN_FQDN = "example.com";\n' +
+        'require("' +
+        scriptPath +
+        '");\n',
+    )
+
+    let threw = false
+    try {
+      execSync(`node "${wrapperPath}"`, {
+        cwd: tmpDir,
+        encoding: "utf-8",
+        env: { ...process.env, APPWARDEN_SKIP_POSTBUILD: undefined },
+      })
+    } catch {
+      threw = true
+    }
+
+    expect(threw).toBe(true)
+
+    fs.rmSync(tmpDir, { recursive: true })
+  })
+
+  it("should skip route-specific CSP from Cloudflare _headers", () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "appwarden-test-"))
+
+    fs.writeFileSync(
+      path.join(tmpDir, "package.json"),
+      JSON.stringify({ dependencies: { astro: "^4" } }),
+    )
+    fs.mkdirSync(path.join(tmpDir, "public"), { recursive: true })
+    fs.writeFileSync(
+      path.join(tmpDir, "public", "_headers"),
+      `/admin/*\n  Content-Security-Policy: default-src 'none'\n\n/*\n  Content-Security-Policy: default-src 'self'\n`,
+    )
+
+    execSync(`node "${scriptPath}"`, {
+      cwd: tmpDir,
+      encoding: "utf-8",
+      env: { ...process.env, APPWARDEN_SKIP_POSTBUILD: undefined },
+    })
+
+    const configPath = path.join(tmpDir, configDir, configName)
+    const config = JSON.parse(fs.readFileSync(configPath, "utf-8"))
+    expect(config.contentSecurityPolicy).toBeDefined()
+    expect(config.contentSecurityPolicy.directives["default-src"]).toContain(
+      "'self'",
+    )
+    expect(
+      config.contentSecurityPolicy.directives["default-src"],
+    ).not.toContain("'none'")
+
+    fs.rmSync(tmpDir, { recursive: true })
+  })
+
+  it("should skip route-specific CSP from Next.js headers()", () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "appwarden-test-"))
+
+    fs.writeFileSync(
+      path.join(tmpDir, "package.json"),
+      JSON.stringify({ dependencies: { next: "^14" } }),
+    )
+    fs.writeFileSync(
+      path.join(tmpDir, "next.config.js"),
+      `module.exports = {
+        async headers() {
+          return [
+            {
+              source: "/admin/:path*",
+              headers: [
+                {
+                  key: "Content-Security-Policy",
+                  value: "default-src 'none'",
+                },
+              ],
+            },
+            {
+              source: "/(.*)",
+              headers: [
+                {
+                  key: "Content-Security-Policy",
+                  value: "default-src 'self'",
+                },
+              ],
+            },
+          ]
+        },
+      }`,
+    )
+
+    execSync(`node "${scriptPath}"`, {
+      cwd: tmpDir,
+      encoding: "utf-8",
+      env: { ...process.env, APPWARDEN_SKIP_POSTBUILD: undefined },
+    })
+
+    const configPath = path.join(tmpDir, configDir, configName)
+    const config = JSON.parse(fs.readFileSync(configPath, "utf-8"))
+    expect(config.contentSecurityPolicy).toBeDefined()
+    expect(config.contentSecurityPolicy.directives["default-src"]).toContain(
+      "'self'",
+    )
+    expect(
+      config.contentSecurityPolicy.directives["default-src"],
+    ).not.toContain("'none'")
+
+    fs.rmSync(tmpDir, { recursive: true })
+  })
+
+  it("should skip route-specific CSP from vercel.json", () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "appwarden-test-"))
+
+    fs.writeFileSync(
+      path.join(tmpDir, "package.json"),
+      JSON.stringify({ dependencies: { next: "^14" } }),
+    )
+    fs.writeFileSync(
+      path.join(tmpDir, "vercel.json"),
+      JSON.stringify({
+        headers: [
+          {
+            source: "/admin/:path*",
+            headers: [
+              {
+                key: "Content-Security-Policy",
+                value: "default-src 'none'",
+              },
+            ],
+          },
+          {
+            source: "/(.*)",
+            headers: [
+              {
+                key: "Content-Security-Policy",
+                value: "default-src 'self'",
+              },
+            ],
+          },
+        ],
+      }),
+    )
+
+    execSync(`node "${scriptPath}"`, {
+      cwd: tmpDir,
+      encoding: "utf-8",
+      env: { ...process.env, APPWARDEN_SKIP_POSTBUILD: undefined },
+    })
+
+    const configPath = path.join(tmpDir, configDir, configName)
+    const config = JSON.parse(fs.readFileSync(configPath, "utf-8"))
+    expect(config.contentSecurityPolicy).toBeDefined()
+    expect(config.contentSecurityPolicy.directives["default-src"]).toContain(
+      "'self'",
+    )
+    expect(
+      config.contentSecurityPolicy.directives["default-src"],
+    ).not.toContain("'none'")
+
+    fs.rmSync(tmpDir, { recursive: true })
+  })
 })
