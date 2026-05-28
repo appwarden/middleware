@@ -23,7 +23,7 @@ export function mergeAdapterConfig(
           ...((siteCsp.directives as Record<string, unknown>) || {}),
         },
       }
-    } else {
+    } else if (callSite[key] !== undefined) {
       merged[key] = callSite[key]
     }
   }

@@ -1,3 +1,5 @@
+import { normalizeLockPageSlug } from "./build-lock-page-url"
+
 /**
  * Context required for rendering the lock page.
  * This is a minimal interface that only includes what's needed.
@@ -10,10 +12,13 @@ export interface RenderLockPageContext {
 }
 
 export const renderLockPage = async (context: RenderLockPageContext) => {
-  const url = new URL(context.lockPageSlug, context.requestUrl.origin)
-  if (url.origin !== context.requestUrl.origin) {
+  let normalizedSlug: string
+  try {
+    normalizedSlug = normalizeLockPageSlug(context.lockPageSlug)
+  } catch {
     throw new Error("lockPageSlug must be a relative path")
   }
+  const url = new URL(normalizedSlug, context.requestUrl.origin)
   return fetch(url, {
     headers: {
       // no browser caching, otherwise we need to hard refresh to disable lock screen

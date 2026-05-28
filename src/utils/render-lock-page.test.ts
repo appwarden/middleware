@@ -101,6 +101,18 @@ describe("renderLockPage", () => {
     expect(fetch).not.toHaveBeenCalled()
   })
 
+  it("should reject backslashes to prevent SSRF", async () => {
+    const mockContext: RenderLockPageContext = {
+      requestUrl: new URL("https://example.com/some-path"),
+      lockPageSlug: "/locked\\page",
+    }
+
+    await expect(renderLockPage(mockContext)).rejects.toThrow(
+      "lockPageSlug must be a relative path",
+    )
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
   it("should allow relative paths without leading slash", async () => {
     const mockContext: RenderLockPageContext = {
       requestUrl: new URL("https://example.com/some-path"),

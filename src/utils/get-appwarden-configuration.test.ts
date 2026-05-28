@@ -111,4 +111,13 @@ describe("mergeAdapterConfig", () => {
     const result = mergeAdapterConfig({ lockPageSlug: "/lock" }, {})
     expect(result.lockPageSlug).toBe("/lock")
   })
+
+  it("should not overwrite generated values with undefined call-site values", () => {
+    const result = mergeAdapterConfig(
+      { lockPageSlug: "/lock", debug: true },
+      { lockPageSlug: undefined, debug: false },
+    )
+    expect(result.lockPageSlug).toBe("/lock")
+    expect(result.debug).toBe(false)
+  })
 })
