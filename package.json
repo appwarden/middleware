@@ -113,7 +113,7 @@
     "@amanda-mitchell/semantic-release-npm-multiple": "^3.17.0",
     "@cloudflare/vitest-pool-workers": "^0.16.4",
     "@commitlint/cli": "^20.5.0",
-    "@commitlint/config-conventional": "^20.5.0",
+    "@commitlint/config-conventional": "^21.0.1",
     "@cyclonedx/cdxgen": "^12.2.0",
     "@playwright/test": "^1.60.0",
     "@semantic-release/changelog": "^6.0.3",
