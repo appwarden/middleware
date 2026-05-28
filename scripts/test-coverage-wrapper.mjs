@@ -35,14 +35,17 @@ child.on("close", (code) => {
     process.exit(0)
   }
 
+  // Strip ANSI escape sequences so regexes work on coloured output
+  const clean = output.replace(/\x1b\[[0-9;]*m/g, "")
+
   const allTestsPassed =
-    /Test Files\s+\d+\s+passed\s+\(\d+\)/.test(output) &&
-    /Tests\s+\d+\s+passed\s+\(\d+\)/.test(output)
+    /Test Files\s+\d+\s+passed\s+\(\d+\)/.test(clean) &&
+    /Tests\s+\d+\s+passed\s+\(\d+\)/.test(clean)
 
   const hasWorkerdSegfault =
-    output.includes("Received signal #11: Segmentation fault") ||
-    output.includes("Worker exited unexpectedly") ||
-    output.includes("[vitest-pool]: Worker cloudflare-pool emitted error")
+    clean.includes("Received signal #11: Segmentation fault") ||
+    clean.includes("Worker exited unexpectedly") ||
+    clean.includes("[vitest-pool]: Worker cloudflare-pool emitted error")
 
   if (allTestsPassed && hasWorkerdSegfault) {
     process.stderr.write(
