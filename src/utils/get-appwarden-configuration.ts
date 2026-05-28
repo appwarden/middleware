@@ -14,6 +14,9 @@ export function mergeAdapterConfig(
 
   for (const key of Object.keys(callSite)) {
     if (key === "contentSecurityPolicy") {
+      if (callSite[key] === undefined) {
+        continue
+      }
       const genCsp = (generated[key] as Record<string, unknown>) || {}
       const siteCsp = (callSite[key] as Record<string, unknown>) || {}
       merged[key] = {

@@ -35,14 +35,35 @@ function isCspHeader(name) {
   return name === CSP_ENFORCED || name === CSP_REPORT_ONLY
 }
 
+function isGlobalRoute(route) {
+  if (typeof route !== "string") return false
+  const trimmed = route.trim()
+  // Cloudflare catch-all routes
+  if (trimmed === "/*" || trimmed === "/") return true
+  // Next.js / Vercel catch-all patterns
+  if (trimmed === "/(.*)" || trimmed === "/:path*" || trimmed === "/:path+")
+    return true
+  return false
+}
+
 const BuildOutputSchema = z.object({
-  lockPageSlug: z.string(),
+  lockPageSlug: z
+    .string()
+    .refine(
+      (val) =>
+        !val.includes("://") && !val.startsWith("//") && !val.includes("\\"),
+      {
+        message: "lockPageSlug must be a relative path",
+      },
+    ),
   debug: z.boolean().optional(),
   appwardenApiHostname: z.string().optional(),
   contentSecurityPolicy: z
     .object({
-      mode: z.enum(["enforced", "report-only"]),
-      directives: z.record(z.union([z.string(), z.array(z.string())])),
+      mode: z.enum(["disabled", "enforced", "report-only"]),
+      directives: z.record(
+        z.union([z.string(), z.array(z.string()), z.boolean()]),
+      ),
     })
     .optional(),
 })
@@ -177,6 +198,25 @@ function extractHeadersFromNextConfig(source) {
     ) {
       for (const el of node.argument.elements || []) {
         if (!el || el.type !== "ObjectExpression") continue
+        let sourceValue = null
+        for (const prop of el.properties || []) {
+          if (
+            prop.type === "Property" &&
+            prop.key &&
+            (prop.key.name === "source" || prop.key.value === "source") &&
+            prop.value &&
+            prop.value.type === "Literal"
+          ) {
+            sourceValue = prop.value.value
+            break
+          }
+        }
+        if (sourceValue && !isGlobalRoute(sourceValue)) {
+          warn(
+            `Skipping route-specific CSP from Next.js source: ${sourceValue}`,
+          )
+          continue
+        }
         for (const prop of el.properties || []) {
           if (
             prop.type === "Property" &&
@@ -303,10 +343,13 @@ function parseCspHeaderValue(value) {
 function parseCloudflareHeaders(content) {
   const lines = content.split(/\r?\n/)
   const result = []
+  let currentRoute = null
   for (const line of lines) {
     const trimmed = line.trim()
     if (!trimmed || trimmed.startsWith("#")) continue
     if (!line.startsWith(" ") && !line.startsWith("\t")) {
+      // This is a route line, not an indented header
+      currentRoute = trimmed
       continue
     }
     const colonIdx = trimmed.indexOf(":")
@@ -314,6 +357,12 @@ function parseCloudflareHeaders(content) {
     const name = trimmed.slice(0, colonIdx).trim().toLowerCase()
     const value = trimmed.slice(colonIdx + 1).trim()
     if (isCspHeader(name)) {
+      if (currentRoute && !isGlobalRoute(currentRoute)) {
+        warn(
+          `Skipping route-specific CSP from non-global route: ${currentRoute}`,
+        )
+        continue
+      }
       result.push({ key: name, value })
     }
   }
@@ -442,6 +491,11 @@ function extractLocalHeadersConfig(cwd, framework) {
     try {
       const vj = JSON.parse(vercelJsonContent)
       for (const rule of [...(vj.headers || []), ...(vj.routes || [])]) {
+        const route = rule.source || rule.src || ""
+        if (route && !isGlobalRoute(route)) {
+          warn(`Skipping route-specific CSP from vercel.json rule: ${route}`)
+          continue
+        }
         pushCspHeaders(headers, rule.headers)
       }
     } catch {}
@@ -482,7 +536,10 @@ function extractLocalHeadersConfig(cwd, framework) {
 
 function isAllowedApiHostname(value) {
   try {
-    return ALLOWED_API_HOSTNAMES.includes(new URL(value).hostname)
+    const url = new URL(value)
+    return (
+      url.protocol === "https:" && ALLOWED_API_HOSTNAMES.includes(url.hostname)
+    )
   } catch {
     return false
   }

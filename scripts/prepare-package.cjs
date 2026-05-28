@@ -69,6 +69,12 @@ const main = () => {
     path.join(__dirname, "../LICENSE"),
     path.join(__dirname, "../build/LICENSE"),
   )
+  // Copy appwarden-link script to the build directory
+  fs.mkdirSync(path.join(__dirname, "../build/scripts"), { recursive: true })
+  fs.copyFileSync(
+    path.join(__dirname, "../scripts/appwarden-link.cjs"),
+    path.join(__dirname, "../build/scripts/appwarden-link.cjs"),
+  )
 }
 
 main()
