@@ -564,10 +564,8 @@ describe("appwarden-link.cjs", () => {
     const wrapperPath = path.join(tmpDir, "mock-fetch-wrapper.cjs")
     fs.writeFileSync(
       wrapperPath,
-      "global.fetch = async () => ({\n" +
-        "  ok: true,\n" +
-        "  headers: { get: () => null },\n" +
-        "  text: async () => JSON.stringify({\n" +
+      "global.fetch = async () => {\n" +
+        "  const bodyText = JSON.stringify({\n" +
         "    content: [{\n" +
         '      url: "example.com",\n' +
         "      options: {\n" +
@@ -575,8 +573,25 @@ describe("appwarden-link.cjs", () => {
         '        appwardenApiHostname: "https://evil.com"\n' +
         "      }\n" +
         "    }]\n" +
-        "  }),\n" +
-        "});\n" +
+        "  });\n" +
+        "  return {\n" +
+        "    ok: true,\n" +
+        "    headers: { get: () => null },\n" +
+        "    body: {\n" +
+        "      getReader: () => {\n" +
+        "        let done = false;\n" +
+        "        return {\n" +
+        "          read: async () => {\n" +
+        "            if (done) return { done: true };\n" +
+        "            done = true;\n" +
+        "            return { done: false, value: new TextEncoder().encode(bodyText) };\n" +
+        "          },\n" +
+        "          cancel: async () => {},\n" +
+        "        };\n" +
+        "      },\n" +
+        "    },\n" +
+        "  };\n" +
+        "};\n" +
         'process.env.APPWARDEN_API_TOKEN = "test-token";\n' +
         'process.env.APPWARDEN_FQDN = "example.com";\n' +
         'require("' +

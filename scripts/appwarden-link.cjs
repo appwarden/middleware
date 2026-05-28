@@ -406,7 +406,10 @@ function safeWriteFile(filePath, content, cwd) {
     fs.renameSync(tempFile, target)
 
     // Final verification: ensure the written file is a regular file inside the
-    // project and was not replaced by a link after the rename.
+    // project. The nlink > 1 check specifically defends against a race where an
+    // attacker creates a hard link to the temp file in the same directory between
+    // writeFileSync and renameSync; it does not protect against a pre-existing
+    // hard-linked target because rename atomically swaps inodes.
     const finalStat = fs.lstatSync(target)
     if (!finalStat.isFile() || finalStat.nlink > 1) {
       warn(`Refusing to write through link: ${target}`)
