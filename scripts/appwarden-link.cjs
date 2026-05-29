@@ -500,7 +500,15 @@ function extractLocalHeadersConfig(cwd, framework) {
           warn(`Skipping route-specific CSP from vercel.json rule: ${route}`)
           continue
         }
-        pushCspHeaders(headers, rule.headers)
+        // Legacy vercel.json routes[] may use an object map for headers
+        let ruleHeaders = rule.headers
+        if (ruleHeaders && !Array.isArray(ruleHeaders)) {
+          ruleHeaders = Object.entries(ruleHeaders).map(([key, value]) => ({
+            key,
+            value,
+          }))
+        }
+        pushCspHeaders(headers, ruleHeaders)
       }
     } catch {}
   }

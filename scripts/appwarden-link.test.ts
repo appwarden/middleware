@@ -414,6 +414,43 @@ describe("appwarden-link.cjs", () => {
     fs.rmSync(tmpDir, { recursive: true })
   })
 
+  it("should extract CSP from vercel.json legacy routes with object-map headers", () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "appwarden-test-"))
+
+    fs.writeFileSync(
+      path.join(tmpDir, "package.json"),
+      JSON.stringify({ dependencies: { next: "^14" } }),
+    )
+    fs.writeFileSync(
+      path.join(tmpDir, "vercel.json"),
+      JSON.stringify({
+        routes: [
+          {
+            src: "/(.*)",
+            headers: {
+              "Content-Security-Policy": "default-src 'self'",
+            },
+          },
+        ],
+      }),
+    )
+
+    execSync(`node "${scriptPath}"`, {
+      cwd: tmpDir,
+      encoding: "utf-8",
+      env: { ...process.env, APPWARDEN_SKIP_POSTBUILD: undefined },
+    })
+
+    const configPath = path.join(tmpDir, configDir, configName)
+    const config = JSON.parse(fs.readFileSync(configPath, "utf-8"))
+    expect(config.contentSecurityPolicy.mode).toBe("enforced")
+    expect(config.contentSecurityPolicy.directives["default-src"]).toEqual([
+      "'self'",
+    ])
+
+    fs.rmSync(tmpDir, { recursive: true })
+  })
+
   it("should warn when .appwarden/linked/ is not gitignored", () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "appwarden-test-"))
 
