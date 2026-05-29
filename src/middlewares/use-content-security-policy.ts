@@ -3,6 +3,14 @@ import { Middleware } from "../types"
 import { isHTMLResponse } from "../utils"
 import { makeCSPHeader } from "../utils/cloudflare"
 
+function generateCspNonce(): string {
+  const bytes = new Uint8Array(16)
+  crypto.getRandomValues(bytes)
+  return Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("")
+}
+
 const AppendAttribute = (attribute: string, nonce: string) => ({
   element: function (element: Element) {
     element.setAttribute(attribute, nonce)
@@ -37,7 +45,7 @@ export const useContentSecurityPolicy: (input: UseCSPInput) => Middleware = (
       return
     }
 
-    const cspNonce = crypto.randomUUID()
+    const cspNonce = generateCspNonce()
 
     const [cspHeaderName, cspHeaderValue] = makeCSPHeader(
       cspNonce,

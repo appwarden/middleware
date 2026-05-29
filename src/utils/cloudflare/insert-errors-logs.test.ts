@@ -57,8 +57,10 @@ describe("insertErrorLogs", () => {
     global.HTMLRewriter = MockHTMLRewriter
 
     // Mock element
+    const mockSetAttribute = vi.fn()
     const mockElement = {
       append: mockAppend,
+      setAttribute: mockSetAttribute,
     }
 
     // Create mock context with a request that has a body
@@ -107,13 +109,29 @@ describe("insertErrorLogs", () => {
     const elementHandler = mockOn.mock.calls[0][1]
     elementHandler.element(mockElement)
 
-    // Verify append was called with script containing errors
+    // Verify setAttribute was called with HTML-escaped JSON errors
+    expect(mockSetAttribute).toHaveBeenCalledWith(
+      "data-appwarden-logs",
+      expect.stringContaining("[MOCK] Error 1"),
+    )
+    expect(mockSetAttribute).toHaveBeenCalledWith(
+      "data-appwarden-logs",
+      expect.stringContaining("[MOCK] Error 2"),
+    )
+    const setAttributeValue = mockSetAttribute.mock.calls[0][1] as string
+    // Verify the attribute value is HTML-escaped (no raw < or > or &)
+    expect(setAttributeValue).not.toContain("<")
+    expect(setAttributeValue).not.toContain(">")
+    expect(setAttributeValue).not.toContain('"')
+
+    // Verify append was called with a static script tag
     expect(mockAppend).toHaveBeenCalledWith(
       expect.stringContaining("console.error"),
       { html: true },
     )
-    expect(mockAppend.mock.calls[0][0]).toContain("[MOCK] Error 1")
-    expect(mockAppend.mock.calls[0][0]).toContain("[MOCK] Error 2")
+    // The appended script should be static (no dynamic error content)
+    expect(mockAppend.mock.calls[0][0]).not.toContain("[MOCK] Error 1")
+    expect(mockAppend.mock.calls[0][0]).not.toContain("[MOCK] Error 2")
   })
 
   it("should escape <script>, backticks, and ${} in error messages injected into HTML", async () => {
@@ -136,6 +154,7 @@ describe("insertErrorLogs", () => {
     const mockResponse = new Response("<html><body>Test</body></html>")
     global.fetch = vi.fn().mockResolvedValue(mockResponse)
 
+    const mockSetAttribute = vi.fn()
     const mockAppend = vi.fn()
     const mockOn = vi.fn().mockReturnThis()
     const mockTransform = vi.fn().mockReturnValue(new Response("transformed"))
@@ -150,6 +169,7 @@ describe("insertErrorLogs", () => {
 
     const mockElement = {
       append: mockAppend,
+      setAttribute: mockSetAttribute,
     }
 
     const mockContext = {
@@ -162,18 +182,24 @@ describe("insertErrorLogs", () => {
     const elementHandler = mockOn.mock.calls[0][1]
     elementHandler.element(mockElement)
 
+    // Verify setAttribute was called with HTML-escaped content
+    expect(mockSetAttribute).toHaveBeenCalledWith(
+      "data-appwarden-logs",
+      expect.stringContaining("[@appwarden/middleware]"),
+    )
+    const escapedValue = mockSetAttribute.mock.calls[0][1] as string
+
+    // Malicious HTML must be escaped in the attribute value
+    expect(escapedValue).not.toContain("</script>")
+    expect(escapedValue).not.toContain("<")
+    expect(escapedValue).not.toContain(">")
+    expect(escapedValue).not.toContain('"')
+
+    // The appended script should be static and safe
     const appendedHtml = mockAppend.mock.calls[0][0] as string
-
-    // </script> must be escaped so it does not close the injected script tag
-    expect(appendedHtml).not.toContain("</script><script>")
-    expect(appendedHtml).toContain("<\\/script>")
-
-    // Template literal interpolation must be escaped
-    expect(appendedHtml).not.toContain('${alert("xss")}')
-    expect(appendedHtml).toContain("\\${alert")
-
-    // Backticks must be escaped so they do not break the template literal
+    expect(appendedHtml).not.toContain("alert('xss')")
+    expect(appendedHtml).not.toContain("${alert")
     expect(appendedHtml).not.toContain("`backtick`")
-    expect(appendedHtml).toContain("\\`backtick\\`")
+    expect(appendedHtml).toContain("console.error")
   })
 })
