@@ -3,6 +3,27 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [3.15.0](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.14.1...@appwarden/middleware@3.15.0) (2026-05-29)
+
+
+### Bug Fixes
+
+* address CodeQL alerts and CI test:coverage workerd segfault ([4221e4a](https://github.com/appwarden/middleware/commit/4221e4a8c7ea888ca2673ce0be649655aff54f8a))
+* address Copilot review comments on PR [#316](https://github.com/appwarden/middleware/issues/316) - Update mock fetch wrapper to use body.getReader() and clarify nlink check comment ([5a02252](https://github.com/appwarden/middleware/commit/5a022524d167ad8e6ba77769023fe7b5a269ad40))
+* address Copilot review comments on PR [#317](https://github.com/appwarden/middleware/issues/317) ([3f91d32](https://github.com/appwarden/middleware/commit/3f91d3234cc04c9d992729b3ca5b5c4d837893d5))
+* address Copilot review comments on PR [#317](https://github.com/appwarden/middleware/issues/317) ([df0aa4b](https://github.com/appwarden/middleware/commit/df0aa4b450580b23d45b11c908de2b3c662252d6))
+* address Copilot review comments on PR [#327](https://github.com/appwarden/middleware/issues/327) ([8b0abb1](https://github.com/appwarden/middleware/commit/8b0abb199fa1b54a89d0fff30303ff9f9836a427))
+* **appwarden-link:** normalize legacy vercel.json object-map headers ([bc0c3a0](https://github.com/appwarden/middleware/commit/bc0c3a0e955deffa99455f82b7fd43e67e626eaf))
+* **appwarden-link:** normalize quoted nonce placeholders and limit next.config discovery to JS ([8f8384c](https://github.com/appwarden/middleware/commit/8f8384c94e3a6f05c2effecefee7adf36725c857))
+* **test-coverage-wrapper:** strip ANSI codes before regex matching ([e4f39d5](https://github.com/appwarden/middleware/commit/e4f39d51a77987ae92166f52767dbedc8d923505))
+
+
+### Features
+
+* apply ValidLockPageSlugSchema to adapter schemas and refine getAppwardenConfiguration ([9d4742e](https://github.com/appwarden/middleware/commit/9d4742ef14e4c526b323cb1fd7b4824097baf17e))
+* **cli:** harden appwarden-link against path traversal and TOCTOU races ([162a40f](https://github.com/appwarden/middleware/commit/162a40fd68dc456c70f0cd9634a6c77868ff640d))
+* synchronize remote configuration across adapters ([545c465](https://github.com/appwarden/middleware/commit/545c465b4d59b72722b6d34d1310cc705d81ccd4))
+
 ## [3.14.1](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.14.0...@appwarden/middleware@3.14.1) (2026-04-16)
 
 
