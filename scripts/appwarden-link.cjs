@@ -187,13 +187,18 @@ function extractHeadersFromNextConfig(source) {
     if (depth > MAX_WALK_DEPTH) return
     visited.add(node)
 
-    if (
+    const headersArray =
       inHeadersFn &&
       node.type === "ReturnStatement" &&
       node.argument &&
       node.argument.type === "ArrayExpression"
-    ) {
-      for (const el of node.argument.elements || []) {
+        ? node.argument
+        : inHeadersFn && node.type === "ArrayExpression"
+          ? node
+          : null
+
+    if (headersArray) {
+      for (const el of headersArray.elements || []) {
         if (!el || el.type !== "ObjectExpression") continue
         let sourceValue = null
         for (const prop of el.properties || []) {
