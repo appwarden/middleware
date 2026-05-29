@@ -6,6 +6,22 @@
  *
  * This is a pure function — call-sites pass their own loaded config.
  */
+function toDirectiveRecord(value: unknown): Record<string, unknown> {
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value)
+      return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+        ? (parsed as Record<string, unknown>)
+        : {}
+    } catch {
+      return {}
+    }
+  }
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {}
+}
+
 export function mergeAdapterConfig(
   generated: Record<string, unknown>,
   callSite: Record<string, unknown>,
@@ -22,8 +38,8 @@ export function mergeAdapterConfig(
       merged[key] = {
         mode: siteCsp.mode ?? genCsp.mode ?? undefined,
         directives: {
-          ...((genCsp.directives as Record<string, unknown>) || {}),
-          ...((siteCsp.directives as Record<string, unknown>) || {}),
+          ...toDirectiveRecord(genCsp.directives),
+          ...toDirectiveRecord(siteCsp.directives),
         },
       }
     } else if (callSite[key] !== undefined) {
