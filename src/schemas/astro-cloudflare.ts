@@ -3,6 +3,7 @@ import {
   AppwardenApiHostnameSchema,
   AppwardenApiTokenSchema,
   BooleanSchema,
+  ValidLockPageSlugSchema,
 } from "./helpers"
 import { UseCSPInputSchema } from "./use-content-security-policy"
 
@@ -12,7 +13,7 @@ import { UseCSPInputSchema } from "./use-content-security-policy"
  */
 export const AstroCloudflareConfigSchema = z.object({
   /** The slug/path of the lock page to redirect to when the site is locked */
-  lockPageSlug: z.string(),
+  lockPageSlug: ValidLockPageSlugSchema,
   /** The Appwarden API token for authentication */
   appwardenApiToken: AppwardenApiTokenSchema,
   /** Optional custom API hostname (defaults to https://api.appwarden.io) */

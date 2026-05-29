@@ -55,6 +55,26 @@ describe("TanStackStartCloudflareConfigSchema", () => {
     expect(result.success).toBe(false)
   })
 
+  it.each([["//evil.com"], ["https://evil.com"], ["http://evil.com"]])(
+    "should reject invalid lockPageSlug: %s",
+    (lockPageSlug) => {
+      const invalidConfig = {
+        lockPageSlug,
+        appwardenApiToken: "token123",
+      }
+
+      const result =
+        TanStackStartCloudflareConfigSchema.safeParse(invalidConfig)
+      expect(result.success).toBe(false)
+      if (!result.success) {
+        const issue = result.error.issues.find((entry) =>
+          entry.path.includes("lockPageSlug"),
+        )
+        expect(issue?.message).toContain("relative path")
+      }
+    },
+  )
+
   it("should reject missing appwardenApiToken", () => {
     const invalidConfig = {
       lockPageSlug: "/maintenance",

@@ -137,6 +137,26 @@ describe("BaseNextJsConfigSchema", () => {
       expect(result.error.issues[0].path).toContain("appwardenApiToken")
     }
   })
+
+  it.each([["//evil.com"], ["https://evil.com"], ["http://evil.com"]])(
+    "should reject invalid lockPageSlug: %s",
+    (lockPageSlug) => {
+      const config = {
+        cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
+        appwardenApiToken: "token123",
+        lockPageSlug,
+      }
+
+      const result = BaseNextJsConfigSchema.safeParse(config)
+      expect(result.success).toBe(false)
+      if (!result.success) {
+        const issue = result.error.issues.find((entry) =>
+          entry.path.includes("lockPageSlug"),
+        )
+        expect(issue?.message).toContain("relative path")
+      }
+    },
+  )
 })
 
 describe("AppwardenConfigSchema", () => {

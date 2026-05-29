@@ -3,18 +3,9 @@ import {
   AppwardenApiHostnameSchema,
   AppwardenApiTokenSchema,
   BooleanSchema,
+  ValidLockPageSlugSchema,
 } from "./helpers"
 import { UseCSPInputSchema } from "./use-content-security-policy"
-
-const ValidLockPageSlugSchema = z
-  .string()
-  .refine(
-    (val) =>
-      !val.includes("://") && !val.startsWith("//") && !val.includes("\\"),
-    {
-      message: "lockPageSlug must be a relative path",
-    },
-  )
 
 export const AppwardenMultidomainConfigSchema = z.record(
   z.string(),
