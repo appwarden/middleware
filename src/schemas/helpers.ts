@@ -52,3 +52,13 @@ export const LockValue = z.object({
 })
 
 export type LockValueType = z.infer<typeof LockValue>
+
+export const ValidLockPageSlugSchema = z
+  .string()
+  .refine(
+    (val) =>
+      !val.includes("://") && !val.startsWith("//") && !val.includes("\\"),
+    {
+      message: "lockPageSlug must be a relative path",
+    },
+  )

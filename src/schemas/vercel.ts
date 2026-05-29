@@ -2,7 +2,7 @@ import { z } from "zod"
 import { ContentSecurityPolicyType } from "../types"
 import { isCacheUrl, isValidCacheUrl, SchemaErrorKey } from "../utils"
 import { printMessage } from "../utils/print-message"
-import { AppwardenApiHostnameSchema } from "./helpers"
+import { AppwardenApiHostnameSchema, ValidLockPageSlugSchema } from "./helpers"
 import {
   CSPDirectivesSchema,
   CSPModeSchema,
@@ -49,10 +49,9 @@ export const BaseNextJsConfigSchema = z.object({
   appwardenApiHostname: AppwardenApiHostnameSchema.optional(),
   vercelApiToken: z.string().optional(),
   debug: z.boolean().optional(),
-  lockPageSlug: z
-    .string()
-    .default("")
-    .transform((val) => val.replace(/^\/?/, "/")),
+  lockPageSlug: ValidLockPageSlugSchema.default("").transform((val) =>
+    val.replace(/^\/?/, "/"),
+  ),
   contentSecurityPolicy: VercelCSPSchema.optional(),
 })
 

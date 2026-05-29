@@ -5,6 +5,7 @@ import { useFetchOrigin } from "../middlewares/use-fetch-origin"
 import {
   CloudflareConfigFnType,
   ConfigFnInputSchema,
+  lockPageSlugRefinement,
   UseAppwardenInputSchema,
 } from "../schemas"
 import { Bindings, MiddlewareContext } from "../types"
@@ -19,14 +20,18 @@ import {
 import { insertErrorLogs } from "../utils/cloudflare"
 import { parseMergedConfig } from "../utils/get-appwarden-configuration"
 
+const RefinedUseAppwardenInputSchema = lockPageSlugRefinement(
+  UseAppwardenInputSchema,
+)
+
 export function getAppwardenConfiguration(
   generatedConfig: Record<string, unknown>,
-  config: Partial<ReturnType<typeof UseAppwardenInputSchema.parse>>,
-): ReturnType<typeof UseAppwardenInputSchema.parse> {
+  config: Partial<ReturnType<typeof RefinedUseAppwardenInputSchema.parse>>,
+): ReturnType<typeof RefinedUseAppwardenInputSchema.parse> {
   return parseMergedConfig(
     generatedConfig,
     config as Record<string, unknown>,
-    UseAppwardenInputSchema.parse,
+    RefinedUseAppwardenInputSchema.parse,
   )
 }
 
