@@ -14,7 +14,7 @@ function toDirectiveRecord(value: unknown): Record<string, unknown> {
         ? (parsed as Record<string, unknown>)
         : {}
     } catch {
-      return {}
+      throw new Error("contentSecurityPolicy.directives must be valid JSON")
     }
   }
   return value && typeof value === "object" && !Array.isArray(value)
