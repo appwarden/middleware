@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.15.1](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.15.0...@appwarden/middleware@3.15.1) (2026-05-29)
+
+
+### Bug Fixes
+
+* resolve two production-blocking security issues ([6ff87b3](https://github.com/appwarden/middleware/commit/6ff87b3726618c721ef372b42f403621d9943dc2))
+* use JSON-safe escapes in htmlEscape and update tests for JSON-parseable attributes ([604a515](https://github.com/appwarden/middleware/commit/604a515afd029daa01c1827e6456c7933c46a031)), closes [#x27](https://github.com/appwarden/middleware/issues/x27)
+
 # [3.15.0](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.14.1...@appwarden/middleware@3.15.0) (2026-05-29)
 
 
