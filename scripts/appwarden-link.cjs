@@ -757,7 +757,9 @@ function checkGitignore(cwd) {
           return false
         }
         const content = fs.readFileSync(fd, "utf-8")
-        return content.includes(CONFIG_PATH) || content.includes(".appwarden/")
+        if (content.includes(CONFIG_PATH) || content.includes(".appwarden/")) {
+          return true
+        }
       } finally {
         fs.closeSync(fd)
       }
