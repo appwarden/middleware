@@ -119,10 +119,11 @@ describe("insertErrorLogs", () => {
       expect.stringContaining("[MOCK] Error 2"),
     )
     const setAttributeValue = mockSetAttribute.mock.calls[0][1] as string
-    // Verify the attribute value is HTML-escaped (no raw < or > or &)
+    // Verify the attribute value does not contain raw tag delimiters
     expect(setAttributeValue).not.toContain("<")
     expect(setAttributeValue).not.toContain(">")
-    expect(setAttributeValue).not.toContain('"')
+    // Verify the attribute value is JSON-parseable
+    expect(() => JSON.parse(setAttributeValue)).not.toThrow()
 
     // Verify append was called with a static script tag
     expect(mockAppend).toHaveBeenCalledWith(
@@ -189,11 +190,11 @@ describe("insertErrorLogs", () => {
     )
     const escapedValue = mockSetAttribute.mock.calls[0][1] as string
 
-    // Malicious HTML must be escaped in the attribute value
-    expect(escapedValue).not.toContain("</script>")
+    // Verify the attribute value does not contain raw tag delimiters
     expect(escapedValue).not.toContain("<")
     expect(escapedValue).not.toContain(">")
-    expect(escapedValue).not.toContain('"')
+    // Verify the attribute value is JSON-parseable
+    expect(() => JSON.parse(escapedValue)).not.toThrow()
 
     // The appended script should be static and safe
     const appendedHtml = mockAppend.mock.calls[0][0] as string
