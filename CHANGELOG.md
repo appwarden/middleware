@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.15.2](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.15.1...@appwarden/middleware@3.15.2) (2026-06-02)
+
+
+### Bug Fixes
+
+* correct package entry points and improve link script auth/debug handling ([f13366c](https://github.com/appwarden/middleware/commit/f13366cfb725f739fb3139427383defc3c510580))
+
 ## [3.15.1](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.15.0...@appwarden/middleware@3.15.1) (2026-05-29)
 
 
