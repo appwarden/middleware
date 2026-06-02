@@ -73,6 +73,11 @@ const YELLOW = "\x1b[33m"
 
 const print = (...args) => console.log(`${CYAN}[appwarden]`, ...args)
 const warn = (...args) => console.warn(`${YELLOW}[appwarden]`, ...args)
+const makeDebug =
+  (enabled) =>
+  (...args) => {
+    if (enabled) console.log(`${CYAN}[appwarden]`, ...args)
+  }
 
 function parseArgs() {
   const args = process.argv.slice(2)
@@ -81,6 +86,7 @@ function parseArgs() {
     staging: false,
     cwd: process.cwd(),
     fqdn: null,
+    debug: false,
   }
   for (const arg of args) {
     const frameworkMatch = arg.match(/^--framework=(.+)$/)
@@ -93,6 +99,7 @@ function parseArgs() {
       }
     }
     if (arg === "--staging") result.staging = true
+    if (arg === "--debug") result.debug = true
 
     const cwdMatch = arg.match(/^--cwd=(.+)$/)
     if (cwdMatch) {
@@ -651,6 +658,11 @@ async function fetchRemoteConfig(apiToken, apiHostname, fqdn) {
       signal: controller.signal,
     })
     if (!res.ok) {
+      if (res.status === 401) {
+        throw new Error(
+          "Authentication failed. Ensure your Appwarden API token is correct. Manage tokens at https://use.appwarden.io?to=settings/security",
+        )
+      }
       warn(`fetch failed: ${href} ${res.status} ${res.statusText}`)
       return null
     }
@@ -713,6 +725,7 @@ async function fetchRemoteConfig(apiToken, apiHostname, fqdn) {
 
     return sanitizeRemoteConfig(config)
   } catch (err) {
+    if (err.message.startsWith("Authentication failed")) throw err
     warn(`fetch error: ${href} ${err.message}`)
     return null
   } finally {
@@ -788,6 +801,7 @@ async function main() {
     process.exit(0)
   }
   const args = parseArgs()
+  const debug = makeDebug(args.debug)
   const cwd = args.cwd
   const framework = detectFramework(cwd, args.framework)
   if (!framework) {
@@ -801,7 +815,7 @@ async function main() {
     : "https://api.appwarden.io"
   const fqdn = args.fqdn || process.env.APPWARDEN_FQDN || null
   if (args.staging) {
-    print("Using staging API hostname")
+    print("Using staging API")
   }
   if (apiToken) {
     print(`Using provided Appwarden API token`)
@@ -812,7 +826,13 @@ async function main() {
   if (localHeaders) {
     print("Found local CSP headers configuration.")
   }
-  const remote = await fetchRemoteConfig(apiToken, apiHostname, fqdn)
+  let remote
+  try {
+    remote = await fetchRemoteConfig(apiToken, apiHostname, fqdn)
+  } catch (err) {
+    warn(err.message)
+    process.exit(1)
+  }
   if (remote) {
     print("Fetched remote Appwarden configuration.")
   }
@@ -836,6 +856,7 @@ async function main() {
   )
   if (writeOk) {
     print(`Wrote merged configuration to ${outPath}`)
+    debug(JSON.stringify(safeConfig, null, 2))
   } else {
     warn(`Failed to write merged configuration to ${outPath}`)
     process.exit(1)

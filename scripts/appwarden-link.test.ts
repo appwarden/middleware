@@ -40,7 +40,7 @@ describe("appwarden-link.cjs", () => {
       env: { ...process.env, APPWARDEN_SKIP_POSTBUILD: undefined },
     })
 
-    expect(output).toContain("Using staging API hostname")
+    expect(output).toContain("Using staging API")
 
     fs.rmSync(tmpDir, { recursive: true })
   })
