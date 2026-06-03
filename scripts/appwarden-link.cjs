@@ -856,7 +856,10 @@ async function main() {
   )
   if (writeOk) {
     print(`Wrote merged configuration to ${outPath}`)
-    debug(JSON.stringify(safeConfig, null, 2))
+    debug(
+      `Printing merged configuration\n`,
+      JSON.stringify(safeConfig, null, 2),
+    )
   } else {
     warn(`Failed to write merged configuration to ${outPath}`)
     process.exit(1)
