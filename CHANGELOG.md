@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.15.4](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.15.3...@appwarden/middleware@3.15.4) (2026-06-03)
+
+
+### Bug Fixes
+
+* consolidate debug log message for merged configuration ([96cea0b](https://github.com/appwarden/middleware/commit/96cea0b020d65a69c0040bd2900d3f8d972de116))
+
 ## [3.15.3](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.15.2...@appwarden/middleware@3.15.3) (2026-06-03)
 
 
