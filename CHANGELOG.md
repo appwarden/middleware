@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.15.3](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.15.2...@appwarden/middleware@3.15.3) (2026-06-03)
+
+
+### Bug Fixes
+
+* improve debug output formatting in appwarden-link ([b6209e2](https://github.com/appwarden/middleware/commit/b6209e2fa3c5b483ea4c3f7817ecf137ea096755))
+
 ## [3.15.2](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.15.1...@appwarden/middleware@3.15.2) (2026-06-02)
 
 
