@@ -119,7 +119,7 @@
     "@cloudflare/vitest-pool-workers": "^0.16.10",
     "@commitlint/cli": "^21.0.1",
     "@commitlint/config-conventional": "^21.0.1",
-    "@cyclonedx/cdxgen": "^12.2.0",
+    "@cyclonedx/cdxgen": "^12.5.0",
     "@opennextjs/cloudflare": "^1.19.11",
     "@playwright/test": "^1.60.0",
     "@semantic-release/changelog": "^6.0.3",
