@@ -21,7 +21,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout
-        uses: actions/checkout@v6.0.1
+        uses: actions/checkout@v6.0.3
         with:
           fetch-depth: 0 # Needed for semantic-release to generate correct version numbers
           token: ${{ env.MIDDLEWARE_GITHUB_TOKEN }}
