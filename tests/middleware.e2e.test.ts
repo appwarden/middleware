@@ -179,7 +179,7 @@ async function wait(ms: number): Promise<void> {
  * Check if the page is showing the lock/maintenance page
  */
 function isLockPage(url: string, lockPageSlug: string): boolean {
-  return url.includes(lockPageSlug)
+  return new URL(url).pathname === lockPageSlug
 }
 
 /**
@@ -269,7 +269,31 @@ async function expectLockStateWithOptionalRetry(
     }
   } while (attempt < maxAttempts && isLocked !== expectedLocked)
 
-  expect(isLocked).toBe(expectedLocked)
+  if (isLocked !== expectedLocked) {
+    const url = page.url()
+    const pathname = new URL(url).pathname
+    const expectedSlug = website.lockPageSlug
+
+    let actual: string
+    if (isLocked) {
+      actual = `lock page (${expectedSlug})`
+    } else if (pathname === "/" || pathname === "") {
+      actual = "homepage"
+    } else if (expectedLocked) {
+      actual = `wrong lock page (${pathname})`
+    } else {
+      actual = `unexpected page (${pathname})`
+    }
+
+    let expected: string
+    if (expectedLocked) {
+      expected = `lock page (${expectedSlug})`
+    } else {
+      expected = "homepage"
+    }
+
+    throw new Error(`Expected ${expected} but got ${actual} at URL: ${url}`)
+  }
 }
 
 /**
