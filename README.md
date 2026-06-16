@@ -104,7 +104,7 @@ For more background and advanced configuration, see the [Appwarden documentation
 
 #### 1.1 Universal Middleware (direct Cloudflare Worker usage)
 
-The **Universal Middleware** (`@appwarden/middleware/cloudflare`) is the recommended way to install Appwarden on Cloudflare. The easiest way to deploy this universal middleware is via our [build-cloudflare-action](https://github.com/appwarden/build-cloudflare-action); see the [Cloudflare integration guide](https://appwarden.io/docs/guides/cloudflare-middleware-integration#1-set-up-the-github-actions-workflow) for workflow details. If you prefer to manage your own Cloudflare Worker instead of using the GitHub Action, you can mount the universal Cloudflare middleware directly using the `@appwarden/middleware/cloudflare` bundle:
+The **Universal Middleware** (`@appwarden/middleware/cloudflare`) supports any website deployed on Cloudflare. It deploys as a standalone Cloudflare Worker and incurs additional usage-based charges. The easiest way to deploy this universal middleware is via our [build-cloudflare-action](https://github.com/appwarden/build-cloudflare-action); see the [Cloudflare integration guide](https://appwarden.io/docs/guides/cloudflare-middleware-integration#1-set-up-the-github-actions-workflow) for workflow details. If you prefer to manage your own Cloudflare Worker instead of using the GitHub Action, you can mount the universal Cloudflare middleware directly using the `@appwarden/middleware/cloudflare` bundle:
 
 ```ts
 // src/worker.ts
@@ -131,29 +131,34 @@ See the Cloudflare integration docs on [appwarden.io](https://appwarden.io/docs)
 
 #### 1.2 Cloudflare framework adapters
 
-If you cannot use `build-cloudflare-action`, you can mount Appwarden inside your application using framework-specific adapters.
+If you are using a supported framework, you can mount Appwarden inside your application using framework-specific adapters. This approach incurs no additional cost.
 
-> Currently, framework adapters do not automatically reflect your Appwarden domain configuration. You must manually provide the `lockPageSlug` and `contentSecurityPolicy` configuration in your code.
+Framework adapters can also sync Appwarden-managed lock page and CSP settings into your build:
+
+1. Add a build hook such as `"prebuild": "appwarden-link --fqdn=your.app"`
+2. Import `.appwarden/linked/middleware.json`
+3. Merge that generated config with code-level overrides by calling
+   `getAppwardenConfiguration(generatedConfig, overrides)`
+
+Values passed in `overrides` take precedence over the generated config.
 
 ##### Astro on Cloudflare
 
 ```ts
 // src/middleware.ts
+import {
+  createAppwardenMiddleware,
+  getAppwardenConfiguration,
+} from "@appwarden/middleware/cloudflare/astro"
 import { sequence } from "astro:middleware"
-import { createAppwardenMiddleware } from "@appwarden/middleware/cloudflare/astro"
+import { env } from "cloudflare:workers"
+import appwardenConfig from "../.appwarden/linked/middleware.json"
 
-const appwarden = createAppwardenMiddleware((cloudflare) => ({
-  lockPageSlug: cloudflare.env.APPWARDEN_LOCK_PAGE_SLUG,
-  appwardenApiToken: cloudflare.env.APPWARDEN_API_TOKEN,
-  debug: cloudflare.env.DEBUG,
-  contentSecurityPolicy: {
-    // See Configuration > contentSecurityPolicy section for details
-    mode: "report-only",
-    directives: {
-      "default-src": ["'self'"],
-    },
-  },
-}))
+const appwarden = createAppwardenMiddleware(() =>
+  getAppwardenConfiguration(appwardenConfig, {
+    appwardenApiToken: env.APPWARDEN_API_TOKEN,
+  }),
+)
 
 export const onRequest = sequence(appwarden)
 ```
@@ -166,24 +171,19 @@ See the [Astro + Cloudflare guide](https://appwarden.io/docs/guides/astro-cloudf
 
 ```ts
 // app/root.tsx
+import {
+  createAppwardenMiddleware,
+  getAppwardenConfiguration,
+} from "@appwarden/middleware/cloudflare/react-router"
 import { env } from "cloudflare:workers"
-import { createAppwardenMiddleware } from "@appwarden/middleware/cloudflare/react-router"
+import appwardenConfig from "../.appwarden/linked/middleware.json"
 
 export const middleware = [
-  createAppwardenMiddleware(() => ({
-    lockPageSlug: env.APPWARDEN_LOCK_PAGE_SLUG,
-    appwardenApiToken: env.APPWARDEN_API_TOKEN,
-    // "debug" can be a string or boolean; the schema will normalize it
-    debug: env.DEBUG,
-    // "directives" can be a JSON string or an object; the schema will parse it
-    contentSecurityPolicy: {
-      // See Configuration > contentSecurityPolicy section for details
-      mode: "report-only",
-      directives: {
-        "default-src": ["'self'"],
-      },
-    },
-  })),
+  createAppwardenMiddleware(() =>
+    getAppwardenConfiguration(appwardenConfig, {
+      appwardenApiToken: env.APPWARDEN_API_TOKEN,
+    }),
+  ),
 ]
 ```
 
@@ -193,23 +193,20 @@ See the [React Router + Cloudflare guide](https://appwarden.io/docs/guides/react
 
 ```ts
 // start.ts
-import { createMiddleware } from "@tanstack/start"
+import {
+  createAppwardenMiddleware,
+  getAppwardenConfiguration,
+} from "@appwarden/middleware/cloudflare/tanstack-start"
+import { createMiddleware, createStart } from "@tanstack/react-start"
 import { env } from "cloudflare:workers"
-import { createAppwardenMiddleware } from "@appwarden/middleware/cloudflare/tanstack-start"
+import appwardenConfig from "../.appwarden/linked/middleware.json"
 
 const appwardenMiddleware = createMiddleware().server(
-  createAppwardenMiddleware(() => ({
-    lockPageSlug: env.APPWARDEN_LOCK_PAGE_SLUG,
-    appwardenApiToken: env.APPWARDEN_API_TOKEN,
-    debug: env.DEBUG, // Accepts string or boolean
-    contentSecurityPolicy: {
-      // See Configuration > contentSecurityPolicy section for details
-      mode: "report-only",
-      directives: {
-        "default-src": ["'self'"],
-      },
-    },
-  })),
+  createAppwardenMiddleware(() =>
+    getAppwardenConfiguration(appwardenConfig, {
+      appwardenApiToken: env.APPWARDEN_API_TOKEN,
+    }),
+  ),
 )
 
 export const startInstance = createStart(() => ({
@@ -223,25 +220,21 @@ See the [TanStack Start + Cloudflare guide](https://appwarden.io/docs/guides/tan
 
 ```ts
 // middleware.ts or proxy.ts
-import { createAppwardenMiddleware } from "@appwarden/middleware/cloudflare/nextjs"
+import {
+  createAppwardenMiddleware,
+  getAppwardenConfiguration,
+} from "@appwarden/middleware/cloudflare/nextjs"
+import appwardenConfig from "./.appwarden/linked/middleware.json"
 
 export const config = {
   matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 }
 
-export default createAppwardenMiddleware((cloudflare) => ({
-  lockPageSlug: cloudflare.env.APPWARDEN_LOCK_PAGE_SLUG,
-  appwardenApiToken: cloudflare.env.APPWARDEN_API_TOKEN,
-  debug: cloudflare.env.DEBUG,
-  // Headers-only CSP (no HTML rewriting, no nonce support; do not use `{{nonce}}` here)
-  contentSecurityPolicy: {
-    // See Configuration > contentSecurityPolicy section for details
-    mode: "enforced",
-    directives: {
-      "default-src": ["'self'"],
-    },
-  },
-}))
+export default createAppwardenMiddleware((runtime) =>
+  getAppwardenConfiguration(appwardenConfig, {
+    appwardenApiToken: runtime.env.APPWARDEN_API_TOKEN,
+  }),
+)
 ```
 
 This adapter applies CSP **headers only** before origin (no HTML rewriting, no nonce injection). Nonce-based CSP (`{{nonce}}`) is **not supported** in this adapter; CSP directives must not include `{{nonce}}`.
