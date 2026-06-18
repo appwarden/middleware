@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.15.5](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.15.4...@appwarden/middleware@3.15.5) (2026-06-18)
+
+
+### Bug Fixes
+
+* **audit:** override undici to >=7.28.0 to resolve CVE ([1683ea1](https://github.com/appwarden/middleware/commit/1683ea1de55515d0c1b118b69682d202b23e414a))
+
 ## [3.15.4](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.15.3...@appwarden/middleware@3.15.4) (2026-06-03)
 
 
