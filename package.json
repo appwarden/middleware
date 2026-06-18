@@ -19,7 +19,8 @@
     "remixjs",
     "cloudflare",
     "web3",
-    "monitoring"
+    "monitoring",
+    "cli"
   ],
   "main": "./index.js",
   "types": "./index.d.ts",
