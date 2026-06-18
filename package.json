@@ -131,7 +131,7 @@
     "@types/node": "^25.9.3",
     "@vercel/functions": "^3.6.1",
     "@vitest/coverage-istanbul": "^4.1.8",
-    "astro": "^6.4.6",
+    "astro": "^6.4.8",
     "cheerio": "^1.2.0",
     "dotenv": "^17.4.2",
     "husky": "^9.1.7",
