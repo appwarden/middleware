@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [3.16.0](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.15.5...@appwarden/middleware@3.16.0) (2026-06-18)
+
+
+### Features
+
+* prepare minor release 3.16.0 ([7bf7c0e](https://github.com/appwarden/middleware/commit/7bf7c0ea4bc8ed36530705b5b1eafcd27df02938))
+
 ## [3.15.4](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.15.3...@appwarden/middleware@3.15.4) (2026-06-03)
 
 
