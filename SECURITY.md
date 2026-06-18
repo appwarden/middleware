@@ -65,6 +65,20 @@ npm audit signatures
 
 This command will show the count of verified registry signatures and verified attestations for all packages in their project.
 
+## npm Trusted Publishing
+
+We publish to the npm public registry using **Trusted Publishing** (OIDC-based authentication) rather than long-lived access tokens. This means the GitHub Actions workflow authenticates directly with npm via a short-lived OIDC token exchanged at publish time, eliminating the risk of leaked or rotated tokens.
+
+### How We've Implemented Trusted Publishing
+
+1. **GitHub Actions Permissions**: Our release workflow (`release.yml`) requests `id-token: write` and `packages: write` permissions, allowing the runner to mint an OIDC token for npm and to publish to GitHub Packages.
+
+2. **No Classic NPM Token**: We do not pass a long-lived `NPM_TOKEN` for the public registry. The npm CLI (v9.6.0+) automatically detects the GitHub Actions OIDC environment and uses it when the package is configured as a trusted publisher on npmjs.com.
+
+3. **GitHub Packages via `GITHUB_TOKEN`**: For the GitHub Packages registry (`npm.pkg.github.com`), we authenticate using the ephemeral `GITHUB_TOKEN` provided by the workflow runner, scoped with `packages: write`. No custom PAT is required for publishing within this repository.
+
+4. **Provenance + Trusted Publishing**: Both the public npm registry and GitHub Packages publish with `provenance: true`, so every release is both attested and published via short-lived OIDC credentials.
+
 ## Software Bill of Materials (SBOM)
 
 A Software Bill of Materials (SBOM) is a comprehensive inventory of all components, libraries, and dependencies used in our software. It provides transparency into our supply chain and helps users understand what's included in our package.
