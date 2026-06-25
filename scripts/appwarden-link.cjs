@@ -591,6 +591,13 @@ function sanitizeRemoteConfig(data, depth = 0) {
     warn("Remote config nested too deeply. Truncating.")
     return null
   }
+  if (Array.isArray(data) && data.length === 0) {
+    warn(
+      "No Appwarden configuration was found for this domain. Are you sure the configuration exists and is committed to the domain configuration repository?",
+    )
+    return {}
+  }
+
   if (!data || typeof data !== "object" || Array.isArray(data)) {
     warn("Remote config response was not a valid object. Ignoring.")
     return null
@@ -705,6 +712,14 @@ async function fetchRemoteConfig(apiToken, apiHostname, fqdn) {
           fqdn === `www.${item.url}`,
       )
       config = entry?.options ?? null
+      if (
+        config === null &&
+        entry &&
+        Array.isArray(entry.middleware) &&
+        entry.middleware.length === 0
+      ) {
+        config = []
+      }
     } else if (data && typeof data === "object" && !Array.isArray(data)) {
       // Fallback: API returned a flat object directly
       config = data
