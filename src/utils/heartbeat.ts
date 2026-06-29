@@ -132,8 +132,7 @@ function getAppwardenControlledMessage(
   if (
     lastSegment === "appwardenApiToken" &&
     issue.code === "invalid_type" &&
-    ((issue as any).received === "undefined" ||
-      (issue as any).received === "null")
+    (issue.received === "undefined" || issue.received === "null")
   ) {
     return AppwardenConfigErrorMessages[
       AppwardenConfigErrorKey.AppwardenApiTokenMissing
