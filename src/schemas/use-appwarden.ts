@@ -1,5 +1,9 @@
 import { z } from "zod"
 import {
+  AppwardenConfigErrorKey,
+  AppwardenConfigErrorMessages,
+} from "../utils/errors"
+import {
   AppwardenApiHostnameSchema,
   AppwardenApiTokenSchema,
   BooleanSchema,
@@ -40,6 +44,12 @@ export const lockPageSlugRefinement = <T extends z.ZodTypeAny>(schema: T) =>
       multidomainConfig?: AppwardenMultidomainConfig
     }) => data.lockPageSlug || data.multidomainConfig,
     {
-      message: "lockPageSlug must be provided",
+      message:
+        AppwardenConfigErrorMessages[
+          AppwardenConfigErrorKey.LockPageSlugRequired
+        ],
+      params: {
+        appwardenErrorKey: AppwardenConfigErrorKey.LockPageSlugRequired,
+      },
     },
   )

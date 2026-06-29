@@ -3,7 +3,7 @@ import {
   ContentSecurityPolicySchema,
   ContentSecurityPolicyType,
 } from "../types"
-import { SchemaErrorKey } from "../utils"
+import { AppwardenConfigErrorKey, AppwardenConfigErrorMessages } from "../utils"
 
 export const CSPDirectivesSchema = z.union([
   z.string(),
@@ -30,7 +30,15 @@ export const UseCSPInputSchema = z.object({
         return false
       }
     },
-    { message: SchemaErrorKey.DirectivesBadParse },
+    {
+      message:
+        AppwardenConfigErrorMessages[
+          AppwardenConfigErrorKey.CspDirectivesBadParse
+        ],
+      params: {
+        appwardenErrorKey: AppwardenConfigErrorKey.CspDirectivesBadParse,
+      },
+    },
   ).transform(
     (val) =>
       (typeof val === "string" ? JSON.parse(val) : val) as

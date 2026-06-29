@@ -1,13 +1,18 @@
 import { describe, expect, it, vi } from "vitest"
-import { SchemaErrorKey } from "../utils"
 import {
   CSPDirectivesSchema,
   CSPModeSchema,
   UseCSPInputSchema,
 } from "./use-content-security-policy"
 
-// Mock the SchemaErrorKey enum
 vi.mock("../utils", () => ({
+  AppwardenConfigErrorKey: {
+    CspDirectivesBadParse: "CSP_DIRECTIVES_BAD_PARSE",
+  },
+  AppwardenConfigErrorMessages: {
+    CSP_DIRECTIVES_BAD_PARSE:
+      "Failed to parse `CSP_DIRECTIVES`. Is it a valid JSON string?",
+  },
   SchemaErrorKey: {
     DirectivesRequired: "DirectivesRequired",
     DirectivesBadParse: "DirectivesBadParse",
@@ -149,7 +154,7 @@ describe("UseCSPInputSchema", () => {
       directives: "{invalid-json}",
     }
     expect(() => UseCSPInputSchema.parse(input)).toThrow(
-      SchemaErrorKey.DirectivesBadParse,
+      "Failed to parse `CSP_DIRECTIVES`. Is it a valid JSON string?",
     )
   })
 
