@@ -595,7 +595,7 @@ function sanitizeRemoteConfig(data, depth = 0) {
     warn(
       "No Appwarden configuration was found for this domain. Are you sure the configuration exists and is committed to the domain configuration repository?",
     )
-    return {}
+    return Object.create(null)
   }
 
   if (!data || typeof data !== "object" || Array.isArray(data)) {

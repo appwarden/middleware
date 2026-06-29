@@ -131,7 +131,9 @@ function getAppwardenControlledMessage(
   const lastSegment = path.length > 0 ? path[path.length - 1] : undefined
   if (
     lastSegment === "appwardenApiToken" &&
-    (issue.code === "invalid_type" || issue.code === "custom")
+    issue.code === "invalid_type" &&
+    ((issue as any).received === "undefined" ||
+      (issue as any).received === "null")
   ) {
     return AppwardenConfigErrorMessages[
       AppwardenConfigErrorKey.AppwardenApiTokenMissing

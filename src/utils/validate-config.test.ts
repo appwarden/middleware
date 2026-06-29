@@ -3,7 +3,7 @@ import { AppwardenConfigSchema } from "../schemas/vercel"
 import { validateConfig } from "./validate-config"
 
 describe("validateConfig", () => {
-  it("should log the Vercel token error with the [@appwarden/middleware] prefix", () => {
+  it("should log the Appwarden API token error with the [@appwarden/middleware] prefix", () => {
     const consoleError = vi
       .spyOn(console, "error")
       .mockImplementation(() => undefined)

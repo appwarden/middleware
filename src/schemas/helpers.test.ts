@@ -173,4 +173,14 @@ describe("AppwardenApiTokenSchema", () => {
       })
     }
   })
+
+  it("should reject a whitespace-only token", () => {
+    const result = AppwardenApiTokenSchema.safeParse("   ")
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.issues[0].message).toContain(
+        "APPWARDEN_API_TOKEN is missing or empty",
+      )
+    }
+  })
 })
