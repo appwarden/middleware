@@ -3,6 +3,26 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.16.2](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.16.1...@appwarden/middleware@3.16.2) (2026-06-29)
+
+
+### Bug Fixes
+
+* address Copilot review feedback on PR [#362](https://github.com/appwarden/middleware/issues/362) ([d9641fb](https://github.com/appwarden/middleware/commit/d9641fb37530787e25300970773dcc48887017a4))
+* **heartbeat:** remove unnecessary any cast for invalid_type received ([bbfd4e3](https://github.com/appwarden/middleware/commit/bbfd4e3961c97bbf87b19c85ca2c9e11ecd5c89b))
+* **schemas:** provide granular heartbeat errors for missing token and unsupported nonce ([51a7062](https://github.com/appwarden/middleware/commit/51a7062f91cf766e1b29ae39b67c22f3ccfc267c))
+
+### Features
+
+* add support for i18n validation error messages ([10c46fd](https://github.com/appwarden/middleware/commit/10c46fdb31e0920b33921a88d89867ee1583360c))
+
+## [3.16.1](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.16.0...@appwarden/middleware@3.16.1) (2026-06-25)
+
+
+### Bug Fixes
+
+* **link:** handle empty middleware array and empty config response ([6787a1c](https://github.com/appwarden/middleware/commit/6787a1ccace7494b98f159fc9f5523d905847704))
+
 # [3.16.0](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.15.5...@appwarden/middleware@3.16.0) (2026-06-18)
 
 
