@@ -379,6 +379,60 @@ describe("createAppwardenMiddleware (OpenNext Cloudflare)", () => {
     ])
   })
 
+  it("should return a granular heartbeat error for an empty appwardenApiToken", async () => {
+    mockRequest = new Request("https://example.com/_appwarden/heartbeat", {
+      headers: { Accept: "application/json" },
+    })
+
+    const middleware = createAppwardenMiddleware(() => ({
+      lockPageSlug: "/maintenance",
+      appwardenApiToken: "",
+    }))
+
+    const result = await middleware(mockRequest as any)
+    const body = (await result.json()) as HeartbeatResponseBody
+
+    expect(result.status).toBe(200)
+    expect(body.configErrors).toEqual([
+      {
+        path: ["appwardenApiToken"],
+        code: "custom",
+        message:
+          "APPWARDEN_API_TOKEN is missing or empty. Learn more at https://appwarden.com/docs/guides/api-token-management.",
+      },
+    ])
+  })
+
+  it("should return a granular heartbeat error for CSP directives containing {{nonce}}", async () => {
+    mockRequest = new Request("https://example.com/_appwarden/heartbeat", {
+      headers: { Accept: "application/json" },
+    })
+
+    const middleware = createAppwardenMiddleware(() => ({
+      lockPageSlug: "/maintenance",
+      appwardenApiToken: "test-token",
+      contentSecurityPolicy: {
+        mode: "enforced",
+        directives: {
+          "script-src": ["'self'", "{{nonce}}"],
+        },
+      },
+    }))
+
+    const result = await middleware(mockRequest as any)
+    const body = (await result.json()) as HeartbeatResponseBody
+
+    expect(result.status).toBe(200)
+    expect(body.configErrors).toEqual([
+      {
+        path: ["contentSecurityPolicy", "directives"],
+        code: "custom",
+        message:
+          "Nonce-based CSP is not supported in the Next.js Cloudflare adapter. Remove '{{nonce}}' placeholders from your CSP directives, as this adapter does not inject nonces into HTML.",
+      },
+    ])
+  })
+
   it("should keep heartbeat deterministic when heartbeat sanitization throws", async () => {
     mockRequest = new Request("https://example.com/_appwarden/heartbeat", {
       headers: { Accept: "application/json" },

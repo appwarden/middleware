@@ -92,6 +92,71 @@ describe("heartbeat utilities", () => {
       expect(result[0].message).toBe("Validation failed for test")
     })
 
+    it("should return the Appwarden-controlled message for a keyed appwardenApiToken error", () => {
+      const error = new ZodError([
+        {
+          code: "custom",
+          path: ["appwardenApiToken"],
+          message: "appwardenApiToken is required",
+          params: {
+            appwardenErrorKey: "APPWARDEN_API_TOKEN_MISSING",
+          },
+        },
+      ])
+
+      const result = sanitizeConfigErrors(error)
+      expect(result).toHaveLength(1)
+      expect(result[0]).toEqual({
+        path: ["appwardenApiToken"],
+        code: "custom",
+        message:
+          "APPWARDEN_API_TOKEN is missing or empty. Learn more at https://appwarden.com/docs/guides/api-token-management.",
+      })
+    })
+
+    it("should return the Appwarden-controlled message for a missing appwardenApiToken", () => {
+      const error = new ZodError([
+        {
+          code: "invalid_type",
+          expected: "string",
+          received: "undefined",
+          path: ["appwardenApiToken"],
+          message: "Required",
+        },
+      ])
+
+      const result = sanitizeConfigErrors(error)
+      expect(result).toHaveLength(1)
+      expect(result[0]).toEqual({
+        path: ["appwardenApiToken"],
+        code: "invalid_type",
+        message:
+          "APPWARDEN_API_TOKEN is missing or empty. Learn more at https://appwarden.com/docs/guides/api-token-management.",
+      })
+    })
+
+    it("should return the Appwarden-controlled message for a keyed nonce error", () => {
+      const error = new ZodError([
+        {
+          code: "custom",
+          path: ["contentSecurityPolicy", "directives"],
+          message: "Nonce-based CSP is not supported",
+          params: {
+            appwardenErrorKey: "NEXTJS_NONCE_UNSUPPORTED",
+          },
+        },
+      ])
+
+      const result = sanitizeConfigErrors(error)
+      expect(result).toHaveLength(1)
+      expect(result[0]).toEqual({
+        path: ["contentSecurityPolicy", "directives"],
+        code: "custom",
+        message:
+          "Nonce-based CSP is not supported in the Next.js Cloudflare adapter. Remove '{{nonce}}' placeholders from your CSP directives, as this adapter does not inject nonces into HTML.",
+      })
+    })
+
     it("should provide descriptive error for invalid_union with type mismatch", () => {
       // Simulate the error when a number is passed to a union of string literals
       const error = new ZodError([

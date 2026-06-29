@@ -280,8 +280,9 @@ describe("AppwardenConfigSchema", () => {
           issue.path.includes("appwardenApiToken"),
         )
         expect(appwardenTokenIssue).toBeDefined()
-        // When field is missing entirely, Zod returns "Required" message
-        expect(appwardenTokenIssue?.message).toBe("Required")
+        expect(appwardenTokenIssue?.message).toContain(
+          "APPWARDEN_API_TOKEN is missing or empty",
+        )
       }
     })
 

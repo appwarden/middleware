@@ -1,8 +1,18 @@
 import { z } from "zod"
 import { ContentSecurityPolicyType } from "../types"
-import { isCacheUrl, isValidCacheUrl, SchemaErrorKey } from "../utils"
+import {
+  AppwardenConfigErrorKey,
+  AppwardenConfigErrorMessages,
+  isCacheUrl,
+  isValidCacheUrl,
+  SchemaErrorKey,
+} from "../utils"
 import { printMessage } from "../utils/print-message"
-import { AppwardenApiHostnameSchema, ValidLockPageSlugSchema } from "./helpers"
+import {
+  AppwardenApiHostnameSchema,
+  AppwardenApiTokenSchema,
+  ValidLockPageSlugSchema,
+} from "./helpers"
 import {
   CSPDirectivesSchema,
   CSPModeSchema,
@@ -32,7 +42,12 @@ export const VercelCSPSchema = z.object({
       },
       {
         message:
-          "Nonce-based CSP is not supported in Vercel Edge Middleware. Remove '{{nonce}}' placeholders from your CSP directives, as Vercel does not support nonce injection.",
+          AppwardenConfigErrorMessages[
+            AppwardenConfigErrorKey.VercelNonceUnsupported
+          ],
+        params: {
+          appwardenErrorKey: AppwardenConfigErrorKey.VercelNonceUnsupported,
+        },
       },
     )
     .transform(
@@ -45,7 +60,7 @@ export const VercelCSPSchema = z.object({
 
 export const BaseNextJsConfigSchema = z.object({
   cacheUrl: z.string(),
-  appwardenApiToken: z.string(),
+  appwardenApiToken: AppwardenApiTokenSchema,
   appwardenApiHostname: AppwardenApiHostnameSchema.optional(),
   vercelApiToken: z.string().optional(),
   debug: z.boolean().optional(),
@@ -115,13 +130,6 @@ export const AppwardenConfigSchema = BaseNextJsConfigSchema
       path: ["vercelApiToken"],
     },
   )
-  // Always require appwardenApiToken
-  .refine((data) => !!data.appwardenApiToken, {
-    message: printMessage(
-      "Please provide a valid `appwardenApiToken`. Learn more at https://appwarden.com/docs/guides/api-token-management.",
-    ),
-    path: ["appwardenApiToken"],
-  })
 
 export type BaseNextJsConfigFnType = z.infer<typeof BaseNextJsConfigSchema>
 

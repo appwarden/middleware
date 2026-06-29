@@ -5,6 +5,24 @@ export enum SchemaErrorKey {
   DirectivesBadParse = "DirectivesBadParse",
 }
 
+export enum AppwardenConfigErrorKey {
+  AppwardenApiTokenMissing = "APPWARDEN_API_TOKEN_MISSING",
+  NextJsNonceUnsupported = "NEXTJS_NONCE_UNSUPPORTED",
+  VercelNonceUnsupported = "VERCEL_NONCE_UNSUPPORTED",
+}
+
+export const AppwardenConfigErrorMessages: Record<
+  AppwardenConfigErrorKey,
+  string
+> = {
+  [AppwardenConfigErrorKey.AppwardenApiTokenMissing]:
+    "APPWARDEN_API_TOKEN is missing or empty. Learn more at https://appwarden.com/docs/guides/api-token-management.",
+  [AppwardenConfigErrorKey.NextJsNonceUnsupported]:
+    "Nonce-based CSP is not supported in the Next.js Cloudflare adapter. Remove '{{nonce}}' placeholders from your CSP directives, as this adapter does not inject nonces into HTML.",
+  [AppwardenConfigErrorKey.VercelNonceUnsupported]:
+    "Nonce-based CSP is not supported in Vercel Edge Middleware. Remove '{{nonce}}' placeholders from your CSP directives, as Vercel does not support nonce injection.",
+}
+
 const errorsMap: Record<string, Record<string, string> | string> = {
   mode: '`CSP_MODE` must be one of "disabled", "report-only", or "enforced"',
   directives: {
@@ -14,7 +32,9 @@ const errorsMap: Record<string, Record<string, string> | string> = {
       "Failed to parse `CSP_DIRECTIVES`. Is it a valid JSON string?",
   },
   appwardenApiToken:
-    "Please provide a valid `appwardenApiToken`. Learn more at https://appwarden.com/docs/guides/api-token-management.",
+    AppwardenConfigErrorMessages[
+      AppwardenConfigErrorKey.AppwardenApiTokenMissing
+    ],
 }
 
 export const getErrors = (error: ZodError) => {

@@ -74,16 +74,7 @@ describe("NextJsCloudflareConfigSchema", () => {
     },
   )
 
-  it("should reject missing appwardenApiToken", () => {
-    const invalidConfig = {
-      lockPageSlug: "/maintenance",
-    }
-
-    const result = NextJsCloudflareConfigSchema.safeParse(invalidConfig)
-    expect(result.success).toBe(false)
-  })
-
-  it("should reject empty appwardenApiToken", () => {
+  it("should reject empty appwardenApiToken with a clear message", () => {
     const invalidConfig = {
       lockPageSlug: "/maintenance",
       appwardenApiToken: "",
@@ -91,6 +82,59 @@ describe("NextJsCloudflareConfigSchema", () => {
 
     const result = NextJsCloudflareConfigSchema.safeParse(invalidConfig)
     expect(result.success).toBe(false)
+    if (!result.success) {
+      const issue = result.error.issues.find((entry) =>
+        entry.path.includes("appwardenApiToken"),
+      )
+      expect(issue?.message).toContain(
+        "APPWARDEN_API_TOKEN is missing or empty",
+      )
+      expect((issue as any)?.params).toEqual({
+        appwardenErrorKey: "APPWARDEN_API_TOKEN_MISSING",
+      })
+    }
+  })
+
+  it("should reject missing appwardenApiToken with a clear message", () => {
+    const invalidConfig = {
+      lockPageSlug: "/maintenance",
+    }
+
+    const result = NextJsCloudflareConfigSchema.safeParse(invalidConfig)
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      const issue = result.error.issues.find((entry) =>
+        entry.path.includes("appwardenApiToken"),
+      )
+      expect(issue?.message).toContain(
+        "APPWARDEN_API_TOKEN is missing or empty",
+      )
+    }
+  })
+
+  it("should reject CSP directives containing {{nonce}} with a clear message", () => {
+    const invalidConfig = {
+      lockPageSlug: "/maintenance",
+      appwardenApiToken: "token123",
+      contentSecurityPolicy: {
+        mode: "enforced",
+        directives: {
+          "script-src": ["'self'", "{{nonce}}"],
+        },
+      },
+    }
+
+    const result = NextJsCloudflareConfigSchema.safeParse(invalidConfig)
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      const issue = result.error.issues.find((entry) =>
+        entry.path.includes("directives"),
+      )
+      expect(issue?.message).toContain("Nonce-based CSP is not supported")
+      expect((issue as any)?.params).toEqual({
+        appwardenErrorKey: "NEXTJS_NONCE_UNSUPPORTED",
+      })
+    }
   })
 
   it.each([
