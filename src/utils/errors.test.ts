@@ -53,7 +53,7 @@ describe("errors", () => {
 
       // Should extract the appwardenApiToken error message
       expect(errors).toContain(
-        "Please provide a valid `appwardenApiToken`. Learn more at https://appwarden.com/docs/guides/api-token-management.",
+        "APPWARDEN_API_TOKEN is missing or empty. Learn more at https://appwarden.com/docs/guides/api-token-management.",
       )
     })
 
@@ -125,7 +125,7 @@ describe("errors", () => {
 
       // Should extract the appwardenApiToken error message from returnTypeError
       expect(errors).toContain(
-        "Please provide a valid `appwardenApiToken`. Learn more at https://appwarden.com/docs/guides/api-token-management.",
+        "APPWARDEN_API_TOKEN is missing or empty. Learn more at https://appwarden.com/docs/guides/api-token-management.",
       )
     })
   })

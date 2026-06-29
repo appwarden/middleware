@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import {
   AppwardenApiHostnameSchema,
+  AppwardenApiTokenSchema,
   BoolOrStringSchema,
   BooleanSchema,
   LockValue,
@@ -152,5 +153,24 @@ describe("AppwardenApiHostnameSchema", () => {
     expect(() => AppwardenApiHostnameSchema.parse(hostname)).toThrow(
       "`appwardenApiHostname` must be https://api.appwarden.io or https://staging-api.appwarden.io.",
     )
+  })
+})
+
+describe("AppwardenApiTokenSchema", () => {
+  it("should accept a non-empty token", () => {
+    expect(AppwardenApiTokenSchema.parse("token123")).toBe("token123")
+  })
+
+  it("should reject an empty token with a clear message", () => {
+    const result = AppwardenApiTokenSchema.safeParse("")
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.issues[0].message).toContain(
+        "APPWARDEN_API_TOKEN is missing or empty",
+      )
+      expect((result.error.issues[0] as any).params).toEqual({
+        appwardenErrorKey: "APPWARDEN_API_TOKEN_MISSING",
+      })
+    }
   })
 })

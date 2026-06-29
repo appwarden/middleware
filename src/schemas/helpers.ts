@@ -1,4 +1,8 @@
 import { z } from "zod"
+import {
+  AppwardenConfigErrorKey,
+  AppwardenConfigErrorMessages,
+} from "../utils/errors"
 
 export const BoolOrStringSchema = z.union([z.string(), z.boolean()]).optional()
 
@@ -13,8 +17,21 @@ export const BooleanSchema = BoolOrStringSchema.transform((val) => {
 
 /** Schema for the Appwarden API token - validates it's a non-empty string */
 export const AppwardenApiTokenSchema = z
-  .string()
-  .refine((val) => !!val, { message: "appwardenApiToken is required" })
+  .string({
+    required_error:
+      AppwardenConfigErrorMessages[
+        AppwardenConfigErrorKey.AppwardenApiTokenMissing
+      ],
+  })
+  .refine((val) => !!val, {
+    message:
+      AppwardenConfigErrorMessages[
+        AppwardenConfigErrorKey.AppwardenApiTokenMissing
+      ],
+    params: {
+      appwardenErrorKey: AppwardenConfigErrorKey.AppwardenApiTokenMissing,
+    },
+  })
 
 /** Schema for the Appwarden API hostname - validates it's an absolute HTTPS URL */
 export const AppwardenApiHostnameSchema = z

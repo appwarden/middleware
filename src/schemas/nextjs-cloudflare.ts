@@ -1,5 +1,9 @@
 import { z } from "zod"
 import {
+  AppwardenConfigErrorKey,
+  AppwardenConfigErrorMessages,
+} from "../utils/errors"
+import {
   AppwardenApiHostnameSchema,
   AppwardenApiTokenSchema,
   BooleanSchema,
@@ -17,7 +21,12 @@ const NextJsCloudflareCSPInputSchema = UseCSPInputSchema.refine(
   {
     path: ["directives"],
     message:
-      "Nonce-based CSP is not supported in the Next.js Cloudflare adapter. Remove '{{nonce}}' placeholders from your CSP directives, as this adapter does not inject nonces into HTML.",
+      AppwardenConfigErrorMessages[
+        AppwardenConfigErrorKey.NextJsNonceUnsupported
+      ],
+    params: {
+      appwardenErrorKey: AppwardenConfigErrorKey.NextJsNonceUnsupported,
+    },
   },
 )
 

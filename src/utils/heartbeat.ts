@@ -16,6 +16,10 @@ import type {
   HeartbeatService,
 } from "../types/heartbeat"
 import { validateHeartbeatResponseBody } from "../types/heartbeat"
+import {
+  AppwardenConfigErrorKey,
+  AppwardenConfigErrorMessages,
+} from "../utils/errors"
 import { MIDDLEWARE_VERSION } from "../version"
 
 const DEFAULT_HEARTBEAT_CONFIG_ERROR_CODE = "custom"
@@ -97,6 +101,46 @@ function getExpectedType(issue: ZodIssue): string | undefined {
   return undefined
 }
 
+type AppwardenIssueParams = {
+  appwardenErrorKey?: string
+}
+
+function getIssueParams(issue: ZodIssue): AppwardenIssueParams | undefined {
+  if (issue.code !== "custom") {
+    return undefined
+  }
+  return (issue as unknown as { params?: AppwardenIssueParams }).params
+}
+
+/**
+ * Returns an Appwarden-controlled message for known schema-level errors.
+ * Uses an explicit error key when available, otherwise falls back to the field path.
+ */
+function getAppwardenControlledMessage(
+  issue: ZodIssue,
+  path: (string | number)[],
+): string | undefined {
+  const key = getIssueParams(issue)?.appwardenErrorKey
+  if (
+    typeof key === "string" &&
+    Object.prototype.hasOwnProperty.call(AppwardenConfigErrorMessages, key)
+  ) {
+    return AppwardenConfigErrorMessages[key as AppwardenConfigErrorKey]
+  }
+
+  const lastSegment = path.length > 0 ? path[path.length - 1] : undefined
+  if (
+    lastSegment === "appwardenApiToken" &&
+    (issue.code === "invalid_type" || issue.code === "custom")
+  ) {
+    return AppwardenConfigErrorMessages[
+      AppwardenConfigErrorKey.AppwardenApiTokenMissing
+    ]
+  }
+
+  return undefined
+}
+
 /**
  * Creates a sanitized error message based on the Zod error code.
  * This ensures only Appwarden-controlled messages are exposed, not user-provided values.
@@ -109,6 +153,11 @@ function createSanitizedMessage(
   issue: ZodIssue,
   path: (string | number)[],
 ): string {
+  const controlledMessage = getAppwardenControlledMessage(issue, path)
+  if (controlledMessage) {
+    return controlledMessage
+  }
+
   const fieldName = path.length > 0 ? path[path.length - 1] : "field"
   const code = issue.code
 
