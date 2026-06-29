@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.16.3](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.16.2...@appwarden/middleware@3.16.3) (2026-06-29)
+
+
+### Bug Fixes
+
+* return sanitized validation errors when Cloudflare adapter config evaluation throws ZodError ([601168e](https://github.com/appwarden/middleware/commit/601168e197f1dab1716659cd7152b1a9cfa6b0e9))
+
 ## [3.16.2](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.16.1...@appwarden/middleware@3.16.2) (2026-06-29)
 
 
