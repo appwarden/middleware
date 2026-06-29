@@ -135,6 +135,26 @@ describe("heartbeat utilities", () => {
       })
     })
 
+    it("should not mask a non-missing type error for appwardenApiToken", () => {
+      const error = new ZodError([
+        {
+          code: "invalid_type",
+          expected: "string",
+          received: "number",
+          path: ["appwardenApiToken"],
+          message: "Expected string, received number",
+        },
+      ])
+
+      const result = sanitizeConfigErrors(error)
+      expect(result).toHaveLength(1)
+      expect(result[0]).toEqual({
+        path: ["appwardenApiToken"],
+        code: "invalid_type",
+        message: "Invalid type for appwardenApiToken. Expected string",
+      })
+    })
+
     it("should return the Appwarden-controlled message for a keyed nonce error", () => {
       const error = new ZodError([
         {

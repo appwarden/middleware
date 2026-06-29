@@ -23,7 +23,7 @@ export const AppwardenApiTokenSchema = z
         AppwardenConfigErrorKey.AppwardenApiTokenMissing
       ],
   })
-  .refine((val) => !!val, {
+  .refine((val) => val.trim().length > 0, {
     message:
       AppwardenConfigErrorMessages[
         AppwardenConfigErrorKey.AppwardenApiTokenMissing
