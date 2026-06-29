@@ -6,23 +6,28 @@ import {
 
 export const BoolOrStringSchema = z.union([z.string(), z.boolean()]).optional()
 
-export const BooleanSchema = BoolOrStringSchema.transform((val) => {
+export const BooleanSchema = BoolOrStringSchema.refine(
+  (val) => val === "true" || val === true || val === "false" || val === false,
+  {
+    message:
+      AppwardenConfigErrorMessages[AppwardenConfigErrorKey.BooleanInvalid],
+    params: {
+      appwardenErrorKey: AppwardenConfigErrorKey.BooleanInvalid,
+    },
+  },
+).transform((val) => {
   if (val === "true" || val === true) {
     return true
-  } else if (val === "false" || val === false) {
-    return false
   }
-  throw new Error("Invalid value")
+  return false
 })
 
 /** Schema for the Appwarden API token - validates it's a non-empty string */
 export const AppwardenApiTokenSchema = z
-  .string({
-    required_error:
-      AppwardenConfigErrorMessages[
-        AppwardenConfigErrorKey.AppwardenApiTokenMissing
-      ],
-  })
+  .preprocess(
+    (val) => (val === undefined || val === null ? "" : val),
+    z.string(),
+  )
   .refine((val) => val.trim().length > 0, {
     message:
       AppwardenConfigErrorMessages[
@@ -36,13 +41,35 @@ export const AppwardenApiTokenSchema = z
 /** Schema for the Appwarden API hostname - validates it's an absolute HTTPS URL */
 export const AppwardenApiHostnameSchema = z
   .string()
-  .url({
-    message:
-      "Invalid `appwardenApiHostname`. Please provide an absolute URL (e.g. https://api.appwarden.io).",
-  })
+  .refine(
+    (value) => {
+      try {
+        new URL(value)
+        return true
+      } catch {
+        return false
+      }
+    },
+    {
+      message:
+        AppwardenConfigErrorMessages[
+          AppwardenConfigErrorKey.AppwardenApiHostnameInvalidUrl
+        ],
+      params: {
+        appwardenErrorKey:
+          AppwardenConfigErrorKey.AppwardenApiHostnameInvalidUrl,
+      },
+    },
+  )
   .refine((value) => value.startsWith("https://"), {
     message:
-      "`appwardenApiHostname` must use the https:// scheme (e.g. https://api.appwarden.io).",
+      AppwardenConfigErrorMessages[
+        AppwardenConfigErrorKey.AppwardenApiHostnameMustUseHttps
+      ],
+    params: {
+      appwardenErrorKey:
+        AppwardenConfigErrorKey.AppwardenApiHostnameMustUseHttps,
+    },
   })
   .refine(
     (value) => {
@@ -58,7 +85,13 @@ export const AppwardenApiHostnameSchema = z
     },
     {
       message:
-        "`appwardenApiHostname` must be https://api.appwarden.io or https://staging-api.appwarden.io.",
+        AppwardenConfigErrorMessages[
+          AppwardenConfigErrorKey.AppwardenApiHostnameMustBeAppwarden
+        ],
+      params: {
+        appwardenErrorKey:
+          AppwardenConfigErrorKey.AppwardenApiHostnameMustBeAppwarden,
+      },
     },
   )
 
@@ -76,6 +109,13 @@ export const ValidLockPageSlugSchema = z
     (val) =>
       !val.includes("://") && !val.startsWith("//") && !val.includes("\\"),
     {
-      message: "lockPageSlug must be a relative path",
+      message:
+        AppwardenConfigErrorMessages[
+          AppwardenConfigErrorKey.LockPageSlugMustBeRelativePath
+        ],
+      params: {
+        appwardenErrorKey:
+          AppwardenConfigErrorKey.LockPageSlugMustBeRelativePath,
+      },
     },
   )

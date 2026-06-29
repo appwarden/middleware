@@ -5,9 +5,7 @@ import {
   AppwardenConfigErrorMessages,
   isCacheUrl,
   isValidCacheUrl,
-  SchemaErrorKey,
 } from "../utils"
-import { printMessage } from "../utils/print-message"
 import {
   AppwardenApiHostnameSchema,
   AppwardenApiTokenSchema,
@@ -33,7 +31,15 @@ export const VercelCSPSchema = z.object({
           return false
         }
       },
-      { message: SchemaErrorKey.DirectivesBadParse },
+      {
+        message:
+          AppwardenConfigErrorMessages[
+            AppwardenConfigErrorKey.CspDirectivesBadParse
+          ],
+        params: {
+          appwardenErrorKey: AppwardenConfigErrorKey.CspDirectivesBadParse,
+        },
+      },
     )
     .refine(
       (val) => {
@@ -80,9 +86,13 @@ export const AppwardenConfigSchema = BaseNextJsConfigSchema
       )
     },
     {
-      message: printMessage(
-        "Provided `cacheUrl` is not recognized. Please provide a Vercel Edge Config or Upstash KV url.",
-      ),
+      message:
+        AppwardenConfigErrorMessages[
+          AppwardenConfigErrorKey.CacheUrlUnrecognized
+        ],
+      params: {
+        appwardenErrorKey: AppwardenConfigErrorKey.CacheUrlUnrecognized,
+      },
       path: ["cacheUrl"],
     },
   )
@@ -94,9 +104,13 @@ export const AppwardenConfigSchema = BaseNextJsConfigSchema
     ) {
       ctx.addIssue({
         code: "custom",
-        message: printMessage(
-          "Provided Vercel Edge Config `cacheUrl` is not valid. It should be in the format https://edge-config.vercel.com/ecfg_*",
-        ),
+        message:
+          AppwardenConfigErrorMessages[
+            AppwardenConfigErrorKey.CacheUrlInvalidEdgeConfig
+          ],
+        params: {
+          appwardenErrorKey: AppwardenConfigErrorKey.CacheUrlInvalidEdgeConfig,
+        },
         path: ["cacheUrl"],
       })
       return false
@@ -109,9 +123,13 @@ export const AppwardenConfigSchema = BaseNextJsConfigSchema
     ) {
       ctx.addIssue({
         code: "custom",
-        message: printMessage(
-          "Provided Upstash KV `cacheUrl` is not valid. It should be in the format rediss://:password@hostname.upstash.io:6379",
-        ),
+        message:
+          AppwardenConfigErrorMessages[
+            AppwardenConfigErrorKey.CacheUrlInvalidUpstash
+          ],
+        params: {
+          appwardenErrorKey: AppwardenConfigErrorKey.CacheUrlInvalidUpstash,
+        },
         path: ["cacheUrl"],
       })
       return false
@@ -124,9 +142,13 @@ export const AppwardenConfigSchema = BaseNextJsConfigSchema
     (data) =>
       isCacheUrl.edgeConfig(data.cacheUrl) ? !!data.vercelApiToken : true,
     {
-      message: printMessage(
-        "The `vercelApiToken` option is required when using Vercel Edge Config",
-      ),
+      message:
+        AppwardenConfigErrorMessages[
+          AppwardenConfigErrorKey.VercelApiTokenRequired
+        ],
+      params: {
+        appwardenErrorKey: AppwardenConfigErrorKey.VercelApiTokenRequired,
+      },
       path: ["vercelApiToken"],
     },
   )
