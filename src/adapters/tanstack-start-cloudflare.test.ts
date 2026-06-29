@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import { ZodError } from "zod"
 import { checkLockStatus } from "../core"
 import type { HeartbeatResponseBody } from "../types"
 import * as utils from "../utils"
@@ -221,6 +222,39 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
         path: ["config"],
         code: "custom",
         message: "Appwarden config evaluation failed",
+      },
+    ])
+    expect(mockNext).not.toHaveBeenCalled()
+    expect(checkLockStatus).not.toHaveBeenCalled()
+  })
+
+  it("should throw sanitized heartbeat config errors when config evaluation throws a ZodError", async () => {
+    mockArgs.request = new Request("https://example.com/_appwarden/heartbeat", {
+      headers: { Accept: "application/json" },
+    })
+
+    const middleware = createAppwardenMiddleware(() => {
+      throw new ZodError([
+        {
+          code: "invalid_type",
+          expected: "string",
+          received: "undefined",
+          path: ["appwardenApiToken"],
+          message: "Required",
+        },
+      ])
+    })
+
+    const response = await getThrownResponse(middleware(mockArgs))
+    const body = (await response.json()) as HeartbeatResponseBody
+
+    expect(response.status).toBe(200)
+    expect(body.configErrors).toEqual([
+      {
+        path: ["appwardenApiToken"],
+        code: "invalid_type",
+        message:
+          "APPWARDEN_API_TOKEN is missing or empty. Learn more at https://appwarden.com/docs/guides/api-token-management.",
       },
     ])
     expect(mockNext).not.toHaveBeenCalled()

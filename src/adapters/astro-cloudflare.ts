@@ -1,5 +1,6 @@
 import type { APIContext } from "astro"
 import { env as cloudflareEnv, waitUntil } from "cloudflare:workers"
+import { ZodError } from "zod"
 import { HEARTBEAT_SERVICES } from "../constants"
 import { checkLockStatus } from "../core"
 import type {
@@ -73,17 +74,19 @@ const createAstroHeartbeatResponse = (
         ? []
         : sanitizeConfigErrors(validationResult.error),
     )
-  } catch {
+  } catch (error) {
     return handleHeartbeatRequest(
       request,
       HEARTBEAT_SERVICES.CLOUDFLARE_ASTRO,
-      [
-        createHeartbeatConfigError(
-          ["config"],
-          "custom",
-          "Appwarden config evaluation failed",
-        ),
-      ],
+      error instanceof ZodError
+        ? sanitizeConfigErrors(error)
+        : [
+            createHeartbeatConfigError(
+              ["config"],
+              "custom",
+              "Appwarden config evaluation failed",
+            ),
+          ],
     )
   }
 }

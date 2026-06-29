@@ -1,4 +1,5 @@
 import { waitUntil } from "cloudflare:workers"
+import { ZodError } from "zod"
 import { HEARTBEAT_SERVICES } from "../constants"
 import { checkLockStatus } from "../core"
 import type { ReactRouterCloudflareConfig } from "../schemas/react-router-cloudflare"
@@ -36,17 +37,18 @@ export function getAppwardenConfiguration(
 
 const createConfigEvaluationHeartbeatResponse = (
   request: Request,
+  configErrors = [
+    createHeartbeatConfigError(
+      ["config"],
+      "custom",
+      "Appwarden config evaluation failed",
+    ),
+  ],
 ): Response => {
   return handleHeartbeatRequest(
     request,
     HEARTBEAT_SERVICES.CLOUDFLARE_REACT_ROUTER,
-    [
-      createHeartbeatConfigError(
-        ["config"],
-        "custom",
-        "Appwarden config evaluation failed",
-      ),
-    ],
+    configErrors,
   )
 }
 
@@ -65,8 +67,11 @@ const handleReactRouterHeartbeatRequest = (
         ? []
         : sanitizeConfigErrors(validationResult.error),
     )
-  } catch {
-    return createConfigEvaluationHeartbeatResponse(request)
+  } catch (error) {
+    return createConfigEvaluationHeartbeatResponse(
+      request,
+      error instanceof ZodError ? sanitizeConfigErrors(error) : undefined,
+    )
   }
 }
 
