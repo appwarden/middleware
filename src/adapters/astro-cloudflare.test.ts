@@ -1,6 +1,7 @@
 import type { APIContext } from "astro"
 import { waitUntil } from "cloudflare:workers"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import { ZodError } from "zod"
 import { checkLockStatus } from "../core"
 import type { HeartbeatResponseBody } from "../types"
 import * as utils from "../utils"
@@ -332,6 +333,41 @@ describe("createAppwardenMiddleware (Astro)", () => {
         path: ["config"],
         code: "custom",
         message: "Appwarden config evaluation failed",
+      },
+    ])
+    expect(mockNext).not.toHaveBeenCalled()
+  })
+
+  it("should return sanitized heartbeat config errors when config evaluation throws a ZodError", async () => {
+    mockContext.request = new Request(
+      "https://example.com/_appwarden/heartbeat",
+      { headers: { Accept: "application/json" } },
+    )
+
+    const middleware = createAppwardenMiddleware(() => {
+      throw new ZodError([
+        {
+          code: "invalid_type",
+          expected: "string",
+          received: "undefined",
+          path: ["appwardenApiToken"],
+          message: "Required",
+        },
+      ])
+    })
+
+    const result = asResponse(
+      await middleware(asAPIContext(mockContext), mockNext),
+    )
+    const body = (await result.json()) as HeartbeatResponseBody
+
+    expect(result.status).toBe(200)
+    expect(body.configErrors).toEqual([
+      {
+        path: ["appwardenApiToken"],
+        code: "invalid_type",
+        message:
+          "APPWARDEN_API_TOKEN is missing or empty. Learn more at https://appwarden.com/docs/guides/api-token-management.",
       },
     ])
     expect(mockNext).not.toHaveBeenCalled()

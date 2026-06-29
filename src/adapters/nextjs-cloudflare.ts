@@ -4,6 +4,7 @@ import {
   type NextFetchEvent,
   type NextRequest,
 } from "next/server"
+import { ZodError } from "zod"
 import { HEARTBEAT_SERVICES } from "../constants"
 import { checkLockStatus } from "../core"
 import type {
@@ -82,15 +83,21 @@ const createNextJsHeartbeatResponse = (
           : sanitizeConfigErrors(validationResult.error),
       ),
     )
-  } catch {
+  } catch (error) {
     return toNextResponse(
-      handleHeartbeatRequest(request, HEARTBEAT_SERVICES.CLOUDFLARE_NEXTJS, [
-        createHeartbeatConfigError(
-          ["config"],
-          "custom",
-          "Appwarden config evaluation failed",
-        ),
-      ]),
+      handleHeartbeatRequest(
+        request,
+        HEARTBEAT_SERVICES.CLOUDFLARE_NEXTJS,
+        error instanceof ZodError
+          ? sanitizeConfigErrors(error)
+          : [
+              createHeartbeatConfigError(
+                ["config"],
+                "custom",
+                "Appwarden config evaluation failed",
+              ),
+            ],
+      ),
     )
   }
 }
