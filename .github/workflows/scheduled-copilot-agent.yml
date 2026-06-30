@@ -1,0 +1,55 @@
+name: Manager Agent
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: manager-agent
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  copilot-agent:
+    name: Initialize Copilot agent
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Check for open pull requests
+        id: check-prs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          count=$(gh pr list --repo ${{ github.repository }} --state open --limit 1 --json number | jq 'length')
+          if [ "$count" -eq 0 ]; then
+            echo "No open pull requests. Skipping Copilot agent."
+            echo "has_prs=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_prs=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup GitHub Copilot CLI
+        if: steps.check-prs.outputs.has_prs == 'true'
+        uses: actions/setup-copilot@v0
+
+      - name: Initialize Copilot agent (haiku model, blank prompt)
+        if: steps.check-prs.outputs.has_prs == 'true'
+        env:
+          COPILOT_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PROMPT=$(cat .github/manager-agent-prompt.md)
+          PROMPT="${PROMPT}
+
+          ## Final step
+          After completing all actions, output exactly one line starting with \`CAVEMAN_SUMMARY:\` followed by a brief caveman-style summary of what you did. Keep it to one short sentence. Example: \`CAVEMAN_SUMMARY: Agent merged 2 PRs. No dependabot batch needed.\`
+          "
+          copilot -p "$PROMPT" --model haiku --no-ask-user -s | tee /tmp/agent-output.log
+          SUMMARY=$(grep '^CAVEMAN_SUMMARY:' /tmp/agent-output.log | sed 's/^CAVEMAN_SUMMARY: *//' | head -n 1)
+          if [ -n "$SUMMARY" ]; then
+            echo "::notice title=Manager Agent Summary::$SUMMARY"
+          fi
