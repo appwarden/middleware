@@ -37,7 +37,7 @@ jobs:
         if: steps.check-prs.outputs.has_prs == 'true'
         uses: actions/setup-copilot@v0
 
-      - name: Initialize Copilot agent (haiku model, blank prompt)
+      - name: Initialize Copilot agent (haiku model)
         if: steps.check-prs.outputs.has_prs == 'true'
         env:
           COPILOT_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
