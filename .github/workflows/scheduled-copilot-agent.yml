@@ -51,5 +51,6 @@ jobs:
           copilot -p "$PROMPT" --model haiku --no-ask-user -s | tee /tmp/agent-output.log
           SUMMARY=$(grep '^CAVEMAN_SUMMARY:' /tmp/agent-output.log | sed 's/^CAVEMAN_SUMMARY: *//' | head -n 1)
           if [ -n "$SUMMARY" ]; then
-            echo "::notice title=Manager Agent Summary::$SUMMARY"
+            SUMMARY_ESCAPED=$(printf '%s' "$SUMMARY" | sed -e 's/%/%25/g' -e 's/\r/%0D/g' -e 's/\n/%0A/g')
+            echo "::notice title=Manager Agent Summary::$SUMMARY_ESCAPED"
           fi
