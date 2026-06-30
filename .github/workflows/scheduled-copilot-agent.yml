@@ -49,6 +49,8 @@ jobs:
           After completing all actions, output exactly one line starting with \`CAVEMAN_SUMMARY:\` followed by a brief caveman-style summary of what you did. Keep it to one short sentence. Example: \`CAVEMAN_SUMMARY: Agent merged 2 PRs. No dependabot batch needed.\`
           "
           copilot -p "$PROMPT" --model haiku --no-ask-user -s | tee /tmp/agent-output.log
+          copilot_status=${PIPESTATUS[0]}
+          if [ "$copilot_status" -ne 0 ]; then exit "$copilot_status"; fi
           SUMMARY=$(grep '^CAVEMAN_SUMMARY:' /tmp/agent-output.log | sed 's/^CAVEMAN_SUMMARY: *//' | head -n 1)
           if [ -n "$SUMMARY" ]; then
             SUMMARY_ESCAPED=$(printf '%s' "$SUMMARY" | sed -e 's/%/%25/g' -e 's/\r/%0D/g' -e 's/\n/%0A/g')
