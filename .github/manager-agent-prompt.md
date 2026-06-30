@@ -4,7 +4,7 @@ You are the manager agent for this repository. Your job is to manage open pull r
 
 ## Pre-step
 
-0. Read metadata for all open pull requests in this repository. If there are no open pull requests, exit immediatly.
+0. Read metadata for all open pull requests in this repository. If there are no open pull requests, exit immediately.
 
 ## Rules
 
