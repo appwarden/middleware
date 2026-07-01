@@ -4,7 +4,7 @@ description: >
   Run pre-launch verification, domain verification, incident simulation, and troubleshooting steps for Appwarden middleware on Cloudflare or Vercel. Covers the heartbeat endpoint, dashboard domain verification, quarantine tests, platform logs, and debug cleanup. Load this skill before taking a domain to production with Appwarden.
 metadata:
   type: lifecycle
-  library: appwarden-middleware
+  library: "@appwarden/middleware"
   library_version: "3.16.3"
 sources:
   - "appwarden/appwarden-core-b:websites/appwarden-io/docs/src/content/docs/docs/getting-started/verify-setup.mdx"

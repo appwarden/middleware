@@ -4,7 +4,7 @@ description: >
   Integrate @appwarden/middleware with Vercel Edge Middleware. Choose and configure Upstash KV or Vercel Edge Config as the cache provider, set the matcher and runtime, and use headers-only CSP. Load this skill when a user is deploying on Vercel.
 metadata:
   type: framework
-  library: appwarden-middleware
+  library: "@appwarden/middleware"
   library_version: "3.16.3"
 sources:
   - "appwarden/appwarden-core-b:websites/appwarden-io/docs/src/content/docs/docs/guides/vercel-middleware-integration.mdx"
@@ -40,15 +40,17 @@ import {
   createAppwardenMiddleware,
   getAppwardenConfiguration,
 } from "@appwarden/middleware/vercel"
-import appwardenConfig from "../.appwarden/linked/middleware.json"
 
-export default createAppwardenMiddleware(() =>
-  getAppwardenConfiguration(appwardenConfig, {
-    appwardenApiToken: process.env.APPWARDEN_API_TOKEN,
-    lockPageSlug: "/maintenance",
-    cacheUrl: process.env.KV_URL,
-    debug: true,
-  }),
+export default createAppwardenMiddleware(
+  getAppwardenConfiguration(
+    {},
+    {
+      appwardenApiToken: process.env.APPWARDEN_API_TOKEN,
+      lockPageSlug: "/maintenance",
+      cacheUrl: process.env.KV_URL,
+      debug: true,
+    },
+  ),
 )
 
 export const config = {
@@ -89,16 +91,18 @@ import {
   createAppwardenMiddleware,
   getAppwardenConfiguration,
 } from "@appwarden/middleware/vercel"
-import appwardenConfig from "../.appwarden/linked/middleware.json"
 
-export default createAppwardenMiddleware(() =>
-  getAppwardenConfiguration(appwardenConfig, {
-    appwardenApiToken: process.env.APPWARDEN_API_TOKEN,
-    lockPageSlug: "/maintenance",
-    cacheUrl: process.env.EDGE_CONFIG,
-    vercelApiToken: process.env.VERCEL_API_TOKEN,
-    debug: true,
-  }),
+export default createAppwardenMiddleware(
+  getAppwardenConfiguration(
+    {},
+    {
+      appwardenApiToken: process.env.APPWARDEN_API_TOKEN,
+      lockPageSlug: "/maintenance",
+      cacheUrl: process.env.EDGE_CONFIG,
+      vercelApiToken: process.env.VERCEL_API_TOKEN,
+      debug: true,
+    },
+  ),
 )
 ```
 

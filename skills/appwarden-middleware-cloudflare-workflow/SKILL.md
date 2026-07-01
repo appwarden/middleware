@@ -4,7 +4,7 @@ description: >
   Deploy @appwarden/middleware as a standalone Cloudflare Worker using the deploy-appwarden.yml GitHub Actions workflow. The Worker mounts on a wildcard route (e.g. *your.app/*) to intercept all HTML traffic. Covers workflow triggers, required variables/secrets, and the build/deploy steps. Load this skill when a user is on Cloudflare but not using a supported framework adapter.
 metadata:
   type: framework
-  library: appwarden-middleware
+  library: "@appwarden/middleware"
   library_version: "3.16.3"
 sources:
   - "appwarden/appwarden-core-b:websites/appwarden-io/docs/snippets/TEMPLATE--deploy-appwarden.yml"

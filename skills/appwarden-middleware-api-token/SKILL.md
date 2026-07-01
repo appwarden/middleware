@@ -4,7 +4,7 @@ description: >
   Create, rotate, and revoke Appwarden API tokens in the dashboard at Settings > Security. Store the token as a secret in Cloudflare, Vercel, or GitHub Actions, and map it to the APPWARDEN_API_TOKEN environment variable used by @appwarden/middleware. Load this skill when a user needs an API token or is troubleshooting token-related errors.
 metadata:
   type: core
-  library: appwarden-middleware
+  library: "@appwarden/middleware"
   library_version: "3.16.3"
 sources:
   - "appwarden/appwarden-core-b:websites/appwarden-io/docs/src/content/docs/docs/guides/api-token-management.mdx"

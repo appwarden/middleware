@@ -3,9 +3,7 @@
 # Fires a repository_dispatch event whenever docs or source files change
 # on merge to main. This triggers the skill staleness check workflow.
 #
-# Requirements:
-#   - A fine-grained PAT with contents:write on this repository stored
-#     as the INTENT_NOTIFY_TOKEN repository secret.
+# Uses the built-in github.token for same-repo dispatches.
 #
 # Template variables (replaced by `intent setup`):
 #   @appwarden/middleware — e.g. @tanstack/query or my-workspace workspace
@@ -40,7 +38,7 @@ jobs:
       - name: Dispatch to intent repo
         uses: peter-evans/repository-dispatch@v3
         with:
-          token: ${{ secrets.INTENT_NOTIFY_TOKEN }}
+          token: ${{ github.token }}
           repository: ${{ github.repository }}
           event-type: skill-check
           client-payload: |

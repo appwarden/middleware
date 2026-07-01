@@ -4,7 +4,7 @@ description: >
   Add @appwarden/middleware to Cloudflare adapter projects: Astro, React Router, TanStack Start, and Next.js (OpenNext). Covers appwarden-link, middleware file placement, getAppwardenConfiguration, and the CSP/adapter capability matrix. Load this skill when a user is wiring Appwarden into a Cloudflare framework adapter.
 metadata:
   type: framework
-  library: appwarden-middleware
+  library: "@appwarden/middleware"
   library_version: "3.16.3"
 sources:
   - "appwarden/appwarden-core-b:websites/appwarden-io/docs/src/content/docs/docs/guides/cloudflare-middleware-integration.mdx"
