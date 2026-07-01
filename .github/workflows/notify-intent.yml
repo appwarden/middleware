@@ -1,15 +1,3 @@
-# notify-intent.yml — Drop this into your library repo's .github/workflows/
-#
-# Fires a repository_dispatch event whenever docs or source files change
-# on merge to main. This triggers the skill staleness check workflow.
-#
-# Uses the built-in github.token for same-repo dispatches.
-#
-# Template variables (replaced by `intent setup`):
-#   @appwarden/middleware — e.g. @tanstack/query or my-workspace workspace
-#   docs/**       — e.g. docs/**
-#   src/**        — e.g. packages/query-core/src/**
-
 name: Trigger Skill Review
 
 on:

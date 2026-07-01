@@ -80,10 +80,10 @@
     "sbom:generate": "cdxgen -o sbom.json -t js --spec-version 1.6 . && cdxgen -o sbom.xml -t js --spec-version 1.6 --output-format xml .",
     "prepack": "pnpm build",
     "commitlint": "commitlint --edit",
-    "intent:scaffold": "npx @tanstack/intent@0.3.2 scaffold",
-    "intent:validate": "npx @tanstack/intent@0.3.2 validate",
-    "intent:stale": "npx @tanstack/intent@0.3.2 stale",
-    "intent:setup-ci": "npx @tanstack/intent@0.3.2 setup-github-actions"
+    "intent:scaffold": "intent scaffold",
+    "intent:validate": "intent validate",
+    "intent:stale": "intent stale",
+    "intent:setup-ci": "intent setup-github-actions"
   },
   "dependencies": {
     "@upstash/redis": "^1.38.0",
