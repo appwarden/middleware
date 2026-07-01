@@ -1,5 +1,5 @@
 ---
-name: quarantine
+name: appwarden-middleware-quarantine
 description: >
   Quarantine, test, and unlock an Appwarden domain via Discord or the dashboard, and validate the behavior end-to-end. Covers required permissions, /_appwarden/test, /_appwarden/heartbeat, /incident test, and safe unlock. Load this skill when a user is rehearsing or running a real quarantine flow.
 metadata:

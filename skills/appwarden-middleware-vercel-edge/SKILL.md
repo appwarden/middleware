@@ -1,11 +1,13 @@
 ---
-name: vercel-edge
+name: appwarden-middleware-vercel-edge
 description: >
   Integrate @appwarden/middleware with Vercel Edge Middleware. Choose and configure Upstash KV or Vercel Edge Config as the cache provider, set the matcher and runtime, and use headers-only CSP. Load this skill when a user is deploying on Vercel.
 metadata:
   type: framework
   library: "@appwarden/middleware"
   library_version: "3.16.3"
+requires:
+  - "appwarden-middleware-get-started"
 sources:
   - "appwarden/appwarden-core-b:websites/appwarden-io/docs/src/content/docs/docs/guides/vercel-middleware-integration.mdx"
   - "https://vercel.com/docs/edge-config/using-edge-config"

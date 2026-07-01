@@ -1,5 +1,5 @@
 ---
-name: verify-setup
+name: appwarden-middleware-verify-setup
 description: >
   Run pre-launch verification, domain verification, incident simulation, and troubleshooting steps for Appwarden middleware on Cloudflare or Vercel. Covers the heartbeat endpoint, dashboard domain verification, quarantine tests, platform logs, and debug cleanup. Load this skill before taking a domain to production with Appwarden.
 metadata:
