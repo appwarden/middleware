@@ -104,6 +104,9 @@ importers:
       '@semantic-release/npm':
         specifier: ^13.1.5
         version: 13.1.5(semantic-release@25.0.5(typescript@5.9.3))
+      '@tanstack/intent':
+        specifier: ^0.3.2
+        version: 0.3.2
       '@tanstack/start':
         specifier: ^1.120.20
         version: 1.120.20(@types/node@25.9.3)(@upstash/redis@1.38.0)(@vercel/functions@3.7.1(@aws-sdk/credential-provider-web-identity@3.972.53)(ws@8.21.0))(aws4fetch@1.0.20)(db0@0.3.4)(ioredis@5.11.1)(jiti@2.7.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rolldown@1.0.3)(terser@5.48.0)(tsx@4.22.4)(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0))(yaml@2.9.0)
@@ -2213,6 +2216,10 @@ packages:
     resolution: {integrity: sha512-79pf/RkhteYZTRgcR4F9kbk84P2N8rugQJswxfIqovlbRiT3yI7eBE+5QorIrZaOKktsgzRlXh1l/du/xpl4iA==}
     engines: {node: '>=20.19'}
 
+  '@tanstack/intent@0.3.2':
+    resolution: {integrity: sha512-Apyfkf0O8QqHQJjy/cB1QW2GpYTOyjf98nFAaYtzjBc0V5YzJoy0wnmZSLvwBJxE8/Hhy0Bsa+EPt/fdeJyXkw==}
+    hasBin: true
+
   '@tanstack/react-router@1.170.15':
     resolution: {integrity: sha512-GawYz7HEjj8rTUUDoT/SemDEVm63pZUO+2mOcXHY9Jl3EwMS5gFBnPu/2UvcrwRm1jN1k79fokc0d4aFmrLatg==}
     engines: {node: '>=20.19'}
@@ -3785,6 +3792,7 @@ packages:
   git-raw-commits@5.0.1:
     resolution: {integrity: sha512-Y+csSm2GD/PCSh6Isd/WiMjNAydu0VBiG9J7EdQsNA5P9uXvLayqjmTsNlK5Gs9IhblFZqOU0yid5Il5JPoLiQ==}
     engines: {node: '>=18'}
+    deprecated: Deprecated and no longer maintained. Use @conventional-changelog/git-client instead.
     hasBin: true
 
   github-slugger@2.0.0:
@@ -8271,7 +8279,7 @@ snapshots:
 
   '@npmcli/fs@5.0.0':
     dependencies:
-      semver: 7.8.2
+      semver: 7.8.4
 
   '@npmcli/git@7.0.2':
     dependencies:
@@ -8281,7 +8289,7 @@ snapshots:
       lru-cache: 11.5.1
       npm-pick-manifest: 11.0.3
       proc-log: 6.1.0
-      semver: 7.8.2
+      semver: 7.8.4
       which: 6.0.1
 
   '@npmcli/map-workspaces@5.0.3':
@@ -8300,7 +8308,7 @@ snapshots:
       hosted-git-info: 9.0.3
       json-parse-even-better-errors: 5.0.0
       proc-log: 6.1.0
-      semver: 7.8.2
+      semver: 7.8.4
       spdx-expression-parse: 4.0.0
 
   '@npmcli/promise-spawn@9.0.1':
@@ -9122,6 +9130,14 @@ snapshots:
   '@tanstack/history@1.131.2': {}
 
   '@tanstack/history@1.162.0': {}
+
+  '@tanstack/intent@0.3.2':
+    dependencies:
+      cac: 6.7.14
+      jsonc-parser: 3.3.1
+      semver: 7.8.4
+      std-env: 4.1.0
+      yaml: 2.9.0
 
   '@tanstack/react-router@1.170.15(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
     dependencies:
@@ -12608,7 +12624,7 @@ snapshots:
 
   npm-install-checks@8.0.0:
     dependencies:
-      semver: 7.8.2
+      semver: 7.8.4
 
   npm-normalize-package-bin@5.0.0: {}
 
@@ -12616,7 +12632,7 @@ snapshots:
     dependencies:
       hosted-git-info: 9.0.3
       proc-log: 6.1.0
-      semver: 7.8.2
+      semver: 7.8.4
       validate-npm-package-name: 7.0.2
 
   npm-pick-manifest@11.0.3:
@@ -12624,7 +12640,7 @@ snapshots:
       npm-install-checks: 8.0.0
       npm-normalize-package-bin: 5.0.0
       npm-package-arg: 13.0.2
-      semver: 7.8.2
+      semver: 7.8.4
 
   npm-run-path@4.0.1:
     dependencies:

@@ -20,7 +20,8 @@
     "cloudflare",
     "web3",
     "monitoring",
-    "cli"
+    "cli",
+    "tanstack-intent"
   ],
   "main": "./index.js",
   "types": "./index.d.ts",
@@ -78,7 +79,11 @@
     "coverage:badge": "node scripts/generate-coverage-badge.cjs",
     "sbom:generate": "cdxgen -o sbom.json -t js --spec-version 1.6 . && cdxgen -o sbom.xml -t js --spec-version 1.6 --output-format xml .",
     "prepack": "pnpm build",
-    "commitlint": "commitlint --edit"
+    "commitlint": "commitlint --edit",
+    "intent:scaffold": "npx @tanstack/intent@0.3.2 scaffold",
+    "intent:validate": "npx @tanstack/intent@0.3.2 validate",
+    "intent:stale": "npx @tanstack/intent@0.3.2 stale",
+    "intent:setup-ci": "npx @tanstack/intent@0.3.2 setup-github-actions"
   },
   "dependencies": {
     "@upstash/redis": "^1.38.0",
@@ -128,6 +133,7 @@
     "@semantic-release/git": "^10.0.1",
     "@semantic-release/github": "^12.0.8",
     "@semantic-release/npm": "^13.1.5",
+    "@tanstack/intent": "^0.3.2",
     "@tanstack/start": "^1.120.20",
     "@types/node": "^25.9.3",
     "@vercel/functions": "^3.6.1",
