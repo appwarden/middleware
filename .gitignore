@@ -9,11 +9,11 @@ examples
 playwright-report/
 test-results/
 # Agents
-.augment
-.claude
-.codex
-.cursorrules
-.opencode
+.augment/
+.claude/
+.codex/
+.cursorrules/
+.opencode/
 # Local environment files
 .env
 
