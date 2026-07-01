@@ -1,5 +1,5 @@
 ---
-name: lock-page
+name: appwarden-middleware-lock-page
 description: >
   Build a neutral maintenance-style lock page, route it in the target framework, and connect it to Appwarden via lockPageSlug. Provides a minimal HTML/JSX template that works on Cloudflare and Vercel. Load this skill when a user is setting up their first lock page.
 metadata:

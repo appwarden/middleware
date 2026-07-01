@@ -1,5 +1,5 @@
 ---
-name: get-started
+name: appwarden-middleware-get-started
 description: >
   Install and minimally configure @appwarden/middleware for a Cloudflare or Vercel project. Covers package installation, creating an API token, wiring middleware with debug: true, verifying the heartbeat endpoint, and switching debug off after confirming the setup. Load this skill when a user is adding Appwarden to a new project for the first time.
 metadata:

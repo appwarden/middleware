@@ -1,5 +1,5 @@
 ---
-name: csp
+name: appwarden-middleware-csp
 description: >
   Configure nonce-based Content Security Policy for Appwarden on Cloudflare. Edit the domain configuration file, start in report-only mode, inject nonces into HTML, redeploy the universal middleware, and switch to enforced after validation. This skill is Cloudflare-only; Vercel does not support nonce-based CSP rewriting.
 metadata:
