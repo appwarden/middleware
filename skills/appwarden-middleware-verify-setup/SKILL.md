@@ -34,7 +34,7 @@ curl https://example.com/_appwarden/heartbeat
 
 - [ ] Dashboard shows the domain as verified:
   - Open `https://use.appwarden.io/?to=/`.
-  - Navigate to Settings > Monitoring.
+  - Navigate to Settings > Security.
   - Confirm the Domain Verification card shows a green checkmark.
 
 - [ ] `/quarantine test` shows the lock page at `https://example.com/_appwarden/test`.
@@ -147,7 +147,7 @@ Wrong:
 Correct:
 
 ```text
-// Open https://use.appwarden.io/?to=/ > Settings > Monitoring
+// Open https://use.appwarden.io/?to=/ > Settings > Security
 // Wait for the green checkmark
 ```
 

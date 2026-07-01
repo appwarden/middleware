@@ -19,6 +19,9 @@ on:
       - "docs/**"
       - "src/**"
 
+permissions:
+  contents: write
+
 jobs:
   notify:
     name: Trigger Skill Review
