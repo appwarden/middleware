@@ -26,7 +26,7 @@ jobs:
           node-version: 20
 
       - name: Install intent CLI
-        run: npm install -g @tanstack/intent
+        run: npm install -g @tanstack/intent@0.3.2
 
       - name: Find and validate skills
         run: |

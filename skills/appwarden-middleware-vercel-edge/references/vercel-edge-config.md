@@ -16,16 +16,18 @@ import {
   createAppwardenMiddleware,
   getAppwardenConfiguration,
 } from "@appwarden/middleware/vercel"
-import appwardenConfig from "./.appwarden/linked/middleware.json"
 
-export default createAppwardenMiddleware(() =>
-  getAppwardenConfiguration(appwardenConfig, {
-    appwardenApiToken: process.env.APPWARDEN_API_TOKEN,
-    lockPageSlug: "/maintenance",
-    cacheUrl: process.env.EDGE_CONFIG,
-    vercelApiToken: process.env.VERCEL_API_TOKEN,
-    debug: true,
-  }),
+export default createAppwardenMiddleware(
+  getAppwardenConfiguration(
+    {},
+    {
+      appwardenApiToken: process.env.APPWARDEN_API_TOKEN,
+      lockPageSlug: "/maintenance",
+      cacheUrl: process.env.EDGE_CONFIG,
+      vercelApiToken: process.env.VERCEL_API_TOKEN,
+      debug: true,
+    },
+  ),
 )
 ```
 

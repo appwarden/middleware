@@ -4,7 +4,7 @@ description: >
   Quarantine, test, and unlock an Appwarden domain via Discord or the dashboard, and validate the behavior end-to-end. Covers required permissions, /_appwarden/test, /_appwarden/heartbeat, /incident test, and safe unlock. Load this skill when a user is rehearsing or running a real quarantine flow.
 metadata:
   type: lifecycle
-  library: appwarden-middleware
+  library: "@appwarden/middleware"
   library_version: "3.16.3"
 sources:
   - "appwarden/appwarden-core-b:websites/appwarden-io/docs/src/content/docs/docs/guides/roles-and-permissions.mdx"

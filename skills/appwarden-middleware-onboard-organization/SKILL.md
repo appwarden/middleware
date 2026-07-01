@@ -4,7 +4,7 @@ description: >
   Onboard an organization to Appwarden: sign in via Discord, connect the Appwarden bot, configure Discord command permissions, create a domain configuration repository from the template, install the Appwarden GitHub App with least privilege, and select the repository in the dashboard. Load this skill when a user is setting up Appwarden for the first time; middleware can be installed before or during onboarding, but onboarding must be completed to finish installation because the API token is created in the dashboard.
 metadata:
   type: lifecycle
-  library: appwarden-middleware
+  library: "@appwarden/middleware"
   library_version: "3.16.3"
 sources:
   - "appwarden/appwarden-core-b:websites/appwarden-io/docs/src/content/docs/docs/getting-started/organization-onboarding.mdx"

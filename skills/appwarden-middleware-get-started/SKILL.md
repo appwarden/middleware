@@ -4,7 +4,7 @@ description: >
   Install and minimally configure @appwarden/middleware for a Cloudflare or Vercel project. Covers package installation, creating an API token, wiring middleware with debug: true, verifying the heartbeat endpoint, and switching debug off after confirming the setup. Load this skill when a user is adding Appwarden to a new project for the first time.
 metadata:
   type: lifecycle
-  library: appwarden-middleware
+  library: "@appwarden/middleware"
   library_version: "3.16.3"
 requires: []
 sources:
@@ -132,15 +132,17 @@ import {
   createAppwardenMiddleware,
   getAppwardenConfiguration,
 } from "@appwarden/middleware/vercel"
-import appwardenConfig from "../.appwarden/linked/middleware.json"
 
-export default createAppwardenMiddleware(() =>
-  getAppwardenConfiguration(appwardenConfig, {
-    appwardenApiToken: process.env.APPWARDEN_API_TOKEN,
-    lockPageSlug: "/maintenance",
-    cacheUrl: process.env.KV_URL,
-    debug: true,
-  }),
+export default createAppwardenMiddleware(
+  getAppwardenConfiguration(
+    {},
+    {
+      appwardenApiToken: process.env.APPWARDEN_API_TOKEN,
+      lockPageSlug: "/maintenance",
+      cacheUrl: process.env.KV_URL,
+      debug: true,
+    },
+  ),
 )
 
 export const config = {
@@ -266,15 +268,17 @@ import {
   createAppwardenMiddleware,
   getAppwardenConfiguration,
 } from "@appwarden/middleware/vercel"
-import appwardenConfig from "../.appwarden/linked/middleware.json"
 
-export default createAppwardenMiddleware(() =>
-  getAppwardenConfiguration(appwardenConfig, {
-    appwardenApiToken: process.env.APPWARDEN_API_TOKEN,
-    lockPageSlug: "/maintenance",
-    cacheUrl: process.env.KV_URL,
-    debug: true,
-  }),
+export default createAppwardenMiddleware(
+  getAppwardenConfiguration(
+    {},
+    {
+      appwardenApiToken: process.env.APPWARDEN_API_TOKEN,
+      lockPageSlug: "/maintenance",
+      cacheUrl: process.env.KV_URL,
+      debug: true,
+    },
+  ),
 )
 ```
 
