@@ -23,7 +23,13 @@ jobs:
       - name: Collect changed files
         id: changes
         run: |
-          FILES=$(git diff --name-only HEAD~1 HEAD | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          BEFORE="${{ github.event.before }}"
+          AFTER="${{ github.sha }}"
+          if [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            FILES=$(git show --name-only --pretty="" "$AFTER" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          else
+            FILES=$(git diff --name-only "$BEFORE" "$AFTER" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          fi
           echo "files=$FILES" >> "$GITHUB_OUTPUT"
 
       - name: Dispatch to intent repo
