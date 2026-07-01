@@ -277,6 +277,10 @@ Nonce-based CSP (`{{nonce}}`) is **not supported** in Vercel Edge Middleware; CS
   - [Next.js on Cloudflare (OpenNext)](https://appwarden.io/docs/guides/nextjs-cloudflare)
 - [All websites on Vercel](https://appwarden.io/docs/guides/vercel-integration)
 
+## Agent skills
+
+This repository includes [TanStack Intent](https://tanstack.com/intent) skills under `skills/` so coding agents can discover and apply Appwarden installation, configuration, and troubleshooting guidance. Load them with the `@tanstack/intent` CLI or any compatible agent. Use `pnpm intent:validate` to check skill files and `pnpm intent:stale` to find outdated skills after a release.
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
