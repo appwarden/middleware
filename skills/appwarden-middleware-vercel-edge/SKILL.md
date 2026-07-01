@@ -138,7 +138,7 @@ Correct:
 
 ```typescript
 createAppwardenMiddleware({
-  cacheUrl: process.env.APPWARDEN_CACHE_URL,
+  cacheUrl: process.env.EDGE_CONFIG,
   vercelApiToken: process.env.VERCEL_API_TOKEN,
   appwardenApiToken: process.env.APPWARDEN_API_TOKEN,
 })
