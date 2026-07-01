@@ -439,8 +439,8 @@ skills:
           })
         correct_pattern: |
           createAppwardenMiddleware({
-            cacheUrl: process.env.APPWARDEN_CACHE_URL!,
-            vercelApiToken: process.env.APPWARDEN_VERCEL_API_TOKEN!,
+            cacheUrl: process.env.EDGE_CONFIG!,
+            vercelApiToken: process.env.VERCEL_API_TOKEN!,
             appwardenApiToken: process.env.APPWARDEN_API_TOKEN!,
           })
         source: "src/schemas/vercel.ts AppwardenConfigSchema, README Configuration > cacheUrl/vercelApiToken, and vercel-middleware-integration.mdx"
