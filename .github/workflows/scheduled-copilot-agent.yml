@@ -35,9 +35,9 @@ jobs:
 
       - name: Setup GitHub Copilot CLI
         if: steps.check-prs.outputs.has_prs == 'true'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: curl -fsSL https://gh.io/copilot-install | bash
+        run: |
+          curl --fail --silent --show-error --location https://gh.io/copilot-install -o /tmp/copilot-install.sh
+          bash /tmp/copilot-install.sh
 
       - name: Initialize Copilot agent (haiku model)
         if: steps.check-prs.outputs.has_prs == 'true'
