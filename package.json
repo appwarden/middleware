@@ -135,7 +135,7 @@
     "@semantic-release/npm": "^13.1.5",
     "@tanstack/intent": "^0.3.2",
     "@tanstack/start": "^1.120.20",
-    "@types/node": "^25.9.3",
+    "@types/node": "^26.1.0",
     "@vercel/functions": "^3.6.1",
     "@vitest/coverage-istanbul": "^4.1.8",
     "astro": "^6.4.6",
