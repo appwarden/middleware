@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.16.5](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.16.4...@appwarden/middleware@3.16.5) (2026-07-02)
+
+
+### Bug Fixes
+
+* install Copilot CLI via official script instead of missing setup-copilot action ([eecfd48](https://github.com/appwarden/middleware/commit/eecfd48015b2c9607a09b0d59d6e252a4b30aa1d))
+
 ## [3.16.3](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.16.2...@appwarden/middleware@3.16.3) (2026-06-29)
 
 
