@@ -45,8 +45,6 @@ jobs:
 
       - name: Initialize Copilot agent (haiku model)
         if: steps.check-prs.outputs.has_prs == 'true'
-        env:
-          COPILOT_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           PROMPT=$(cat .github/manager-agent-prompt.md)
           PROMPT="${PROMPT}
