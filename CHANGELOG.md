@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.16.4](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.16.3...@appwarden/middleware@3.16.4) (2026-07-01)
+
+
+### Bug Fixes
+
+* **skills:** align SKILL.md names with directories and add required framework requires ([e3daca5](https://github.com/appwarden/middleware/commit/e3daca567d2cf7950b2e7770ebcdedea5f4e9d92))
+
 ## [3.16.3](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.16.2...@appwarden/middleware@3.16.3) (2026-06-29)
 
 
