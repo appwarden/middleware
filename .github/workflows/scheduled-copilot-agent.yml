@@ -36,8 +36,12 @@ jobs:
       - name: Setup GitHub Copilot CLI
         if: steps.check-prs.outputs.has_prs == 'true'
         run: |
-          curl --fail --silent --show-error --location https://gh.io/copilot-install -o /tmp/copilot-install.sh
-          bash /tmp/copilot-install.sh
+          set -euo pipefail
+          tmp="$(mktemp)"
+          curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 https://gh.io/copilot-install -o "$tmp"
+          bash "$tmp"
+          rm -f "$tmp"
+          copilot --version
 
       - name: Initialize Copilot agent (haiku model)
         if: steps.check-prs.outputs.has_prs == 'true'
