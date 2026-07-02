@@ -29,6 +29,7 @@ updates:
           - "*prettier*"
           - "*test*"
         update-types:
+          - "minor"
           - "patch"
     # Specify labels for npm pull requests
     labels:
@@ -43,6 +44,13 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
     # Specify labels for GitHub Actions pull requests
     labels:
       - "github-actions"
