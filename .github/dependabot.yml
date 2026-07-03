@@ -7,6 +7,9 @@ updates:
       interval: "weekly"
     # Limit to security updates only
     open-pull-requests-limit: 10
+    # Align with pnpm v11 default minimumReleaseAge (1 day / 1440 minutes)
+    cooldown:
+      default-days: 1
     versioning-strategy: increase
     ignore:
       # Ignore major version updates for zod - requires manual migration
