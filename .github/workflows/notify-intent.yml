@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 2
 
@@ -33,7 +33,7 @@ jobs:
           echo "files=$FILES" >> "$GITHUB_OUTPUT"
 
       - name: Dispatch to intent repo
-        uses: peter-evans/repository-dispatch@v3
+        uses: peter-evans/repository-dispatch@v4
         with:
           token: ${{ github.token }}
           repository: ${{ github.repository }}
