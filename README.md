@@ -279,7 +279,31 @@ Nonce-based CSP (`{{nonce}}`) is **not supported** in Vercel Edge Middleware; CS
 
 ## Agent skills
 
-This repository includes [TanStack Intent](https://tanstack.com/intent) skills under `skills/` so coding agents can discover and apply Appwarden installation, configuration, and troubleshooting guidance. Load them with the `@tanstack/intent` CLI or any compatible agent.
+This repository ships [TanStack Intent](https://tanstack.com/intent) skills under `skills/` so coding agents can discover and apply Appwarden installation, configuration, and troubleshooting guidance.
+
+After installing `@appwarden/middleware`, configure your agent to use the skills:
+
+```bash
+npx @tanstack/intent@latest install
+```
+
+For edit-time skill suggestions in Claude Code or Codex:
+
+```bash
+npx @tanstack/intent@latest hooks install
+```
+
+Then load a specific skill when working on a task:
+
+```bash
+npx @tanstack/intent@latest load @appwarden/middleware#appwarden-middleware-get-started
+```
+
+List available skills:
+
+```bash
+npx @tanstack/intent@latest list
+```
 
 ## Contributing
 

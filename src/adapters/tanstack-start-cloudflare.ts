@@ -80,8 +80,7 @@ export type {
  * Accepts pre-transformation input types (e.g., string | boolean for debug, string | object for CSP directives).
  */
 export type TanStackStartConfigFn = () =>
-  | TanStackStartCloudflareConfigInput
-  | TanStackStartCloudflareConfig
+  TanStackStartCloudflareConfigInput | TanStackStartCloudflareConfig
 
 /**
  * The result returned by the `next()` function in TanStack Start request middleware.
@@ -129,8 +128,7 @@ export interface TanStackStartNextOptions<
 }
 
 export type TanStackStartNextFnResult =
-  | Promise<TanStackStartNextResult>
-  | TanStackStartNextResult
+  Promise<TanStackStartNextResult> | TanStackStartNextResult
 
 export type TanStackStartNextFn = <TServerContext = Record<string, unknown>>(
   options?: TanStackStartNextOptions<TServerContext>,

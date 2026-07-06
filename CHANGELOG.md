@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.16.6](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.16.4...@appwarden/middleware@3.16.6) (2026-07-06)
+
+
+### Bug Fixes
+
+* include TanStack Intent skills in published tarball ([b6c74d5](https://github.com/appwarden/middleware/commit/b6c74d51160ab6b19edc6a0efd704435b3d1780b))
+
 ## [3.16.4](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.16.3...@appwarden/middleware@3.16.4) (2026-07-01)
 
 

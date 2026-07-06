@@ -42,8 +42,7 @@ export const UseCSPInputSchema = z.object({
   ).transform(
     (val) =>
       (typeof val === "string" ? JSON.parse(val) : val) as
-        | ContentSecurityPolicyType
-        | undefined,
+        ContentSecurityPolicyType | undefined,
   ),
 })
 
