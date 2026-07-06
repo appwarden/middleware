@@ -296,7 +296,7 @@ npx @tanstack/intent@latest hooks install
 Then load a specific skill when working on a task:
 
 ```bash
-npx @tanstack/intent@latest load @appwarden/middleware/appwarden-middleware-get-started
+npx @tanstack/intent@latest load @appwarden/middleware#appwarden-middleware-get-started
 ```
 
 List available skills:
