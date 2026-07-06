@@ -75,6 +75,19 @@ const main = () => {
     path.join(__dirname, "../scripts/appwarden-link.cjs"),
     path.join(__dirname, "../build/scripts/appwarden-link.cjs"),
   )
+  // Copy skills directory to build directory so the TanStack Intent registry
+  // can discover them in the published tarball. Exclude _artifacts because
+  // this is a single-package repo and artifacts are only for local validation.
+  // See: https://tanstack.com/intent/latest/docs/registry
+  const skillsSrc = path.join(__dirname, "../skills")
+  const skillsDest = path.join(__dirname, "../build/skills")
+  if (fs.existsSync(skillsSrc)) {
+    fs.cpSync(skillsSrc, skillsDest, { recursive: true })
+    const artifactsDir = path.join(skillsDest, "_artifacts")
+    if (fs.existsSync(artifactsDir)) {
+      fs.rmSync(artifactsDir, { recursive: true, force: true })
+    }
+  }
 }
 
 main()
