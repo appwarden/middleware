@@ -890,18 +890,25 @@ function mergeConfigs(remote, localHeaders) {
       Array.isArray(merged.appwardenMiddleware) &&
       merged.appwardenMiddleware.length > 0
     ) {
-      // Merge local CSP headers into the new route-based config shape
-      merged.appwardenMiddleware = merged.appwardenMiddleware.map((entry) => ({
-        ...entry,
-        options: {
-          ...entry.options,
-          website: {
-            ...entry.options.website,
-            cspMode: localHeaders.mode,
-            cspDirectives: localHeaders.directives,
+      // Merge local CSP headers into the new route-based config shape.
+      // Only touch entries that already have a website config; API-only entries
+      // have no lock page to apply CSP to.
+      merged.appwardenMiddleware = merged.appwardenMiddleware.map((entry) => {
+        if (!entry.options.website) {
+          return entry
+        }
+        return {
+          ...entry,
+          options: {
+            ...entry.options,
+            website: {
+              ...entry.options.website,
+              cspMode: localHeaders.mode,
+              cspDirectives: localHeaders.directives,
+            },
           },
-        },
-      }))
+        }
+      })
     } else {
       merged.contentSecurityPolicy = localHeaders
     }

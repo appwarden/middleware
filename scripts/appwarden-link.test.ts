@@ -1277,4 +1277,79 @@ describe("appwarden-link.cjs", () => {
 
     fs.rmSync(tmpDir, { recursive: true })
   })
+
+  it("does not create website when merging CSP into API-only route config", () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "appwarden-test-"))
+
+    fs.writeFileSync(
+      path.join(tmpDir, "package.json"),
+      JSON.stringify({ dependencies: { astro: "^4" } }),
+    )
+    fs.mkdirSync(path.join(tmpDir, "public"), { recursive: true })
+    fs.writeFileSync(
+      path.join(tmpDir, "public", "_headers"),
+      `/*\n  Content-Security-Policy: default-src 'self'\n`,
+    )
+
+    const wrapperPath = path.join(tmpDir, "mock-fetch-wrapper.cjs")
+    fs.writeFileSync(
+      wrapperPath,
+      "global.fetch = async () => {\n" +
+        "  const bodyText = JSON.stringify({\n" +
+        "    content: [{\n" +
+        '      url: "example.com",\n' +
+        "      options: {\n" +
+        "        api: {\n" +
+        '          basePaths: ["/api"],\n' +
+        "          response: {\n" +
+        "            status: 503,\n" +
+        '            body: "\\"locked\\""\n' +
+        "          }\n" +
+        "        }\n" +
+        "      }\n" +
+        "    }]\n" +
+        "  });\n" +
+        "  return {\n" +
+        "    ok: true,\n" +
+        "    headers: { get: () => null },\n" +
+        "    body: {\n" +
+        "      getReader: () => {\n" +
+        "        let done = false;\n" +
+        "        return {\n" +
+        "          read: async () => {\n" +
+        "            if (done) return { done: true };\n" +
+        "            done = true;\n" +
+        "            return { done: false, value: new TextEncoder().encode(bodyText) };\n" +
+        "          },\n" +
+        "          cancel: async () => {},\n" +
+        "        };\n" +
+        "      },\n" +
+        "    },\n" +
+        "  };\n" +
+        "};\n" +
+        'process.env.APPWARDEN_API_TOKEN = "test-token";\n' +
+        'process.env.APPWARDEN_FQDN = "example.com";\n' +
+        'require("' +
+        scriptPath +
+        '");\n',
+    )
+
+    execSync(`node "${wrapperPath}"`, {
+      cwd: tmpDir,
+      encoding: "utf-8",
+      env: { ...process.env, APPWARDEN_SKIP_POSTBUILD: undefined },
+    })
+
+    const configPath = path.join(tmpDir, configDir, configName)
+    const config = JSON.parse(fs.readFileSync(configPath, "utf-8"))
+
+    expect(config.appwardenMiddleware).toHaveLength(1)
+    expect(config.appwardenMiddleware[0].url).toBe("example.com")
+    expect(config.appwardenMiddleware[0].options.website).toBeUndefined()
+    expect(config.appwardenMiddleware[0].options.api.basePaths).toEqual([
+      "/api",
+    ])
+
+    fs.rmSync(tmpDir, { recursive: true })
+  })
 })
