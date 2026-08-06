@@ -276,7 +276,7 @@ describe("resolveMiddlewareConfig edge cases", () => {
           "example.com": {
             lockPageSlug: "/maintenance-example",
             contentSecurityPolicy: {
-              mode: "custom",
+              mode: "enforced",
               directives: { "default-src": ["'self'"] },
             },
           },
@@ -290,7 +290,7 @@ describe("resolveMiddlewareConfig edge cases", () => {
       bypassPaths: undefined,
       website: {
         lockPageSlug: "/maintenance-example",
-        cspMode: "custom",
+        cspMode: "enforced",
         cspDirectives: { "default-src": ["'self'"] },
       },
       api: undefined,
