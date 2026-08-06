@@ -140,6 +140,16 @@ const BuildOutputSchema = z.union([
   LegacyBuildOutputSchema,
   z.object({
     appwardenMiddleware: z.array(ServiceMiddlewareSchema).min(1),
+    debug: DebugBooleanSchema,
+    appwardenApiHostname: z.string().optional(),
+    contentSecurityPolicy: z
+      .object({
+        mode: z.enum(["disabled", "enforced", "report-only"]),
+        directives: z.record(
+          z.union([z.string(), z.array(z.string()), z.boolean()]),
+        ),
+      })
+      .optional(),
   }),
 ])
 
@@ -856,15 +866,26 @@ async function fetchRemoteConfig(apiToken, apiHostname, fqdn) {
 
       // If the API response uses the new route-based options wrapper,
       // keep it in the new shape and wrap it in a middleware array.
+      // Preserve any global fields from the API response at the top level.
       if (config.website || config.api || config.bypassPaths) {
-        return sanitizeRemoteConfig({
+        const result = {
           appwardenMiddleware: [
             {
               url: matchedUrl,
               options: config,
             },
           ],
-        })
+        }
+        for (const key of [
+          "debug",
+          "appwardenApiHostname",
+          "contentSecurityPolicy",
+        ]) {
+          if (data[key] !== undefined && data[key] !== null) {
+            result[key] = data[key]
+          }
+        }
+        return sanitizeRemoteConfig(result)
       }
     }
 

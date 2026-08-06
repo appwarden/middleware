@@ -1352,4 +1352,69 @@ describe("appwarden-link.cjs", () => {
 
     fs.rmSync(tmpDir, { recursive: true })
   })
+
+  it("preserves top-level fields alongside route-based appwardenMiddleware", () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "appwarden-test-"))
+
+    fs.writeFileSync(
+      path.join(tmpDir, "package.json"),
+      JSON.stringify({ dependencies: { next: "^14" } }),
+    )
+
+    const wrapperPath = path.join(tmpDir, "mock-fetch-wrapper.cjs")
+    fs.writeFileSync(
+      wrapperPath,
+      "global.fetch = async () => {\n" +
+        "  const bodyText = JSON.stringify({\n" +
+        '    debug: "true",\n' +
+        '    appwardenApiHostname: "https://api.appwarden.io",\n' +
+        "    content: [{\n" +
+        '      url: "example.com",\n' +
+        "      options: {\n" +
+        "        website: {\n" +
+        '          lockPageSlug: "/maintenance"\n' +
+        "        }\n" +
+        "      }\n" +
+        "    }]\n" +
+        "  });\n" +
+        "  return {\n" +
+        "    ok: true,\n" +
+        "    headers: { get: () => null },\n" +
+        "    body: {\n" +
+        "      getReader: () => {\n" +
+        "        let done = false;\n" +
+        "        return {\n" +
+        "          read: async () => {\n" +
+        "            if (done) return { done: true };\n" +
+        "            done = true;\n" +
+        "            return { done: false, value: new TextEncoder().encode(bodyText) };\n" +
+        "          },\n" +
+        "          cancel: async () => {},\n" +
+        "        };\n" +
+        "      },\n" +
+        "    },\n" +
+        "  };\n" +
+        "};\n" +
+        'process.env.APPWARDEN_API_TOKEN = "test-token";\n' +
+        'process.env.APPWARDEN_FQDN = "example.com";\n' +
+        'require("' +
+        scriptPath +
+        '");\n',
+    )
+
+    execSync(`node "${wrapperPath}"`, {
+      cwd: tmpDir,
+      encoding: "utf-8",
+      env: { ...process.env, APPWARDEN_SKIP_POSTBUILD: undefined },
+    })
+
+    const configPath = path.join(tmpDir, configDir, configName)
+    const config = JSON.parse(fs.readFileSync(configPath, "utf-8"))
+
+    expect(config.appwardenMiddleware).toHaveLength(1)
+    expect(config.debug).toBe(true)
+    expect(config.appwardenApiHostname).toBe("https://api.appwarden.io")
+
+    fs.rmSync(tmpDir, { recursive: true })
+  })
 })
