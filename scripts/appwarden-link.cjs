@@ -24,6 +24,10 @@ const ALLOWED_REMOTE_CONFIG_KEYS = [
   "debug",
   "contentSecurityPolicy",
   "appwardenApiHostname",
+  "bypass-paths",
+  "website",
+  "api",
+  "appwardenMiddleware",
 ]
 
 const ALLOWED_API_HOSTNAMES = ["api.appwarden.io", "staging-api.appwarden.io"]
@@ -46,7 +50,23 @@ function isGlobalRoute(route) {
   return false
 }
 
-const BuildOutputSchema = z.object({
+const HeaderValueSchema = z.object({
+  name: z.string(),
+  value: z.string(),
+})
+
+const ApiLockResponseSchema = z.object({
+  status: z.number().int().min(100).max(599).optional(),
+  body: z.string().optional(),
+  headers: z.array(HeaderValueSchema).optional(),
+})
+
+const ApiMiddlewareConfigSchema = z.object({
+  basePaths: z.array(z.string()),
+  response: ApiLockResponseSchema.optional(),
+})
+
+const WebsiteMiddlewareConfigSchema = z.object({
   lockPageSlug: z
     .string()
     .refine(
@@ -56,7 +76,44 @@ const BuildOutputSchema = z.object({
         message: "lockPageSlug must be a relative path",
       },
     ),
-  debug: z.boolean().optional(),
+  cspMode: z.enum(["disabled", "enforced", "report-only"]).optional(),
+  cspDirectives: z
+    .record(z.union([z.string(), z.array(z.string()), z.boolean()]))
+    .optional(),
+})
+
+const DebugBooleanSchema = z
+  .union([z.boolean(), z.string()])
+  .optional()
+  .transform((val) => {
+    if (val === "true" || val === true) return true
+    if (val === "false" || val === false) return false
+    return val
+  })
+
+const MiddlewareOptionsSchema = z.object({
+  debug: DebugBooleanSchema,
+  bypassPaths: z.array(z.string()).optional(),
+  website: WebsiteMiddlewareConfigSchema.optional(),
+  api: ApiMiddlewareConfigSchema.optional(),
+})
+
+const ServiceMiddlewareSchema = z.object({
+  url: z.string(),
+  options: MiddlewareOptionsSchema,
+})
+
+const LegacyBuildOutputSchema = z.object({
+  lockPageSlug: z
+    .string()
+    .refine(
+      (val) =>
+        !val.includes("://") && !val.startsWith("//") && !val.includes("\\"),
+      {
+        message: "lockPageSlug must be a relative path",
+      },
+    ),
+  debug: DebugBooleanSchema,
   appwardenApiHostname: z.string().optional(),
   contentSecurityPolicy: z
     .object({
@@ -67,6 +124,13 @@ const BuildOutputSchema = z.object({
     })
     .optional(),
 })
+
+const BuildOutputSchema = z.union([
+  LegacyBuildOutputSchema,
+  z.object({
+    appwardenMiddleware: z.array(ServiceMiddlewareSchema).min(1),
+  }),
+])
 
 const CYAN = "\x1b[36m"
 const YELLOW = "\x1b[33m"
@@ -580,8 +644,28 @@ function mapKeys(obj, transform) {
   return result
 }
 
-const normalizeRemoteConfigKeys = (obj) =>
-  mapKeys(obj, (key) => key.replace(/-([a-z])/g, (_, ch) => ch.toUpperCase()))
+function normalizeRemoteConfigKeys(obj, parentKey) {
+  if (Array.isArray(obj)) {
+    return obj.map((item) => normalizeRemoteConfigKeys(item, parentKey))
+  }
+  if (obj && typeof obj === "object" && !Array.isArray(obj)) {
+    return Object.fromEntries(
+      Object.entries(obj).map(([key, value]) => {
+        const normalizedKey = key.replace(/-([a-z])/g, (_, ch) =>
+          ch.toUpperCase(),
+        )
+        // Preserve kebab-case CSP directive keys inside cspDirectives/directives
+        const shouldPreserveKebabCase =
+          parentKey === "cspDirectives" || parentKey === "directives"
+        return [
+          shouldPreserveKebabCase ? key : normalizedKey,
+          normalizeRemoteConfigKeys(value, normalizedKey),
+        ]
+      }),
+    )
+  }
+  return obj
+}
 
 const kebabCaseDirectives = (obj) =>
   mapKeys(obj, (key) => key.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase())
@@ -622,7 +706,7 @@ function sanitizeRemoteConfig(data, depth = 0) {
       warn(`Ignoring invalid appwardenApiHostname: ${val}`)
       continue
     }
-    // Only accept primitive values, arrays of strings, and plain objects
+    // Only accept primitive values, arrays, and plain objects
     if (val === null || val === undefined) {
       safe[key] = val
     } else if (
@@ -631,8 +715,17 @@ function sanitizeRemoteConfig(data, depth = 0) {
       typeof val === "number"
     ) {
       safe[key] = val
-    } else if (Array.isArray(val) && val.every((v) => typeof v === "string")) {
-      safe[key] = val
+    } else if (Array.isArray(val)) {
+      // Arrays of strings are accepted as-is; arrays of objects are sanitized recursively
+      if (val.every((v) => typeof v === "string")) {
+        safe[key] = val
+      } else if (
+        val.every((v) => v && typeof v === "object" && !Array.isArray(v))
+      ) {
+        safe[key] = val
+          .map((v) => sanitizeRemoteConfig(v, depth + 1))
+          .filter(Boolean)
+      }
     } else if (typeof val === "object") {
       // Recursively sanitize nested objects (e.g. contentSecurityPolicy.directives)
       const nested = sanitizeRemoteConfig(val, depth + 1)
@@ -704,6 +797,7 @@ async function fetchRemoteConfig(apiToken, apiHostname, fqdn) {
 
     // The API returns { content: [{ url, options }] } — extract the config object
     let config = null
+    let matchedUrl = null
     if (data && Array.isArray(data.content)) {
       const entry = data.content.find(
         (item) =>
@@ -711,6 +805,7 @@ async function fetchRemoteConfig(apiToken, apiHostname, fqdn) {
           item.url === `www.${fqdn}` ||
           fqdn === `www.${item.url}`,
       )
+      matchedUrl = entry?.url ?? null
       config = entry?.options ?? null
       if (
         config === null &&
@@ -720,6 +815,16 @@ async function fetchRemoteConfig(apiToken, apiHostname, fqdn) {
       ) {
         config = []
       }
+    } else if (data && Array.isArray(data)) {
+      // Fallback: API returned ServiceMiddlewareType[] directly
+      const entry = data.find(
+        (item) =>
+          item.url === fqdn ||
+          item.url === `www.${fqdn}` ||
+          fqdn === `www.${item.url}`,
+      )
+      matchedUrl = entry?.url ?? null
+      config = entry?.options ?? null
     } else if (data && typeof data === "object" && !Array.isArray(data)) {
       // Fallback: API returned a flat object directly
       config = data
@@ -735,6 +840,19 @@ async function fetchRemoteConfig(apiToken, apiHostname, fqdn) {
         }
         delete config.cspMode
         delete config.cspDirectives
+      }
+
+      // If the API response uses the new route-based options wrapper,
+      // keep it in the new shape and wrap it in a middleware array.
+      if (config.website || config.api || config.bypassPaths) {
+        return sanitizeRemoteConfig({
+          appwardenMiddleware: [
+            {
+              url: matchedUrl,
+              options: config,
+            },
+          ],
+        })
       }
     }
 
@@ -756,7 +874,25 @@ function mergeConfigs(remote, localHeaders) {
     }
   }
   if (localHeaders) {
-    merged.contentSecurityPolicy = localHeaders
+    if (
+      Array.isArray(merged.appwardenMiddleware) &&
+      merged.appwardenMiddleware.length > 0
+    ) {
+      // Merge local CSP headers into the new route-based config shape
+      merged.appwardenMiddleware = merged.appwardenMiddleware.map((entry) => ({
+        ...entry,
+        options: {
+          ...entry.options,
+          website: {
+            ...entry.options.website,
+            cspMode: localHeaders.mode,
+            cspDirectives: localHeaders.directives,
+          },
+        },
+      }))
+    } else {
+      merged.contentSecurityPolicy = localHeaders
+    }
   }
   return merged
 }
@@ -852,7 +988,11 @@ async function main() {
     print("Fetched remote Appwarden configuration.")
   }
   const merged = mergeConfigs(remote, localHeaders)
-  if (!merged.lockPageSlug && merged.lockPageSlug !== "") {
+  if (
+    !merged.appwardenMiddleware &&
+    !merged.lockPageSlug &&
+    merged.lockPageSlug !== ""
+  ) {
     merged.lockPageSlug = ""
   }
   const outDir = path.join(cwd, ".appwarden", "linked")
@@ -864,14 +1004,17 @@ async function main() {
     warn("Generated config failed validation:", validation.error.message)
     process.exit(1)
   }
+  const writeConfig = validation.data
   const writeOk = safeWriteFile(
     outPath,
-    JSON.stringify(safeConfig, null, 2) + "\n",
+    JSON.stringify(writeConfig, null, 2) + "\n",
     cwd,
   )
   if (writeOk) {
     print(`Wrote merged configuration to ${outPath}`)
-    debug(`Logging merged configuration ${JSON.stringify(safeConfig, null, 2)}`)
+    debug(
+      `Logging merged configuration ${JSON.stringify(writeConfig, null, 2)}`,
+    )
   } else {
     warn(`Failed to write merged configuration to ${outPath}`)
     process.exit(1)

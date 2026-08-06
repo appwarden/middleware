@@ -14,6 +14,7 @@ import {
   debug,
   handleHeartbeatRequest,
   isHeartbeatRequest,
+  resolveMiddlewareConfig,
   sanitizeConfigErrors,
   usePipeline,
 } from "../utils"
@@ -113,12 +114,11 @@ export const appwardenOnCloudflare =
       throw error
     }
 
-    // Resolve debug value per-domain: check multidomainConfig[hostname].debug first,
-    // then fall back to top-level debug
-    const domainDebug =
-      input.multidomainConfig?.[requestUrl.hostname]?.debug ??
-      input.debug ??
-      false
+    // Resolve the effective middleware configuration for this hostname.
+    const routeConfig = resolveMiddlewareConfig(input, requestUrl.hostname)
+
+    // Resolve debug value per-domain from the route config, then fall back to top-level debug.
+    const domainDebug = routeConfig?.debug ?? input.debug ?? false
 
     // Create context with debug function initialized from resolved debug value
     const context: MiddlewareContext = {
@@ -140,8 +140,13 @@ export const appwardenOnCloudflare =
       // Add CSP middleware after origin using per-domain config first,
       // then fall back to the top-level configuration.
       const cspConfig =
-        input.multidomainConfig?.[requestUrl.hostname]?.contentSecurityPolicy ??
-        input.contentSecurityPolicy
+        routeConfig?.website?.cspMode && routeConfig?.website?.cspDirectives
+          ? {
+              mode: routeConfig.website.cspMode,
+              directives: routeConfig.website.cspDirectives,
+            }
+          : (input.multidomainConfig?.[requestUrl.hostname]
+              ?.contentSecurityPolicy ?? input.contentSecurityPolicy)
 
       if (cspConfig) {
         pipeline.push(useContentSecurityPolicy(cspConfig))

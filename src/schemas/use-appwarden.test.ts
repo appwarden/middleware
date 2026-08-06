@@ -284,4 +284,77 @@ describe("UseAppwardenInputSchema", () => {
       expect(issue?.message).toContain("relative path")
     }
   })
+
+  it("should accept route-based middleware config", () => {
+    const validInput = {
+      debug: true,
+      appwardenApiToken: "token123",
+      appwardenMiddleware: [
+        {
+          url: "example.com",
+          options: {
+            debug: "false",
+            bypassPaths: ["/health", "/api/webhooks/*"],
+            website: {
+              lockPageSlug: "/maintenance",
+              cspMode: "report-only",
+              cspDirectives: {
+                "default-src": ["'self'"],
+              },
+            },
+            api: {
+              basePaths: ["/api", "/internal"],
+              response: {
+                status: 503,
+                body: JSON.stringify({ error: "Service unavailable" }),
+                headers: [{ name: "content-type", value: "application/json" }],
+              },
+            },
+          },
+        },
+      ],
+    }
+
+    const result = UseAppwardenInputSchema.safeParse(validInput)
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.appwardenMiddleware).toHaveLength(1)
+      expect(result.data.appwardenMiddleware?.[0].url).toBe("example.com")
+      expect(result.data.appwardenMiddleware?.[0].options.debug).toBe(false)
+      expect(result.data.appwardenMiddleware?.[0].options.bypassPaths).toEqual([
+        "/health",
+        "/api/webhooks/*",
+      ])
+      expect(
+        result.data.appwardenMiddleware?.[0].options.website?.cspDirectives,
+      ).toEqual({
+        "default-src": ["'self'"],
+      })
+      expect(
+        result.data.appwardenMiddleware?.[0].options.api?.basePaths,
+      ).toEqual(["/api", "/internal"])
+      expect(
+        result.data.appwardenMiddleware?.[0].options.api?.response?.headers,
+      ).toEqual([{ name: "content-type", value: "application/json" }])
+    }
+  })
+
+  it("should pass refinement when route-based middleware config is provided", () => {
+    const validInput = {
+      debug: true,
+      appwardenApiToken: "token123",
+      appwardenMiddleware: [
+        {
+          url: "example.com",
+          options: {
+            website: { lockPageSlug: "/maintenance" },
+          },
+        },
+      ],
+    }
+
+    const RefinedSchema = lockPageSlugRefinement(UseAppwardenInputSchema)
+    const result = RefinedSchema.safeParse(validInput)
+    expect(result.success).toBe(true)
+  })
 })

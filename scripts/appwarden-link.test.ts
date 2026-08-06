@@ -1039,4 +1039,106 @@ describe("appwarden-link.cjs", () => {
 
     fs.rmSync(tmpDir, { recursive: true })
   })
+
+  it("should parse and write new route-based remote config", () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "appwarden-test-"))
+
+    fs.writeFileSync(
+      path.join(tmpDir, "package.json"),
+      JSON.stringify({ dependencies: { next: "^14" } }),
+    )
+
+    const wrapperPath = path.join(tmpDir, "mock-fetch-wrapper.cjs")
+    fs.writeFileSync(
+      wrapperPath,
+      "global.fetch = async () => {\n" +
+        "  const bodyText = JSON.stringify({\n" +
+        "    content: [{\n" +
+        '      url: "example.com",\n' +
+        "      options: {\n" +
+        '        debug: "true",\n' +
+        '        "bypass-paths": ["/health", "/api/webhooks/*"],\n' +
+        "        website: {\n" +
+        '          "lock-page-slug": "/maintenance",\n' +
+        '          "csp-mode": "report-only",\n' +
+        '          "csp-directives": { "default-src": ["\'self\'"] }\n' +
+        "        },\n" +
+        "        api: {\n" +
+        '          "base-paths": ["/api", "/internal"],\n' +
+        "          response: {\n" +
+        "            status: 503,\n" +
+        '            body: "{\\"error\\":\\"Service unavailable\\"}",\n' +
+        '            headers: [{ name: "content-type", value: "application/json" }]\n' +
+        "          }\n" +
+        "        }\n" +
+        "      }\n" +
+        "    }]\n" +
+        "  });\n" +
+        "  const encoder = new TextEncoder();\n" +
+        "  return {\n" +
+        "    ok: true,\n" +
+        "    status: 200,\n" +
+        "    text: async () => bodyText,\n" +
+        "    body: {\n" +
+        "      getReader: () => {\n" +
+        "        let sent = false;\n" +
+        "        return {\n" +
+        "          read: async () => {\n" +
+        "            if (sent) return { done: true };\n" +
+        "            sent = true;\n" +
+        "            return { done: false, value: encoder.encode(bodyText) };\n" +
+        "          },\n" +
+        "        };\n" +
+        "      },\n" +
+        "    },\n" +
+        "    headers: {\n" +
+        '      get: (name) => name === "content-type" ? "application/json" : undefined,\n' +
+        "    },\n" +
+        "  };\n" +
+        "};\n" +
+        'process.env.APPWARDEN_API_TOKEN = "test-token";\n' +
+        'process.env.APPWARDEN_FQDN = "example.com";\n' +
+        'require("' +
+        scriptPath +
+        '");\n',
+    )
+
+    execSync(`node "${wrapperPath}"`, {
+      cwd: tmpDir,
+      encoding: "utf-8",
+      env: { ...process.env, APPWARDEN_SKIP_POSTBUILD: undefined },
+    })
+
+    const configPath = path.join(tmpDir, configDir, configName)
+    const config = JSON.parse(fs.readFileSync(configPath, "utf-8"))
+
+    expect(config.appwardenMiddleware).toHaveLength(1)
+    expect(config.appwardenMiddleware[0].url).toBe("example.com")
+    expect(config.appwardenMiddleware[0].options.debug).toBe(true)
+    expect(config.appwardenMiddleware[0].options.bypassPaths).toEqual([
+      "/health",
+      "/api/webhooks/*",
+    ])
+    expect(config.appwardenMiddleware[0].options.website.lockPageSlug).toBe(
+      "/maintenance",
+    )
+    expect(config.appwardenMiddleware[0].options.website.cspMode).toBe(
+      "report-only",
+    )
+    expect(config.appwardenMiddleware[0].options.website.cspDirectives).toEqual(
+      {
+        "default-src": ["'self'"],
+      },
+    )
+    expect(config.appwardenMiddleware[0].options.api.basePaths).toEqual([
+      "/api",
+      "/internal",
+    ])
+    expect(config.appwardenMiddleware[0].options.api.response.status).toBe(503)
+    expect(config.appwardenMiddleware[0].options.api.response.headers).toEqual([
+      { name: "content-type", value: "application/json" },
+    ])
+
+    fs.rmSync(tmpDir, { recursive: true })
+  })
 })
