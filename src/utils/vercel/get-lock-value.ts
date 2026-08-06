@@ -1,5 +1,5 @@
 import { errors } from "../../constants"
-import { LockValue, LockValueType } from "../../schemas"
+import { LockValue, LockValueType } from "../../schemas/helpers"
 import { VercelProviderContext } from "../../types"
 import { printMessage } from "../print-message"
 

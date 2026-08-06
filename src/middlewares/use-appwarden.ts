@@ -2,11 +2,15 @@ import { checkLockStatus } from "../core"
 import { CloudflareConfigType } from "../schemas"
 import { Middleware } from "../types"
 import {
+  buildApiLockResponseHeaders,
   buildLockPageUrl,
   createRedirect,
+  debug,
   isHTMLRequest,
   isOnLockPage,
+  pathMatchesAnyPattern,
   printMessage,
+  resolveMiddlewareConfig,
 } from "../utils"
 
 export const useAppwarden: (input: CloudflareConfigType) => Middleware =
@@ -23,22 +27,42 @@ export const useAppwarden: (input: CloudflareConfigType) => Middleware =
         return
       }
 
-      // Skip non-HTML requests (e.g., API calls, static assets)
-      if (!isHTMLRequest(request)) {
+      // Resolve the effective middleware configuration for this hostname.
+      // When the new route-based `middleware` array is provided, it is used.
+      // Otherwise, the legacy lockPageSlug/multidomainConfig shape is synthesized.
+      const routeConfig = resolveMiddlewareConfig(input, requestUrl.hostname)
+      if (!routeConfig) {
         return
       }
 
-      // Resolve lockPageSlug from multidomainConfig (if hostname exists) or fall back to top-level config.
-      // If neither provides a lockPageSlug, this domain is not protected and lock logic is skipped.
-      const lockPageSlug =
-        input.multidomainConfig?.[requestUrl.hostname]?.lockPageSlug ??
-        input.lockPageSlug
+      const domainDebug = routeConfig.debug ?? input.debug ?? false
+      const debugFn = debug(domainDebug)
 
+      // Bypass paths are always allowed through, regardless of lock status.
+      if (
+        routeConfig.bypassPaths &&
+        routeConfig.bypassPaths.length > 0 &&
+        pathMatchesAnyPattern(requestUrl.pathname, routeConfig.bypassPaths)
+      ) {
+        debugFn("Bypass path matched - passing through")
+        return
+      }
+
+      const lockPageSlug = routeConfig.website?.lockPageSlug
       if (!lockPageSlug) {
         return
       }
 
-      // Skip if already on lock page to prevent infinite redirect loop
+      // Skip lock check for non-HTML requests when there are no API base paths.
+      // This preserves the legacy behavior of not touching API/static traffic.
+      const hasApiBasePaths =
+        routeConfig.api?.basePaths && routeConfig.api.basePaths.length > 0
+      if (!isHTMLRequest(request) && !hasApiBasePaths) {
+        return
+      }
+
+      // Skip if already on lock page to prevent infinite redirect loop and
+      // avoid unnecessary lock status checks.
       if (isOnLockPage(lockPageSlug, request.url)) {
         return
       }
@@ -49,18 +73,40 @@ export const useAppwarden: (input: CloudflareConfigType) => Middleware =
         request,
         appwardenApiToken: input.appwardenApiToken,
         appwardenApiHostname: input.appwardenApiHostname,
-        debug: input.debug,
+        debug: domainDebug,
         lockPageSlug,
         waitUntil: (fn) => context.waitUntil(fn),
       })
 
-      // If locked, redirect to the lock page
-      if (result.isLocked) {
-        const lockPageUrl = buildLockPageUrl(lockPageSlug, request.url)
-        context.response = createRedirect(lockPageUrl)
+      if (!result.isLocked) {
+        return
+      }
+
+      // Locked: API base paths return the configured API response.
+      if (
+        routeConfig.api?.basePaths &&
+        routeConfig.api.basePaths.length > 0 &&
+        pathMatchesAnyPattern(requestUrl.pathname, routeConfig.api.basePaths)
+      ) {
+        const responseConfig = routeConfig.api.response
+        debugFn("API base path matched - returning API lock response")
+        context.response = new Response(responseConfig?.body ?? "", {
+          status: responseConfig?.status ?? 503,
+          headers: buildApiLockResponseHeaders(responseConfig?.headers),
+        })
         shouldCallNext = false
         return
       }
+
+      // Locked: non-HTML requests are not redirected to the lock page.
+      if (!isHTMLRequest(request)) {
+        return
+      }
+
+      // Locked: redirect to the website lock page
+      const lockPageUrl = buildLockPageUrl(lockPageSlug, request.url)
+      context.response = createRedirect(lockPageUrl)
+      shouldCallNext = false
     } catch (e) {
       const message =
         "Appwarden encountered an unknown error. Please contact Appwarden support at https://appwarden.io/join-community."

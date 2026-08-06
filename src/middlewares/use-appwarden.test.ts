@@ -10,31 +10,35 @@ vi.mock("../core", () => ({
   checkLockStatus: vi.fn(),
 }))
 
-vi.mock("../utils", () => ({
-  printMessage: vi.fn((message) => `[@appwarden/middleware] ${message}`),
-  buildLockPageUrl: vi.fn((slug: string, requestUrl: string) => {
-    const url = new URL(requestUrl)
-    url.pathname = slug.startsWith("/") ? slug : `/${slug}`
-    return url
-  }),
-  createRedirect: vi.fn((url: URL) => {
-    return new Response(null, {
-      status: 302,
-      headers: { Location: url.toString() },
-    })
-  }),
-  isHTMLRequest: vi.fn(
-    (request: Request) =>
-      request.headers.get("accept")?.includes("text/html") ?? false,
-  ),
-  isOnLockPage: vi.fn((lockPageSlug: string, requestUrl: string) => {
-    const normalizedSlug = lockPageSlug.startsWith("/")
-      ? lockPageSlug
-      : `/${lockPageSlug}`
-    const url = new URL(requestUrl)
-    return url.pathname === normalizedSlug
-  }),
-}))
+vi.mock("../utils", async () => {
+  const actual = await vi.importActual<typeof import("../utils")>("../utils")
+  return {
+    ...actual,
+    printMessage: vi.fn((message) => `[@appwarden/middleware] ${message}`),
+    buildLockPageUrl: vi.fn((slug: string, requestUrl: string) => {
+      const url = new URL(requestUrl)
+      url.pathname = slug.startsWith("/") ? slug : `/${slug}`
+      return url
+    }),
+    createRedirect: vi.fn((url: URL) => {
+      return new Response(null, {
+        status: 302,
+        headers: { Location: url.toString() },
+      })
+    }),
+    isHTMLRequest: vi.fn(
+      (request: Request) =>
+        request.headers.get("accept")?.includes("text/html") ?? false,
+    ),
+    isOnLockPage: vi.fn((lockPageSlug: string, requestUrl: string) => {
+      const normalizedSlug = lockPageSlug.startsWith("/")
+        ? lockPageSlug
+        : `/${lockPageSlug}`
+      const url = new URL(requestUrl)
+      return url.pathname === normalizedSlug
+    }),
+  }
+})
 
 vi.mock("../utils/cloudflare", () => ({
   store: {
@@ -457,6 +461,194 @@ describe("useAppwarden", () => {
       expect(checkLockStatus).toHaveBeenCalled()
 
       // Should call next when not locked
+      expect(mockNext).toHaveBeenCalled()
+    })
+  })
+
+  describe("route-based middleware config", () => {
+    it("should pass through bypass paths without checking lock status", async () => {
+      mockInput = {
+        ...mockInput,
+        appwardenMiddleware: [
+          {
+            url: "example.com",
+            options: {
+              bypassPaths: ["/health", "/api/webhooks/*"],
+              website: { lockPageSlug: "/maintenance" },
+            },
+          },
+        ],
+      }
+
+      mockContext.request = new Request("https://example.com/health", {
+        headers: { accept: "text/html" },
+      })
+
+      const middleware = useAppwarden(mockInput)
+      await middleware(mockContext, mockNext)
+
+      expect(checkLockStatus).not.toHaveBeenCalled()
+      expect(mockNext).toHaveBeenCalled()
+    })
+
+    it("should not match bypass paths across segment boundaries", async () => {
+      mockInput = {
+        ...mockInput,
+        appwardenMiddleware: [
+          {
+            url: "example.com",
+            options: {
+              bypassPaths: ["/api"],
+              website: { lockPageSlug: "/maintenance" },
+            },
+          },
+        ],
+      }
+
+      vi.mocked(checkLockStatus).mockResolvedValue({
+        isLocked: true,
+        isTestLock: false,
+      })
+
+      mockContext.request = new Request("https://example.com/api-docs", {
+        headers: { accept: "text/html" },
+      })
+
+      const middleware = useAppwarden(mockInput)
+      await middleware(mockContext, mockNext)
+
+      expect(checkLockStatus).toHaveBeenCalled()
+      expect(mockNext).not.toHaveBeenCalled()
+      expect(mockContext.response).toBeInstanceOf(Response)
+      expect(mockContext.response!.status).toBe(302)
+    })
+
+    it("should return API lock response when API base path matches and site is locked", async () => {
+      mockInput = {
+        ...mockInput,
+        appwardenMiddleware: [
+          {
+            url: "example.com",
+            options: {
+              website: { lockPageSlug: "/maintenance" },
+              api: {
+                basePaths: ["/api", "/internal"],
+                response: {
+                  status: 503,
+                  body: JSON.stringify({ error: "Service unavailable" }),
+                  headers: [
+                    { name: "content-type", value: "application/json" },
+                  ],
+                },
+              },
+            },
+          },
+        ],
+      }
+
+      vi.mocked(checkLockStatus).mockResolvedValue({
+        isLocked: true,
+        isTestLock: false,
+      })
+
+      mockContext.request = new Request("https://example.com/api/users", {
+        headers: { accept: "application/json" },
+      })
+
+      const middleware = useAppwarden(mockInput)
+      await middleware(mockContext, mockNext)
+
+      expect(checkLockStatus).toHaveBeenCalled()
+      expect(mockNext).not.toHaveBeenCalled()
+      expect(mockContext.response).toBeInstanceOf(Response)
+      expect(mockContext.response!.status).toBe(503)
+      expect(mockContext.response!.headers.get("content-type")).toBe(
+        "application/json",
+      )
+      const body = await mockContext.response!.text()
+      expect(body).toBe(JSON.stringify({ error: "Service unavailable" }))
+    })
+
+    it("should not match API base paths across segment boundaries", async () => {
+      mockInput = {
+        ...mockInput,
+        appwardenMiddleware: [
+          {
+            url: "example.com",
+            options: {
+              website: { lockPageSlug: "/maintenance" },
+              api: { basePaths: ["/api"] },
+            },
+          },
+        ],
+      }
+
+      vi.mocked(checkLockStatus).mockResolvedValue({
+        isLocked: true,
+        isTestLock: false,
+      })
+
+      mockContext.request = new Request("https://example.com/api-docs", {
+        headers: { accept: "text/html" },
+      })
+
+      const middleware = useAppwarden(mockInput)
+      await middleware(mockContext, mockNext)
+
+      expect(mockNext).not.toHaveBeenCalled()
+      expect(mockContext.response).toBeInstanceOf(Response)
+      expect(mockContext.response!.status).toBe(302)
+      expect(mockContext.response!.headers.get("Location")).toBe(
+        "https://example.com/maintenance",
+      )
+    })
+
+    it("should resolve lockPageSlug for matching hostname in route-based config", async () => {
+      mockInput = {
+        ...mockInput,
+        appwardenMiddleware: [
+          {
+            url: "example.com",
+            options: {
+              website: { lockPageSlug: "/maintenance-example" },
+            },
+          },
+          {
+            url: "other.com",
+            options: {
+              website: { lockPageSlug: "/maintenance-other" },
+            },
+          },
+        ],
+      }
+
+      const middleware = useAppwarden(mockInput)
+      await middleware(mockContext, mockNext)
+
+      expect(checkLockStatus).toHaveBeenCalledWith(
+        expect.objectContaining({
+          lockPageSlug: "/maintenance-example",
+        }),
+      )
+    })
+
+    it("should skip protection when no route-based hostname matches", async () => {
+      mockInput = {
+        ...mockInput,
+        appwardenMiddleware: [
+          {
+            url: "other.com",
+            options: {
+              website: { lockPageSlug: "/maintenance-other" },
+            },
+          },
+        ],
+      }
+
+      const middleware = useAppwarden(mockInput)
+      await middleware(mockContext, mockNext)
+
+      expect(checkLockStatus).not.toHaveBeenCalled()
       expect(mockNext).toHaveBeenCalled()
     })
   })

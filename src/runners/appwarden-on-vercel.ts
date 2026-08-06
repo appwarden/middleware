@@ -8,6 +8,7 @@ import {
 import { LockValueType } from "../schemas"
 import { AppwardenConfigSchema, VercelAppwardenConfig } from "../schemas/vercel"
 import {
+  buildApiLockResponseHeaders,
   buildLockPageUrl,
   debug,
   handleHeartbeatRequest,
@@ -16,7 +17,9 @@ import {
   isHTMLRequest,
   isOnLockPage,
   MemoryCache,
+  pathMatchesAnyPattern,
   printMessage,
+  resolveMiddlewareConfig,
   sanitizeConfigErrors,
   TEMPORARY_REDIRECT_STATUS,
   validateConfig,
@@ -83,10 +86,23 @@ export function createAppwardenMiddleware(
     }
 
     const parsedConfig = AppwardenConfigSchema.parse(config)
-    const debugFn = debug(parsedConfig.debug ?? false)
+
+    const routeConfig = resolveMiddlewareConfig(
+      parsedConfig as unknown as Parameters<typeof resolveMiddlewareConfig>[0],
+      requestUrl.hostname,
+    )
+    const domainDebug = routeConfig?.debug ?? parsedConfig.debug ?? false
+    const debugFn = debug(domainDebug)
 
     const applyCspHeaders = (response: Response): Response => {
-      const cspConfig = parsedConfig.contentSecurityPolicy
+      const cspConfig =
+        routeConfig?.website?.cspMode && routeConfig?.website?.cspDirectives
+          ? {
+              mode: routeConfig.website.cspMode,
+              directives: routeConfig.website.cspDirectives,
+            }
+          : parsedConfig.contentSecurityPolicy
+
       if (cspConfig && ["enforced", "report-only"].includes(cspConfig.mode)) {
         const [headerName, headerValue] = makeCSPHeader(
           "",
@@ -108,28 +124,43 @@ export function createAppwardenMiddleware(
     }
 
     try {
-      const isHTML = isHTMLRequest(request)
+      debugFn(`Appwarden middleware invoked for ${requestUrl.pathname}`)
 
-      debugFn(
-        `Appwarden middleware invoked for ${requestUrl.pathname}`,
-        `isHTML: ${isHTML}`,
-      )
-
-      // Pass through non-HTML requests to the next handler
-      if (!isHTML) {
-        debugFn("Non-HTML request detected - passing through")
-        return NextResponse.next()
+      // Pass through if no lock page is configured for this hostname
+      if (!routeConfig) {
+        debugFn("No middleware config for hostname - passing through")
+        return applyCspHeaders(NextResponse.next())
       }
 
-      // Pass through if no lock page is configured
-      if (!parsedConfig.lockPageSlug) {
-        debugFn("No lockPageSlug configured - passing through")
-        return NextResponse.next()
+      // Bypass paths are always allowed through, regardless of lock status.
+      if (
+        routeConfig.bypassPaths &&
+        routeConfig.bypassPaths.length > 0 &&
+        pathMatchesAnyPattern(requestUrl.pathname, routeConfig.bypassPaths)
+      ) {
+        debugFn("Bypass path matched - passing through")
+        return applyCspHeaders(NextResponse.next())
       }
 
-      // Skip if already on lock page to prevent infinite redirect loop
-      if (isOnLockPage(parsedConfig.lockPageSlug, request.url)) {
+      const lockPageSlug = routeConfig.website?.lockPageSlug
+      if (!lockPageSlug) {
+        debugFn("No lock page configured - passing through")
+        return applyCspHeaders(NextResponse.next())
+      }
+
+      // Skip if already on lock page to prevent infinite redirect loop and
+      // avoid unnecessary lock status checks.
+      if (isOnLockPage(lockPageSlug, request.url)) {
         debugFn("Already on lock page - passing through")
+        return applyCspHeaders(NextResponse.next())
+      }
+
+      // Skip lock check and CSP for non-HTML requests when there are no API base paths.
+      // This preserves the legacy behavior of not touching API/static traffic.
+      const hasApiBasePaths =
+        routeConfig.api?.basePaths && routeConfig.api.basePaths.length > 0
+      if (!isHTMLRequest(request) && !hasApiBasePaths) {
+        debugFn("Non-HTML request without API base paths - passing through")
         return NextResponse.next()
       }
 
@@ -172,24 +203,40 @@ export function createAppwardenMiddleware(
           })
         ).lockValue
 
-      if (lockValue?.isLocked) {
-        debugFn(
-          `Website is locked - redirecting to ${parsedConfig.lockPageSlug}`,
-        )
-        const lockPageUrl = buildLockPageUrl(
-          parsedConfig.lockPageSlug,
-          request.url,
-        )
-        const redirectResponse = createMutableRedirectResponse(
-          lockPageUrl.toString(),
-        )
-        return applyCspHeaders(redirectResponse)
+      if (!lockValue?.isLocked) {
+        // Site is not locked - pass through to the next handler
+        const response = NextResponse.next()
+        debugFn("Site is not locked - passing through")
+        return applyCspHeaders(response)
       }
 
-      // Site is not locked - pass through to the next handler
-      const response = NextResponse.next()
-      debugFn("Site is not locked - passing through")
-      return applyCspHeaders(response)
+      // Locked: API base paths return the configured API response.
+      if (
+        routeConfig.api?.basePaths &&
+        routeConfig.api.basePaths.length > 0 &&
+        pathMatchesAnyPattern(requestUrl.pathname, routeConfig.api.basePaths)
+      ) {
+        const responseConfig = routeConfig.api.response
+        debugFn("API base path matched - returning API lock response")
+        return new Response(responseConfig?.body ?? "", {
+          status: responseConfig?.status ?? 503,
+          headers: buildApiLockResponseHeaders(responseConfig?.headers),
+        })
+      }
+
+      // Locked: non-HTML requests are not redirected to the lock page.
+      if (!isHTMLRequest(request)) {
+        debugFn("Non-HTML request detected - passing through")
+        return applyCspHeaders(NextResponse.next())
+      }
+
+      // Locked: redirect to the website lock page
+      debugFn(`Website is locked - redirecting to ${lockPageSlug}`)
+      const lockPageUrl = buildLockPageUrl(lockPageSlug, request.url)
+      const redirectResponse = createMutableRedirectResponse(
+        lockPageUrl.toString(),
+      )
+      return applyCspHeaders(redirectResponse)
     } catch (e) {
       debugFn(
         "Error in Appwarden Vercel middleware",

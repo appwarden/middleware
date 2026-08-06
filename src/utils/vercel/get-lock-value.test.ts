@@ -1,12 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { errors } from "../../constants"
-import { LockValue, LockValueType } from "../../schemas"
+import { LockValue, LockValueType } from "../../schemas/helpers"
 import { VercelProviderContext } from "../../types"
 import { printMessage } from "../print-message"
 import { getLockValue } from "./get-lock-value"
 
 // Mock dependencies
-vi.mock("../../schemas", () => ({
+vi.mock("../../schemas/helpers", () => ({
   LockValue: {
     parse: vi.fn(),
   },

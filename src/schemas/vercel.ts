@@ -11,6 +11,7 @@ import {
   AppwardenApiTokenSchema,
   ValidLockPageSlugSchema,
 } from "./helpers"
+import { AppwardenMiddlewareArraySchema } from "./middleware-config"
 import {
   CSPDirectivesSchema,
   CSPModeSchema,
@@ -73,6 +74,7 @@ export const BaseNextJsConfigSchema = z.object({
     val.replace(/^\/?/, "/"),
   ),
   contentSecurityPolicy: VercelCSPSchema.optional(),
+  appwardenMiddleware: AppwardenMiddlewareArraySchema.optional(),
 })
 
 export const AppwardenConfigSchema = BaseNextJsConfigSchema

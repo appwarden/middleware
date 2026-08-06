@@ -877,4 +877,143 @@ describe("createAppwardenMiddleware", () => {
       expect(mockMakeCSPHeader).toHaveBeenCalledWith("", directives, "enforced")
     })
   })
+
+  describe("route-based middleware config", () => {
+    it("should bypass configured paths without checking lock status", async () => {
+      const routeConfig = {
+        ...mockConfig,
+        appwardenMiddleware: [
+          {
+            url: "example.com",
+            options: {
+              bypassPaths: ["/health", "/api/webhooks/*"],
+              website: { lockPageSlug: "/maintenance" },
+            },
+          },
+        ],
+      }
+      vi.mocked(AppwardenConfigSchemaMock.parse).mockReturnValue(routeConfig)
+
+      const middleware = createAppwardenMiddleware(routeConfig)
+      const result = await middleware(
+        new Request("https://example.com/health", {
+          headers: { accept: "text/html" },
+        }),
+      )
+
+      expect(getLockValueMock).not.toHaveBeenCalled()
+      expect(result.status).toBe(200)
+      expect(mockNextResponseNext).toHaveBeenCalled()
+    })
+
+    it("should return API lock response when API base path matches and site is locked", async () => {
+      const routeConfig = {
+        ...mockConfig,
+        appwardenMiddleware: [
+          {
+            url: "example.com",
+            options: {
+              website: { lockPageSlug: "/maintenance" },
+              api: {
+                basePaths: ["/api", "/internal"],
+                response: {
+                  status: 503,
+                  body: JSON.stringify({ error: "Service unavailable" }),
+                  headers: [
+                    { name: "content-type", value: "application/json" },
+                  ],
+                },
+              },
+            },
+          },
+        ],
+      }
+      vi.mocked(AppwardenConfigSchemaMock.parse).mockReturnValue(routeConfig)
+      vi.mocked(getLockValueMock).mockResolvedValue({
+        lockValue: {
+          isLocked: 1,
+          isLockedTest: 0,
+          lastCheck: Date.now(),
+        },
+        shouldDeleteEdgeValue: false,
+      })
+
+      const middleware = createAppwardenMiddleware(routeConfig)
+      const result = await middleware(
+        new Request("https://example.com/api/users", {
+          headers: { accept: "application/json" },
+        }),
+      )
+
+      expect(getLockValueMock).toHaveBeenCalled()
+      expect(result.status).toBe(503)
+      expect(result.headers.get("content-type")).toBe("application/json")
+      expect(await result.text()).toBe(
+        JSON.stringify({ error: "Service unavailable" }),
+      )
+      expect(mockNextResponseNext).not.toHaveBeenCalled()
+    })
+
+    it("should redirect to website lock page for non-API paths when site is locked", async () => {
+      const routeConfig = {
+        ...mockConfig,
+        appwardenMiddleware: [
+          {
+            url: "example.com",
+            options: {
+              website: { lockPageSlug: "/maintenance" },
+              api: { basePaths: ["/api"] },
+            },
+          },
+        ],
+      }
+      vi.mocked(AppwardenConfigSchemaMock.parse).mockReturnValue(routeConfig)
+      vi.mocked(getLockValueMock).mockResolvedValue({
+        lockValue: {
+          isLocked: 1,
+          isLockedTest: 0,
+          lastCheck: Date.now(),
+        },
+        shouldDeleteEdgeValue: false,
+      })
+
+      const middleware = createAppwardenMiddleware(routeConfig)
+      const result = await middleware(
+        new Request("https://example.com/page", {
+          headers: { accept: "text/html" },
+        }),
+      )
+
+      expect(result.status).toBe(302)
+      expect(result.headers.get("Location")).toBe(
+        "https://example.com/maintenance",
+      )
+    })
+
+    it("should skip protection when hostname does not match any route config", async () => {
+      const routeConfig = {
+        ...mockConfig,
+        appwardenMiddleware: [
+          {
+            url: "other.com",
+            options: {
+              website: { lockPageSlug: "/maintenance-other" },
+            },
+          },
+        ],
+      }
+      vi.mocked(AppwardenConfigSchemaMock.parse).mockReturnValue(routeConfig)
+
+      const middleware = createAppwardenMiddleware(routeConfig)
+      const result = await middleware(
+        new Request("https://example.com/page", {
+          headers: { accept: "text/html" },
+        }),
+      )
+
+      expect(getLockValueMock).not.toHaveBeenCalled()
+      expect(result.status).toBe(200)
+      expect(mockNextResponseNext).toHaveBeenCalled()
+    })
+  })
 })

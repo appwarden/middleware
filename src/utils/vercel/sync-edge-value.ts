@@ -1,5 +1,5 @@
 import { APPWARDEN_MIDDLEWARE_USER_AGENT } from "../../constants"
-import { AppwardenApiHostnameSchema } from "../../schemas"
+import { AppwardenApiHostnameSchema } from "../../schemas/helpers"
 import { VercelProviderContext } from "../../types"
 import { printMessage } from "../print-message"
 
