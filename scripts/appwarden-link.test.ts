@@ -1141,4 +1141,140 @@ describe("appwarden-link.cjs", () => {
 
     fs.rmSync(tmpDir, { recursive: true })
   })
+
+  it("should handle flat object fallback with route-based config", () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "appwarden-test-"))
+
+    fs.writeFileSync(
+      path.join(tmpDir, "package.json"),
+      JSON.stringify({ dependencies: { next: "^14" } }),
+    )
+
+    const wrapperPath = path.join(tmpDir, "mock-fetch-wrapper.cjs")
+    fs.writeFileSync(
+      wrapperPath,
+      "global.fetch = async () => {\n" +
+        "  const bodyText = JSON.stringify({\n" +
+        '    debug: "false",\n' +
+        '    bypassPaths: ["/health"],\n' +
+        "    website: {\n" +
+        '      lockPageSlug: "/maintenance",\n' +
+        '      cspMode: "report-only",\n' +
+        '      cspDirectives: { "default-src": ["\'self\'"] }\n' +
+        "    },\n" +
+        "    api: {\n" +
+        '      basePaths: ["/api"],\n' +
+        "      response: {\n" +
+        "        status: 503,\n" +
+        '        body: "\\"locked\\"",\n' +
+        '        headers: [{ name: "content-type", value: "application/json" }]\n' +
+        "      }\n" +
+        "    }\n" +
+        "  });\n" +
+        "  return {\n" +
+        "    ok: true,\n" +
+        "    headers: { get: () => null },\n" +
+        "    body: {\n" +
+        "      getReader: () => {\n" +
+        "        let done = false;\n" +
+        "        return {\n" +
+        "          read: async () => {\n" +
+        "            if (done) return { done: true };\n" +
+        "            done = true;\n" +
+        "            return { done: false, value: new TextEncoder().encode(bodyText) };\n" +
+        "          },\n" +
+        "          cancel: async () => {},\n" +
+        "        };\n" +
+        "      },\n" +
+        "    },\n" +
+        "  };\n" +
+        "};\n" +
+        'process.env.APPWARDEN_API_TOKEN = "test-token";\n' +
+        'process.env.APPWARDEN_FQDN = "example.com";\n' +
+        'require("' +
+        scriptPath +
+        '");\n',
+    )
+
+    execSync(`node "${wrapperPath}"`, {
+      cwd: tmpDir,
+      encoding: "utf-8",
+      env: { ...process.env, APPWARDEN_SKIP_POSTBUILD: undefined },
+    })
+
+    const configPath = path.join(tmpDir, configDir, configName)
+    const config = JSON.parse(fs.readFileSync(configPath, "utf-8"))
+
+    expect(config.appwardenMiddleware).toHaveLength(1)
+    expect(config.appwardenMiddleware[0].url).toBe("example.com")
+    expect(config.appwardenMiddleware[0].options.debug).toBe(false)
+    expect(config.appwardenMiddleware[0].options.bypassPaths).toEqual([
+      "/health",
+    ])
+    expect(config.appwardenMiddleware[0].options.website.lockPageSlug).toBe(
+      "/maintenance",
+    )
+    expect(config.appwardenMiddleware[0].options.api.basePaths).toEqual([
+      "/api",
+    ])
+
+    fs.rmSync(tmpDir, { recursive: true })
+  })
+
+  it("should reject invalid debug string values", () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "appwarden-test-"))
+
+    fs.writeFileSync(
+      path.join(tmpDir, "package.json"),
+      JSON.stringify({ dependencies: { next: "^14" } }),
+    )
+
+    const wrapperPath = path.join(tmpDir, "mock-fetch-wrapper.cjs")
+    fs.writeFileSync(
+      wrapperPath,
+      "global.fetch = async () => {\n" +
+        "  const bodyText = JSON.stringify({\n" +
+        "    content: [{\n" +
+        '      url: "example.com",\n' +
+        "      options: {\n" +
+        '        debug: "invalid",\n' +
+        '        lockPageSlug: "/maintenance"\n' +
+        "      }\n" +
+        "    }]\n" +
+        "  });\n" +
+        "  return {\n" +
+        "    ok: true,\n" +
+        "    headers: { get: () => null },\n" +
+        "    body: {\n" +
+        "      getReader: () => {\n" +
+        "        let done = false;\n" +
+        "        return {\n" +
+        "          read: async () => {\n" +
+        "            if (done) return { done: true };\n" +
+        "            done = true;\n" +
+        "            return { done: false, value: new TextEncoder().encode(bodyText) };\n" +
+        "          },\n" +
+        "          cancel: async () => {},\n" +
+        "        };\n" +
+        "      },\n" +
+        "    },\n" +
+        "  };\n" +
+        "};\n" +
+        'process.env.APPWARDEN_API_TOKEN = "test-token";\n' +
+        'process.env.APPWARDEN_FQDN = "example.com";\n' +
+        'require("' +
+        scriptPath +
+        '");\n',
+    )
+
+    expect(() =>
+      execSync(`node "${wrapperPath}"`, {
+        cwd: tmpDir,
+        encoding: "utf-8",
+        env: { ...process.env, APPWARDEN_SKIP_POSTBUILD: undefined },
+      }),
+    ).toThrow()
+
+    fs.rmSync(tmpDir, { recursive: true })
+  })
 })
