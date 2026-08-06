@@ -12,13 +12,17 @@ interface ResolveMiddlewareConfigInput {
 }
 
 /**
- * Normalizes a path pattern by stripping a trailing `/*` wildcard indicator.
- * The wildcard is only a visual convention; matching is governed by
- * segment-boundary rules in `pathMatchesPattern`.
+ * Normalizes a path pattern by stripping a trailing `/*` wildcard indicator
+ * and any trailing slash. The wildcard is only a visual convention; matching
+ * is governed by segment-boundary rules in `pathMatchesPattern`.
  */
 function normalizePathPattern(pattern: string): string {
   if (pattern === "/") return pattern
-  return pattern.endsWith("/*") ? pattern.slice(0, -2) : pattern
+  let normalized = pattern
+  if (normalized.endsWith("/*")) {
+    normalized = normalized.slice(0, -2)
+  }
+  return normalized.endsWith("/") ? normalized.slice(0, -1) : normalized
 }
 
 /**
@@ -89,9 +93,10 @@ export function findMiddlewareConfigForHostname(
 /**
  * Resolves the effective middleware configuration for a request.
  *
- * When the new `middleware` array is present, it looks up the config by hostname.
- * Otherwise, it synthesizes a config from the legacy `lockPageSlug`,
- * `multidomainConfig`, and `contentSecurityPolicy` fields.
+ * When the new `appwardenMiddleware` array is present, it looks up the config
+ * by hostname. Otherwise, it synthesizes a config from the legacy
+ * `lockPageSlug` and `multidomainConfig` fields, using
+ * `multidomainConfig[hostname].contentSecurityPolicy` for CSP settings.
  */
 export function resolveMiddlewareConfig(
   input: ResolveMiddlewareConfigInput,

@@ -33,6 +33,18 @@ export const WebsiteMiddlewareConfigSchema = z.object({
   cspMode: CSPModeSchema.optional(),
   cspDirectives: z
     .lazy(() => CSPDirectivesSchema)
+    .superRefine((val, ctx) => {
+      if (typeof val === "string") {
+        try {
+          JSON.parse(val)
+        } catch {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "cspDirectives must be a valid JSON string",
+          })
+        }
+      }
+    })
     .transform(
       (val) =>
         (typeof val === "string" ? JSON.parse(val) : val) as

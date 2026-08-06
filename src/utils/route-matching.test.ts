@@ -17,6 +17,9 @@ describe("pathMatchesPattern", () => {
     ["/api/webhooks/123", "/api/webhooks/*", true],
     ["/api/webhooks/123/456", "/api/webhooks/*", true],
     ["/api/webhooks-other", "/api/webhooks/*", false],
+    ["/api/", "/api/", true],
+    ["/api/users", "/api/", true],
+    ["/api-docs", "/api/", false],
     ["/", "/", true],
     ["/anything", "/", true],
   ])("pathMatchesPattern(%s, %s) -> %s", (requestPath, pattern, expected) => {

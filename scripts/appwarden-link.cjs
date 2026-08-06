@@ -85,6 +85,17 @@ const WebsiteMiddlewareConfigSchema = z.object({
 const DebugBooleanSchema = z
   .union([z.boolean(), z.string()])
   .optional()
+  .refine(
+    (val) =>
+      val === undefined ||
+      val === true ||
+      val === false ||
+      val === "true" ||
+      val === "false",
+    {
+      message: "debug must be a boolean or 'true'/'false'",
+    },
+  )
   .transform((val) => {
     if (val === "true" || val === true) return true
     if (val === "false" || val === false) return false
@@ -828,6 +839,7 @@ async function fetchRemoteConfig(apiToken, apiHostname, fqdn) {
     } else if (data && typeof data === "object" && !Array.isArray(data)) {
       // Fallback: API returned a flat object directly
       config = data
+      matchedUrl = fqdn
     }
 
     if (config) {
