@@ -62,7 +62,7 @@ const ApiLockResponseSchema = z.object({
 })
 
 const ApiMiddlewareConfigSchema = z.object({
-  basePaths: z.array(z.string()),
+  basePaths: z.array(z.string()).default(["/"]),
   response: ApiLockResponseSchema.optional(),
 })
 

@@ -143,22 +143,23 @@ export function createAppwardenMiddleware(
       }
 
       const lockPageSlug = routeConfig.website?.lockPageSlug
-      if (!lockPageSlug) {
-        debugFn("No lock page configured - passing through")
+      const hasApiBasePaths =
+        routeConfig.api?.basePaths && routeConfig.api.basePaths.length > 0
+
+      // Pass through if neither a website lock page nor API base paths are configured.
+      if (!lockPageSlug && !hasApiBasePaths) {
+        debugFn("No lock page or API base paths configured - passing through")
         return applyCspHeaders(NextResponse.next())
       }
 
-      // Skip if already on lock page to prevent infinite redirect loop and
-      // avoid unnecessary lock status checks.
-      if (isOnLockPage(lockPageSlug, request.url)) {
+      // Skip if already on the website lock page to prevent infinite redirect loop.
+      if (lockPageSlug && isOnLockPage(lockPageSlug, request.url)) {
         debugFn("Already on lock page - passing through")
         return applyCspHeaders(NextResponse.next())
       }
 
       // Skip lock check and CSP for non-HTML requests when there are no API base paths.
       // This preserves the legacy behavior of not touching API/static traffic.
-      const hasApiBasePaths =
-        routeConfig.api?.basePaths && routeConfig.api.basePaths.length > 0
       if (!isHTMLRequest(request) && !hasApiBasePaths) {
         debugFn("Non-HTML request without API base paths - passing through")
         return NextResponse.next()
@@ -212,11 +213,10 @@ export function createAppwardenMiddleware(
 
       // Locked: API base paths return the configured API response.
       if (
-        routeConfig.api?.basePaths &&
-        routeConfig.api.basePaths.length > 0 &&
-        pathMatchesAnyPattern(requestUrl.pathname, routeConfig.api.basePaths)
+        hasApiBasePaths &&
+        pathMatchesAnyPattern(requestUrl.pathname, routeConfig.api!.basePaths)
       ) {
-        const responseConfig = routeConfig.api.response
+        const responseConfig = routeConfig.api!.response
         debugFn("API base path matched - returning API lock response")
         return new Response(responseConfig?.body ?? "", {
           status: responseConfig?.status ?? 503,
@@ -231,12 +231,17 @@ export function createAppwardenMiddleware(
       }
 
       // Locked: redirect to the website lock page
-      debugFn(`Website is locked - redirecting to ${lockPageSlug}`)
-      const lockPageUrl = buildLockPageUrl(lockPageSlug, request.url)
-      const redirectResponse = createMutableRedirectResponse(
-        lockPageUrl.toString(),
-      )
-      return applyCspHeaders(redirectResponse)
+      if (lockPageSlug) {
+        debugFn(`Website is locked - redirecting to ${lockPageSlug}`)
+        const lockPageUrl = buildLockPageUrl(lockPageSlug, request.url)
+        const redirectResponse = createMutableRedirectResponse(
+          lockPageUrl.toString(),
+        )
+        return applyCspHeaders(redirectResponse)
+      }
+
+      // No website lock page configured; pass through.
+      return applyCspHeaders(NextResponse.next())
     } catch (e) {
       debugFn(
         "Error in Appwarden Vercel middleware",

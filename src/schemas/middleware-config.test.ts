@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest"
-import { WebsiteMiddlewareConfigSchema } from "./middleware-config"
+import {
+  ApiMiddlewareConfigSchema,
+  WebsiteMiddlewareConfigSchema,
+} from "./middleware-config"
 
 describe("WebsiteMiddlewareConfigSchema", () => {
   it("parses a valid JSON string for cspDirectives", () => {
@@ -38,5 +41,25 @@ describe("WebsiteMiddlewareConfigSchema", () => {
         "cspDirectives must be a valid JSON string",
       )
     }
+  })
+})
+
+describe("ApiMiddlewareConfigSchema", () => {
+  it('defaults basePaths to ["/"] when omitted', () => {
+    const result = ApiMiddlewareConfigSchema.safeParse({
+      response: { status: 503, body: "Service unavailable" },
+    })
+
+    expect(result.success).toBe(true)
+    expect(result.data?.basePaths).toEqual(["/"])
+  })
+
+  it("preserves explicit basePaths when provided", () => {
+    const result = ApiMiddlewareConfigSchema.safeParse({
+      basePaths: ["/api", "/internal"],
+    })
+
+    expect(result.success).toBe(true)
+    expect(result.data?.basePaths).toEqual(["/api", "/internal"])
   })
 })
