@@ -3,6 +3,20 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+# [3.17.0](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.16.7...@appwarden/middleware@3.17.0) (2026-08-07)
+
+
+### Bug Fixes
+
+* address Copilot review feedback on route config refactor ([c097eeb](https://github.com/appwarden/middleware/commit/c097eebb59ec5de43e5b866e3c2f958f06631b2b))
+* preserve top-level fields alongside route-based appwardenMiddleware ([524691c](https://github.com/appwarden/middleware/commit/524691c9b47dbd4b6ca6d9f204f65e959276fc76))
+* skip CSP merge for API-only route configs ([0a7a2d0](https://github.com/appwarden/middleware/commit/0a7a2d0f202e9695f1731ac6ab38b3c6c3dff723))
+
+
+### Features
+
+* route-based middleware config with bypass, API, and CSP ([9607749](https://github.com/appwarden/middleware/commit/96077499ccffa67487a2229d77b6c8dba1464ff5))
+
 ## [3.16.7](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.16.6...@appwarden/middleware@3.16.7) (2026-07-06)
 
 
