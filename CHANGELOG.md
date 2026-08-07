@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.17.1](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.17.0...@appwarden/middleware@3.17.1) (2026-08-07)
+
+
+### Bug Fixes
+
+* avoid non-null assertions on routeConfig.api in middleware runners ([daf729e](https://github.com/appwarden/middleware/commit/daf729e81dddf3852f795ee8425819ad5ae6902b))
+* default api.basePaths to [\/\] and allow API-only locking without website config ([35dc123](https://github.com/appwarden/middleware/commit/35dc12313db05012930e4bb148e712f980ed0e7d))
+
 # [3.17.0](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.16.7...@appwarden/middleware@3.17.0) (2026-08-07)
 
 
