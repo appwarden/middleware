@@ -49,8 +49,8 @@ export const useAppwarden: (input: CloudflareConfigType) => Middleware =
       }
 
       const lockPageSlug = routeConfig.website?.lockPageSlug
-      const hasApiBasePaths =
-        routeConfig.api?.basePaths && routeConfig.api.basePaths.length > 0
+      const apiBasePaths = routeConfig.api?.basePaths ?? []
+      const hasApiBasePaths = apiBasePaths.length > 0
 
       // Nothing to do if neither a website lock page nor API base paths are configured.
       if (!lockPageSlug && !hasApiBasePaths) {
@@ -86,9 +86,9 @@ export const useAppwarden: (input: CloudflareConfigType) => Middleware =
       // Locked: API base paths return the configured API response.
       if (
         hasApiBasePaths &&
-        pathMatchesAnyPattern(requestUrl.pathname, routeConfig.api!.basePaths)
+        pathMatchesAnyPattern(requestUrl.pathname, apiBasePaths)
       ) {
-        const responseConfig = routeConfig.api!.response
+        const responseConfig = routeConfig.api?.response
         debugFn("API base path matched - returning API lock response")
         context.response = new Response(responseConfig?.body ?? "", {
           status: responseConfig?.status ?? 503,
