@@ -143,8 +143,8 @@ export function createAppwardenMiddleware(
       }
 
       const lockPageSlug = routeConfig.website?.lockPageSlug
-      const hasApiBasePaths =
-        routeConfig.api?.basePaths && routeConfig.api.basePaths.length > 0
+      const apiBasePaths = routeConfig.api?.basePaths ?? []
+      const hasApiBasePaths = apiBasePaths.length > 0
 
       // Pass through if neither a website lock page nor API base paths are configured.
       if (!lockPageSlug && !hasApiBasePaths) {
@@ -214,9 +214,9 @@ export function createAppwardenMiddleware(
       // Locked: API base paths return the configured API response.
       if (
         hasApiBasePaths &&
-        pathMatchesAnyPattern(requestUrl.pathname, routeConfig.api!.basePaths)
+        pathMatchesAnyPattern(requestUrl.pathname, apiBasePaths)
       ) {
-        const responseConfig = routeConfig.api!.response
+        const responseConfig = routeConfig.api?.response
         debugFn("API base path matched - returning API lock response")
         return new Response(responseConfig?.body ?? "", {
           status: responseConfig?.status ?? 503,
