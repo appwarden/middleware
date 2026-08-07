@@ -603,6 +603,86 @@ describe("useAppwarden", () => {
       )
     })
 
+    it("should return API lock response for API-only config when site is locked", async () => {
+      mockInput = {
+        ...mockInput,
+        appwardenMiddleware: [
+          {
+            url: "example.com",
+            options: {
+              api: { basePaths: ["/api"] },
+            },
+          },
+        ],
+      }
+
+      vi.mocked(checkLockStatus).mockResolvedValue({
+        isLocked: true,
+        isTestLock: false,
+      })
+
+      mockContext.request = new Request("https://example.com/api/users", {
+        headers: { accept: "application/json" },
+      })
+
+      const middleware = useAppwarden(mockInput)
+      await middleware(mockContext, mockNext)
+
+      expect(checkLockStatus).toHaveBeenCalled()
+      expect(mockNext).not.toHaveBeenCalled()
+      expect(mockContext.response).toBeInstanceOf(Response)
+      expect(mockContext.response!.status).toBe(503)
+    })
+
+    it('should lock all paths when api.basePaths is ["/"]', async () => {
+      mockInput = {
+        ...mockInput,
+        appwardenMiddleware: [
+          {
+            url: "example.com",
+            options: {
+              api: { basePaths: ["/"] },
+            },
+          },
+        ],
+      }
+
+      vi.mocked(checkLockStatus).mockResolvedValue({
+        isLocked: true,
+        isTestLock: false,
+      })
+
+      mockContext.request = new Request("https://example.com/any-path", {
+        headers: { accept: "application/json" },
+      })
+
+      const middleware = useAppwarden(mockInput)
+      await middleware(mockContext, mockNext)
+
+      expect(checkLockStatus).toHaveBeenCalled()
+      expect(mockNext).not.toHaveBeenCalled()
+      expect(mockContext.response).toBeInstanceOf(Response)
+      expect(mockContext.response!.status).toBe(503)
+    })
+
+    it("should pass through when route-based options are empty", async () => {
+      mockInput = {
+        ...mockInput,
+        appwardenMiddleware: [
+          {
+            url: "example.com",
+            options: {},
+          },
+        ],
+      }
+
+      const middleware = useAppwarden(mockInput)
+      await middleware(mockContext, mockNext)
+
+      expect(checkLockStatus).not.toHaveBeenCalled()
+      expect(mockNext).toHaveBeenCalled()
+    })
+
     it("should resolve lockPageSlug for matching hostname in route-based config", async () => {
       mockInput = {
         ...mockInput,

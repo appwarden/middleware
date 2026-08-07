@@ -990,6 +990,98 @@ describe("createAppwardenMiddleware", () => {
       )
     })
 
+    it("should return API lock response for API-only config when site is locked", async () => {
+      const routeConfig = {
+        ...mockConfig,
+        appwardenMiddleware: [
+          {
+            url: "example.com",
+            options: {
+              api: { basePaths: ["/api"] },
+            },
+          },
+        ],
+      }
+      vi.mocked(AppwardenConfigSchemaMock.parse).mockReturnValue(routeConfig)
+      vi.mocked(getLockValueMock).mockResolvedValue({
+        lockValue: {
+          isLocked: 1,
+          isLockedTest: 0,
+          lastCheck: Date.now(),
+        },
+        shouldDeleteEdgeValue: false,
+      })
+
+      const middleware = createAppwardenMiddleware(routeConfig)
+      const result = await middleware(
+        new Request("https://example.com/api/users", {
+          headers: { accept: "application/json" },
+        }),
+      )
+
+      expect(getLockValueMock).toHaveBeenCalled()
+      expect(result.status).toBe(503)
+      expect(mockNextResponseNext).not.toHaveBeenCalled()
+    })
+
+    it('should lock all paths when api.basePaths is ["/"]', async () => {
+      const routeConfig = {
+        ...mockConfig,
+        appwardenMiddleware: [
+          {
+            url: "example.com",
+            options: {
+              api: { basePaths: ["/"] },
+            },
+          },
+        ],
+      }
+      vi.mocked(AppwardenConfigSchemaMock.parse).mockReturnValue(routeConfig)
+      vi.mocked(getLockValueMock).mockResolvedValue({
+        lockValue: {
+          isLocked: 1,
+          isLockedTest: 0,
+          lastCheck: Date.now(),
+        },
+        shouldDeleteEdgeValue: false,
+      })
+
+      const middleware = createAppwardenMiddleware(routeConfig)
+      const result = await middleware(
+        new Request("https://example.com/any-path", {
+          headers: { accept: "application/json" },
+        }),
+      )
+
+      expect(getLockValueMock).toHaveBeenCalled()
+      expect(result.status).toBe(503)
+      expect(mockNextResponseNext).not.toHaveBeenCalled()
+    })
+
+    it("should pass through when route-based options are empty", async () => {
+      const routeConfig = {
+        ...mockConfig,
+        appwardenMiddleware: [
+          {
+            url: "example.com",
+            options: {},
+          },
+        ],
+      }
+      vi.mocked(AppwardenConfigSchemaMock.parse).mockReturnValue(routeConfig)
+
+      const middleware = createAppwardenMiddleware(routeConfig)
+      const result = await middleware(
+        new Request("https://example.com/page", {
+          headers: { accept: "text/html" },
+        }),
+      )
+
+      expect(getLockValueMock).not.toHaveBeenCalled()
+      expect(result.status).toBe(200)
+      expect(mockNextResponseNext).toHaveBeenCalled()
+    })
+
     it("should skip protection when hostname does not match any route config", async () => {
       const routeConfig = {
         ...mockConfig,

@@ -61,7 +61,7 @@ export type CloudflareProviderContext = Omit<
   provider: "cloudflare-cache"
   edgeCache: JSONStore<LockValueType>
   waitUntil: NextFetchEvent["waitUntil"]
-  lockPageSlug: string // Required - context is only created when lockPageSlug is resolved
+  lockPageSlug?: string // Optional - allows API-only locking without a website lock page
   appwardenApiHostname?: string
   debug: (...msg: any[]) => void
 }

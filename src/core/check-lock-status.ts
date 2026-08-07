@@ -24,8 +24,8 @@ export interface CheckLockConfig {
   debug?: boolean
   /** waitUntil function for background tasks (Cloudflare Workers) */
   waitUntil: (fn: Promise<unknown>) => void
-  /** The lock page slug - used to construct the context */
-  lockPageSlug: string
+  /** The lock page slug - used to construct the context (optional for API-only locking) */
+  lockPageSlug?: string
 }
 
 /**

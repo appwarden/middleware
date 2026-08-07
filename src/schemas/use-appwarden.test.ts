@@ -357,4 +357,27 @@ describe("UseAppwardenInputSchema", () => {
     const result = RefinedSchema.safeParse(validInput)
     expect(result.success).toBe(true)
   })
+
+  it('should default api.basePaths to ["/"] when omitted in route-based config', () => {
+    const validInput = {
+      debug: true,
+      appwardenApiToken: "token123",
+      appwardenMiddleware: [
+        {
+          url: "example.com",
+          options: {
+            api: {},
+          },
+        },
+      ],
+    }
+
+    const result = UseAppwardenInputSchema.safeParse(validInput)
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(
+        result.data.appwardenMiddleware?.[0].options.api?.basePaths,
+      ).toEqual(["/"])
+    }
+  })
 })
