@@ -22,7 +22,10 @@ import {
   TEMPORARY_REDIRECT_STATUS,
 } from "../utils"
 import { applyContentSecurityPolicyToResponse } from "../utils/apply-content-security-policy-to-response"
-import { parseMergedConfig } from "../utils/get-appwarden-configuration"
+import {
+  normalizeRouteBasedAdapterConfig,
+  parseMergedConfig,
+} from "../utils/get-appwarden-configuration"
 import { getNowMs, logElapsed } from "../utils/get-now"
 import { isResponseLike } from "../utils/is-response-like"
 
@@ -37,7 +40,7 @@ export function getAppwardenConfiguration(
   config: Partial<AstroCloudflareConfigInput>,
 ): AstroCloudflareConfig {
   return parseMergedConfig(
-    generatedConfig,
+    normalizeRouteBasedAdapterConfig(generatedConfig),
     config as Record<string, unknown>,
     AstroCloudflareConfigSchema.parse,
   )

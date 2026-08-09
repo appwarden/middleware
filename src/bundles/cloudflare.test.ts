@@ -104,12 +104,14 @@ describe("cloudflare bundle", () => {
       ).toThrow()
     })
 
-    it("should throw when lockPageSlug and multidomainConfig are both missing", () => {
-      expect(() =>
-        getAppwardenConfiguration({}, {
-          appwardenApiToken: "test-token",
-        } as any),
-      ).toThrow()
+    it("should default lockPageSlug to /maintenance when lockPageSlug and multidomainConfig are both missing", () => {
+      const config = getAppwardenConfiguration({}, {
+        appwardenApiToken: "test-token",
+      } as any)
+
+      expect(config.lockPageSlug).toBe("/maintenance")
+      expect(config.appwardenApiToken).toBe("test-token")
+      expect(config.debug).toBe(false)
     })
   })
 })

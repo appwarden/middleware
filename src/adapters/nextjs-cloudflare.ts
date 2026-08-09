@@ -25,7 +25,10 @@ import {
   TEMPORARY_REDIRECT_STATUS,
 } from "../utils"
 import { makeCSPHeader } from "../utils/cloudflare"
-import { parseMergedConfig } from "../utils/get-appwarden-configuration"
+import {
+  normalizeRouteBasedAdapterConfig,
+  parseMergedConfig,
+} from "../utils/get-appwarden-configuration"
 import { getNowMs, logElapsed } from "../utils/get-now"
 import { toNextResponse } from "../utils/to-next-response"
 
@@ -34,7 +37,7 @@ export function getAppwardenConfiguration(
   config: Partial<NextJsCloudflareConfigInput>,
 ): NextJsCloudflareConfig {
   return parseMergedConfig(
-    generatedConfig,
+    normalizeRouteBasedAdapterConfig(generatedConfig),
     config as Record<string, unknown>,
     NextJsCloudflareConfigSchema.parse,
   )

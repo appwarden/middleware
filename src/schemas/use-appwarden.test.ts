@@ -102,15 +102,31 @@ describe("UseAppwardenInputSchema", () => {
     }
   })
 
-  it("should allow lockPageSlug to be optional in base schema", () => {
+  it("should default lockPageSlug to /maintenance when not provided", () => {
     const validInput = {
       debug: true,
       appwardenApiToken: "token123",
     }
 
-    // Base schema allows optional lockPageSlug
     const result = UseAppwardenInputSchema.safeParse(validInput)
     expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.lockPageSlug).toBe("/maintenance")
+    }
+  })
+
+  it("should add a leading slash to lockPageSlug when not provided", () => {
+    const validInput = {
+      debug: true,
+      lockPageSlug: "maintenance",
+      appwardenApiToken: "token123",
+    }
+
+    const result = UseAppwardenInputSchema.safeParse(validInput)
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.lockPageSlug).toBe("/maintenance")
+    }
   })
 
   it("should accept multidomainConfig instead of lockPageSlug", () => {
@@ -153,15 +169,18 @@ describe("UseAppwardenInputSchema", () => {
     }
   })
 
-  it("should require either lockPageSlug or multidomainConfig when using refinement", () => {
-    const invalidInput = {
+  it("should pass refinement because lockPageSlug defaults to /maintenance", () => {
+    const validInput = {
       debug: true,
       appwardenApiToken: "token123",
     }
 
     const RefinedSchema = lockPageSlugRefinement(UseAppwardenInputSchema)
-    const result = RefinedSchema.safeParse(invalidInput)
-    expect(result.success).toBe(false)
+    const result = RefinedSchema.safeParse(validInput)
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.lockPageSlug).toBe("/maintenance")
+    }
   })
 
   it("should pass refinement when lockPageSlug is provided", () => {

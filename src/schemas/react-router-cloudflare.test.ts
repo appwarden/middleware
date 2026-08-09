@@ -46,13 +46,29 @@ describe("ReactRouterCloudflareConfigSchema", () => {
     }
   })
 
-  it("should reject missing lockPageSlug", () => {
-    const invalidConfig = {
+  it("should default lockPageSlug to /maintenance when not provided", () => {
+    const config = {
       appwardenApiToken: "token123",
     }
 
-    const result = ReactRouterCloudflareConfigSchema.safeParse(invalidConfig)
-    expect(result.success).toBe(false)
+    const result = ReactRouterCloudflareConfigSchema.safeParse(config)
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.lockPageSlug).toBe("/maintenance")
+    }
+  })
+
+  it("should add a leading slash to lockPageSlug when not provided", () => {
+    const config = {
+      lockPageSlug: "maintenance",
+      appwardenApiToken: "token123",
+    }
+
+    const result = ReactRouterCloudflareConfigSchema.safeParse(config)
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.lockPageSlug).toBe("/maintenance")
+    }
   })
 
   it.each([["//evil.com"], ["https://evil.com"], ["http://evil.com"]])(

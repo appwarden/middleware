@@ -157,6 +157,7 @@ describe("createAppwardenMiddleware", () => {
       appwardenApiToken: "test-token",
       vercelApiToken: "vercel-token",
       lockPageSlug: "/maintenance",
+      debug: false,
     }
 
     // Mock isCacheUrl.edgeConfig
@@ -495,6 +496,7 @@ describe("createAppwardenMiddleware", () => {
       cacheUrl: "rediss://:password@hostname.upstash.io:6379",
       appwardenApiToken: "test-token",
       lockPageSlug: "/maintenance",
+      debug: false,
     }
 
     vi.mocked(AppwardenConfigSchemaMock.parse).mockReturnValue(upstashConfig)
@@ -563,6 +565,7 @@ describe("createAppwardenMiddleware", () => {
       cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
       appwardenApiToken: "test-token",
       lockPageSlug: "/maintenance",
+      debug: false,
     }
 
     vi.mocked(AppwardenConfigSchemaMock.parse).mockReturnValue(minimalConfig)

@@ -52,6 +52,48 @@ describe("BaseNextJsConfigSchema", () => {
     }
   })
 
+  it("should default lockPageSlug to /maintenance when not provided", () => {
+    const config = {
+      cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
+      appwardenApiToken: "token123",
+    }
+
+    const result = BaseNextJsConfigSchema.safeParse(config)
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.lockPageSlug).toBe("/maintenance")
+    }
+  })
+
+  it("should default debug to false when not provided", () => {
+    const config = {
+      cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
+      appwardenApiToken: "token123",
+      lockPageSlug: "maintenance",
+    }
+
+    const result = BaseNextJsConfigSchema.safeParse(config)
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.debug).toBe(false)
+    }
+  })
+
+  it("should accept string debug value and transform to boolean", () => {
+    const config = {
+      cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
+      appwardenApiToken: "token123",
+      lockPageSlug: "maintenance",
+      debug: "true",
+    }
+
+    const result = BaseNextJsConfigSchema.safeParse(config)
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.debug).toBe(true)
+    }
+  })
+
   it("should make vercelApiToken optional", () => {
     const config = {
       cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",

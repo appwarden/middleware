@@ -9,7 +9,8 @@ import {
 import {
   AppwardenApiHostnameSchema,
   AppwardenApiTokenSchema,
-  ValidLockPageSlugSchema,
+  BooleanSchema,
+  LockPageSlugSchema,
 } from "./helpers"
 import { AppwardenMiddlewareArraySchema } from "./middleware-config"
 import {
@@ -69,10 +70,8 @@ export const BaseNextJsConfigSchema = z.object({
   appwardenApiToken: AppwardenApiTokenSchema,
   appwardenApiHostname: AppwardenApiHostnameSchema.optional(),
   vercelApiToken: z.string().optional(),
-  debug: z.boolean().optional(),
-  lockPageSlug: ValidLockPageSlugSchema.default("").transform((val) =>
-    val.replace(/^\/?/, "/"),
-  ),
+  debug: BooleanSchema.default(false),
+  lockPageSlug: LockPageSlugSchema,
   contentSecurityPolicy: VercelCSPSchema.optional(),
   appwardenMiddleware: AppwardenMiddlewareArraySchema.optional(),
 })

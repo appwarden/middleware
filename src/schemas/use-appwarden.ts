@@ -7,6 +7,7 @@ import {
   AppwardenApiHostnameSchema,
   AppwardenApiTokenSchema,
   BooleanSchema,
+  LockPageSlugSchema,
   ValidLockPageSlugSchema,
 } from "./helpers"
 import {
@@ -47,7 +48,7 @@ export {
 // Base schema without refinement - can be extended by other schemas
 export const UseAppwardenInputSchema = z.object({
   debug: BooleanSchema.default(false),
-  lockPageSlug: ValidLockPageSlugSchema.optional(),
+  lockPageSlug: LockPageSlugSchema,
   contentSecurityPolicy: z.lazy(() => UseCSPInputSchema).optional(),
   multidomainConfig: AppwardenMultidomainConfigSchema.optional(),
   appwardenMiddleware: AppwardenMiddlewareArraySchema.optional(),

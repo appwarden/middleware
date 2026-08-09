@@ -119,3 +119,12 @@ export const ValidLockPageSlugSchema = z
       },
     },
   )
+
+export const LockPageSlugSchema = ValidLockPageSlugSchema.default(
+  "/maintenance",
+).transform((value) => {
+  if (!value) {
+    return "/maintenance"
+  }
+  return value.startsWith("/") ? value : `/${value}`
+})

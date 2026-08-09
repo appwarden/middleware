@@ -3,7 +3,7 @@ import {
   AppwardenApiHostnameSchema,
   AppwardenApiTokenSchema,
   BooleanSchema,
-  ValidLockPageSlugSchema,
+  LockPageSlugSchema,
 } from "./helpers"
 import { UseCSPInputSchema } from "./use-content-security-policy"
 
@@ -13,7 +13,7 @@ import { UseCSPInputSchema } from "./use-content-security-policy"
  */
 export const ReactRouterCloudflareConfigSchema = z.object({
   /** The slug/path of the lock page to redirect to when the site is locked */
-  lockPageSlug: ValidLockPageSlugSchema,
+  lockPageSlug: LockPageSlugSchema,
   /** The Appwarden API token for authentication */
   appwardenApiToken: AppwardenApiTokenSchema,
   /** Optional custom API hostname (defaults to https://api.appwarden.io) */

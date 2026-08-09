@@ -272,6 +272,7 @@ describe("useAppwarden", () => {
     it("should use lockPageSlug from multidomainConfig when hostname matches", async () => {
       const inputWithMultidomain: CloudflareConfigType = {
         debug: false,
+        lockPageSlug: "/maintenance",
         appwardenApiToken: "test-token",
         multidomainConfig: {
           "example.com": { lockPageSlug: "/maintenance-example" },
@@ -295,6 +296,7 @@ describe("useAppwarden", () => {
     it("should use lockPageSlug from different domain in multidomainConfig", async () => {
       const inputWithMultidomain: CloudflareConfigType = {
         debug: false,
+        lockPageSlug: "/maintenance",
         appwardenApiToken: "test-token",
         multidomainConfig: {
           "example.com": { lockPageSlug: "/maintenance-example" },
@@ -315,9 +317,10 @@ describe("useAppwarden", () => {
       expect(callArgs.lockPageSlug).toBe("/maintenance-other")
     })
 
-    it("should skip lock check for unconfigured domains when using multidomainConfig", async () => {
+    it("should fall back to root lockPageSlug for unconfigured domains when using multidomainConfig", async () => {
       const inputWithMultidomain: CloudflareConfigType = {
         debug: false,
+        lockPageSlug: "/maintenance",
         appwardenApiToken: "test-token",
         multidomainConfig: {
           "example.com": { lockPageSlug: "/maintenance-example" },
@@ -332,10 +335,10 @@ describe("useAppwarden", () => {
       const middleware = useAppwarden(inputWithMultidomain)
       await middleware(mockContext, mockNext)
 
-      // checkLockStatus should NOT be called for unconfigured domains
-      expect(checkLockStatus).not.toHaveBeenCalled()
-      // But next() should still be called
-      expect(mockNext).toHaveBeenCalled()
+      // checkLockStatus should be called with the root lockPageSlug as fallback
+      expect(checkLockStatus).toHaveBeenCalled()
+      const callArgs = vi.mocked(checkLockStatus).mock.calls[0][0]
+      expect(callArgs.lockPageSlug).toBe("/maintenance")
     })
 
     it("should fall back to root lockPageSlug when multidomainConfig is not provided", async () => {

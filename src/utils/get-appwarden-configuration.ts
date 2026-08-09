@@ -51,6 +51,64 @@ export function mergeAdapterConfig(
 }
 
 /**
+ * Converts a route-based Appwarden middleware configuration into the flat
+ * adapter configuration shape. Framework adapters consume a single lock page
+ * slug and a single CSP configuration, so we pick the first middleware entry
+ * that has a website configuration, falling back to the first entry if none
+ * has one.
+ *
+ * @param generated - Generated config from `appwarden-link`
+ * @returns Flat config ready for adapter schema validation
+ */
+export function normalizeRouteBasedAdapterConfig(
+  generated: Record<string, unknown>,
+): Record<string, unknown> {
+  if (
+    !Array.isArray(generated.appwardenMiddleware) ||
+    generated.appwardenMiddleware.length === 0
+  ) {
+    return generated
+  }
+
+  const middleware = generated.appwardenMiddleware as Array<
+    Record<string, unknown>
+  >
+
+  const entry =
+    middleware.find((entry) => {
+      const options = entry.options
+      return (
+        typeof options === "object" &&
+        options !== null &&
+        (options as Record<string, unknown>).website !== undefined
+      )
+    }) ?? middleware[0]
+
+  const options = entry?.options as Record<string, unknown> | undefined
+  const website = options?.website as Record<string, unknown> | undefined
+
+  const normalized: Record<string, unknown> = { ...generated }
+  delete normalized.appwardenMiddleware
+
+  if (website?.lockPageSlug !== undefined) {
+    normalized.lockPageSlug = website.lockPageSlug
+  }
+
+  if (website?.cspMode !== undefined && website?.cspDirectives !== undefined) {
+    normalized.contentSecurityPolicy = {
+      mode: website.cspMode,
+      directives: website.cspDirectives,
+    }
+  }
+
+  if (options?.debug !== undefined) {
+    normalized.debug = options.debug
+  }
+
+  return normalized
+}
+
+/**
  * Merge generated config with call-site overrides and validate
  * through the provided schema parse function.
  */

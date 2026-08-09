@@ -91,6 +91,39 @@ describe("react-router-cloudflare bundle", () => {
         } as any),
       ).toThrow()
     })
+
+    it("should accept route-based generated config", () => {
+      const config = getAppwardenConfiguration(
+        {
+          appwardenMiddleware: [
+            {
+              url: "example.com",
+              options: {
+                website: {
+                  lockPageSlug: "/maintenance",
+                  cspMode: "report-only",
+                  cspDirectives: {
+                    "script-src": ["'self'", "{{nonce}}"],
+                  },
+                },
+              },
+            },
+          ],
+          debug: true,
+        },
+        { appwardenApiToken: "test-token" },
+      )
+
+      expect(config.lockPageSlug).toBe("/maintenance")
+      expect(config.appwardenApiToken).toBe("test-token")
+      expect(config.debug).toBe(true)
+      expect(config.contentSecurityPolicy).toEqual({
+        mode: "report-only",
+        directives: {
+          "script-src": ["'self'", "{{nonce}}"],
+        },
+      })
+    })
   })
 })
 

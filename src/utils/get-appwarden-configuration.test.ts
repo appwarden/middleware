@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest"
-import { mergeAdapterConfig } from "./get-appwarden-configuration"
+import {
+  mergeAdapterConfig,
+  normalizeRouteBasedAdapterConfig,
+} from "./get-appwarden-configuration"
 
 describe("mergeAdapterConfig", () => {
   it("should use call-site values over generated", () => {
@@ -127,5 +130,158 @@ describe("mergeAdapterConfig", () => {
       { contentSecurityPolicy: undefined },
     )
     expect(result.contentSecurityPolicy).toBeUndefined()
+  })
+})
+
+describe("normalizeRouteBasedAdapterConfig", () => {
+  it("should return legacy flat config unchanged", () => {
+    const generated = {
+      lockPageSlug: "/maintenance",
+      debug: true,
+      appwardenApiHostname: "https://api.appwarden.io",
+      contentSecurityPolicy: {
+        mode: "enforced" as const,
+        directives: { "default-src": ["'self'"] },
+      },
+    }
+
+    expect(normalizeRouteBasedAdapterConfig(generated)).toEqual(generated)
+  })
+
+  it("should convert route-based config to flat config", () => {
+    const generated = {
+      appwardenMiddleware: [
+        {
+          url: "example.com",
+          options: {
+            debug: true,
+            bypassPaths: [],
+            website: {
+              lockPageSlug: "/maintenance",
+              cspMode: "report-only" as const,
+              cspDirectives: {
+                "script-src": ["'self'", "{{nonce}}"],
+              },
+            },
+          },
+        },
+      ],
+      appwardenApiHostname: "https://api.appwarden.io",
+    }
+
+    const result = normalizeRouteBasedAdapterConfig(generated)
+
+    expect(result).toEqual({
+      lockPageSlug: "/maintenance",
+      debug: true,
+      appwardenApiHostname: "https://api.appwarden.io",
+      contentSecurityPolicy: {
+        mode: "report-only",
+        directives: {
+          "script-src": ["'self'", "{{nonce}}"],
+        },
+      },
+    })
+  })
+
+  it("should pick the first entry with a website config", () => {
+    const generated = {
+      appwardenMiddleware: [
+        {
+          url: "api.example.com",
+          options: {
+            api: { basePaths: ["/api"] },
+          },
+        },
+        {
+          url: "example.com",
+          options: {
+            website: {
+              lockPageSlug: "/maintenance",
+              cspMode: "enforced" as const,
+              cspDirectives: { "default-src": ["'self'"] },
+            },
+          },
+        },
+      ],
+      debug: false,
+    }
+
+    const result = normalizeRouteBasedAdapterConfig(generated)
+
+    expect(result.lockPageSlug).toBe("/maintenance")
+    expect(result.debug).toBe(false)
+  })
+
+  it("should fall back to the first entry when no entry has a website config", () => {
+    const generated = {
+      appwardenMiddleware: [
+        {
+          url: "api.example.com",
+          options: {
+            api: { basePaths: ["/api"] },
+          },
+        },
+      ],
+    }
+
+    const result = normalizeRouteBasedAdapterConfig(generated)
+
+    expect(result.appwardenMiddleware).toBeUndefined()
+    expect(result.lockPageSlug).toBeUndefined()
+  })
+
+  it("should prefer entry-level debug over top-level debug", () => {
+    const generated = {
+      appwardenMiddleware: [
+        {
+          url: "example.com",
+          options: {
+            debug: true,
+            website: {
+              lockPageSlug: "/maintenance",
+            },
+          },
+        },
+      ],
+      debug: false,
+    }
+
+    const result = normalizeRouteBasedAdapterConfig(generated)
+
+    expect(result.debug).toBe(true)
+  })
+
+  it("should preserve top-level fields when entry-level options are missing them", () => {
+    const generated = {
+      appwardenMiddleware: [
+        {
+          url: "example.com",
+          options: {
+            website: {
+              lockPageSlug: "/maintenance",
+              cspMode: "enforced" as const,
+              cspDirectives: { "default-src": ["'self'"] },
+            },
+          },
+        },
+      ],
+      debug: true,
+      appwardenApiHostname: "https://api.appwarden.io",
+    }
+
+    const result = normalizeRouteBasedAdapterConfig(generated)
+
+    expect(result.debug).toBe(true)
+    expect(result.appwardenApiHostname).toBe("https://api.appwarden.io")
+  })
+
+  it("should return generated config unchanged when appwardenMiddleware is empty", () => {
+    const generated = {
+      appwardenMiddleware: [],
+      debug: true,
+    }
+
+    expect(normalizeRouteBasedAdapterConfig(generated)).toEqual(generated)
   })
 })
