@@ -1,5 +1,7 @@
+import { NextFetchEvent, NextRequest } from "next/server"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { VercelProviderContext } from "../../types"
+import { MemoryCache } from "../memory-cache"
 import { printMessage } from "../print-message"
 import { deleteEdgeValue } from "./delete-edge-value"
 
@@ -29,6 +31,25 @@ vi.mock("@upstash/redis", () => ({
 const originalFetch = global.fetch
 const mockFetch = vi.fn()
 
+const createMockContext = (
+  partial: Pick<
+    VercelProviderContext,
+    "keyName" | "provider" | "cacheUrl" | "vercelApiToken" | "appwardenApiToken"
+  >,
+): VercelProviderContext => ({
+  ...partial,
+  requestUrl: new URL("https://example.com"),
+  req: {} as NextRequest,
+  event: {} as NextFetchEvent,
+  memoryCache: new MemoryCache({ maxSize: 1 }),
+  waitUntil: vi.fn(),
+  debug: vi.fn(),
+  bypassPaths: undefined,
+  website: undefined,
+  api: undefined,
+  appwardenApiHostname: undefined,
+})
+
 describe("deleteEdgeValue", () => {
   // Mock console.error
   let consoleErrorSpy: ReturnType<typeof vi.spyOn>
@@ -53,14 +74,13 @@ describe("deleteEdgeValue", () => {
     })
 
     // Create mock context
-    const mockContext = {
+    const mockContext = createMockContext({
       keyName: "appwarden-lock",
       provider: "edge-config",
       cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
       vercelApiToken: "test-token",
       appwardenApiToken: "test-token",
-      requestUrl: new URL("https://example.com"),
-    } as unknown as VercelProviderContext
+    })
 
     // Call the function
     await deleteEdgeValue(mockContext)
@@ -100,14 +120,13 @@ describe("deleteEdgeValue", () => {
     })
 
     // Create mock context
-    const mockContext = {
+    const mockContext = createMockContext({
       keyName: "appwarden-lock",
       provider: "edge-config",
       cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
       vercelApiToken: "test-token",
       appwardenApiToken: "test-token",
-      requestUrl: new URL("https://example.com"),
-    } as unknown as VercelProviderContext
+    })
 
     // Call the function
     await deleteEdgeValue(mockContext)
@@ -121,14 +140,13 @@ describe("deleteEdgeValue", () => {
 
   it("should handle invalid edge-config ID", async () => {
     // Create mock context with invalid cacheUrl
-    const mockContext = {
+    const mockContext = createMockContext({
       keyName: "appwarden-lock",
       provider: "edge-config",
       cacheUrl: "https://invalid-url.com",
       vercelApiToken: "test-token",
       appwardenApiToken: "test-token",
-      requestUrl: new URL("https://example.com"),
-    } as unknown as VercelProviderContext
+    })
 
     // Call the function
     await deleteEdgeValue(mockContext)
@@ -155,14 +173,13 @@ describe("deleteEdgeValue", () => {
     })
 
     // Create mock context
-    const mockContext = {
+    const mockContext = createMockContext({
       keyName: "appwarden-lock",
       provider: "upstash",
       cacheUrl: "redis://:password@funky-roughy-44527.upstash.io:6379",
       vercelApiToken: "test-token",
       appwardenApiToken: "test-token",
-      requestUrl: new URL("https://example.com"),
-    } as unknown as VercelProviderContext
+    })
 
     // Call the function
     await deleteEdgeValue(mockContext)
@@ -189,14 +206,13 @@ describe("deleteEdgeValue", () => {
     })
 
     // Create mock context
-    const mockContext = {
+    const mockContext = createMockContext({
       keyName: "appwarden-lock",
       provider: "edge-config",
       cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
       vercelApiToken: "test-token",
       appwardenApiToken: "test-token",
-      requestUrl: new URL("https://example.com"),
-    } as unknown as VercelProviderContext
+    })
 
     // Call the function
     await deleteEdgeValue(mockContext)

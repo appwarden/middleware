@@ -30,6 +30,10 @@ vi.mock("@upstash/redis", () => ({
   })),
 }))
 
+const createMockContext = (
+  partial: Pick<VercelProviderContext, "cacheUrl" | "keyName" | "provider">,
+): Pick<VercelProviderContext, "cacheUrl" | "keyName" | "provider"> => partial
+
 describe("getLockValue", () => {
   // Mock console.error
   let consoleErrorSpy: ReturnType<typeof vi.spyOn>
@@ -74,14 +78,11 @@ describe("getLockValue", () => {
     vi.mocked(LockValue.parse).mockReturnValue(mockLockValue)
 
     // Create mock context
-    const mockContext = {
+    const mockContext = createMockContext({
       keyName: "appwarden-lock",
       provider: "edge-config",
       cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
-      vercelApiToken: "test-token",
-      appwardenApiToken: "test-token",
-      requestUrl: new URL("https://example.com"),
-    } as unknown as VercelProviderContext
+    })
 
     // Call the function
     const result = await getLockValue(mockContext)
@@ -126,14 +127,11 @@ describe("getLockValue", () => {
     vi.mocked(createClient).mockReturnValue(mockEdgeConfigClient)
 
     // Create mock context
-    const mockContext = {
+    const mockContext = createMockContext({
       keyName: "appwarden-lock",
       provider: "edge-config",
       cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
-      vercelApiToken: "test-token",
-      appwardenApiToken: "test-token",
-      requestUrl: new URL("https://example.com"),
-    } as unknown as VercelProviderContext
+    })
 
     // Call the function
     const result = await getLockValue(mockContext)
@@ -176,14 +174,11 @@ describe("getLockValue", () => {
     })
 
     // Create mock context
-    const mockContext = {
+    const mockContext = createMockContext({
       keyName: "appwarden-lock",
       provider: "edge-config",
       cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
-      vercelApiToken: "test-token",
-      appwardenApiToken: "test-token",
-      requestUrl: new URL("https://example.com"),
-    } as unknown as VercelProviderContext
+    })
 
     // Call the function
     const result = await getLockValue(mockContext)
@@ -209,14 +204,11 @@ describe("getLockValue", () => {
     })
 
     // Create mock context
-    const mockContext = {
+    const mockContext = createMockContext({
       keyName: "appwarden-lock",
       provider: "edge-config",
       cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
-      vercelApiToken: "test-token",
-      appwardenApiToken: "test-token",
-      requestUrl: new URL("https://example.com"),
-    } as unknown as VercelProviderContext
+    })
 
     // Call the function
     const result = await getLockValue(mockContext)
@@ -242,14 +234,11 @@ describe("getLockValue", () => {
     })
 
     // Create mock context
-    const mockContext = {
+    const mockContext = createMockContext({
       keyName: "appwarden-lock",
       provider: "edge-config",
       cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
-      vercelApiToken: "test-token",
-      appwardenApiToken: "test-token",
-      requestUrl: new URL("https://example.com"),
-    } as unknown as VercelProviderContext
+    })
 
     // Call the function and expect it to throw
     await expect(getLockValue(mockContext)).rejects.toThrow(

@@ -56,6 +56,52 @@ describe("BaseNextJsConfigSchema", () => {
     }
   })
 
+  it("should default lockPageSlug when omitted", () => {
+    const config = {
+      cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
+      appwardenApiToken: "token123",
+      website: {},
+    }
+
+    const result = BaseNextJsConfigSchema.safeParse(config)
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.website?.lockPageSlug).toBe("/maintenance")
+    }
+  })
+
+  it("should default an empty lockPageSlug to /maintenance", () => {
+    const config = {
+      cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
+      appwardenApiToken: "token123",
+      website: {
+        lockPageSlug: "",
+      },
+    }
+
+    const result = BaseNextJsConfigSchema.safeParse(config)
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.website?.lockPageSlug).toBe("/maintenance")
+    }
+  })
+
+  it("should reject an empty api.basePaths array", () => {
+    const config = {
+      cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
+      appwardenApiToken: "token123",
+      api: {
+        basePaths: [],
+      },
+    }
+
+    const result = BaseNextJsConfigSchema.safeParse(config)
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.issues[0].path).toContain("basePaths")
+    }
+  })
+
   it("should make vercelApiToken optional", () => {
     const config = {
       cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",

@@ -17,6 +17,10 @@ export const matchesSegmentBoundaryPath = (
     return true
   }
 
+  if (normalized === "/") {
+    return true
+  }
+
   return requestPath.startsWith(`${normalized}/`)
 }
 
