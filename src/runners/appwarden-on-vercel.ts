@@ -88,9 +88,22 @@ export function createAppwardenMiddleware(
     }
 
     const parsedConfig = AppwardenConfigSchema.parse(config)
-    const debugFn = debug(parsedConfig.debug)
 
-    const websiteConfig = parsedConfig.website
+    const hasRouteConfig =
+      parsedConfig.appwardenMiddleware &&
+      parsedConfig.appwardenMiddleware.length > 0
+    const routeConfig = parsedConfig.appwardenMiddleware?.find(
+      (route) => route.url === requestUrl.hostname,
+    )
+
+    if (hasRouteConfig && !routeConfig) {
+      return NextResponse.next()
+    }
+
+    const resolvedOptions = routeConfig?.options ?? parsedConfig
+    const debugFn = debug(resolvedOptions.debug)
+
+    const websiteConfig = resolvedOptions.website
     const lockPageSlug = websiteConfig?.lockPageSlug
 
     const applyCspHeaders = (response: Response): Response => {
@@ -154,7 +167,7 @@ export function createAppwardenMiddleware(
     }
 
     try {
-      const action = resolveMiddlewareAction(request, parsedConfig)
+      const action = resolveMiddlewareAction(request, resolvedOptions)
 
       debugFn(
         `Appwarden middleware invoked for ${requestUrl.pathname}`,
@@ -167,7 +180,7 @@ export function createAppwardenMiddleware(
 
       if (action === "api") {
         if (await isSiteLocked()) {
-          const responseConfig = parsedConfig.api?.response ?? {
+          const responseConfig = resolvedOptions.api?.response ?? {
             status: DEFAULT_API_LOCK_STATUS,
             body: DEFAULT_API_LOCK_BODY,
           }

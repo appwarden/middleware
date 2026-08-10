@@ -128,7 +128,7 @@ export const ApiMiddlewareConfigSchema = z.object({
   basePaths: PathPatternsSchema.min(
     1,
     "At least one API base path is required",
-  ),
+  ).default(["/"]),
   response: ApiResponseSchema.default({
     status: DEFAULT_API_LOCK_STATUS,
     body: DEFAULT_API_LOCK_BODY,

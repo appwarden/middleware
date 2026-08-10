@@ -354,7 +354,7 @@ describe("UseAppwardenInputSchema", () => {
       ],
     }
 
-    const RefinedSchema = lockPageSlugRefinement(UseAppwardenInputSchema)
+    const RefinedSchema = appwardenConfigRefinement(UseAppwardenInputSchema)
     const result = RefinedSchema.safeParse(validInput)
     expect(result.success).toBe(true)
   })
