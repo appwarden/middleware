@@ -1,7 +1,7 @@
 ---
 name: appwarden-middleware-lock-page
 description: >
-  Build a neutral maintenance-style lock page, route it in the target framework, and connect it to Appwarden via lockPageSlug. Provides a minimal HTML/JSX template that works on Cloudflare and Vercel. Load this skill when a user is setting up their first lock page.
+  Build a neutral maintenance-style lock page, route it in the target framework, and connect it to Appwarden via website.lockPageSlug. Provides a minimal HTML/JSX template that works on Cloudflare and Vercel. Load this skill when a user is setting up their first lock page.
 metadata:
   type: core
   library: "@appwarden/middleware"
@@ -13,13 +13,13 @@ sources:
 
 # Appwarden Middleware — Create and Configure Lock Page
 
-A lock page is the page users see when a domain is quarantined. It must exist as a real route, use neutral maintenance language, and link back to the homepage. This skill provides a minimal template and shows how to wire it to `lockPageSlug`.
+A lock page is the page users see when a domain is quarantined. It must exist as a real route, use neutral maintenance language, and link back to the homepage. This skill provides a minimal template and shows how to wire it to `website.lockPageSlug`.
 
 ## Setup
 
 1. Create a route in your framework at the path you want to use for the lock page (for example, `/maintenance`).
 2. Add a page component that returns the lock page template below.
-3. Set `lockPageSlug` in the middleware to match that path.
+3. Set `website.lockPageSlug` in the middleware to match that path.
 
 ## Core Patterns
 
@@ -78,7 +78,7 @@ export default function MaintenancePage() {
 </html>
 ```
 
-### Wire lockPageSlug to the route
+### Wire website.lockPageSlug to the route
 
 ```typescript
 import {
@@ -90,26 +90,32 @@ import appwardenConfig from "../.appwarden/linked/middleware.json"
 export default createAppwardenMiddleware((cloudflare) =>
   getAppwardenConfiguration(appwardenConfig, {
     appwardenApiToken: cloudflare.env.APPWARDEN_API_TOKEN,
-    lockPageSlug: "/maintenance",
+    website: {
+      lockPageSlug: "/maintenance",
+    },
   }),
 )
 ```
 
 ## Common Mistakes
 
-### HIGH Configuring a lockPageSlug that does not exist as a route
+### HIGH Configuring a website.lockPageSlug that does not exist as a route
 
 Wrong:
 
 ```typescript
-lockPageSlug: "/lockdown"
+website: {
+  lockPageSlug: "/lockdown"
+}
 // but /lockdown is not a real route in the app
 ```
 
 Correct:
 
 ```typescript
-lockPageSlug: "/maintenance"
+website: {
+  lockPageSlug: "/maintenance"
+}
 // with a real /maintenance page in the framework
 ```
 
@@ -132,21 +138,25 @@ Correct:
 
 Appwarden guidance is to use neutral language. Alarming messaging can create unnecessary panic and leak incident details.
 
-### MEDIUM Providing an absolute URL or protocol-relative lockPageSlug
+### MEDIUM Providing an absolute URL or protocol-relative website.lockPageSlug
 
 Wrong:
 
 ```typescript
-lockPageSlug: "https://example.com/maintenance"
+website: {
+  lockPageSlug: "https://example.com/maintenance"
+}
 ```
 
 Correct:
 
 ```typescript
-lockPageSlug: "/maintenance"
+website: {
+  lockPageSlug: "/maintenance"
+}
 ```
 
-`lockPageSlug` must be a relative path. The schema rejects values containing `://`, starting with `//`, or containing backslashes.
+`website.lockPageSlug` must be a relative path. The schema rejects values containing `://`, starting with `//`, or containing backslashes.
 
 ## Next Steps
 

@@ -22,7 +22,9 @@ export default createAppwardenMiddleware(
     {},
     {
       appwardenApiToken: process.env.APPWARDEN_API_TOKEN,
-      lockPageSlug: "/maintenance",
+      website: {
+        lockPageSlug: "/maintenance",
+      },
       cacheUrl: process.env.EDGE_CONFIG,
       vercelApiToken: process.env.VERCEL_API_TOKEN,
       debug: true,

@@ -61,7 +61,7 @@ skills:
     type: "core"
     domain: "security-configuration"
     path: "skills/appwarden-middleware-lock-page/SKILL.md"
-    description: "Build a neutral maintenance-style lock page and connect it to Appwarden lockPageSlug."
+    description: "Build a neutral maintenance-style lock page and connect it to Appwarden website.lockPageSlug."
     requires:
       - "appwarden-middleware-get-started"
     sources:

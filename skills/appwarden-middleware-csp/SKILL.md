@@ -102,9 +102,9 @@ Wrong:
 
 ```typescript
 // middleware.ts on Vercel
-contentSecurityPolicy: {
-  mode: 'enforced',
-  directives: { 'script-src': ["'self'", '{{nonce}}"] },
+website: {
+  cspMode: 'enforced',
+  cspDirectives: { 'script-src': ["'self'", '{{nonce}}"] },
 }
 ```
 
@@ -112,9 +112,9 @@ Correct:
 
 ```typescript
 // Vercel: headers-only CSP, or move to Cloudflare for nonce support
-contentSecurityPolicy: {
-  mode: 'enforced',
-  directives: { 'default-src': ["'self'"] },
+website: {
+  cspMode: 'enforced',
+  cspDirectives: { 'default-src': ["'self'"] },
 }
 ```
 
