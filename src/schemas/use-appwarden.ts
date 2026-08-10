@@ -4,70 +4,34 @@ import {
   AppwardenConfigErrorMessages,
 } from "../utils/errors"
 import {
-  AppwardenApiHostnameSchema,
-  AppwardenApiTokenSchema,
-  BooleanSchema,
-  ValidLockPageSlugSchema,
-} from "./helpers"
-import {
-  AppwardenMiddlewareArraySchema,
-  AppwardenMiddlewareConfig,
-} from "./middleware-config"
-import { UseCSPInputSchema } from "./use-content-security-policy"
+  ApiMiddlewareConfigType,
+  AppwardenMiddlewareConfigSchema,
+  DomainMiddlewareOptionsSchema,
+  WebsiteMiddlewareConfigType,
+} from "./middleware-options"
 
 export const AppwardenMultidomainConfigSchema = z.record(
   z.string(),
-  z.object({
-    lockPageSlug: ValidLockPageSlugSchema,
-    contentSecurityPolicy: z.lazy(() => UseCSPInputSchema).optional(),
-    debug: BooleanSchema.optional(),
-  }),
+  DomainMiddlewareOptionsSchema,
 )
 
 export type AppwardenMultidomainConfig = z.infer<
   typeof AppwardenMultidomainConfigSchema
 >
 
-export {
-  ApiLockResponseSchema,
-  ApiMiddlewareConfigSchema,
-  AppwardenMiddlewareArraySchema,
-  MiddlewareOptionsSchema,
-  ServiceMiddlewareSchema,
-  WebsiteMiddlewareConfigSchema,
-  type ApiLockResponse,
-  type ApiMiddlewareConfig,
-  type AppwardenMiddlewareConfig,
-  type MiddlewareOptions,
-  type ResolvedMiddlewareConfig,
-  type ServiceMiddleware,
-  type WebsiteMiddlewareConfig,
-} from "./middleware-config"
-
-// Base schema without refinement - can be extended by other schemas
-export const UseAppwardenInputSchema = z.object({
-  debug: BooleanSchema.default(false),
-  lockPageSlug: ValidLockPageSlugSchema.optional(),
-  contentSecurityPolicy: z.lazy(() => UseCSPInputSchema).optional(),
+export const UseAppwardenInputSchema = AppwardenMiddlewareConfigSchema.extend({
   multidomainConfig: AppwardenMultidomainConfigSchema.optional(),
-  appwardenMiddleware: AppwardenMiddlewareArraySchema.optional(),
-  appwardenApiToken: AppwardenApiTokenSchema,
-  appwardenApiHostname: AppwardenApiHostnameSchema.optional(),
 })
 
 export type UseAppwardenInput = z.infer<typeof UseAppwardenInputSchema>
 
-// Refinement to ensure either lockPageSlug, multidomainConfig, or appwardenMiddleware is provided
-export const lockPageSlugRefinement = <T extends z.ZodTypeAny>(schema: T) =>
+export const appwardenConfigRefinement = <T extends z.ZodTypeAny>(schema: T) =>
   schema.refine(
     (data: {
-      lockPageSlug?: string
+      website?: WebsiteMiddlewareConfigType
+      api?: ApiMiddlewareConfigType
       multidomainConfig?: AppwardenMultidomainConfig
-      appwardenMiddleware?: AppwardenMiddlewareConfig[]
-    }) =>
-      data.lockPageSlug ||
-      data.multidomainConfig ||
-      (data.appwardenMiddleware && data.appwardenMiddleware.length > 0),
+    }) => !!data.website || !!data.api || !!data.multidomainConfig,
     {
       message:
         AppwardenConfigErrorMessages[

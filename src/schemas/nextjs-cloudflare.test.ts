@@ -4,10 +4,16 @@ import { NextJsCloudflareConfigSchema } from "./nextjs-cloudflare"
 describe("NextJsCloudflareConfigSchema", () => {
   it("should validate a valid config with all fields", () => {
     const validConfig = {
-      lockPageSlug: "/maintenance",
       appwardenApiToken: "token123",
       appwardenApiHostname: "https://api.appwarden.io",
       debug: true,
+      website: {
+        lockPageSlug: "/maintenance",
+        cspMode: "enforced" as const,
+        cspDirectives: {
+          "default-src": ["'self'"],
+        },
+      },
     }
 
     const result = NextJsCloudflareConfigSchema.safeParse(validConfig)
@@ -19,24 +25,28 @@ describe("NextJsCloudflareConfigSchema", () => {
 
   it("should validate a minimal valid config", () => {
     const minimalConfig = {
-      lockPageSlug: "/maintenance",
       appwardenApiToken: "token123",
+      website: {
+        lockPageSlug: "/maintenance",
+      },
     }
 
     const result = NextJsCloudflareConfigSchema.safeParse(minimalConfig)
     expect(result.success).toBe(true)
     if (result.success) {
       expect(result.data.appwardenApiToken).toBe("token123")
-      expect(result.data.lockPageSlug).toBe("/maintenance")
+      expect(result.data.website?.lockPageSlug).toBe("/maintenance")
       expect(result.data.debug).toBe(false) // Default value
     }
   })
 
   it("should accept string debug value and transform to boolean", () => {
     const config = {
-      lockPageSlug: "/maintenance",
       appwardenApiToken: "token123",
       debug: "true",
+      website: {
+        lockPageSlug: "/maintenance",
+      },
     }
 
     const result = NextJsCloudflareConfigSchema.safeParse(config)
@@ -46,21 +56,33 @@ describe("NextJsCloudflareConfigSchema", () => {
     }
   })
 
-  it("should reject missing lockPageSlug", () => {
-    const invalidConfig = {
+  it("should validate a config with api instead of website", () => {
+    const config = {
       appwardenApiToken: "token123",
+      api: {
+        basePaths: ["/api"],
+        response: {
+          status: 503,
+          body: '{"error":"Service unavailable"}',
+        },
+      },
     }
 
-    const result = NextJsCloudflareConfigSchema.safeParse(invalidConfig)
-    expect(result.success).toBe(false)
+    const result = NextJsCloudflareConfigSchema.safeParse(config)
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.api?.basePaths).toEqual(["/api"])
+    }
   })
 
   it.each([["//evil.com"], ["https://evil.com"], ["http://evil.com"]])(
-    "should reject invalid lockPageSlug: %s",
-    (lockPageSlug) => {
+    "should reject invalid website.lockPageSlug: %s",
+    (lockPageSlug: string) => {
       const invalidConfig = {
-        lockPageSlug,
         appwardenApiToken: "token123",
+        website: {
+          lockPageSlug,
+        },
       }
 
       const result = NextJsCloudflareConfigSchema.safeParse(invalidConfig)
@@ -76,8 +98,10 @@ describe("NextJsCloudflareConfigSchema", () => {
 
   it("should reject empty appwardenApiToken with a clear message", () => {
     const invalidConfig = {
-      lockPageSlug: "/maintenance",
       appwardenApiToken: "",
+      website: {
+        lockPageSlug: "/maintenance",
+      },
     }
 
     const result = NextJsCloudflareConfigSchema.safeParse(invalidConfig)
@@ -97,7 +121,9 @@ describe("NextJsCloudflareConfigSchema", () => {
 
   it("should reject missing appwardenApiToken with a clear message", () => {
     const invalidConfig = {
-      lockPageSlug: "/maintenance",
+      website: {
+        lockPageSlug: "/maintenance",
+      },
     }
 
     const result = NextJsCloudflareConfigSchema.safeParse(invalidConfig)
@@ -114,11 +140,11 @@ describe("NextJsCloudflareConfigSchema", () => {
 
   it("should reject CSP directives containing {{nonce}} with a clear message", () => {
     const invalidConfig = {
-      lockPageSlug: "/maintenance",
       appwardenApiToken: "token123",
-      contentSecurityPolicy: {
-        mode: "enforced",
-        directives: {
+      website: {
+        lockPageSlug: "/maintenance",
+        cspMode: "enforced" as const,
+        cspDirectives: {
           "script-src": ["'self'", "{{nonce}}"],
         },
       },
@@ -128,7 +154,7 @@ describe("NextJsCloudflareConfigSchema", () => {
     expect(result.success).toBe(false)
     if (!result.success) {
       const issue = result.error.issues.find((entry) =>
-        entry.path.includes("directives"),
+        entry.path.includes("cspDirectives"),
       )
       expect(issue?.message).toContain("Nonce-based CSP is not supported")
       expect((issue as any)?.params).toEqual({
@@ -150,27 +176,35 @@ describe("NextJsCloudflareConfigSchema", () => {
       "https://evil.com",
       "`appwardenApiHostname` must be https://api.appwarden.io or https://staging-api.appwarden.io.",
     ],
-  ])("should reject invalid appwardenApiHostname: %s", (hostname, message) => {
-    const invalidConfig = {
-      lockPageSlug: "/maintenance",
-      appwardenApiToken: "token123",
-      appwardenApiHostname: hostname,
-    }
+  ])(
+    "should reject invalid appwardenApiHostname: %s",
+    (hostname: string, message: string) => {
+      const invalidConfig = {
+        appwardenApiToken: "token123",
+        appwardenApiHostname: hostname,
+        website: {
+          lockPageSlug: "/maintenance",
+        },
+      }
 
-    const result = NextJsCloudflareConfigSchema.safeParse(invalidConfig)
-    expect(result.success).toBe(false)
-    if (!result.success) {
-      const issue = result.error.issues.find((entry) =>
-        entry.path.includes("appwardenApiHostname"),
-      )
-      expect(issue?.message).toContain(message)
-    }
-  })
+      const result = NextJsCloudflareConfigSchema.safeParse(invalidConfig)
+      expect(result.success).toBe(false)
+      if (!result.success) {
+        const issue = result.error.issues.find((entry) =>
+          entry.path.includes("appwardenApiHostname"),
+        )
+        expect(issue?.message).toContain(message)
+      }
+    },
+  )
 
   it("should reject invalid debug value", () => {
     const invalidConfig = {
       appwardenApiToken: "token123",
       debug: "not-a-boolean",
+      website: {
+        lockPageSlug: "/maintenance",
+      },
     }
 
     expect(() => NextJsCloudflareConfigSchema.parse(invalidConfig)).toThrow(

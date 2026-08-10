@@ -9,10 +9,10 @@ describe("ConfigFnInputSchema", () => {
       appwardenApiToken: "token123",
       multidomainConfig: {
         "example.com": {
-          lockPageSlug: "/maintenance",
-          contentSecurityPolicy: {
-            mode: "enforced",
-            directives: {
+          website: {
+            lockPageSlug: "/maintenance",
+            cspMode: "enforced",
+            cspDirectives: {
               "default-src": ["'self'"],
             },
           },
@@ -34,8 +34,10 @@ describe("ConfigFnInputSchema", () => {
     // Create a valid function without middleware
     const validFn = (context: any) => ({
       debug: true,
-      lockPageSlug: "/maintenance",
       appwardenApiToken: "token123",
+      website: {
+        lockPageSlug: "/maintenance",
+      },
       // No middleware specified
     })
 

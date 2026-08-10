@@ -2,9 +2,9 @@ import type { APIContext } from "astro"
 import { waitUntil } from "cloudflare:workers"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { ZodError } from "zod"
-import { checkLockStatus } from "../core"
 import type { HeartbeatResponseBody } from "../types"
 import * as utils from "../utils"
+import { resolveAdapterAction } from "../utils/adapter-common"
 import { applyContentSecurityPolicyToResponse } from "../utils/apply-content-security-policy-to-response"
 import {
   AstroCloudflareRuntime,
@@ -31,7 +31,6 @@ vi.mock("cloudflare:workers", () => ({
 
 /**
  * Mock Astro middleware context interface for testing.
- * This is a simplified version that matches what the middleware actually uses.
  */
 interface MockAstroContext {
   request: Request
@@ -42,25 +41,17 @@ interface MockAstroContext {
   redirect: (path: string, status?: number) => Response
 }
 
-/**
- * Helper to cast mock context to APIContext for testing.
- * The middleware only uses a subset of APIContext properties.
- */
 const asAPIContext = (ctx: MockAstroContext): APIContext =>
   ctx as unknown as APIContext
 
-/**
- * Helper to assert result is a Response and return it.
- * Our middleware implementation always returns a Response, never void.
- */
 const asResponse = (result: Response | void): Response => {
   expect(result).toBeInstanceOf(Response)
   return result as Response
 }
 
 // Mock dependencies
-vi.mock("../core", () => ({
-  checkLockStatus: vi.fn(),
+vi.mock("../utils/adapter-common", () => ({
+  resolveAdapterAction: vi.fn(),
 }))
 
 vi.mock(
@@ -102,7 +93,7 @@ vi.mock("../utils", async (importOriginal) => {
       const url = new URL(requestUrl)
       return url.pathname === normalizedSlug
     }),
-    validateConfig: vi.fn(() => false), // No validation errors by default
+    validateConfig: vi.fn(() => false),
     TEMPORARY_REDIRECT_STATUS: 302,
   }
 })
@@ -135,7 +126,6 @@ describe("createAppwardenMiddleware (Astro)", () => {
     } as unknown as AstroCloudflareRuntime
 
     mockContext = {
-      // Default request accepts HTML
       request: new Request("https://example.com/page", {
         headers: { Accept: "text/html,application/xhtml+xml" },
       }),
@@ -152,10 +142,9 @@ describe("createAppwardenMiddleware (Astro)", () => {
 
     mockNext = vi.fn().mockResolvedValue(new Response("OK", { status: 200 }))
 
-    // Default: site is not locked
-    vi.mocked(checkLockStatus).mockResolvedValue({
-      isLocked: false,
-      isTestLock: false,
+    // Default: website is not locked
+    vi.mocked(resolveAdapterAction).mockResolvedValue({
+      type: "website-unlocked",
     })
   })
 
@@ -166,7 +155,9 @@ describe("createAppwardenMiddleware (Astro)", () => {
 
   it("should call next() when site is not locked", async () => {
     const middleware = createAppwardenMiddleware(() => ({
-      lockPageSlug: "/maintenance",
+      website: { lockPageSlug: "/maintenance" },
+      api: { basePaths: ["/api"] },
+      bypassPaths: ["/health"],
       appwardenApiToken: "test-token",
     }))
 
@@ -184,7 +175,9 @@ describe("createAppwardenMiddleware (Astro)", () => {
       .mockImplementation(() => {})
 
     const middleware = createAppwardenMiddleware(() => ({
-      lockPageSlug: "/maintenance",
+      website: { lockPageSlug: "/maintenance" },
+      api: { basePaths: ["/api"] },
+      bypassPaths: ["/health"],
       appwardenApiToken: "", // Invalid - empty token
     }))
 
@@ -195,7 +188,7 @@ describe("createAppwardenMiddleware (Astro)", () => {
     expect(consoleErrorSpy).toHaveBeenCalledWith(
       expect.stringContaining("Config validation failed"),
     )
-    expect(checkLockStatus).not.toHaveBeenCalled()
+    expect(resolveAdapterAction).not.toHaveBeenCalled()
     expect(mockNext).toHaveBeenCalled()
     expect(result.status).toBe(200)
 
@@ -203,13 +196,15 @@ describe("createAppwardenMiddleware (Astro)", () => {
   })
 
   it("should redirect when site is locked", async () => {
-    vi.mocked(checkLockStatus).mockResolvedValue({
-      isLocked: true,
-      isTestLock: false,
+    vi.mocked(resolveAdapterAction).mockResolvedValue({
+      type: "website-locked",
+      lockPageUrl: new URL("https://example.com/maintenance"),
     })
 
     const middleware = createAppwardenMiddleware(() => ({
-      lockPageSlug: "/maintenance",
+      website: { lockPageSlug: "/maintenance" },
+      api: { basePaths: ["/api"] },
+      bypassPaths: ["/health"],
       appwardenApiToken: "test-token",
     }))
 
@@ -228,13 +223,15 @@ describe("createAppwardenMiddleware (Astro)", () => {
   })
 
   it("should normalize lock page slug to start with /", async () => {
-    vi.mocked(checkLockStatus).mockResolvedValue({
-      isLocked: true,
-      isTestLock: false,
+    vi.mocked(resolveAdapterAction).mockResolvedValue({
+      type: "website-locked",
+      lockPageUrl: new URL("https://example.com/maintenance"),
     })
 
     const middleware = createAppwardenMiddleware(() => ({
-      lockPageSlug: "maintenance", // No leading slash
+      website: { lockPageSlug: "maintenance" }, // No leading slash
+      api: { basePaths: ["/api"] },
+      bypassPaths: ["/health"],
       appwardenApiToken: "test-token",
     }))
 
@@ -252,19 +249,20 @@ describe("createAppwardenMiddleware (Astro)", () => {
   })
 
   it("should skip non-HTML requests", async () => {
-    // Request without text/html in Accept header (e.g., API call)
     mockContext.request = new Request("https://example.com/api/data", {
       headers: { Accept: "application/json" },
     })
 
     const middleware = createAppwardenMiddleware(() => ({
-      lockPageSlug: "/maintenance",
+      website: { lockPageSlug: "/maintenance" },
+      api: { basePaths: ["/api"] },
+      bypassPaths: ["/health"],
       appwardenApiToken: "test-token",
     }))
 
     await middleware(asAPIContext(mockContext), mockNext)
 
-    expect(checkLockStatus).not.toHaveBeenCalled()
+    expect(resolveAdapterAction).toHaveBeenCalled()
     expect(mockNext).toHaveBeenCalled()
   })
 
@@ -272,7 +270,9 @@ describe("createAppwardenMiddleware (Astro)", () => {
     mockContext.locals = {}
 
     const middleware = createAppwardenMiddleware(() => ({
-      lockPageSlug: "/maintenance",
+      website: { lockPageSlug: "/maintenance" },
+      api: { basePaths: ["/api"] },
+      bypassPaths: ["/health"],
       appwardenApiToken: "test-token",
     }))
 
@@ -292,7 +292,9 @@ describe("createAppwardenMiddleware (Astro)", () => {
     mockContext.locals = {}
 
     const middleware = createAppwardenMiddleware(() => ({
-      lockPageSlug: "/maintenance",
+      website: { lockPageSlug: "/maintenance" },
+      api: { basePaths: ["/api"] },
+      bypassPaths: ["/health"],
       appwardenApiToken: "test-token",
     }))
 
@@ -383,7 +385,9 @@ describe("createAppwardenMiddleware (Astro)", () => {
     })
 
     const middleware = createAppwardenMiddleware(() => ({
-      lockPageSlug: "/maintenance",
+      website: { lockPageSlug: "/maintenance" },
+      api: { basePaths: ["/api"] },
+      bypassPaths: ["/health"],
       appwardenApiToken: "",
     }))
 
@@ -413,7 +417,9 @@ describe("createAppwardenMiddleware (Astro)", () => {
     )
 
     const configFn = vi.fn(() => ({
-      lockPageSlug: "/maintenance",
+      website: { lockPageSlug: "/maintenance" },
+      api: { basePaths: ["/api"] },
+      bypassPaths: ["/health"],
       appwardenApiToken: "test-token",
     }))
     const middleware = createAppwardenMiddleware(configFn)
@@ -425,12 +431,14 @@ describe("createAppwardenMiddleware (Astro)", () => {
     expect(result.status).toBe(200)
     expect(configFn).toHaveBeenCalledTimes(1)
     expect(mockNext).toHaveBeenCalledTimes(1)
-    expect(checkLockStatus).not.toHaveBeenCalled()
+    expect(resolveAdapterAction).toHaveBeenCalled()
   })
 
-  it("should pass correct config to checkLockStatus", async () => {
+  it("should pass correct config to resolveAdapterAction", async () => {
     const middleware = createAppwardenMiddleware(() => ({
-      lockPageSlug: "/maintenance",
+      website: { lockPageSlug: "/maintenance" },
+      api: { basePaths: ["/api"] },
+      bypassPaths: ["/health"],
       appwardenApiToken: "test-token",
       appwardenApiHostname: "https://api.appwarden.io",
       debug: true,
@@ -438,35 +446,42 @@ describe("createAppwardenMiddleware (Astro)", () => {
 
     await middleware(asAPIContext(mockContext), mockNext)
 
-    expect(checkLockStatus).toHaveBeenCalledWith({
-      request: mockContext.request,
-      appwardenApiToken: "test-token",
-      appwardenApiHostname: "https://api.appwarden.io",
-      debug: true,
-      lockPageSlug: "/maintenance",
-      waitUntil: expect.any(Function),
-    })
+    expect(resolveAdapterAction).toHaveBeenCalledWith(
+      mockContext.request,
+      expect.objectContaining({
+        appwardenApiToken: "test-token",
+        appwardenApiHostname: "https://api.appwarden.io",
+        debug: true,
+        website: expect.objectContaining({ lockPageSlug: "/maintenance" }),
+        api: expect.objectContaining({ basePaths: ["/api"] }),
+        bypassPaths: ["/health"],
+      }),
+      waitUntil,
+    )
   })
 
-  it("should use waitUntil from cloudflare:workers in checkLockStatus config", async () => {
+  it("should use waitUntil from cloudflare:workers in resolveAdapterAction config", async () => {
     const middleware = createAppwardenMiddleware(() => ({
-      lockPageSlug: "/maintenance",
+      website: { lockPageSlug: "/maintenance" },
+      api: { basePaths: ["/api"] },
+      bypassPaths: ["/health"],
       appwardenApiToken: "test-token",
     }))
 
     await middleware(asAPIContext(mockContext), mockNext)
 
-    // Get the waitUntil function that was passed to checkLockStatus
-    const checkLockStatusCall = vi.mocked(checkLockStatus).mock.calls[0][0]
-    const waitUntilFn = checkLockStatusCall.waitUntil
+    const resolveAdapterActionCall =
+      vi.mocked(resolveAdapterAction).mock.calls[0]
+    const waitUntilFn = resolveAdapterActionCall[2]
 
-    // Verify that the global waitUntil from cloudflare:workers is used
     expect(waitUntilFn).toBe(waitUntil)
   })
 
   it("should receive config from configFn with runtime context", async () => {
     const configFn = vi.fn().mockReturnValue({
-      lockPageSlug: "/maintenance",
+      website: { lockPageSlug: "/maintenance" },
+      api: { basePaths: ["/api"] },
+      bypassPaths: ["/health"],
       appwardenApiToken: "test-token",
     })
 
@@ -477,10 +492,12 @@ describe("createAppwardenMiddleware (Astro)", () => {
   })
 
   it("should handle errors gracefully and call next()", async () => {
-    vi.mocked(checkLockStatus).mockRejectedValue(new Error("API error"))
+    vi.mocked(resolveAdapterAction).mockRejectedValue(new Error("API error"))
 
     const middleware = createAppwardenMiddleware(() => ({
-      lockPageSlug: "/maintenance",
+      website: { lockPageSlug: "/maintenance" },
+      api: { basePaths: ["/api"] },
+      bypassPaths: ["/health"],
       appwardenApiToken: "test-token",
     }))
 
@@ -506,14 +523,16 @@ describe("createAppwardenMiddleware (Astro)", () => {
     )
 
     const middleware = createAppwardenMiddleware(() => ({
-      lockPageSlug: "/maintenance",
-      appwardenApiToken: "test-token",
-      contentSecurityPolicy: {
-        mode: "enforced",
-        directives: {
+      website: {
+        lockPageSlug: "/maintenance",
+        cspMode: "enforced",
+        cspDirectives: {
           "script-src": ["'self'", "{{nonce}}"],
         },
       },
+      api: { basePaths: ["/api"] },
+      bypassPaths: ["/health"],
+      appwardenApiToken: "test-token",
     }))
 
     const result = asResponse(
@@ -528,13 +547,15 @@ describe("createAppwardenMiddleware (Astro)", () => {
   })
 
   it("should use 302 status code for redirects (temporary redirect)", async () => {
-    vi.mocked(checkLockStatus).mockResolvedValue({
-      isLocked: true,
-      isTestLock: false,
+    vi.mocked(resolveAdapterAction).mockResolvedValue({
+      type: "website-locked",
+      lockPageUrl: new URL("https://example.com/maintenance"),
     })
 
     const middleware = createAppwardenMiddleware(() => ({
-      lockPageSlug: "/maintenance",
+      website: { lockPageSlug: "/maintenance" },
+      api: { basePaths: ["/api"] },
+      bypassPaths: ["/health"],
       appwardenApiToken: "test-token",
     }))
 
@@ -550,10 +571,12 @@ describe("createAppwardenMiddleware (Astro)", () => {
       status: 302,
       headers: { Location: "/other-page" },
     })
-    vi.mocked(checkLockStatus).mockRejectedValue(redirectResponse)
+    vi.mocked(resolveAdapterAction).mockRejectedValue(redirectResponse)
 
     const middleware = createAppwardenMiddleware(() => ({
-      lockPageSlug: "/maintenance",
+      website: { lockPageSlug: "/maintenance" },
+      api: { basePaths: ["/api"] },
+      bypassPaths: ["/health"],
       appwardenApiToken: "test-token",
     }))
 
@@ -563,19 +586,20 @@ describe("createAppwardenMiddleware (Astro)", () => {
   })
 
   it("should fallback to createRedirect when context.redirect is not a function", async () => {
-    vi.mocked(checkLockStatus).mockResolvedValue({
-      isLocked: true,
-      isTestLock: false,
+    vi.mocked(resolveAdapterAction).mockResolvedValue({
+      type: "website-locked",
+      lockPageUrl: new URL("https://example.com/maintenance"),
     })
 
-    // Remove the redirect function
     mockContext.redirect = undefined as unknown as (
       path: string,
       status?: number,
     ) => Response
 
     const middleware = createAppwardenMiddleware(() => ({
-      lockPageSlug: "/maintenance",
+      website: { lockPageSlug: "/maintenance" },
+      api: { basePaths: ["/api"] },
+      bypassPaths: ["/health"],
       appwardenApiToken: "test-token",
     }))
 
@@ -590,13 +614,15 @@ describe("createAppwardenMiddleware (Astro)", () => {
   })
 
   it("should handle test lock correctly", async () => {
-    vi.mocked(checkLockStatus).mockResolvedValue({
-      isLocked: true,
-      isTestLock: true,
+    vi.mocked(resolveAdapterAction).mockResolvedValue({
+      type: "website-locked",
+      lockPageUrl: new URL("https://example.com/maintenance"),
     })
 
     const middleware = createAppwardenMiddleware(() => ({
-      lockPageSlug: "/maintenance",
+      website: { lockPageSlug: "/maintenance" },
+      api: { basePaths: ["/api"] },
+      bypassPaths: ["/health"],
       appwardenApiToken: "test-token",
     }))
 
@@ -611,18 +637,14 @@ describe("createAppwardenMiddleware (Astro)", () => {
   })
 
   it("should not redirect when already on lock page to prevent infinite redirect loop", async () => {
-    vi.mocked(checkLockStatus).mockResolvedValue({
-      isLocked: true,
-      isTestLock: false,
-    })
-
-    // Request is already on the lock page
     mockContext.request = new Request("https://example.com/maintenance", {
       headers: { Accept: "text/html,application/xhtml+xml" },
     })
 
     const middleware = createAppwardenMiddleware(() => ({
-      lockPageSlug: "/maintenance",
+      website: { lockPageSlug: "/maintenance" },
+      api: { basePaths: ["/api"] },
+      bypassPaths: ["/health"],
       appwardenApiToken: "test-token",
     }))
 
@@ -630,9 +652,7 @@ describe("createAppwardenMiddleware (Astro)", () => {
       await middleware(asAPIContext(mockContext), mockNext),
     )
 
-    // Should call next() and NOT redirect
     expect(mockNext).toHaveBeenCalled()
-    expect(checkLockStatus).not.toHaveBeenCalled()
     expect(mockContext.redirect).not.toHaveBeenCalled()
     expect(result.status).toBe(200)
   })
@@ -649,38 +669,35 @@ describe("createAppwardenMiddleware (Astro)", () => {
     )
 
     const middleware = createAppwardenMiddleware(() => ({
-      lockPageSlug: "/maintenance",
-      appwardenApiToken: "test-token",
-      contentSecurityPolicy: {
-        mode: "enforced",
-        directives: {
+      website: {
+        lockPageSlug: "/maintenance",
+        cspMode: "enforced",
+        cspDirectives: {
           "script-src": ["'self'", "{{nonce}}"],
         },
       },
+      api: { basePaths: ["/api"] },
+      bypassPaths: ["/health"],
+      appwardenApiToken: "test-token",
     }))
 
     const response = asResponse(
       await middleware(asAPIContext(mockContext), mockNext),
     )
 
-    expect(checkLockStatus).not.toHaveBeenCalled()
     expect(mockNext).toHaveBeenCalledTimes(1)
     expect(response.headers.get("Content-Security-Policy")).toBeTruthy()
   })
 
   it("should not redirect when already on lock page (slug without leading slash)", async () => {
-    vi.mocked(checkLockStatus).mockResolvedValue({
-      isLocked: true,
-      isTestLock: false,
-    })
-
-    // Request is already on the lock page
     mockContext.request = new Request("https://example.com/maintenance", {
       headers: { Accept: "text/html,application/xhtml+xml" },
     })
 
     const middleware = createAppwardenMiddleware(() => ({
-      lockPageSlug: "maintenance", // No leading slash
+      website: { lockPageSlug: "maintenance" }, // No leading slash
+      api: { basePaths: ["/api"] },
+      bypassPaths: ["/health"],
       appwardenApiToken: "test-token",
     }))
 
@@ -688,9 +705,7 @@ describe("createAppwardenMiddleware (Astro)", () => {
       await middleware(asAPIContext(mockContext), mockNext),
     )
 
-    // Should call next() and NOT redirect
     expect(mockNext).toHaveBeenCalled()
-    expect(checkLockStatus).not.toHaveBeenCalled()
     expect(result.status).toBe(200)
   })
 })

@@ -6,24 +6,22 @@ import {
 } from "next/server"
 import { ZodError } from "zod"
 import { HEARTBEAT_SERVICES } from "../constants"
-import { checkLockStatus } from "../core"
 import type {
   NextJsCloudflareConfig,
   NextJsCloudflareConfigInput,
 } from "../schemas/nextjs-cloudflare"
 import { NextJsCloudflareConfigSchema } from "../schemas/nextjs-cloudflare"
 import {
-  buildLockPageUrl,
   createHeartbeatConfigError,
   debug,
   handleHeartbeatRequest,
   isHeartbeatRequest,
   isHTMLRequest,
-  isOnLockPage,
   printMessage,
   sanitizeConfigErrors,
   TEMPORARY_REDIRECT_STATUS,
 } from "../utils"
+import { resolveAdapterAction } from "../utils/adapter-common"
 import { makeCSPHeader } from "../utils/cloudflare"
 import { parseMergedConfig } from "../utils/get-appwarden-configuration"
 import { getNowMs, logElapsed } from "../utils/get-now"
@@ -149,7 +147,9 @@ export type NextJsMiddlewareFunction = (
  * }
  *
  * export default createAppwardenMiddleware(({ env }) => ({
- *   lockPageSlug: env.APPWARDEN_LOCK_PAGE_SLUG,
+ *   website: {
+ *     lockPageSlug: env.APPWARDEN_LOCK_PAGE_SLUG,
+ *   },
  *   appwardenApiToken: env.APPWARDEN_API_TOKEN,
  * }))
  * ```
@@ -188,55 +188,39 @@ export function createAppwardenMiddleware(
       // Use the validated and transformed config
       const config = validationResult.data
       const debugFn = debug(config.debug)
-      const isHTML = isHTMLRequest(request)
 
-      debugFn(
-        `Appwarden middleware invoked for ${requestUrl.pathname}`,
-        `isHTML: ${isHTML}`,
+      const action = await resolveAdapterAction(
+        request,
+        config,
+        ctx.waitUntil.bind(ctx),
       )
 
-      // Skip non-HTML requests (e.g., API calls, static assets)
-      if (!isHTML) {
-        return NextResponse.next()
+      if (action.type === "api-locked") {
+        return toNextResponse(action.response)
       }
 
-      // Skip if already on lock page to prevent infinite redirect loop
-      if (isOnLockPage(config.lockPageSlug, request.url)) {
-        debugFn("Already on lock page - skipping")
-        return NextResponse.next()
-      }
-
-      // Check lock status
-      const result = await checkLockStatus({
-        request,
-        appwardenApiToken: config.appwardenApiToken,
-        appwardenApiHostname: config.appwardenApiHostname,
-        debug: config.debug,
-        lockPageSlug: config.lockPageSlug,
-        waitUntil: ctx.waitUntil.bind(ctx),
-      })
-
-      // If locked, redirect to lock page
-      if (result.isLocked) {
-        const lockPageUrl = buildLockPageUrl(config.lockPageSlug, request.url)
-        debugFn(`Website is locked - redirecting to ${lockPageUrl.pathname}`)
-        return NextResponse.redirect(lockPageUrl, TEMPORARY_REDIRECT_STATUS)
-      }
-
-      debugFn("Site is unlocked")
-
-      // Apply CSP headers if configured (pre-origin, headers only)
-      if (
-        config.contentSecurityPolicy &&
-        config.contentSecurityPolicy.mode !== "disabled"
-      ) {
+      if (action.type === "website-locked") {
         debugFn(
-          `Applying CSP headers in ${config.contentSecurityPolicy.mode} mode`,
+          `Website is locked - redirecting to ${action.lockPageUrl.pathname}`,
         )
+        return NextResponse.redirect(
+          action.lockPageUrl,
+          TEMPORARY_REDIRECT_STATUS,
+        )
+      }
+
+      // Apply CSP headers to website responses if configured (pre-origin, headers only)
+      const websiteCsp = config.website
+      if (
+        websiteCsp?.cspMode &&
+        websiteCsp.cspMode !== "disabled" &&
+        isHTMLRequest(request)
+      ) {
+        debugFn(`Applying CSP headers in ${websiteCsp.cspMode} mode`)
         const [headerName, headerValue] = makeCSPHeader(
           "",
-          config.contentSecurityPolicy.directives,
-          config.contentSecurityPolicy.mode,
+          websiteCsp.cspDirectives,
+          websiteCsp.cspMode,
         )
 
         const response = NextResponse.next()

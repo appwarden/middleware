@@ -60,8 +60,7 @@ describe("deleteEdgeValue", () => {
       vercelApiToken: "test-token",
       appwardenApiToken: "test-token",
       requestUrl: new URL("https://example.com"),
-      lockPageSlug: "/locked",
-    } as VercelProviderContext
+    } as unknown as VercelProviderContext
 
     // Call the function
     await deleteEdgeValue(mockContext)
@@ -108,8 +107,7 @@ describe("deleteEdgeValue", () => {
       vercelApiToken: "test-token",
       appwardenApiToken: "test-token",
       requestUrl: new URL("https://example.com"),
-      lockPageSlug: "/locked",
-    } as VercelProviderContext
+    } as unknown as VercelProviderContext
 
     // Call the function
     await deleteEdgeValue(mockContext)
@@ -130,8 +128,7 @@ describe("deleteEdgeValue", () => {
       vercelApiToken: "test-token",
       appwardenApiToken: "test-token",
       requestUrl: new URL("https://example.com"),
-      lockPageSlug: "/locked",
-    } as VercelProviderContext
+    } as unknown as VercelProviderContext
 
     // Call the function
     await deleteEdgeValue(mockContext)
@@ -165,8 +162,7 @@ describe("deleteEdgeValue", () => {
       vercelApiToken: "test-token",
       appwardenApiToken: "test-token",
       requestUrl: new URL("https://example.com"),
-      lockPageSlug: "/locked",
-    } as VercelProviderContext
+    } as unknown as VercelProviderContext
 
     // Call the function
     await deleteEdgeValue(mockContext)
@@ -200,8 +196,7 @@ describe("deleteEdgeValue", () => {
       vercelApiToken: "test-token",
       appwardenApiToken: "test-token",
       requestUrl: new URL("https://example.com"),
-      lockPageSlug: "/locked",
-    } as VercelProviderContext
+    } as unknown as VercelProviderContext
 
     // Call the function
     await deleteEdgeValue(mockContext)

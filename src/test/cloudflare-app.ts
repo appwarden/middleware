@@ -6,15 +6,19 @@ export default {
     // Create the Appwarden handler
     const appwardenHandler = createAppwardenMiddleware(({ env: e }) => ({
       debug: e.DEBUG,
-      lockPageSlug: e.APPWARDEN_LOCK_PAGE_SLUG,
       appwardenApiToken: e.APPWARDEN_API_TOKEN,
       appwardenApiHostname: e.APPWARDEN_API_HOSTNAME,
+      website: {
+        lockPageSlug: e.APPWARDEN_LOCK_PAGE_SLUG,
+        cspMode: e.CSP_MODE,
+        cspDirectives: e.CSP_DIRECTIVES,
+      },
       multidomainConfig: {
         "appwarden.io": {
-          lockPageSlug: e.APPWARDEN_LOCK_PAGE_SLUG,
-          contentSecurityPolicy: {
-            mode: e.CSP_MODE,
-            directives: e.CSP_DIRECTIVES,
+          website: {
+            lockPageSlug: e.APPWARDEN_LOCK_PAGE_SLUG,
+            cspMode: e.CSP_MODE,
+            cspDirectives: e.CSP_DIRECTIVES,
           },
         },
       },

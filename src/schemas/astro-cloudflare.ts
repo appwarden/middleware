@@ -1,28 +1,11 @@
 import { z } from "zod"
-import {
-  AppwardenApiHostnameSchema,
-  AppwardenApiTokenSchema,
-  BooleanSchema,
-  ValidLockPageSlugSchema,
-} from "./helpers"
-import { UseCSPInputSchema } from "./use-content-security-policy"
+import { AppwardenMiddlewareConfigSchema } from "./middleware-options"
 
 /**
  * Zod schema for Astro Cloudflare adapter configuration.
  * Validates the config object returned by the configFn.
  */
-export const AstroCloudflareConfigSchema = z.object({
-  /** The slug/path of the lock page to redirect to when the site is locked */
-  lockPageSlug: ValidLockPageSlugSchema,
-  /** The Appwarden API token for authentication */
-  appwardenApiToken: AppwardenApiTokenSchema,
-  /** Optional custom API hostname (defaults to https://api.appwarden.io) */
-  appwardenApiHostname: AppwardenApiHostnameSchema.optional(),
-  /** Enable debug logging */
-  debug: BooleanSchema.default(false),
-  /** Optional Content Security Policy configuration */
-  contentSecurityPolicy: z.lazy(() => UseCSPInputSchema).optional(),
-})
+export const AstroCloudflareConfigSchema = AppwardenMiddlewareConfigSchema
 
 export type AstroCloudflareConfig = z.infer<typeof AstroCloudflareConfigSchema>
 

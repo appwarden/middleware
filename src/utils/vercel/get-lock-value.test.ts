@@ -81,8 +81,7 @@ describe("getLockValue", () => {
       vercelApiToken: "test-token",
       appwardenApiToken: "test-token",
       requestUrl: new URL("https://example.com"),
-      lockPageSlug: "/locked",
-    } as VercelProviderContext
+    } as unknown as VercelProviderContext
 
     // Call the function
     const result = await getLockValue(mockContext)
@@ -134,8 +133,7 @@ describe("getLockValue", () => {
       vercelApiToken: "test-token",
       appwardenApiToken: "test-token",
       requestUrl: new URL("https://example.com"),
-      lockPageSlug: "/locked",
-    } as VercelProviderContext
+    } as unknown as VercelProviderContext
 
     // Call the function
     const result = await getLockValue(mockContext)
@@ -185,8 +183,7 @@ describe("getLockValue", () => {
       vercelApiToken: "test-token",
       appwardenApiToken: "test-token",
       requestUrl: new URL("https://example.com"),
-      lockPageSlug: "/locked",
-    } as VercelProviderContext
+    } as unknown as VercelProviderContext
 
     // Call the function
     const result = await getLockValue(mockContext)
@@ -219,8 +216,7 @@ describe("getLockValue", () => {
       vercelApiToken: "test-token",
       appwardenApiToken: "test-token",
       requestUrl: new URL("https://example.com"),
-      lockPageSlug: "/locked",
-    } as VercelProviderContext
+    } as unknown as VercelProviderContext
 
     // Call the function
     const result = await getLockValue(mockContext)
@@ -253,8 +249,7 @@ describe("getLockValue", () => {
       vercelApiToken: "test-token",
       appwardenApiToken: "test-token",
       requestUrl: new URL("https://example.com"),
-      lockPageSlug: "/locked",
-    } as VercelProviderContext
+    } as unknown as VercelProviderContext
 
     // Call the function and expect it to throw
     await expect(getLockValue(mockContext)).rejects.toThrow(

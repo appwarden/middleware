@@ -5,10 +5,13 @@ import {
   globalErrors,
   HEARTBEAT_SERVICES,
 } from "../constants"
-import { LockValueType } from "../schemas"
+import {
+  DEFAULT_API_LOCK_BODY,
+  DEFAULT_API_LOCK_STATUS,
+  LockValueType,
+} from "../schemas"
 import { AppwardenConfigSchema, VercelAppwardenConfig } from "../schemas/vercel"
 import {
-  buildApiLockResponseHeaders,
   buildLockPageUrl,
   debug,
   handleHeartbeatRequest,
@@ -17,15 +20,14 @@ import {
   isHTMLRequest,
   isOnLockPage,
   MemoryCache,
-  pathMatchesAnyPattern,
   printMessage,
-  resolveMiddlewareConfig,
   sanitizeConfigErrors,
   TEMPORARY_REDIRECT_STATUS,
   validateConfig,
 } from "../utils"
 import { makeCSPHeader } from "../utils/cloudflare"
 import { parseMergedConfig } from "../utils/get-appwarden-configuration"
+import { resolveMiddlewareAction } from "../utils/route-matching"
 import { toNextResponse } from "../utils/to-next-response"
 import { getLockValue, syncEdgeValue } from "../utils/vercel"
 
@@ -86,28 +88,20 @@ export function createAppwardenMiddleware(
     }
 
     const parsedConfig = AppwardenConfigSchema.parse(config)
+    const debugFn = debug(parsedConfig.debug)
 
-    const routeConfig = resolveMiddlewareConfig(
-      parsedConfig as unknown as Parameters<typeof resolveMiddlewareConfig>[0],
-      requestUrl.hostname,
-    )
-    const domainDebug = routeConfig?.debug ?? parsedConfig.debug ?? false
-    const debugFn = debug(domainDebug)
+    const websiteConfig = parsedConfig.website
+    const lockPageSlug = websiteConfig?.lockPageSlug
 
     const applyCspHeaders = (response: Response): Response => {
-      const cspConfig =
-        routeConfig?.website?.cspMode && routeConfig?.website?.cspDirectives
-          ? {
-              mode: routeConfig.website.cspMode,
-              directives: routeConfig.website.cspDirectives,
-            }
-          : parsedConfig.contentSecurityPolicy
-
-      if (cspConfig && ["enforced", "report-only"].includes(cspConfig.mode)) {
+      if (
+        websiteConfig?.cspMode &&
+        ["enforced", "report-only"].includes(websiteConfig.cspMode)
+      ) {
         const [headerName, headerValue] = makeCSPHeader(
           "",
-          cspConfig.directives,
-          cspConfig.mode,
+          websiteConfig.cspDirectives,
+          websiteConfig.cspMode,
         )
         response.headers.set(headerName, headerValue)
       }
@@ -123,53 +117,10 @@ export function createAppwardenMiddleware(
       })
     }
 
-    try {
-      debugFn(`Appwarden middleware invoked for ${requestUrl.pathname}`)
-
-      // Pass through if no lock page is configured for this hostname
-      if (!routeConfig) {
-        debugFn("No middleware config for hostname - passing through")
-        return applyCspHeaders(NextResponse.next())
-      }
-
-      // Bypass paths are always allowed through, regardless of lock status.
-      if (
-        routeConfig.bypassPaths &&
-        routeConfig.bypassPaths.length > 0 &&
-        pathMatchesAnyPattern(requestUrl.pathname, routeConfig.bypassPaths)
-      ) {
-        debugFn("Bypass path matched - passing through")
-        return applyCspHeaders(NextResponse.next())
-      }
-
-      const lockPageSlug = routeConfig.website?.lockPageSlug
-      const apiBasePaths = routeConfig.api?.basePaths ?? []
-      const hasApiBasePaths = apiBasePaths.length > 0
-
-      // Pass through if neither a website lock page nor API base paths are configured.
-      if (!lockPageSlug && !hasApiBasePaths) {
-        debugFn("No lock page or API base paths configured - passing through")
-        return applyCspHeaders(NextResponse.next())
-      }
-
-      // Skip if already on the website lock page to prevent infinite redirect loop.
-      if (lockPageSlug && isOnLockPage(lockPageSlug, request.url)) {
-        debugFn("Already on lock page - passing through")
-        return applyCspHeaders(NextResponse.next())
-      }
-
-      // Skip lock check and CSP for non-HTML requests when there are no API base paths.
-      // This preserves the legacy behavior of not touching API/static traffic.
-      if (!isHTMLRequest(request) && !hasApiBasePaths) {
-        debugFn("Non-HTML request without API base paths - passing through")
-        return NextResponse.next()
-      }
-
+    const isSiteLocked = async (): Promise<boolean> => {
       const provider = isCacheUrl.edgeConfig(parsedConfig.cacheUrl)
         ? ("edge-config" as const)
         : ("upstash" as const)
-
-      debugFn(`Using provider: ${provider}`)
 
       // Check memory cache first
       const cacheValue = memoryCache.get(APPWARDEN_CACHE_KEY)
@@ -177,10 +128,6 @@ export function createAppwardenMiddleware(
 
       // Sync from edge in background if cache is expired or missing
       if (!cacheValue || shouldRecheck) {
-        debugFn(
-          "Memory cache miss or expired - syncing edge value in background",
-          `shouldRecheck=${shouldRecheck}`,
-        )
         safeWaitUntil(
           syncEdgeValue({
             requestUrl,
@@ -193,7 +140,6 @@ export function createAppwardenMiddleware(
         )
       }
 
-      // Use cached value or fetch directly
       const lockValue =
         cacheValue ??
         (
@@ -204,35 +150,53 @@ export function createAppwardenMiddleware(
           })
         ).lockValue
 
-      if (!lockValue?.isLocked) {
-        // Site is not locked - pass through to the next handler
-        const response = NextResponse.next()
-        debugFn("Site is not locked - passing through")
-        return applyCspHeaders(response)
+      return !!lockValue?.isLocked
+    }
+
+    try {
+      const action = resolveMiddlewareAction(request, parsedConfig)
+
+      debugFn(
+        `Appwarden middleware invoked for ${requestUrl.pathname}`,
+        `action: ${action}`,
+      )
+
+      if (action === null || action === "bypass") {
+        return NextResponse.next()
       }
 
-      // Locked: API base paths return the configured API response.
-      if (
-        hasApiBasePaths &&
-        pathMatchesAnyPattern(requestUrl.pathname, apiBasePaths)
-      ) {
-        const responseConfig = routeConfig.api?.response
-        debugFn("API base path matched - returning API lock response")
-        return new Response(responseConfig?.body ?? "", {
-          status: responseConfig?.status ?? 503,
-          headers: buildApiLockResponseHeaders(responseConfig?.headers),
-        })
+      if (action === "api") {
+        if (await isSiteLocked()) {
+          const responseConfig = parsedConfig.api?.response ?? {
+            status: DEFAULT_API_LOCK_STATUS,
+            body: DEFAULT_API_LOCK_BODY,
+          }
+          const headers = new Headers()
+          responseConfig.headers?.forEach(({ name, value }) => {
+            headers.set(name, value)
+          })
+          return new Response(responseConfig.body, {
+            status: responseConfig.status,
+            headers,
+          })
+        }
+        return NextResponse.next()
       }
 
-      // Locked: non-HTML requests are not redirected to the lock page.
+      // action === "website"
       if (!isHTMLRequest(request)) {
-        debugFn("Non-HTML request detected - passing through")
-        return applyCspHeaders(NextResponse.next())
+        return NextResponse.next()
       }
 
-      // Locked: redirect to the website lock page
-      if (lockPageSlug) {
-        debugFn(`Website is locked - redirecting to ${lockPageSlug}`)
+      if (!lockPageSlug) {
+        return NextResponse.next()
+      }
+
+      if (isOnLockPage(lockPageSlug, request.url)) {
+        return NextResponse.next()
+      }
+
+      if (await isSiteLocked()) {
         const lockPageUrl = buildLockPageUrl(lockPageSlug, request.url)
         const redirectResponse = createMutableRedirectResponse(
           lockPageUrl.toString(),
@@ -240,7 +204,6 @@ export function createAppwardenMiddleware(
         return applyCspHeaders(redirectResponse)
       }
 
-      // No website lock page configured; pass through.
       return applyCspHeaders(NextResponse.next())
     } catch (e) {
       debugFn(

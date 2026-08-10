@@ -1,81 +1,16 @@
 import { z } from "zod"
-import { ContentSecurityPolicyType } from "../types"
 import {
   AppwardenConfigErrorKey,
   AppwardenConfigErrorMessages,
-  isCacheUrl,
-  isValidCacheUrl,
-} from "../utils"
-import {
-  AppwardenApiHostnameSchema,
-  AppwardenApiTokenSchema,
-  ValidLockPageSlugSchema,
-} from "./helpers"
-import { AppwardenMiddlewareArraySchema } from "./middleware-config"
-import {
-  CSPDirectivesSchema,
-  CSPModeSchema,
-} from "./use-content-security-policy"
+} from "../utils/errors"
+import { isCacheUrl, isValidCacheUrl } from "../utils/is-cache-url"
+import { AppwardenMiddlewareConfigWithoutNonceSchema } from "./middleware-options"
 
-export const VercelCSPSchema = z.object({
-  mode: CSPModeSchema,
-  directives: z
-    .lazy(() => CSPDirectivesSchema)
-    .refine(
-      (val) => {
-        try {
-          if (typeof val === "string") {
-            JSON.parse(val)
-          }
-          return true
-        } catch {
-          return false
-        }
-      },
-      {
-        message:
-          AppwardenConfigErrorMessages[
-            AppwardenConfigErrorKey.CspDirectivesBadParse
-          ],
-        params: {
-          appwardenErrorKey: AppwardenConfigErrorKey.CspDirectivesBadParse,
-        },
-      },
-    )
-    .refine(
-      (val) => {
-        const serialized = typeof val === "string" ? val : JSON.stringify(val)
-        return !serialized.includes("{{nonce}}")
-      },
-      {
-        message:
-          AppwardenConfigErrorMessages[
-            AppwardenConfigErrorKey.VercelNonceUnsupported
-          ],
-        params: {
-          appwardenErrorKey: AppwardenConfigErrorKey.VercelNonceUnsupported,
-        },
-      },
-    )
-    .transform(
-      (val) =>
-        (typeof val === "string" ? JSON.parse(val) : val) as
-          ContentSecurityPolicyType | undefined,
-    ),
-})
-
-export const BaseNextJsConfigSchema = z.object({
-  cacheUrl: z.string(),
-  appwardenApiToken: AppwardenApiTokenSchema,
-  appwardenApiHostname: AppwardenApiHostnameSchema.optional(),
-  vercelApiToken: z.string().optional(),
-  debug: z.boolean().optional(),
-  lockPageSlug: ValidLockPageSlugSchema.default("").transform((val) =>
-    val.replace(/^\/?/, "/"),
-  ),
-  contentSecurityPolicy: VercelCSPSchema.optional(),
-  appwardenMiddleware: AppwardenMiddlewareArraySchema.optional(),
-})
+export const BaseNextJsConfigSchema =
+  AppwardenMiddlewareConfigWithoutNonceSchema.extend({
+    cacheUrl: z.string(),
+    vercelApiToken: z.string().optional(),
+  })
 
 export const AppwardenConfigSchema = BaseNextJsConfigSchema
   // First check if the URL is recognized as either Edge Config or Upstash

@@ -50,7 +50,6 @@ describe("handleVercelRequest", () => {
       cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
       appwardenApiToken: "test-token",
       vercelApiToken: "vercel-token",
-      lockPageSlug: "/maintenance",
       memoryCache: mockMemoryCache,
       waitUntil: vi.fn(),
       debug: vi.fn(),

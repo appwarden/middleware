@@ -53,7 +53,7 @@ export type RequestContext = {
 
 export type CloudflareProviderContext = Omit<
   UseAppwardenInput,
-  "lockPageSlug" | "debug"
+  "website" | "debug" | "multidomainConfig"
 > & {
   request: Request
   requestUrl: URL
@@ -61,7 +61,7 @@ export type CloudflareProviderContext = Omit<
   provider: "cloudflare-cache"
   edgeCache: JSONStore<LockValueType>
   waitUntil: NextFetchEvent["waitUntil"]
-  lockPageSlug?: string // Optional - allows API-only locking without a website lock page
+  lockPageSlug?: string
   appwardenApiHostname?: string
   debug: (...msg: any[]) => void
 }
