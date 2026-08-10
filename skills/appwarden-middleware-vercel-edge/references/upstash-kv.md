@@ -21,7 +21,9 @@ export default createAppwardenMiddleware(
     {},
     {
       appwardenApiToken: process.env.APPWARDEN_API_TOKEN,
-      lockPageSlug: "/maintenance",
+      website: {
+        lockPageSlug: "/maintenance",
+      },
       cacheUrl: process.env.KV_URL,
       debug: true,
     },

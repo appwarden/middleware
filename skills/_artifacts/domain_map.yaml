@@ -56,12 +56,16 @@ skills:
         wrong_pattern: |
           createAppwardenMiddleware({
             appwardenApiToken: "sk_test_...",
-            lockPageSlug: "/maintenance",
+            website: {
+              lockPageSlug: "/maintenance",
+            },
           })
         correct_pattern: |
           createAppwardenMiddleware({
             appwardenApiToken: process.env.APPWARDEN_API_TOKEN!,
-            lockPageSlug: "/maintenance",
+            website: {
+              lockPageSlug: "/maintenance",
+            },
           })
         source: "src/schemas/helpers.ts AppwardenApiTokenSchema and README Configuration > appwardenApiToken"
         priority: "CRITICAL"
@@ -96,12 +100,16 @@ skills:
         wrong_pattern: |
           createAppwardenMiddleware({
             appwardenApiToken: env.APPWARDEN_API_TOKEN,
-            lockPageSlug: "/maintenance",
+            website: {
+              lockPageSlug: "/maintenance",
+            },
           })
         correct_pattern: |
           createAppwardenMiddleware({
             appwardenApiToken: env.APPWARDEN_API_TOKEN,
-            lockPageSlug: "/maintenance",
+            website: {
+              lockPageSlug: "/maintenance",
+            },
             debug: true,
           })
         source: "src/schemas/use-appwarden.ts BooleanSchema default false"
@@ -238,16 +246,16 @@ skills:
       - mistake: "Using nonce-based CSP on the Next.js Cloudflare adapter"
         mechanism: "The OpenNext adapter applies CSP headers only before origin; it does not rewrite HTML or inject nonces, so {{nonce}} placeholders will not work."
         wrong_pattern: |
-          contentSecurityPolicy: {
-            mode: "enforced",
-            directives: {
+          website: {
+            cspMode: "enforced",
+            cspDirectives: {
               "script-src": ["'self'", "{{nonce}}"],
             },
           }
         correct_pattern: |
-          contentSecurityPolicy: {
-            mode: "enforced",
-            directives: {
+          website: {
+            cspMode: "enforced",
+            cspDirectives: {
               "script-src": ["'self'"],
             },
           }
@@ -503,14 +511,14 @@ skills:
       - mistake: "Including {{nonce}} in CSP directives for Vercel"
         mechanism: "Vercel Edge Middleware cannot rewrite HTML to inject nonces, so the schema rejects {{nonce}} placeholders on Vercel."
         wrong_pattern: |
-          contentSecurityPolicy: {
-            mode: "enforced",
-            directives: { "script-src": ["'self'", "{{nonce}}"] },
+          website: {
+            cspMode: "enforced",
+            cspDirectives: { "script-src": ["'self'", "{{nonce}}"] },
           }
         correct_pattern: |
-          contentSecurityPolicy: {
-            mode: "enforced",
-            directives: { "default-src": ["'self'"] },
+          website: {
+            cspMode: "enforced",
+            cspDirectives: { "default-src": ["'self'"] },
           }
         source: "src/schemas/vercel.ts VercelCSPSchema, README Feature Compatibility, and vercel-middleware-integration.mdx"
         priority: "HIGH"
@@ -625,15 +633,15 @@ skills:
       - mistake: "Using {{nonce}} on a platform that does not support HTML rewriting"
         mechanism: "Nonce placeholders are only rewritten on Cloudflare Workers and Cloudflare framework adapters with HTML rewriting; Vercel and Next.js on Cloudflare (OpenNext) silently leave the placeholder in the header."
         wrong_pattern: |
-          contentSecurityPolicy: {
-            mode: "enforced",
-            directives: { "script-src": ["'self'", "{{nonce}}"] },
+          website: {
+            cspMode: "enforced",
+            cspDirectives: { "script-src": ["'self'", "{{nonce}}"] },
           }
         correct_pattern: |
           // Use headers-only CSP on Vercel / OpenNext
-          contentSecurityPolicy: {
-            mode: "enforced",
-            directives: { "default-src": ["'self'"] },
+          website: {
+            cspMode: "enforced",
+            cspDirectives: { "default-src": ["'self'"] },
           }
         source: "README Feature Compatibility and src/schemas/vercel.ts VercelCSPSchema"
         priority: "CRITICAL"
@@ -648,15 +656,15 @@ skills:
         mechanism: "Nonce-based CSP is Cloudflare-only because Vercel cannot rewrite HTML to inject nonces; Appwarden CSP on Vercel is headers-only."
         wrong_pattern: |
           // middleware.ts on Vercel
-          contentSecurityPolicy: {
-            mode: "enforced",
-            directives: { "script-src": ["'self'", "{{nonce}}"] },
+          website: {
+            cspMode: "enforced",
+            cspDirectives: { "script-src": ["'self'", "{{nonce}}"] },
           }
         correct_pattern: |
           // Use a headers-only CSP on Vercel, or move to Cloudflare for nonce support
-          contentSecurityPolicy: {
-            mode: "enforced",
-            directives: { "default-src": ["'self'"] },
+          website: {
+            cspMode: "enforced",
+            cspDirectives: { "default-src": ["'self'"] },
           }
         source: "managing-content-security-policy.mdx Warning and README Feature Compatibility"
         priority: "CRITICAL"
@@ -669,11 +677,11 @@ skills:
       - mistake: "Starting CSP in enforced mode before validating directives"
         mechanism: "Enforced mode blocks violations immediately; report-only lets developers collect violations and fix them before enforcement."
         wrong_pattern: |
-          contentSecurityPolicy: { mode: "enforced", directives: { ... } }
+          website: { cspMode: "enforced", cspDirectives: { ... } }
         correct_pattern: |
-          contentSecurityPolicy: { mode: "report-only", directives: { ... } }
+          website: { cspMode: "report-only", cspDirectives: { ... } }
           // Switch to enforced after no violations are reported
-        source: "README Configuration > contentSecurityPolicy and managing-content-security-policy.mdx Enablement"
+        source: "README Configuration > website.cspMode/cspDirectives and managing-content-security-policy.mdx Enablement"
         priority: "MEDIUM"
         status: "active"
       - mistake: "Passing CSP_DIRECTIVES as a malformed JSON string"
@@ -706,29 +714,29 @@ skills:
   - name: "Create and configure Appwarden lock page"
     slug: "create-and-configure-lock-page"
     domain: "security-configuration"
-    description: "Build a neutral maintenance-style lock page and connect it to Appwarden lockPageSlug."
+    description: "Build a neutral maintenance-style lock page and connect it to Appwarden website.lockPageSlug."
     type: "core"
     covers:
       [
         "lock page route and template",
         "neutral messaging and UX",
         "linking back to main homepage",
-        "lockPageSlug validation and defaults",
+        "website.lockPageSlug validation and defaults",
       ]
     tasks:
       [
         "Scaffold a lock page route in the target framework",
         "Use neutral “maintenance” messaging plus homepage link",
-        "Configure lockPageSlug to point at the new route",
+        "Configure website.lockPageSlug to point at the new route",
       ]
     failure_modes:
-      - mistake: "Configuring a lockPageSlug that does not exist as a route"
+      - mistake: "Configuring a website.lockPageSlug that does not exist as a route"
         mechanism: "If the lock page route is missing, quarantined visitors receive 404s instead of the maintenance page."
         wrong_pattern: |
-          lockPageSlug: "/lockdown" // no /lockdown route in the app
+          website: { lockPageSlug: "/lockdown" } // no /lockdown route in the app
         correct_pattern: |
-          lockPageSlug: "/maintenance" // with a real /maintenance page
-        source: "README Configuration > lockPageSlug"
+          website: { lockPageSlug: "/maintenance" } // with a real /maintenance page
+        source: "README Configuration > website.lockPageSlug"
         priority: "HIGH"
         status: "active"
       - mistake: "Using incident-specific or alarming messaging on the lock page"
@@ -741,12 +749,12 @@ skills:
         source: "intent-log.md Turn 17"
         priority: "MEDIUM"
         status: "active"
-      - mistake: "Providing an absolute URL or protocol-relative lockPageSlug"
-        mechanism: "The schema rejects slugs containing ://, starting with //, or containing backslashes; lockPageSlug must be a relative path."
+      - mistake: "Providing an absolute URL or protocol-relative website.lockPageSlug"
+        mechanism: "The schema rejects slugs containing ://, starting with //, or containing backslashes; website.lockPageSlug must be a relative path."
         wrong_pattern: |
-          lockPageSlug: "https://example.com/maintenance"
+          website: { lockPageSlug: "https://example.com/maintenance" }
         correct_pattern: |
-          lockPageSlug: "/maintenance"
+          website: { lockPageSlug: "/maintenance" }
         source: "src/schemas/helpers.ts ValidLockPageSlugSchema"
         priority: "MEDIUM"
         status: "active"

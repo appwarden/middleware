@@ -21,7 +21,7 @@
 | Wire Appwarden into Vercel Edge Middleware            | framework | Middleware integration                | Vercel Edge Middleware, matcher/runtime, Upstash KV and Edge Config cache provider selection, Edge Config endpoint/reads, Deployment Protection bypass | 10            |
 | Manage Appwarden API token in dashboard               | core      | Security & policy configuration       | Creating, rotating, and revoking API tokens (Settings > Security)                                                                                      | 4             |
 | Configure nonce-based CSP on Cloudflare               | core      | Security & policy configuration       | Nonce CSP config, domain configuration file, redeploy workflow                                                                                         | 6             |
-| Create and configure Appwarden lock page              | core      | Security & policy configuration       | Lock page route, UX, lockPageSlug validation                                                                                                           | 3             |
+| Create and configure Appwarden lock page              | core      | Security & policy configuration       | Lock page route, UX, website.lockPageSlug validation                                                                                                   | 3             |
 | Quarantine, unlock, and test a domain                 | lifecycle | Operations, testing & troubleshooting | Quarantine/test/unlock flows, heartbeat verification, Discord permissions, dashboard UI path                                                           | 5             |
 | Verify setup before production and debug issues       | lifecycle | Operations, testing & troubleshooting | Pre-launch checklist, domain verification, incident simulation, debug cleanup                                                                          | 5             |
 
@@ -107,11 +107,11 @@
 
 ### Create and configure Appwarden lock page (3 failure modes)
 
-| #   | Mistake                                                        | Priority | Source                 | Cross-skill? |
-| --- | -------------------------------------------------------------- | -------- | ---------------------- | ------------ |
-| 1   | Configuring a lockPageSlug that does not exist as a route      | HIGH     | README                 | —            |
-| 2   | Using incident-specific or alarming messaging on the lock page | MEDIUM   | intent-log.md          | —            |
-| 3   | Providing an absolute URL or protocol-relative lockPageSlug    | MEDIUM   | src/schemas/helpers.ts | —            |
+| #   | Mistake                                                             | Priority | Source                 | Cross-skill? |
+| --- | ------------------------------------------------------------------- | -------- | ---------------------- | ------------ |
+| 1   | Configuring a website.lockPageSlug that does not exist as a route   | HIGH     | README                 | —            |
+| 2   | Using incident-specific or alarming messaging on the lock page      | MEDIUM   | intent-log.md          | —            |
+| 3   | Providing an absolute URL or protocol-relative website.lockPageSlug | MEDIUM   | src/schemas/helpers.ts | —            |
 
 ### Quarantine, unlock, and test a domain (5 failure modes)
 
