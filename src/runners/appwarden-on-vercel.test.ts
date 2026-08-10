@@ -156,7 +156,8 @@ describe("createAppwardenMiddleware", () => {
       cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
       appwardenApiToken: "test-token",
       vercelApiToken: "vercel-token",
-      lockPageSlug: "/maintenance",
+      debug: false,
+      website: { lockPageSlug: "/maintenance" },
     }
 
     // Mock isCacheUrl.edgeConfig
@@ -292,7 +293,10 @@ describe("createAppwardenMiddleware", () => {
   })
 
   it("should call NextResponse.next() when no lock page slug is configured (pass through)", async () => {
-    const configWithoutLockPage = { ...mockConfig, lockPageSlug: "" }
+    const configWithoutLockPage = {
+      ...mockConfig,
+      website: { lockPageSlug: "" },
+    }
     vi.mocked(AppwardenConfigSchemaMock.parse).mockReturnValue(
       configWithoutLockPage,
     )
@@ -331,7 +335,10 @@ describe("createAppwardenMiddleware", () => {
   })
 
   it("should normalize lock page slug to start with /", async () => {
-    const configWithoutSlash = { ...mockConfig, lockPageSlug: "maintenance" }
+    const configWithoutSlash = {
+      ...mockConfig,
+      website: { lockPageSlug: "maintenance" },
+    }
     vi.mocked(AppwardenConfigSchemaMock.parse).mockReturnValue(
       configWithoutSlash,
     )
@@ -494,7 +501,8 @@ describe("createAppwardenMiddleware", () => {
     const upstashConfig = {
       cacheUrl: "rediss://:password@hostname.upstash.io:6379",
       appwardenApiToken: "test-token",
-      lockPageSlug: "/maintenance",
+      debug: false,
+      website: { lockPageSlug: "/maintenance" },
     }
 
     vi.mocked(AppwardenConfigSchemaMock.parse).mockReturnValue(upstashConfig)
@@ -562,7 +570,8 @@ describe("createAppwardenMiddleware", () => {
     const minimalConfig = {
       cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
       appwardenApiToken: "test-token",
-      lockPageSlug: "/maintenance",
+      debug: false,
+      website: { lockPageSlug: "/maintenance" },
     }
 
     vi.mocked(AppwardenConfigSchemaMock.parse).mockReturnValue(minimalConfig)
@@ -623,7 +632,7 @@ describe("createAppwardenMiddleware", () => {
     it("should set correct Location header for redirect", async () => {
       const configWithCustomPath = {
         ...mockConfig,
-        lockPageSlug: "/custom-lock",
+        website: { lockPageSlug: "/custom-lock" },
       }
       vi.mocked(AppwardenConfigSchemaMock.parse).mockReturnValue(
         configWithCustomPath,
@@ -675,7 +684,10 @@ describe("createAppwardenMiddleware", () => {
     })
 
     it("should not redirect when already on lock page (slug without leading slash)", async () => {
-      const configWithoutSlash = { ...mockConfig, lockPageSlug: "maintenance" }
+      const configWithoutSlash = {
+        ...mockConfig,
+        website: { lockPageSlug: "maintenance" },
+      }
       vi.mocked(AppwardenConfigSchemaMock.parse).mockReturnValue(
         configWithoutSlash,
       )
@@ -708,7 +720,11 @@ describe("createAppwardenMiddleware", () => {
       const directives = { defaultSrc: ["self"] }
       const configWithCSP = {
         ...mockConfig,
-        contentSecurityPolicy: { mode: "enforced", directives },
+        website: {
+          ...mockConfig.website,
+          cspMode: "enforced",
+          cspDirectives: directives,
+        },
       }
       vi.mocked(AppwardenConfigSchemaMock.parse).mockReturnValue(configWithCSP)
       mockMakeCSPHeader.mockReturnValue([
@@ -733,7 +749,11 @@ describe("createAppwardenMiddleware", () => {
       const directives = { defaultSrc: ["self"] }
       const configWithCSP = {
         ...mockConfig,
-        contentSecurityPolicy: { mode: "enforced", directives },
+        website: {
+          ...mockConfig.website,
+          cspMode: "enforced",
+          cspDirectives: directives,
+        },
       }
       vi.mocked(AppwardenConfigSchemaMock.parse).mockReturnValue(configWithCSP)
       vi.mocked(getLockValueMock).mockResolvedValue({
@@ -774,7 +794,11 @@ describe("createAppwardenMiddleware", () => {
       const directives = { defaultSrc: ["self"] }
       const configWithCSP = {
         ...mockConfig,
-        contentSecurityPolicy: { mode: "report-only", directives },
+        website: {
+          ...mockConfig.website,
+          cspMode: "report-only",
+          cspDirectives: directives,
+        },
       }
       vi.mocked(AppwardenConfigSchemaMock.parse).mockReturnValue(configWithCSP)
       mockMakeCSPHeader.mockReturnValue([
@@ -802,7 +826,10 @@ describe("createAppwardenMiddleware", () => {
     it("should not add CSP header when mode is 'disabled'", async () => {
       const configWithCSP = {
         ...mockConfig,
-        contentSecurityPolicy: { mode: "disabled" },
+        website: {
+          ...mockConfig.website,
+          cspMode: "disabled",
+        },
       }
       vi.mocked(AppwardenConfigSchemaMock.parse).mockReturnValue(configWithCSP)
 
@@ -820,8 +847,8 @@ describe("createAppwardenMiddleware", () => {
       ).toBeNull()
     })
 
-    it("should not add CSP header when no contentSecurityPolicy config is provided", async () => {
-      // mockConfig has no contentSecurityPolicy field
+    it("should not add CSP header when no website CSP config is provided", async () => {
+      // mockConfig has no website CSP configuration
       const middleware = createAppwardenMiddleware(mockConfig)
       const result = await middleware(
         new Request("https://example.com/page", {
@@ -837,7 +864,11 @@ describe("createAppwardenMiddleware", () => {
       const directives = { defaultSrc: ["self"] }
       const configWithCSP = {
         ...mockConfig,
-        contentSecurityPolicy: { mode: "enforced", directives },
+        website: {
+          ...mockConfig.website,
+          cspMode: "enforced",
+          cspDirectives: directives,
+        },
       }
       vi.mocked(AppwardenConfigSchemaMock.parse).mockReturnValue(configWithCSP)
 
@@ -859,7 +890,11 @@ describe("createAppwardenMiddleware", () => {
       }
       const configWithCSP = {
         ...mockConfig,
-        contentSecurityPolicy: { mode: "enforced", directives },
+        website: {
+          ...mockConfig.website,
+          cspMode: "enforced",
+          cspDirectives: directives,
+        },
       }
       vi.mocked(AppwardenConfigSchemaMock.parse).mockReturnValue(configWithCSP)
       mockMakeCSPHeader.mockReturnValue([

@@ -19,7 +19,7 @@ describe("tanstack-start-cloudflare bundle", () => {
     it("should return a middleware function when called with config function", () => {
       const configFn: TanStackStartConfigFn = () => ({
         debug: true,
-        lockPageSlug: "/maintenance",
+        website: { lockPageSlug: "/maintenance" },
         appwardenApiToken: "test-token",
       })
 
@@ -30,7 +30,7 @@ describe("tanstack-start-cloudflare bundle", () => {
     it("should create middleware that accepts args parameter", () => {
       const configFn: TanStackStartConfigFn = () => ({
         debug: true,
-        lockPageSlug: "/maintenance",
+        website: { lockPageSlug: "/maintenance" },
         appwardenApiToken: "test-token",
       })
 
@@ -44,7 +44,7 @@ describe("tanstack-start-cloudflare bundle", () => {
     it("should export TanStackStartConfigFn type", () => {
       // Type check - this will fail at compile time if the type is not exported
       const configFn: TanStackStartConfigFn = () => ({
-        lockPageSlug: "/maintenance",
+        website: { lockPageSlug: "/maintenance" },
         appwardenApiToken: "test-token",
       })
       expect(typeof configFn).toBe("function")
@@ -83,21 +83,21 @@ describe("tanstack-start-cloudflare bundle", () => {
     it("should export TanStackStartCloudflareConfig type", () => {
       // Type check - this will fail at compile time if the type is not exported
       const config: TanStackStartCloudflareConfig = {
-        lockPageSlug: "/maintenance",
+        website: { lockPageSlug: "/maintenance" },
         appwardenApiToken: "test-token",
         debug: true,
       }
-      expect(config.lockPageSlug).toBe("/maintenance")
+      expect(config.website?.lockPageSlug).toBe("/maintenance")
     })
 
     it("should export TanStackStartCloudflareConfigInput type", () => {
       // Type check - this will fail at compile time if the type is not exported
       const config: TanStackStartCloudflareConfigInput = {
-        lockPageSlug: "/maintenance",
+        website: { lockPageSlug: "/maintenance" },
         appwardenApiToken: "test-token",
         debug: "true", // Input type accepts string
       }
-      expect(config.lockPageSlug).toBe("/maintenance")
+      expect(config.website?.lockPageSlug).toBe("/maintenance")
     })
   })
 
@@ -110,13 +110,13 @@ describe("tanstack-start-cloudflare bundle", () => {
       const config = getAppwardenConfiguration(
         {},
         {
-          lockPageSlug: "/maintenance",
+          website: { lockPageSlug: "/maintenance" },
           appwardenApiToken: "test-token",
           debug: true,
         },
       )
 
-      expect(config.lockPageSlug).toBe("/maintenance")
+      expect(config.website?.lockPageSlug).toBe("/maintenance")
       expect(config.appwardenApiToken).toBe("test-token")
       expect(config.debug).toBe(true)
     })
@@ -124,7 +124,7 @@ describe("tanstack-start-cloudflare bundle", () => {
     it("should throw when required fields are missing", () => {
       expect(() =>
         getAppwardenConfiguration({}, {
-          lockPageSlug: "/maintenance",
+          website: { lockPageSlug: "/maintenance" },
         } as any),
       ).toThrow()
     })

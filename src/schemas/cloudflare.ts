@@ -1,14 +1,14 @@
 import { z } from "zod"
 import { RequestContext } from "../types"
 import {
-  lockPageSlugRefinement,
+  appwardenConfigRefinement,
   UseAppwardenInputSchema,
 } from "./use-appwarden"
 
 export const ConfigFnInputSchema = z
   .function()
   .args(z.custom<RequestContext>())
-  .returns(z.lazy(() => lockPageSlugRefinement(UseAppwardenInputSchema)))
+  .returns(z.lazy(() => appwardenConfigRefinement(UseAppwardenInputSchema)))
 
 export type CloudflareConfigType = z.infer<typeof UseAppwardenInputSchema>
 

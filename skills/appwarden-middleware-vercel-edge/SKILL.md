@@ -48,7 +48,9 @@ export default createAppwardenMiddleware(
     {},
     {
       appwardenApiToken: process.env.APPWARDEN_API_TOKEN,
-      lockPageSlug: "/maintenance",
+      website: {
+        lockPageSlug: "/maintenance",
+      },
       cacheUrl: process.env.KV_URL,
       debug: true,
     },
@@ -99,7 +101,9 @@ export default createAppwardenMiddleware(
     {},
     {
       appwardenApiToken: process.env.APPWARDEN_API_TOKEN,
-      lockPageSlug: "/maintenance",
+      website: {
+        lockPageSlug: "/maintenance",
+      },
       cacheUrl: process.env.EDGE_CONFIG,
       vercelApiToken: process.env.VERCEL_API_TOKEN,
       debug: true,
@@ -111,9 +115,10 @@ export default createAppwardenMiddleware(
 ### Headers-only CSP on Vercel
 
 ```typescript
-contentSecurityPolicy: {
-  mode: 'enforced',
-  directives: {
+website: {
+  lockPageSlug: "/maintenance",
+  cspMode: 'enforced',
+  cspDirectives: {
     'default-src': ["'self'"],
   },
 }
@@ -223,18 +228,18 @@ Vercel shows the full Edge Config read token only once after creation. If it is 
 Wrong:
 
 ```typescript
-contentSecurityPolicy: {
-  mode: 'enforced',
-  directives: { 'script-src': ["'self'", '{{nonce}}"] },
+website: {
+  cspMode: 'enforced',
+  cspDirectives: { 'script-src': [\"'self'\", '{{nonce}}'] },
 }
 ```
 
 Correct:
 
 ```typescript
-contentSecurityPolicy: {
-  mode: 'enforced',
-  directives: { 'default-src': ["'self'"] },
+website: {
+  cspMode: 'enforced',
+  cspDirectives: { 'default-src': ["'self'"] },
 }
 ```
 

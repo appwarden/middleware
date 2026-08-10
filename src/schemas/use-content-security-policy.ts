@@ -3,7 +3,10 @@ import {
   ContentSecurityPolicySchema,
   ContentSecurityPolicyType,
 } from "../types"
-import { AppwardenConfigErrorKey, AppwardenConfigErrorMessages } from "../utils"
+import {
+  AppwardenConfigErrorKey,
+  AppwardenConfigErrorMessages,
+} from "../utils/errors"
 
 export const CSPDirectivesSchema = z.union([
   z.string(),

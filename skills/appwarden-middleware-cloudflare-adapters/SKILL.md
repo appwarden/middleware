@@ -41,6 +41,29 @@ npm install @appwarden/middleware
 
 ## Core Patterns
 
+### New configuration format
+
+The Cloudflare adapters use the nested `middleware.options` configuration. Runtime call-site values can override or extend the generated `middleware.json`:
+
+```typescript
+getAppwardenConfiguration(appwardenConfig, {
+  appwardenApiToken: context.locals.runtime.env.APPWARDEN_API_TOKEN,
+  debug: true,
+  bypassPaths: ["/health", "/api/health"],
+  api: {
+    basePaths: ["/api"],
+  },
+  website: {
+    lockPageSlug: "/maintenance",
+  },
+})
+```
+
+- `website` contains the lock page and headers-only CSP for HTML traffic.
+- `api` contains API base paths and the locked response to return for API traffic.
+- `bypassPaths` are matched before `api` and pass through without a lock check.
+- Paths in `api.basePaths` and `bypassPaths` use segment-boundary matching: `/api` matches `/api/users` but not `/api-docs`.
+
 ### Astro Cloudflare adapter
 
 ```typescript

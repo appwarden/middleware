@@ -83,8 +83,10 @@ describe("appwardenOnCloudflare", () => {
     // Mock valid input function
     mockInputFn = vi.fn((_context) => ({
       debug: true,
-      lockPageSlug: "/maintenance",
       appwardenApiToken: "test-token",
+      website: {
+        lockPageSlug: "/maintenance",
+      },
       middleware: {
         before: [
           async (_ctx: any, next: any) => {
@@ -146,9 +148,14 @@ describe("appwardenOnCloudflare", () => {
 
   it("should include heartbeat config errors when config output is invalid", async () => {
     mockRequest = new Request("https://example.com/_appwarden/heartbeat")
-    mockInputFn.mockReturnValueOnce({
-      lockPageSlug: "/maintenance",
-      appwardenApiToken: "",
+    mockInputFn.mockImplementationOnce(() => {
+      throw new ZodError([
+        {
+          code: "custom",
+          path: ["appwardenApiToken"],
+          message: "Invalid token",
+        },
+      ])
     })
 
     const handler = appwardenOnCloudflare(mockInputFn) as any
@@ -190,9 +197,8 @@ describe("appwardenOnCloudflare", () => {
   })
 
   it("should return error logs when config evaluation throws a ZodError", async () => {
-    mockInputFn.mockReturnValueOnce({
-      lockPageSlug: "/maintenance",
-      appwardenApiToken: "",
+    mockInputFn.mockImplementationOnce(() => {
+      throw new ZodError([])
     })
 
     const handler = appwardenOnCloudflare(mockInputFn) as any
@@ -287,10 +293,10 @@ describe("appwardenOnCloudflare", () => {
       appwardenApiToken: "test-token",
       multidomainConfig: {
         "example.com": {
-          lockPageSlug: "/maintenance-example",
-          contentSecurityPolicy: {
-            mode: "enforced",
-            directives: {
+          website: {
+            lockPageSlug: "/maintenance-example",
+            cspMode: "enforced",
+            cspDirectives: {
               "default-src": ["'self'"],
             },
           },
@@ -315,10 +321,10 @@ describe("appwardenOnCloudflare", () => {
       appwardenApiToken: "test-token",
       multidomainConfig: {
         "example.com": {
-          lockPageSlug: "/maintenance-example",
-          contentSecurityPolicy: {
-            mode: "enforced",
-            directives: {
+          website: {
+            lockPageSlug: "/maintenance-example",
+            cspMode: "enforced",
+            cspDirectives: {
               "default-src": ["'self'"],
             },
           },
@@ -339,8 +345,10 @@ describe("appwardenOnCloudflare", () => {
       appwardenApiToken: "test-token",
       multidomainConfig: {
         "example.com": {
-          lockPageSlug: "/maintenance-example",
-          // No contentSecurityPolicy configured for this hostname
+          website: {
+            lockPageSlug: "/maintenance-example",
+            // No CSP configured for this hostname
+          },
         },
       },
     })
@@ -352,14 +360,14 @@ describe("appwardenOnCloudflare", () => {
     expect(usePipelineArgs).toHaveLength(2)
   })
 
-  it("should include CSP middleware when top-level contentSecurityPolicy is configured", async () => {
+  it("should include CSP middleware when top-level website CSP is configured", async () => {
     mockInputFn.mockReturnValueOnce({
       debug: true,
-      lockPageSlug: "/maintenance",
       appwardenApiToken: "test-token",
-      contentSecurityPolicy: {
-        mode: "report-only",
-        directives: {
+      website: {
+        lockPageSlug: "/maintenance",
+        cspMode: "report-only",
+        cspDirectives: {
           "default-src": ["'self'"],
         },
       },
@@ -372,16 +380,16 @@ describe("appwardenOnCloudflare", () => {
     expect(usePipelineArgs).toHaveLength(3)
   })
 
-  it("should prefer domain-specific CSP over top-level contentSecurityPolicy", async () => {
+  it("should prefer domain-specific CSP over top-level website CSP", async () => {
     const topLevelCsp = {
-      mode: "report-only",
-      directives: {
+      cspMode: "report-only",
+      cspDirectives: {
         "default-src": ["'self'"],
       },
     }
     const domainCsp = {
-      mode: "enforced",
-      directives: {
+      cspMode: "enforced",
+      cspDirectives: {
         "script-src": ["'self'"],
       },
     }
@@ -389,11 +397,16 @@ describe("appwardenOnCloudflare", () => {
     mockInputFn.mockReturnValueOnce({
       debug: true,
       appwardenApiToken: "test-token",
-      contentSecurityPolicy: topLevelCsp,
+      website: {
+        lockPageSlug: "/maintenance",
+        ...topLevelCsp,
+      },
       multidomainConfig: {
         "example.com": {
-          lockPageSlug: "/maintenance-example",
-          contentSecurityPolicy: domainCsp,
+          website: {
+            lockPageSlug: "/maintenance-example",
+            ...domainCsp,
+          },
         },
       },
     })
@@ -402,7 +415,10 @@ describe("appwardenOnCloudflare", () => {
     await handler(mockRequest, mockEnv, mockCtx)
 
     const { useContentSecurityPolicy } = await import("../middlewares")
-    expect(useContentSecurityPolicy).toHaveBeenCalledWith(domainCsp)
+    expect(useContentSecurityPolicy).toHaveBeenCalledWith({
+      mode: domainCsp.cspMode,
+      directives: domainCsp.cspDirectives,
+    })
   })
 
   describe("per-domain debug configuration", () => {
@@ -412,7 +428,9 @@ describe("appwardenOnCloudflare", () => {
         appwardenApiToken: "test-token",
         multidomainConfig: {
           "example.com": {
-            lockPageSlug: "/maintenance-example",
+            website: {
+              lockPageSlug: "/maintenance-example",
+            },
             debug: true, // Domain-specific debug is true
           },
         },
@@ -425,11 +443,13 @@ describe("appwardenOnCloudflare", () => {
       const { debug: debugMock } = await import("../utils")
       expect(debugMock).toHaveBeenCalledWith(true)
 
-      // Verify useAppwarden was called with config that has debug:true
+      // Verify useAppwarden received the domain-specific debug config
       const { useAppwarden } = await import("../middlewares")
       expect(useAppwarden).toHaveBeenCalledWith(
         expect.objectContaining({
-          debug: true, // Should use domain-specific debug value
+          multidomainConfig: expect.objectContaining({
+            "example.com": expect.objectContaining({ debug: true }),
+          }),
         }),
       )
     })
@@ -440,7 +460,9 @@ describe("appwardenOnCloudflare", () => {
         appwardenApiToken: "test-token",
         multidomainConfig: {
           "example.com": {
-            lockPageSlug: "/maintenance-example",
+            website: {
+              lockPageSlug: "/maintenance-example",
+            },
             debug: false, // Domain-specific debug is false
           },
         },
@@ -453,11 +475,13 @@ describe("appwardenOnCloudflare", () => {
       const { debug: debugMock } = await import("../utils")
       expect(debugMock).toHaveBeenCalledWith(false)
 
-      // Verify useAppwarden was called with config that has debug:false
+      // Verify useAppwarden received the domain-specific debug config
       const { useAppwarden } = await import("../middlewares")
       expect(useAppwarden).toHaveBeenCalledWith(
         expect.objectContaining({
-          debug: false, // Should use domain-specific debug value
+          multidomainConfig: expect.objectContaining({
+            "example.com": expect.objectContaining({ debug: false }),
+          }),
         }),
       )
     })
@@ -468,7 +492,9 @@ describe("appwardenOnCloudflare", () => {
         appwardenApiToken: "test-token",
         multidomainConfig: {
           "example.com": {
-            lockPageSlug: "/maintenance-example",
+            website: {
+              lockPageSlug: "/maintenance-example",
+            },
             // No debug configured for this domain
           },
         },
@@ -481,11 +507,15 @@ describe("appwardenOnCloudflare", () => {
       const { debug: debugMock } = await import("../utils")
       expect(debugMock).toHaveBeenCalledWith(true)
 
-      // Verify useAppwarden was called with config that has debug:true (global fallback)
+      // Verify useAppwarden received the domain config without debug
       const { useAppwarden } = await import("../middlewares")
       expect(useAppwarden).toHaveBeenCalledWith(
         expect.objectContaining({
-          debug: true, // Should fall back to global debug value
+          multidomainConfig: expect.objectContaining({
+            "example.com": expect.objectContaining({
+              website: { lockPageSlug: "/maintenance-example" },
+            }),
+          }),
         }),
       )
     })
@@ -499,7 +529,9 @@ describe("appwardenOnCloudflare", () => {
         appwardenApiToken: "test-token",
         multidomainConfig: {
           "example.com": {
-            lockPageSlug: "/maintenance-example",
+            website: {
+              lockPageSlug: "/maintenance-example",
+            },
             debug: false,
           },
         },
@@ -512,11 +544,13 @@ describe("appwardenOnCloudflare", () => {
       const { debug: debugMock } = await import("../utils")
       expect(debugMock).toHaveBeenCalledWith(true)
 
-      // Verify useAppwarden was called with config that has debug:true (global fallback)
+      // Verify useAppwarden still received the domain config
       const { useAppwarden } = await import("../middlewares")
       expect(useAppwarden).toHaveBeenCalledWith(
         expect.objectContaining({
-          debug: true, // Should fall back to global debug value
+          multidomainConfig: expect.objectContaining({
+            "example.com": expect.objectContaining({ debug: false }),
+          }),
         }),
       )
     })
@@ -525,7 +559,9 @@ describe("appwardenOnCloudflare", () => {
       mockInputFn.mockReturnValueOnce({
         // No debug at global level
         appwardenApiToken: "test-token",
-        lockPageSlug: "/maintenance",
+        website: {
+          lockPageSlug: "/maintenance",
+        },
       })
 
       const handler = appwardenOnCloudflare(mockInputFn) as any
@@ -535,22 +571,24 @@ describe("appwardenOnCloudflare", () => {
       const { debug: debugMock } = await import("../utils")
       expect(debugMock).toHaveBeenCalledWith(false)
 
-      // Verify useAppwarden was called with config that has debug:false (default)
+      // Verify useAppwarden was called with the website config
       const { useAppwarden } = await import("../middlewares")
       expect(useAppwarden).toHaveBeenCalledWith(
         expect.objectContaining({
-          debug: false, // Should default to false
+          website: { lockPageSlug: "/maintenance" },
         }),
       )
     })
 
-    it("should accept string 'true' for domain debug and transform to boolean", async () => {
+    it("should accept string 'true' for domain debug and pass it to debug", async () => {
       mockInputFn.mockReturnValueOnce({
         debug: false,
         appwardenApiToken: "test-token",
         multidomainConfig: {
           "example.com": {
-            lockPageSlug: "/maintenance-example",
+            website: {
+              lockPageSlug: "/maintenance-example",
+            },
             debug: "true", // String value
           },
         },
@@ -559,26 +597,30 @@ describe("appwardenOnCloudflare", () => {
       const handler = appwardenOnCloudflare(mockInputFn) as any
       await handler(mockRequest, mockEnv, mockCtx)
 
-      // Verify debug was called with true (transformed from string)
+      // Verify debug was called with the coerced boolean value
       const { debug: debugMock } = await import("../utils")
       expect(debugMock).toHaveBeenCalledWith(true)
 
-      // Verify useAppwarden was called with config that has debug:true (transformed)
+      // Verify useAppwarden received the coerced boolean domain debug value
       const { useAppwarden } = await import("../middlewares")
       expect(useAppwarden).toHaveBeenCalledWith(
         expect.objectContaining({
-          debug: true, // Should transform string "true" to boolean true
+          multidomainConfig: expect.objectContaining({
+            "example.com": expect.objectContaining({ debug: true }),
+          }),
         }),
       )
     })
 
-    it("should accept string 'false' for domain debug and transform to boolean", async () => {
+    it("should accept string 'false' for domain debug and pass it to debug", async () => {
       mockInputFn.mockReturnValueOnce({
         debug: true,
         appwardenApiToken: "test-token",
         multidomainConfig: {
           "example.com": {
-            lockPageSlug: "/maintenance-example",
+            website: {
+              lockPageSlug: "/maintenance-example",
+            },
             debug: "false", // String value
           },
         },
@@ -587,15 +629,17 @@ describe("appwardenOnCloudflare", () => {
       const handler = appwardenOnCloudflare(mockInputFn) as any
       await handler(mockRequest, mockEnv, mockCtx)
 
-      // Verify debug was called with false (transformed from string)
+      // Verify debug was called with the coerced boolean value
       const { debug: debugMock } = await import("../utils")
       expect(debugMock).toHaveBeenCalledWith(false)
 
-      // Verify useAppwarden was called with config that has debug:false (transformed)
+      // Verify useAppwarden received the coerced boolean domain debug value
       const { useAppwarden } = await import("../middlewares")
       expect(useAppwarden).toHaveBeenCalledWith(
         expect.objectContaining({
-          debug: false, // Should transform string "false" to boolean false
+          multidomainConfig: expect.objectContaining({
+            "example.com": expect.objectContaining({ debug: false }),
+          }),
         }),
       )
     })

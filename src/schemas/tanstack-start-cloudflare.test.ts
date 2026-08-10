@@ -4,10 +4,16 @@ import { TanStackStartCloudflareConfigSchema } from "./tanstack-start-cloudflare
 describe("TanStackStartCloudflareConfigSchema", () => {
   it("should validate a valid config with all fields", () => {
     const validConfig = {
-      lockPageSlug: "/maintenance",
       appwardenApiToken: "token123",
       appwardenApiHostname: "https://api.appwarden.io",
       debug: true,
+      website: {
+        lockPageSlug: "/maintenance",
+        cspMode: "enforced" as const,
+        cspDirectives: {
+          "default-src": ["'self'"],
+        },
+      },
     }
 
     const result = TanStackStartCloudflareConfigSchema.safeParse(validConfig)
@@ -19,24 +25,28 @@ describe("TanStackStartCloudflareConfigSchema", () => {
 
   it("should validate a minimal valid config", () => {
     const minimalConfig = {
-      lockPageSlug: "/maintenance",
       appwardenApiToken: "token123",
+      website: {
+        lockPageSlug: "/maintenance",
+      },
     }
 
     const result = TanStackStartCloudflareConfigSchema.safeParse(minimalConfig)
     expect(result.success).toBe(true)
     if (result.success) {
       expect(result.data.appwardenApiToken).toBe("token123")
-      expect(result.data.lockPageSlug).toBe("/maintenance")
+      expect(result.data.website?.lockPageSlug).toBe("/maintenance")
       expect(result.data.debug).toBe(false) // Default value
     }
   })
 
   it("should accept string debug value and transform to boolean", () => {
     const config = {
-      lockPageSlug: "/maintenance",
       appwardenApiToken: "token123",
       debug: "true",
+      website: {
+        lockPageSlug: "/maintenance",
+      },
     }
 
     const result = TanStackStartCloudflareConfigSchema.safeParse(config)
@@ -46,21 +56,33 @@ describe("TanStackStartCloudflareConfigSchema", () => {
     }
   })
 
-  it("should reject missing lockPageSlug", () => {
-    const invalidConfig = {
+  it("should validate a config with api instead of website", () => {
+    const config = {
       appwardenApiToken: "token123",
+      api: {
+        basePaths: ["/api"],
+        response: {
+          status: 503,
+          body: '{"error":"Service unavailable"}',
+        },
+      },
     }
 
-    const result = TanStackStartCloudflareConfigSchema.safeParse(invalidConfig)
-    expect(result.success).toBe(false)
+    const result = TanStackStartCloudflareConfigSchema.safeParse(config)
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.api?.basePaths).toEqual(["/api"])
+    }
   })
 
   it.each([["//evil.com"], ["https://evil.com"], ["http://evil.com"]])(
-    "should reject invalid lockPageSlug: %s",
-    (lockPageSlug) => {
+    "should reject invalid website.lockPageSlug: %s",
+    (lockPageSlug: string) => {
       const invalidConfig = {
-        lockPageSlug,
         appwardenApiToken: "token123",
+        website: {
+          lockPageSlug,
+        },
       }
 
       const result =
@@ -77,7 +99,9 @@ describe("TanStackStartCloudflareConfigSchema", () => {
 
   it("should reject missing appwardenApiToken", () => {
     const invalidConfig = {
-      lockPageSlug: "/maintenance",
+      website: {
+        lockPageSlug: "/maintenance",
+      },
     }
 
     const result = TanStackStartCloudflareConfigSchema.safeParse(invalidConfig)
@@ -86,8 +110,10 @@ describe("TanStackStartCloudflareConfigSchema", () => {
 
   it("should reject empty appwardenApiToken", () => {
     const invalidConfig = {
-      lockPageSlug: "/maintenance",
       appwardenApiToken: "",
+      website: {
+        lockPageSlug: "/maintenance",
+      },
     }
 
     const result = TanStackStartCloudflareConfigSchema.safeParse(invalidConfig)
@@ -107,27 +133,36 @@ describe("TanStackStartCloudflareConfigSchema", () => {
       "https://evil.com",
       "`appwardenApiHostname` must be https://api.appwarden.io or https://staging-api.appwarden.io.",
     ],
-  ])("should reject invalid appwardenApiHostname: %s", (hostname, message) => {
-    const invalidConfig = {
-      lockPageSlug: "/maintenance",
-      appwardenApiToken: "token123",
-      appwardenApiHostname: hostname,
-    }
+  ])(
+    "should reject invalid appwardenApiHostname: %s",
+    (hostname: string, message: string) => {
+      const invalidConfig = {
+        appwardenApiToken: "token123",
+        appwardenApiHostname: hostname,
+        website: {
+          lockPageSlug: "/maintenance",
+        },
+      }
 
-    const result = TanStackStartCloudflareConfigSchema.safeParse(invalidConfig)
-    expect(result.success).toBe(false)
-    if (!result.success) {
-      const issue = result.error.issues.find((entry) =>
-        entry.path.includes("appwardenApiHostname"),
-      )
-      expect(issue?.message).toContain(message)
-    }
-  })
+      const result =
+        TanStackStartCloudflareConfigSchema.safeParse(invalidConfig)
+      expect(result.success).toBe(false)
+      if (!result.success) {
+        const issue = result.error.issues.find((entry) =>
+          entry.path.includes("appwardenApiHostname"),
+        )
+        expect(issue?.message).toContain(message)
+      }
+    },
+  )
 
   it("should reject invalid debug value", () => {
     const invalidConfig = {
       appwardenApiToken: "token123",
       debug: "not-a-boolean",
+      website: {
+        lockPageSlug: "/maintenance",
+      },
     }
 
     expect(() =>

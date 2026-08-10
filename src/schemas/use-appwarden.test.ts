@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import {
-  lockPageSlugRefinement,
+  appwardenConfigRefinement,
   UseAppwardenInputSchema,
 } from "./use-appwarden"
 
@@ -11,10 +11,10 @@ describe("UseAppwardenInputSchema", () => {
   it("should validate a valid input", () => {
     const validInput = {
       debug: true,
-      lockPageSlug: "/maintenance",
-      contentSecurityPolicy: {
-        mode: "report-only",
-        directives: {
+      website: {
+        lockPageSlug: "/maintenance",
+        cspMode: "report-only",
+        cspDirectives: {
           "default-src": ["'self'"],
         },
       },
@@ -31,7 +31,7 @@ describe("UseAppwardenInputSchema", () => {
   it("should validate a valid input with string debug value", () => {
     const validInput = {
       debug: "true",
-      lockPageSlug: "/maintenance",
+      website: { lockPageSlug: "/maintenance" },
       appwardenApiToken: "token123",
     }
 
@@ -39,14 +39,14 @@ describe("UseAppwardenInputSchema", () => {
     expect(result.success).toBe(true)
     if (result.success) {
       expect(result.data.debug).toBe(true) // Should be transformed to boolean
-      expect(result.data.lockPageSlug).toBe("/maintenance")
+      expect(result.data.website?.lockPageSlug).toBe("/maintenance")
       expect(result.data.appwardenApiToken).toBe("token123")
     }
   })
 
   it("should retain a valid appwardenApiHostname", () => {
     const validInput = {
-      lockPageSlug: "/maintenance",
+      website: { lockPageSlug: "/maintenance" },
       appwardenApiToken: "token123",
       appwardenApiHostname: "https://api.appwarden.io",
     }
@@ -62,7 +62,7 @@ describe("UseAppwardenInputSchema", () => {
 
   it("should accept staging api hostname", () => {
     const validInput = {
-      lockPageSlug: "/maintenance",
+      website: { lockPageSlug: "/maintenance" },
       appwardenApiToken: "token123",
       appwardenApiHostname: "https://staging-api.appwarden.io",
     }
@@ -78,7 +78,7 @@ describe("UseAppwardenInputSchema", () => {
 
   it("should reject an untrusted appwardenApiHostname", () => {
     const invalidInput = {
-      lockPageSlug: "/maintenance",
+      website: { lockPageSlug: "/maintenance" },
       appwardenApiToken: "token123",
       appwardenApiHostname: "https://api.custom.appwarden.io",
     }
@@ -89,7 +89,7 @@ describe("UseAppwardenInputSchema", () => {
 
   it("should default debug to false when not provided", () => {
     const validInput = {
-      lockPageSlug: "/maintenance",
+      website: { lockPageSlug: "/maintenance" },
       appwardenApiToken: "token123",
     }
 
@@ -97,29 +97,29 @@ describe("UseAppwardenInputSchema", () => {
     expect(result.success).toBe(true)
     if (result.success) {
       expect(result.data.debug).toBe(false)
-      expect(result.data.lockPageSlug).toBe("/maintenance")
+      expect(result.data.website?.lockPageSlug).toBe("/maintenance")
       expect(result.data.appwardenApiToken).toBe("token123")
     }
   })
 
-  it("should allow lockPageSlug to be optional in base schema", () => {
+  it("should allow website to be optional in base schema", () => {
     const validInput = {
       debug: true,
       appwardenApiToken: "token123",
     }
 
-    // Base schema allows optional lockPageSlug
+    // Base schema allows optional website
     const result = UseAppwardenInputSchema.safeParse(validInput)
     expect(result.success).toBe(true)
   })
 
-  it("should accept multidomainConfig instead of lockPageSlug", () => {
+  it("should accept multidomainConfig instead of website", () => {
     const validInput = {
       debug: true,
       appwardenApiToken: "token123",
       multidomainConfig: {
-        "example.com": { lockPageSlug: "/maintenance-example" },
-        "other.com": { lockPageSlug: "/maintenance-other" },
+        "example.com": { website: { lockPageSlug: "/maintenance-example" } },
+        "other.com": { website: { lockPageSlug: "/maintenance-other" } },
       },
     }
 
@@ -132,23 +132,24 @@ describe("UseAppwardenInputSchema", () => {
     }
   })
 
-  it("should accept a top-level contentSecurityPolicy configuration", () => {
+  it("should accept a top-level website CSP configuration", () => {
     const validInput = {
-      lockPageSlug: "/maintenance",
-      appwardenApiToken: "token123",
-      contentSecurityPolicy: {
-        mode: "report-only",
-        directives: {
+      website: {
+        lockPageSlug: "/maintenance",
+        cspMode: "report-only",
+        cspDirectives: {
           "default-src": ["'self'"],
         },
       },
+      appwardenApiToken: "token123",
     }
 
     const result = UseAppwardenInputSchema.safeParse(validInput)
     expect(result.success).toBe(true)
     if (result.success) {
-      expect(result.data.contentSecurityPolicy).toEqual(
-        validInput.contentSecurityPolicy,
+      expect(result.data.website?.cspMode).toBe("report-only")
+      expect(result.data.website?.cspDirectives).toEqual(
+        validInput.website.cspDirectives,
       )
     }
   })
@@ -159,19 +160,19 @@ describe("UseAppwardenInputSchema", () => {
       appwardenApiToken: "token123",
     }
 
-    const RefinedSchema = lockPageSlugRefinement(UseAppwardenInputSchema)
+    const RefinedSchema = appwardenConfigRefinement(UseAppwardenInputSchema)
     const result = RefinedSchema.safeParse(invalidInput)
     expect(result.success).toBe(false)
   })
 
-  it("should pass refinement when lockPageSlug is provided", () => {
+  it("should pass refinement when website is provided", () => {
     const validInput = {
       debug: true,
-      lockPageSlug: "/maintenance",
+      website: { lockPageSlug: "/maintenance" },
       appwardenApiToken: "token123",
     }
 
-    const RefinedSchema = lockPageSlugRefinement(UseAppwardenInputSchema)
+    const RefinedSchema = appwardenConfigRefinement(UseAppwardenInputSchema)
     const result = RefinedSchema.safeParse(validInput)
     expect(result.success).toBe(true)
   })
@@ -181,11 +182,11 @@ describe("UseAppwardenInputSchema", () => {
       debug: true,
       appwardenApiToken: "token123",
       multidomainConfig: {
-        "example.com": { lockPageSlug: "/maintenance" },
+        "example.com": { website: { lockPageSlug: "/maintenance" } },
       },
     }
 
-    const RefinedSchema = lockPageSlugRefinement(UseAppwardenInputSchema)
+    const RefinedSchema = appwardenConfigRefinement(UseAppwardenInputSchema)
     const result = RefinedSchema.safeParse(validInput)
     expect(result.success).toBe(true)
   })
@@ -193,7 +194,7 @@ describe("UseAppwardenInputSchema", () => {
   it("should require appwardenApiToken", () => {
     const invalidInput = {
       debug: true,
-      lockPageSlug: "/maintenance",
+      website: { lockPageSlug: "/maintenance" },
     }
 
     const result = UseAppwardenInputSchema.safeParse(invalidInput)
@@ -203,7 +204,7 @@ describe("UseAppwardenInputSchema", () => {
   it("should reject empty appwardenApiToken", () => {
     const invalidInput = {
       debug: true,
-      lockPageSlug: "/maintenance",
+      website: { lockPageSlug: "/maintenance" },
       appwardenApiToken: "",
     }
 
@@ -226,7 +227,7 @@ describe("UseAppwardenInputSchema", () => {
     ],
   ])("should reject invalid appwardenApiHostname: %s", (hostname, message) => {
     const invalidInput = {
-      lockPageSlug: "/maintenance",
+      website: { lockPageSlug: "/maintenance" },
       appwardenApiToken: "token123",
       appwardenApiHostname: hostname,
     }
@@ -243,10 +244,10 @@ describe("UseAppwardenInputSchema", () => {
 
   it("should reject invalid lockPageSlug values", () => {
     const invalidInputs = [
-      { lockPageSlug: "//evil.com" },
-      { lockPageSlug: "https://evil.com" },
-      { lockPageSlug: "http://evil.com" },
-      { lockPageSlug: "ftp://evil.com" },
+      { website: { lockPageSlug: "//evil.com" } },
+      { website: { lockPageSlug: "https://evil.com" } },
+      { website: { lockPageSlug: "http://evil.com" } },
+      { website: { lockPageSlug: "ftp://evil.com" } },
     ]
 
     for (const invalid of invalidInputs) {
@@ -271,7 +272,7 @@ describe("UseAppwardenInputSchema", () => {
       debug: true,
       appwardenApiToken: "token123",
       multidomainConfig: {
-        "example.com": { lockPageSlug: "//evil.com" },
+        "example.com": { website: { lockPageSlug: "//evil.com" } },
       },
     }
 

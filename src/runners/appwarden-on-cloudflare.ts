@@ -3,9 +3,9 @@ import { HEARTBEAT_SERVICES } from "../constants"
 import { useAppwarden, useContentSecurityPolicy } from "../middlewares"
 import { useFetchOrigin } from "../middlewares/use-fetch-origin"
 import {
+  appwardenConfigRefinement,
   CloudflareConfigFnType,
   ConfigFnInputSchema,
-  lockPageSlugRefinement,
   UseAppwardenInputSchema,
 } from "../schemas"
 import { Bindings, MiddlewareContext } from "../types"
@@ -14,14 +14,13 @@ import {
   debug,
   handleHeartbeatRequest,
   isHeartbeatRequest,
-  resolveMiddlewareConfig,
   sanitizeConfigErrors,
   usePipeline,
 } from "../utils"
 import { insertErrorLogs } from "../utils/cloudflare"
 import { parseMergedConfig } from "../utils/get-appwarden-configuration"
 
-const RefinedUseAppwardenInputSchema = lockPageSlugRefinement(
+const RefinedUseAppwardenInputSchema = appwardenConfigRefinement(
   UseAppwardenInputSchema,
 )
 
@@ -114,11 +113,12 @@ export const appwardenOnCloudflare =
       throw error
     }
 
-    // Resolve the effective middleware configuration for this hostname.
-    const routeConfig = resolveMiddlewareConfig(input, requestUrl.hostname)
-
-    // Resolve debug value per-domain from the route config, then fall back to top-level debug.
-    const domainDebug = routeConfig?.debug ?? input.debug ?? false
+    // Resolve debug value per-domain: check multidomainConfig[hostname].debug first,
+    // then fall back to top-level debug
+    const domainDebug =
+      input.multidomainConfig?.[requestUrl.hostname]?.debug ??
+      input.debug ??
+      false
 
     // Create context with debug function initialized from resolved debug value
     const context: MiddlewareContext = {
@@ -131,22 +131,20 @@ export const appwardenOnCloudflare =
     }
 
     try {
-      // Pass input with resolved debug value to useAppwarden
-      const pipeline = [
-        useAppwarden({ ...input, debug: domainDebug }),
-        useFetchOrigin(),
-      ]
+      // Pass input directly to useAppwarden; it resolves per-domain options internally.
+      const pipeline = [useAppwarden(input), useFetchOrigin()]
 
-      // Add CSP middleware after origin using per-domain config first,
-      // then fall back to the top-level configuration.
+      // Add CSP middleware after origin using per-domain website config first,
+      // then fall back to the top-level website configuration.
+      const domainWebsite =
+        input.multidomainConfig?.[requestUrl.hostname]?.website ?? input.website
       const cspConfig =
-        routeConfig?.website?.cspMode && routeConfig?.website?.cspDirectives
+        domainWebsite?.cspMode && domainWebsite.cspMode !== "disabled"
           ? {
-              mode: routeConfig.website.cspMode,
-              directives: routeConfig.website.cspDirectives,
+              mode: domainWebsite.cspMode,
+              directives: domainWebsite.cspDirectives,
             }
-          : (input.multidomainConfig?.[requestUrl.hostname]
-              ?.contentSecurityPolicy ?? input.contentSecurityPolicy)
+          : undefined
 
       if (cspConfig) {
         pipeline.push(useContentSecurityPolicy(cspConfig))

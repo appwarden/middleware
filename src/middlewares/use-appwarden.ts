@@ -1,113 +1,110 @@
 import { checkLockStatus } from "../core"
-import { CloudflareConfigType } from "../schemas"
+import {
+  CloudflareConfigType,
+  DEFAULT_API_LOCK_BODY,
+  DEFAULT_API_LOCK_STATUS,
+} from "../schemas"
 import { Middleware } from "../types"
 import {
-  buildApiLockResponseHeaders,
   buildLockPageUrl,
   createRedirect,
   debug,
   isHTMLRequest,
   isOnLockPage,
-  pathMatchesAnyPattern,
   printMessage,
-  resolveMiddlewareConfig,
 } from "../utils"
+import { resolveMiddlewareAction } from "../utils/route-matching"
 
 export const useAppwarden: (input: CloudflareConfigType) => Middleware =
   (input) => async (context, next) => {
-    const { request } = context
+    const { request, hostname } = context
     let shouldCallNext = true
 
     try {
-      const requestUrl = new URL(request.url)
-
       // Skip OPTIONS requests (CORS preflight) to avoid delaying them with lock checks
-      // OPTIONS requests should be handled quickly and don't need lock protection
       if (request.method.toUpperCase() === "OPTIONS") {
         return
       }
 
-      // Resolve the effective middleware configuration for this hostname.
-      // When the new route-based `middleware` array is provided, it is used.
-      // Otherwise, the legacy lockPageSlug/multidomainConfig shape is synthesized.
-      const routeConfig = resolveMiddlewareConfig(input, requestUrl.hostname)
-      if (!routeConfig) {
-        return
-      }
-
-      const domainDebug = routeConfig.debug ?? input.debug ?? false
-      const debugFn = debug(domainDebug)
-
-      // Bypass paths are always allowed through, regardless of lock status.
-      if (
-        routeConfig.bypassPaths &&
-        routeConfig.bypassPaths.length > 0 &&
-        pathMatchesAnyPattern(requestUrl.pathname, routeConfig.bypassPaths)
-      ) {
-        debugFn("Bypass path matched - passing through")
-        return
-      }
-
-      const lockPageSlug = routeConfig.website?.lockPageSlug
-      const apiBasePaths = routeConfig.api?.basePaths ?? []
-      const hasApiBasePaths = apiBasePaths.length > 0
-
-      // Nothing to do if neither a website lock page nor API base paths are configured.
-      if (!lockPageSlug && !hasApiBasePaths) {
-        return
-      }
-
-      // Skip lock check for non-HTML requests when there are no API base paths.
-      // This preserves the legacy behavior of not touching API/static traffic.
-      if (!isHTMLRequest(request) && !hasApiBasePaths) {
-        return
-      }
-
-      // Skip if already on the website lock page to prevent infinite redirect loop.
-      if (lockPageSlug && isOnLockPage(lockPageSlug, request.url)) {
-        return
-      }
-
-      // Check lock status BEFORE fetching the origin
-      // This prevents the streaming SSR flash issue on React Router/TanStack Start frameworks
-      const result = await checkLockStatus({
-        request,
+      const domainOverride = input.multidomainConfig?.[hostname]
+      const resolvedOptions = {
+        debug: input.debug,
+        bypassPaths: input.bypassPaths,
+        website: input.website,
+        api: input.api,
         appwardenApiToken: input.appwardenApiToken,
         appwardenApiHostname: input.appwardenApiHostname,
-        debug: domainDebug,
-        lockPageSlug,
-        waitUntil: (fn) => context.waitUntil(fn),
-      })
+        ...domainOverride,
+      }
+      const debugFn = debug(resolvedOptions.debug)
 
-      if (!result.isLocked) {
+      const action = resolveMiddlewareAction(request, resolvedOptions)
+
+      if (action === null) {
         return
       }
 
-      // Locked: API base paths return the configured API response.
-      if (
-        hasApiBasePaths &&
-        pathMatchesAnyPattern(requestUrl.pathname, apiBasePaths)
-      ) {
-        const responseConfig = routeConfig.api?.response
-        debugFn("API base path matched - returning API lock response")
-        context.response = new Response(responseConfig?.body ?? "", {
-          status: responseConfig?.status ?? 503,
-          headers: buildApiLockResponseHeaders(responseConfig?.headers),
+      if (action === "bypass") {
+        debugFn(
+          `Bypassing path: ${new URL(request.url).pathname} due to bypassPaths match`,
+        )
+        return
+      }
+
+      if (action === "api") {
+        const result = await checkLockStatus({
+          request,
+          appwardenApiToken: resolvedOptions.appwardenApiToken,
+          appwardenApiHostname: resolvedOptions.appwardenApiHostname,
+          debug: resolvedOptions.debug,
+          lockPageSlug: resolvedOptions.website?.lockPageSlug,
+          waitUntil: (fn) => context.waitUntil(fn),
         })
-        shouldCallNext = false
+
+        if (result.isLocked) {
+          const responseConfig = resolvedOptions.api?.response ?? {
+            status: DEFAULT_API_LOCK_STATUS,
+            body: DEFAULT_API_LOCK_BODY,
+          }
+          const headers = new Headers()
+          responseConfig.headers?.forEach(({ name, value }) => {
+            headers.set(name, value)
+          })
+          context.response = new Response(responseConfig.body, {
+            status: responseConfig.status,
+            headers,
+          })
+          shouldCallNext = false
+        }
         return
       }
 
-      // Locked: non-HTML requests are not redirected to the lock page.
-      if (!isHTMLRequest(request)) {
-        return
-      }
+      if (action === "website") {
+        if (!isHTMLRequest(request)) {
+          return
+        }
 
-      // Locked: redirect to the website lock page
-      if (lockPageSlug) {
-        const lockPageUrl = buildLockPageUrl(lockPageSlug, request.url)
-        context.response = createRedirect(lockPageUrl)
-        shouldCallNext = false
+        const lockPageSlug =
+          resolvedOptions.website?.lockPageSlug ?? "/maintenance"
+
+        if (isOnLockPage(lockPageSlug, request.url)) {
+          return
+        }
+
+        const result = await checkLockStatus({
+          request,
+          appwardenApiToken: resolvedOptions.appwardenApiToken,
+          appwardenApiHostname: resolvedOptions.appwardenApiHostname,
+          debug: resolvedOptions.debug,
+          lockPageSlug,
+          waitUntil: (fn) => context.waitUntil(fn),
+        })
+
+        if (result.isLocked) {
+          const lockPageUrl = buildLockPageUrl(lockPageSlug, request.url)
+          context.response = createRedirect(lockPageUrl)
+          shouldCallNext = false
+        }
       }
     } catch (e) {
       const message =

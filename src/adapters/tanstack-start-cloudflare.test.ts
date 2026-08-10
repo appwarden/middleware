@@ -122,7 +122,9 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
 
   it("should call next() when site is not locked", async () => {
     const middleware = createAppwardenMiddleware(() => ({
-      lockPageSlug: "/maintenance",
+      website: {
+        lockPageSlug: "/maintenance",
+      },
       appwardenApiToken: "test-token",
     }))
 
@@ -141,7 +143,9 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
       .mockImplementation(() => {})
 
     const middleware = createAppwardenMiddleware(() => ({
-      lockPageSlug: "/maintenance",
+      website: {
+        lockPageSlug: "/maintenance",
+      },
       appwardenApiToken: "", // Invalid - empty token
     }))
 
@@ -166,7 +170,9 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
     })
 
     const middleware = createAppwardenMiddleware(() => ({
-      lockPageSlug: "/maintenance",
+      website: {
+        lockPageSlug: "/maintenance",
+      },
       appwardenApiToken: "test-token",
     }))
 
@@ -186,7 +192,9 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
     })
 
     const middleware = createAppwardenMiddleware(() => ({
-      lockPageSlug: "/maintenance",
+      website: {
+        lockPageSlug: "/maintenance",
+      },
       appwardenApiToken: "",
     }))
 
@@ -270,7 +278,9 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
     })
 
     const middleware = createAppwardenMiddleware(() => ({
-      lockPageSlug: "/maintenance",
+      website: {
+        lockPageSlug: "/maintenance",
+      },
       appwardenApiToken: "",
     }))
 
@@ -296,7 +306,9 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
     })
 
     const configFn = vi.fn(() => ({
-      lockPageSlug: "/maintenance",
+      website: {
+        lockPageSlug: "/maintenance",
+      },
       appwardenApiToken: "test-token",
     }))
     const middleware = createAppwardenMiddleware(configFn)
@@ -319,7 +331,9 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
     })
 
     const middleware = createAppwardenMiddleware(() => ({
-      lockPageSlug: "/maintenance",
+      website: {
+        lockPageSlug: "/maintenance",
+      },
       appwardenApiToken: "test-token",
     }))
 
@@ -344,14 +358,14 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
     })
 
     const middleware = createAppwardenMiddleware(() => ({
-      lockPageSlug: "/maintenance",
-      appwardenApiToken: "test-token",
-      contentSecurityPolicy: {
-        mode: "enforced",
-        directives: {
+      website: {
+        lockPageSlug: "/maintenance",
+        cspMode: "enforced",
+        cspDirectives: {
           "script-src": ["'self'", "{{nonce}}"],
         },
       },
+      appwardenApiToken: "test-token",
     }))
 
     try {
@@ -377,7 +391,9 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
     })
 
     const middleware = createAppwardenMiddleware(() => ({
-      lockPageSlug: "maintenance", // No leading slash
+      website: {
+        lockPageSlug: "maintenance", // No leading slash
+      },
       appwardenApiToken: "test-token",
     }))
 
@@ -398,7 +414,9 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
     })
 
     const middleware = createAppwardenMiddleware(() => ({
-      lockPageSlug: "/maintenance",
+      website: {
+        lockPageSlug: "/maintenance",
+      },
       appwardenApiToken: "test-token",
     }))
 
@@ -410,7 +428,9 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
 
   it("should pass correct config to checkLockStatus", async () => {
     const middleware = createAppwardenMiddleware(() => ({
-      lockPageSlug: "/maintenance",
+      website: {
+        lockPageSlug: "/maintenance",
+      },
       appwardenApiToken: "test-token",
       appwardenApiHostname: "https://api.appwarden.io",
       debug: true,
@@ -432,7 +452,9 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
     const { waitUntil } = await import("cloudflare:workers")
 
     const middleware = createAppwardenMiddleware(() => ({
-      lockPageSlug: "/maintenance",
+      website: {
+        lockPageSlug: "/maintenance",
+      },
       appwardenApiToken: "test-token",
     }))
 
@@ -447,7 +469,9 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
 
   it("should receive config from configFn without parameters", async () => {
     const configFn = vi.fn().mockReturnValue({
-      lockPageSlug: "/maintenance",
+      website: {
+        lockPageSlug: "/maintenance",
+      },
       appwardenApiToken: "test-token",
     })
 
@@ -461,7 +485,9 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
     vi.mocked(checkLockStatus).mockRejectedValue(new Error("API error"))
 
     const middleware = createAppwardenMiddleware(() => ({
-      lockPageSlug: "/maintenance",
+      website: {
+        lockPageSlug: "/maintenance",
+      },
       appwardenApiToken: "test-token",
     }))
 
@@ -495,14 +521,14 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
     )
 
     const middleware = createAppwardenMiddleware(() => ({
-      lockPageSlug: "/maintenance",
-      appwardenApiToken: "test-token",
-      contentSecurityPolicy: {
-        mode: "enforced",
-        directives: {
+      website: {
+        lockPageSlug: "/maintenance",
+        cspMode: "enforced",
+        cspDirectives: {
           "script-src": ["'self'", "{{nonce}}"],
         },
       },
+      appwardenApiToken: "test-token",
     }))
 
     const result = await middleware(mockArgs)
@@ -524,14 +550,14 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
     )
 
     const middleware = createAppwardenMiddleware(() => ({
-      lockPageSlug: "/maintenance",
-      appwardenApiToken: "test-token",
-      contentSecurityPolicy: {
-        mode: "enforced",
-        directives: {
+      website: {
+        lockPageSlug: "/maintenance",
+        cspMode: "enforced",
+        cspDirectives: {
           "script-src": ["'self'", "{{nonce}}"],
         },
       },
+      appwardenApiToken: "test-token",
     }))
 
     await expect(middleware(mockArgs)).rejects.toMatchObject({
@@ -560,7 +586,9 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
     vi.mocked(checkLockStatus).mockRejectedValue(redirectResponse)
 
     const middleware = createAppwardenMiddleware(() => ({
-      lockPageSlug: "/maintenance",
+      website: {
+        lockPageSlug: "/maintenance",
+      },
       appwardenApiToken: "test-token",
     }))
 
@@ -574,7 +602,9 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
     })
 
     const middleware = createAppwardenMiddleware(() => ({
-      lockPageSlug: "/maintenance",
+      website: {
+        lockPageSlug: "/maintenance",
+      },
       appwardenApiToken: "test-token",
     }))
 
@@ -593,7 +623,9 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
     })
 
     const middleware = createAppwardenMiddleware(() => ({
-      lockPageSlug: "/maintenance",
+      website: {
+        lockPageSlug: "/maintenance",
+      },
       appwardenApiToken: "test-token",
     }))
 
@@ -620,7 +652,9 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
     })
 
     const middleware = createAppwardenMiddleware(() => ({
-      lockPageSlug: "/maintenance",
+      website: {
+        lockPageSlug: "/maintenance",
+      },
       appwardenApiToken: "test-token",
     }))
 
@@ -651,14 +685,14 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
     mockArgs.next = mockNext as any
 
     const middleware = createAppwardenMiddleware(() => ({
-      lockPageSlug: "/maintenance",
-      appwardenApiToken: "test-token",
-      contentSecurityPolicy: {
-        mode: "enforced",
-        directives: {
+      website: {
+        lockPageSlug: "/maintenance",
+        cspMode: "enforced",
+        cspDirectives: {
           "script-src": ["'self'", "{{nonce}}"],
         },
       },
+      appwardenApiToken: "test-token",
     }))
 
     const result = await middleware(mockArgs)
@@ -680,7 +714,9 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
     })
 
     const middleware = createAppwardenMiddleware(() => ({
-      lockPageSlug: "maintenance", // No leading slash
+      website: {
+        lockPageSlug: "maintenance", // No leading slash
+      },
       appwardenApiToken: "test-token",
     }))
 

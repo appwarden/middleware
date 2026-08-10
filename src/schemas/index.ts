@@ -1,6 +1,6 @@
 export * from "./cloudflare"
 export * from "./helpers"
-export * from "./middleware-config"
+export * from "./middleware-options"
 export * from "./use-appwarden"
 export * from "./use-content-security-policy"
 export * from "./vercel"

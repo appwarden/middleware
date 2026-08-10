@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest"
-import {
-  AppwardenConfigSchema,
-  BaseNextJsConfigSchema,
-  VercelCSPSchema,
-} from "./vercel"
+import { AppwardenConfigSchema, BaseNextJsConfigSchema } from "./vercel"
 
 describe("BaseNextJsConfigSchema", () => {
   it("should validate a valid config", () => {
@@ -11,7 +7,9 @@ describe("BaseNextJsConfigSchema", () => {
       cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
       appwardenApiToken: "token123",
       vercelApiToken: "vercel-token",
-      lockPageSlug: "maintenance",
+      website: {
+        lockPageSlug: "maintenance",
+      },
     }
 
     const result = BaseNextJsConfigSchema.safeParse(validConfig)
@@ -19,7 +17,9 @@ describe("BaseNextJsConfigSchema", () => {
     if (result.success) {
       expect(result.data).toMatchObject({
         ...validConfig,
-        lockPageSlug: "/maintenance", // Should transform to have leading slash
+        website: {
+          lockPageSlug: "/maintenance", // Should transform to have leading slash
+        },
       })
     }
   })
@@ -28,13 +28,15 @@ describe("BaseNextJsConfigSchema", () => {
     const config = {
       cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
       appwardenApiToken: "token123",
-      lockPageSlug: "maintenance",
+      website: {
+        lockPageSlug: "maintenance",
+      },
     }
 
     const result = BaseNextJsConfigSchema.safeParse(config)
     expect(result.success).toBe(true)
     if (result.success) {
-      expect(result.data.lockPageSlug).toBe("/maintenance")
+      expect(result.data.website?.lockPageSlug).toBe("/maintenance")
     }
   })
 
@@ -42,13 +44,15 @@ describe("BaseNextJsConfigSchema", () => {
     const config = {
       cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
       appwardenApiToken: "token123",
-      lockPageSlug: "/maintenance",
+      website: {
+        lockPageSlug: "/maintenance",
+      },
     }
 
     const result = BaseNextJsConfigSchema.safeParse(config)
     expect(result.success).toBe(true)
     if (result.success) {
-      expect(result.data.lockPageSlug).toBe("/maintenance")
+      expect(result.data.website?.lockPageSlug).toBe("/maintenance")
     }
   })
 
@@ -56,7 +60,9 @@ describe("BaseNextJsConfigSchema", () => {
     const config = {
       cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
       appwardenApiToken: "token123",
-      lockPageSlug: "maintenance",
+      website: {
+        lockPageSlug: "maintenance",
+      },
     }
 
     const result = BaseNextJsConfigSchema.safeParse(config)
@@ -68,7 +74,9 @@ describe("BaseNextJsConfigSchema", () => {
       cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
       appwardenApiToken: "token123",
       appwardenApiHostname: "https://api.appwarden.io",
-      lockPageSlug: "maintenance",
+      website: {
+        lockPageSlug: "maintenance",
+      },
     }
 
     const result = BaseNextJsConfigSchema.safeParse(config)
@@ -76,7 +84,9 @@ describe("BaseNextJsConfigSchema", () => {
     if (result.success) {
       expect(result.data).toMatchObject({
         ...config,
-        lockPageSlug: "/maintenance",
+        website: {
+          lockPageSlug: "/maintenance",
+        },
       })
     }
   })
@@ -94,28 +104,35 @@ describe("BaseNextJsConfigSchema", () => {
       "https://evil.com",
       "`appwardenApiHostname` must be https://api.appwarden.io or https://staging-api.appwarden.io.",
     ],
-  ])("should reject invalid appwardenApiHostname: %s", (hostname, message) => {
-    const config = {
-      cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
-      appwardenApiToken: "token123",
-      appwardenApiHostname: hostname,
-      lockPageSlug: "maintenance",
-    }
+  ])(
+    "should reject invalid appwardenApiHostname: %s",
+    (hostname: string, message: string) => {
+      const config = {
+        cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
+        appwardenApiToken: "token123",
+        appwardenApiHostname: hostname,
+        website: {
+          lockPageSlug: "maintenance",
+        },
+      }
 
-    const result = BaseNextJsConfigSchema.safeParse(config)
-    expect(result.success).toBe(false)
-    if (!result.success) {
-      const issue = result.error.issues.find((entry) =>
-        entry.path.includes("appwardenApiHostname"),
-      )
-      expect(issue?.message).toContain(message)
-    }
-  })
+      const result = BaseNextJsConfigSchema.safeParse(config)
+      expect(result.success).toBe(false)
+      if (!result.success) {
+        const issue = result.error.issues.find((entry) =>
+          entry.path.includes("appwardenApiHostname"),
+        )
+        expect(issue?.message).toContain(message)
+      }
+    },
+  )
 
   it("should require cacheUrl", () => {
     const config = {
       appwardenApiToken: "token123",
-      lockPageSlug: "maintenance",
+      website: {
+        lockPageSlug: "maintenance",
+      },
     }
 
     const result = BaseNextJsConfigSchema.safeParse(config)
@@ -128,7 +145,9 @@ describe("BaseNextJsConfigSchema", () => {
   it("should require appwardenApiToken", () => {
     const config = {
       cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
-      lockPageSlug: "maintenance",
+      website: {
+        lockPageSlug: "maintenance",
+      },
     }
 
     const result = BaseNextJsConfigSchema.safeParse(config)
@@ -140,11 +159,13 @@ describe("BaseNextJsConfigSchema", () => {
 
   it.each([["//evil.com"], ["https://evil.com"], ["http://evil.com"]])(
     "should reject invalid lockPageSlug: %s",
-    (lockPageSlug) => {
+    (lockPageSlug: string) => {
       const config = {
         cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
         appwardenApiToken: "token123",
-        lockPageSlug,
+        website: {
+          lockPageSlug,
+        },
       }
 
       const result = BaseNextJsConfigSchema.safeParse(config)
@@ -166,7 +187,9 @@ describe("AppwardenConfigSchema", () => {
         cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
         appwardenApiToken: "token123",
         vercelApiToken: "vercel-token",
-        lockPageSlug: "maintenance",
+        website: {
+          lockPageSlug: "maintenance",
+        },
       }
 
       const result = AppwardenConfigSchema.safeParse(config)
@@ -177,7 +200,9 @@ describe("AppwardenConfigSchema", () => {
       const config = {
         cacheUrl: "redis://:password@funky-roughy-44527.upstash.io:6379",
         appwardenApiToken: "token123",
-        lockPageSlug: "maintenance",
+        website: {
+          lockPageSlug: "maintenance",
+        },
       }
 
       const result = AppwardenConfigSchema.safeParse(config)
@@ -189,7 +214,9 @@ describe("AppwardenConfigSchema", () => {
         cacheUrl: "https://example.com/cache",
         appwardenApiToken: "token123",
         vercelApiToken: "vercel-token",
-        lockPageSlug: "maintenance",
+        website: {
+          lockPageSlug: "maintenance",
+        },
       }
 
       const result = AppwardenConfigSchema.safeParse(config)
@@ -205,7 +232,9 @@ describe("AppwardenConfigSchema", () => {
         cacheUrl: "https://edge-config.vercel.com/config_123?token=abc",
         appwardenApiToken: "token123",
         vercelApiToken: "vercel-token",
-        lockPageSlug: "maintenance",
+        website: {
+          lockPageSlug: "maintenance",
+        },
       }
 
       const result = AppwardenConfigSchema.safeParse(config)
@@ -220,7 +249,9 @@ describe("AppwardenConfigSchema", () => {
       const config = {
         cacheUrl: "https://funky-roughy-44527.upstash.io:6379",
         appwardenApiToken: "token123",
-        lockPageSlug: "maintenance",
+        website: {
+          lockPageSlug: "maintenance",
+        },
       }
 
       const result = AppwardenConfigSchema.safeParse(config)
@@ -237,7 +268,9 @@ describe("AppwardenConfigSchema", () => {
       const config = {
         cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
         appwardenApiToken: "token123",
-        lockPageSlug: "maintenance",
+        website: {
+          lockPageSlug: "maintenance",
+        },
         // Missing vercelApiToken
       }
 
@@ -255,7 +288,9 @@ describe("AppwardenConfigSchema", () => {
       const config = {
         cacheUrl: "redis://:password@funky-roughy-44527.upstash.io:6379",
         appwardenApiToken: "token123",
-        lockPageSlug: "maintenance",
+        website: {
+          lockPageSlug: "maintenance",
+        },
         // No vercelApiToken
       }
 
@@ -269,7 +304,9 @@ describe("AppwardenConfigSchema", () => {
       const config = {
         cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
         vercelApiToken: "vercel-token",
-        lockPageSlug: "maintenance",
+        website: {
+          lockPageSlug: "maintenance",
+        },
         // Missing appwardenApiToken
       }
 
@@ -291,7 +328,9 @@ describe("AppwardenConfigSchema", () => {
         cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
         appwardenApiToken: "",
         vercelApiToken: "vercel-token",
-        lockPageSlug: "maintenance",
+        website: {
+          lockPageSlug: "maintenance",
+        },
       }
 
       const result = AppwardenConfigSchema.safeParse(config)
@@ -312,7 +351,9 @@ describe("AppwardenConfigSchema", () => {
           "https://edge-config.vercel.com/ecfg_yaa9pmoquhmf29cnfott3jhbsfdz?token=5010d9a6-04e1-4219-a8b7-f8ecfd3e10d6",
         appwardenApiToken: "appwarden-token-123",
         vercelApiToken: "vercel-token-456",
-        lockPageSlug: "/maintenance",
+        website: {
+          lockPageSlug: "/maintenance",
+        },
       }
 
       const result = AppwardenConfigSchema.safeParse(config)
@@ -321,7 +362,7 @@ describe("AppwardenConfigSchema", () => {
         expect(result.data.cacheUrl).toBe(config.cacheUrl)
         expect(result.data.appwardenApiToken).toBe(config.appwardenApiToken)
         expect(result.data.vercelApiToken).toBe(config.vercelApiToken)
-        expect(result.data.lockPageSlug).toBe("/maintenance")
+        expect(result.data.website?.lockPageSlug).toBe("/maintenance")
       }
     })
 
@@ -330,7 +371,9 @@ describe("AppwardenConfigSchema", () => {
         cacheUrl:
           "rediss://:Aa3vAAIjcDFkNWIzYTlkODVhMWY0ZjliOGQzMmUyNmMxZWUxMzcxOXAxMA@funky-roughy-44527.upstash.io:6379",
         appwardenApiToken: "appwarden-token-123",
-        lockPageSlug: "maintenance",
+        website: {
+          lockPageSlug: "maintenance",
+        },
       }
 
       const result = AppwardenConfigSchema.safeParse(config)
@@ -338,92 +381,8 @@ describe("AppwardenConfigSchema", () => {
       if (result.success) {
         expect(result.data.cacheUrl).toBe(config.cacheUrl)
         expect(result.data.appwardenApiToken).toBe(config.appwardenApiToken)
-        expect(result.data.lockPageSlug).toBe("/maintenance")
+        expect(result.data.website?.lockPageSlug).toBe("/maintenance")
       }
     })
-  })
-})
-
-describe("VercelCSPSchema", () => {
-  it("should accept enforced mode with directives", () => {
-    const result = VercelCSPSchema.safeParse({
-      mode: "enforced",
-      directives: { "default-src": ["'self'"] },
-    })
-    expect(result.success).toBe(true)
-  })
-
-  it("should accept report-only mode with directives", () => {
-    const result = VercelCSPSchema.safeParse({
-      mode: "report-only",
-      directives: { "default-src": ["'self'"] },
-    })
-    expect(result.success).toBe(true)
-  })
-
-  it("should accept disabled mode with directives", () => {
-    const result = VercelCSPSchema.safeParse({
-      mode: "disabled",
-      directives: {
-        "default-src": ["'self'"],
-      },
-    })
-    expect(result.success).toBe(true)
-  })
-
-  it("should reject enforced mode without directives", () => {
-    const result = VercelCSPSchema.safeParse({ mode: "enforced" })
-    expect(result.success).toBe(false)
-    if (!result.success) {
-      const issue = result.error.issues.find((i) =>
-        i.path.includes("directives"),
-      )
-      expect(issue).toBeDefined()
-    }
-  })
-
-  it("should reject report-only mode without directives", () => {
-    const result = VercelCSPSchema.safeParse({ mode: "report-only" })
-    expect(result.success).toBe(false)
-    if (!result.success) {
-      const issue = result.error.issues.find((i) =>
-        i.path.includes("directives"),
-      )
-      expect(issue).toBeDefined()
-    }
-  })
-
-  it("should reject directives containing {{nonce}} (object form)", () => {
-    const result = VercelCSPSchema.safeParse({
-      mode: "enforced",
-      directives: { "script-src": ["self", "{{nonce}}"] },
-    })
-    expect(result.success).toBe(false)
-    if (!result.success) {
-      expect(result.error.issues[0].message).toContain(
-        "Nonce-based CSP is not supported",
-      )
-    }
-  })
-
-  it("should reject directives containing {{nonce}} (string form)", () => {
-    const result = VercelCSPSchema.safeParse({
-      mode: "enforced",
-      directives: JSON.stringify({ scriptSrc: ["self", "{{nonce}}"] }),
-    })
-    expect(result.success).toBe(false)
-    if (!result.success) {
-      expect(result.error.issues[0].message).toContain(
-        "Nonce-based CSP is not supported",
-      )
-    }
-  })
-
-  it("should reject malformed JSON string directives", () => {
-    const result = VercelCSPSchema.safeParse({
-      mode: "enforced",
-      directives: "not-valid-json",
-    })
-    expect(result.success).toBe(false)
   })
 })

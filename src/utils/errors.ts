@@ -43,7 +43,7 @@ export const AppwardenConfigErrorMessages: Record<
   [AppwardenConfigErrorKey.LockPageSlugMustBeRelativePath]:
     "lockPageSlug must be a relative path",
   [AppwardenConfigErrorKey.LockPageSlugRequired]:
-    "lockPageSlug must be provided",
+    "website, api, or multidomainConfig must be provided",
   [AppwardenConfigErrorKey.CspModeInvalid]:
     '`CSP_MODE` must be one of "disabled", "report-only", or "enforced"',
   [AppwardenConfigErrorKey.CspDirectivesBadParse]:

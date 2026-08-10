@@ -1,24 +1,21 @@
 import { waitUntil } from "cloudflare:workers"
 import { ZodError } from "zod"
 import { HEARTBEAT_SERVICES } from "../constants"
-import { checkLockStatus } from "../core"
 import type { ReactRouterCloudflareConfig } from "../schemas/react-router-cloudflare"
 import {
   type ReactRouterAppwardenConfigInput,
   ReactRouterCloudflareConfigSchema,
 } from "../schemas/react-router-cloudflare"
 import {
-  buildLockPageUrl,
   createHeartbeatConfigError,
   createRedirect,
   debug,
   handleHeartbeatRequest,
   isHeartbeatRequest,
-  isHTMLRequest,
-  isOnLockPage,
   printMessage,
   sanitizeConfigErrors,
 } from "../utils"
+import { resolveAdapterAction } from "../utils/adapter-common"
 import { applyContentSecurityPolicyToResponse } from "../utils/apply-content-security-policy-to-response"
 import { parseMergedConfig } from "../utils/get-appwarden-configuration"
 import { getNowMs, logElapsed } from "../utils/get-now"
@@ -115,7 +112,9 @@ export type ReactRouterMiddlewareFunction = (
  *
  * export const unstable_middleware = [
  *   createAppwardenMiddleware(() => ({
- *     lockPageSlug: env.APPWARDEN_LOCK_PAGE_SLUG,
+ *     website: {
+ *       lockPageSlug: env.APPWARDEN_LOCK_PAGE_SLUG,
+ *     },
  *     appwardenApiToken: env.APPWARDEN_API_TOKEN,
  *   })),
  * ]
@@ -137,7 +136,11 @@ export function createAppwardenMiddleware(
     const applyCspToResponse = async (
       response: Response,
     ): Promise<Response> => {
-      if (!config.contentSecurityPolicy || !isResponseLike(response)) {
+      if (
+        !config.website?.cspMode ||
+        config.website.cspMode === "disabled" ||
+        !isResponseLike(response)
+      ) {
         return response
       }
 
@@ -148,7 +151,10 @@ export function createAppwardenMiddleware(
           hostname: requestUrl.hostname,
           waitUntil,
           debug: debugFn,
-          contentSecurityPolicy: config.contentSecurityPolicy,
+          contentSecurityPolicy: {
+            mode: config.website.cspMode,
+            directives: config.website.cspDirectives ?? {},
+          },
         })
       } catch (error) {
         console.error(
@@ -182,39 +188,17 @@ export function createAppwardenMiddleware(
 
       config = validationResult.data
       debugFn = debug(config.debug)
-      const isHTML = isHTMLRequest(request)
 
-      debugFn(
-        `Appwarden middleware invoked for ${requestUrl.pathname}`,
-        `isHTML: ${isHTML}`,
-      )
+      const action = await resolveAdapterAction(request, config, waitUntil)
 
-      // Skip non-HTML requests (e.g., API calls, static assets)
-      if (!isHTML) {
-        return next()
+      if (action.type === "api-locked") {
+        return action.response
       }
 
-      if (isOnLockPage(config.lockPageSlug, request.url)) {
-        debugFn("Already on lock page - skipping lock status check")
-      } else {
-        // Check lock status
-        const result = await checkLockStatus({
-          request,
-          appwardenApiToken: config.appwardenApiToken,
-          appwardenApiHostname: config.appwardenApiHostname,
-          debug: config.debug,
-          lockPageSlug: config.lockPageSlug,
-          waitUntil,
-        })
-
-        // If locked, redirect to lock page
-        if (result.isLocked) {
-          const lockPageUrl = buildLockPageUrl(config.lockPageSlug, request.url)
-          debugFn(`Website is locked - redirecting to ${lockPageUrl.pathname}`)
-          throw createRedirect(lockPageUrl)
-        }
-
-        debugFn("Website is unlocked")
+      if (action.type === "website-locked") {
+        const lockPageUrl = action.lockPageUrl
+        debugFn(`Website is locked - redirecting to ${lockPageUrl.pathname}`)
+        throw createRedirect(lockPageUrl)
       }
     } catch (error) {
       // Re-throw redirects and responses

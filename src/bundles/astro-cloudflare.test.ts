@@ -18,7 +18,7 @@ describe("astro-cloudflare bundle", () => {
     it("should return a middleware function when called with config function", () => {
       const middleware = createAppwardenMiddleware((_runtime) => ({
         debug: true,
-        lockPageSlug: "/maintenance",
+        website: { lockPageSlug: "/maintenance" },
         appwardenApiToken: "test-token",
       }))
 
@@ -28,7 +28,7 @@ describe("astro-cloudflare bundle", () => {
     it("should create middleware that accepts context and next", () => {
       const middleware = createAppwardenMiddleware((_runtime) => ({
         debug: true,
-        lockPageSlug: "/maintenance",
+        website: { lockPageSlug: "/maintenance" },
         appwardenApiToken: "test-token",
       }))
 
@@ -41,37 +41,37 @@ describe("astro-cloudflare bundle", () => {
     it("should export AstroAppwardenConfig type", () => {
       // Type check - this will fail at compile time if the type is not exported
       const config: AstroAppwardenConfig = {
-        lockPageSlug: "/maintenance",
+        website: { lockPageSlug: "/maintenance" },
         appwardenApiToken: "test-token",
         debug: true,
       }
-      expect(config.lockPageSlug).toBe("/maintenance")
+      expect(config.website?.lockPageSlug).toBe("/maintenance")
     })
 
     it("should export AstroCloudflareConfig type", () => {
       // Type check - this will fail at compile time if the type is not exported
       const config: AstroCloudflareConfig = {
-        lockPageSlug: "/maintenance",
+        website: { lockPageSlug: "/maintenance" },
         appwardenApiToken: "test-token",
         debug: true,
       }
-      expect(config.lockPageSlug).toBe("/maintenance")
+      expect(config.website?.lockPageSlug).toBe("/maintenance")
     })
 
     it("should export AstroCloudflareConfigInput type", () => {
       // Type check - this will fail at compile time if the type is not exported
       const config: AstroCloudflareConfigInput = {
-        lockPageSlug: "/maintenance",
+        website: { lockPageSlug: "/maintenance" },
         appwardenApiToken: "test-token",
         debug: "true", // Input type accepts string
       }
-      expect(config.lockPageSlug).toBe("/maintenance")
+      expect(config.website?.lockPageSlug).toBe("/maintenance")
     })
 
     it("should export AstroConfigFn type", () => {
       // Type check - this will fail at compile time if the type is not exported
       const configFn: AstroConfigFn = (_runtime: AstroCloudflareRuntime) => ({
-        lockPageSlug: "/maintenance",
+        website: { lockPageSlug: "/maintenance" },
         appwardenApiToken: "test-token",
       })
       expect(typeof configFn).toBe("function")
@@ -87,13 +87,13 @@ describe("astro-cloudflare bundle", () => {
       const config = getAppwardenConfiguration(
         {},
         {
-          lockPageSlug: "/maintenance",
+          website: { lockPageSlug: "/maintenance" },
           appwardenApiToken: "test-token",
           debug: true,
         },
       )
 
-      expect(config.lockPageSlug).toBe("/maintenance")
+      expect(config.website?.lockPageSlug).toBe("/maintenance")
       expect(config.appwardenApiToken).toBe("test-token")
       expect(config.debug).toBe(true)
     })
@@ -101,7 +101,7 @@ describe("astro-cloudflare bundle", () => {
     it("should throw when required fields are missing", () => {
       expect(() =>
         getAppwardenConfiguration({}, {
-          lockPageSlug: "/maintenance",
+          website: { lockPageSlug: "/maintenance" },
         } as any),
       ).toThrow()
     })

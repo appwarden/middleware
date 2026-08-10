@@ -15,8 +15,10 @@ describe("cloudflare bundle", () => {
     it("should return a fetch handler when called with config function", () => {
       const configFn = (_context: RequestContext) => ({
         debug: true,
-        lockPageSlug: "/maintenance",
         appwardenApiToken: "test-token",
+        website: {
+          lockPageSlug: "/maintenance",
+        },
       })
 
       const handler = createAppwardenMiddleware(configFn)
@@ -26,8 +28,10 @@ describe("cloudflare bundle", () => {
     it("should create handler that accepts Request, env, and ctx", () => {
       const configFn = (_context: RequestContext) => ({
         debug: true,
-        lockPageSlug: "/maintenance",
         appwardenApiToken: "test-token",
+        website: {
+          lockPageSlug: "/maintenance",
+        },
       })
 
       const handler = createAppwardenMiddleware(configFn)
@@ -85,13 +89,15 @@ describe("cloudflare bundle", () => {
       const config = getAppwardenConfiguration(
         {},
         {
-          lockPageSlug: "/maintenance",
           appwardenApiToken: "test-token",
           debug: true,
+          website: {
+            lockPageSlug: "/maintenance",
+          },
         },
       )
 
-      expect(config.lockPageSlug).toBe("/maintenance")
+      expect(config.website?.lockPageSlug).toBe("/maintenance")
       expect(config.appwardenApiToken).toBe("test-token")
       expect(config.debug).toBe(true)
     })
@@ -99,7 +105,7 @@ describe("cloudflare bundle", () => {
     it("should throw when required fields are missing", () => {
       expect(() =>
         getAppwardenConfiguration({}, {
-          lockPageSlug: "/maintenance",
+          website: { lockPageSlug: "/maintenance" },
         } as any),
       ).toThrow()
     })

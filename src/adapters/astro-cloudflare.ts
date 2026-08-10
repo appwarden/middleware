@@ -2,25 +2,22 @@ import type { APIContext } from "astro"
 import { env as cloudflareEnv, waitUntil } from "cloudflare:workers"
 import { ZodError } from "zod"
 import { HEARTBEAT_SERVICES } from "../constants"
-import { checkLockStatus } from "../core"
 import type {
   AstroCloudflareConfig,
   AstroCloudflareConfigInput,
 } from "../schemas/astro-cloudflare"
 import { AstroCloudflareConfigSchema } from "../schemas/astro-cloudflare"
 import {
-  buildLockPageUrl,
   createHeartbeatConfigError,
   createRedirect,
   debug,
   handleHeartbeatRequest,
   isHeartbeatRequest,
-  isHTMLRequest,
-  isOnLockPage,
   printMessage,
   sanitizeConfigErrors,
   TEMPORARY_REDIRECT_STATUS,
 } from "../utils"
+import { resolveAdapterAction } from "../utils/adapter-common"
 import { applyContentSecurityPolicyToResponse } from "../utils/apply-content-security-policy-to-response"
 import { parseMergedConfig } from "../utils/get-appwarden-configuration"
 import { getNowMs, logElapsed } from "../utils/get-now"
@@ -163,7 +160,9 @@ const getAstroCloudflareRuntime = (
  * import { createAppwardenMiddleware } from "@appwarden/middleware/cloudflare/astro"
  *
  * const appwarden = createAppwardenMiddleware(({ env }) => ({
- *   lockPageSlug: env.APPWARDEN_LOCK_PAGE_SLUG,
+ *   website: {
+ *     lockPageSlug: env.APPWARDEN_LOCK_PAGE_SLUG,
+ *   },
  *   appwardenApiToken: env.APPWARDEN_API_TOKEN,
  * }))
  *
@@ -184,7 +183,11 @@ export function createAppwardenMiddleware(configFn: AstroConfigFn) {
     const applyCspToResponse = async (
       response: Response,
     ): Promise<Response> => {
-      if (!config.contentSecurityPolicy || !isResponseLike(response)) {
+      if (
+        !config.website?.cspMode ||
+        config.website.cspMode === "disabled" ||
+        !isResponseLike(response)
+      ) {
         return response
       }
 
@@ -195,7 +198,10 @@ export function createAppwardenMiddleware(configFn: AstroConfigFn) {
           hostname: requestUrl.hostname,
           waitUntil,
           debug: debugFn,
-          contentSecurityPolicy: config.contentSecurityPolicy,
+          contentSecurityPolicy: {
+            mode: config.website.cspMode,
+            directives: config.website.cspDirectives ?? {},
+          },
         })
       } catch (error) {
         console.error(
@@ -241,47 +247,25 @@ export function createAppwardenMiddleware(configFn: AstroConfigFn) {
       // Use the validated and transformed config
       config = validationResult.data
       debugFn = debug(config.debug)
-      const isHTML = isHTMLRequest(request)
 
-      debugFn(
-        `Appwarden middleware invoked for ${requestUrl.pathname}`,
-        `isHTML: ${isHTML}`,
-      )
+      const action = await resolveAdapterAction(request, config, waitUntil)
 
-      // Skip non-HTML requests (e.g., API calls, static assets)
-      if (!isHTML) {
-        return next()
+      if (action.type === "api-locked") {
+        return action.response
       }
 
-      if (isOnLockPage(config.lockPageSlug, request.url)) {
-        debugFn("Already on lock page - skipping lock status check")
-      } else {
-        // Check lock status
-        const result = await checkLockStatus({
-          request,
-          appwardenApiToken: config.appwardenApiToken,
-          appwardenApiHostname: config.appwardenApiHostname,
-          debug: config.debug,
-          lockPageSlug: config.lockPageSlug,
-          waitUntil,
-        })
+      if (action.type === "website-locked") {
+        const lockPageUrl = action.lockPageUrl
+        debugFn(`Website is locked - redirecting to ${lockPageUrl.pathname}`)
 
-        // If locked, redirect to lock page
-        if (result.isLocked) {
-          const lockPageUrl = buildLockPageUrl(config.lockPageSlug, request.url)
-          debugFn(`Website is locked - redirecting to ${lockPageUrl.pathname}`)
-
-          // Use Astro's redirect helper if available, otherwise create our own redirect
-          if (context.redirect) {
-            return context.redirect(
-              lockPageUrl.toString(),
-              TEMPORARY_REDIRECT_STATUS,
-            )
-          }
-          return createRedirect(lockPageUrl)
+        // Use Astro's redirect helper if available, otherwise create our own redirect
+        if (context.redirect) {
+          return context.redirect(
+            lockPageUrl.toString(),
+            TEMPORARY_REDIRECT_STATUS,
+          )
         }
-
-        debugFn("Website is unlocked")
+        return createRedirect(lockPageUrl)
       }
     } catch (error) {
       // Re-throw redirects and responses
