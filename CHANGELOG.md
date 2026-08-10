@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.17.2](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.17.1...@appwarden/middleware@3.17.2) (2026-08-10)
+
+
+### Bug Fixes
+
+* address Copilot review comments on PR [#415](https://github.com/appwarden/middleware/issues/415) ([9e919ab](https://github.com/appwarden/middleware/commit/9e919abfb1ca90928874940e5f4a332e48ff7c7e))
+* restore appwardenMiddleware route-based config support after rebase ([714b9b9](https://github.com/appwarden/middleware/commit/714b9b90b8da71fa4890dfdfc73726c6351a25be))
+
 ## [3.17.1](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.17.0...@appwarden/middleware@3.17.1) (2026-08-07)
 
 
