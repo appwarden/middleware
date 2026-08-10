@@ -4,12 +4,23 @@ import {
   AppwardenConfigErrorMessages,
 } from "../utils/errors"
 import { isCacheUrl, isValidCacheUrl } from "../utils/is-cache-url"
-import { AppwardenMiddlewareConfigWithoutNonceSchema } from "./middleware-options"
+import {
+  AppwardenMiddlewareConfigWithoutNonceSchema,
+  MiddlewareOptionsWithoutNonceSchema,
+} from "./middleware-options"
 
 export const BaseNextJsConfigSchema =
   AppwardenMiddlewareConfigWithoutNonceSchema.extend({
     cacheUrl: z.string(),
     vercelApiToken: z.string().optional(),
+    appwardenMiddleware: z
+      .array(
+        z.object({
+          url: z.string(),
+          options: MiddlewareOptionsWithoutNonceSchema,
+        }),
+      )
+      .optional(),
   })
 
 export const AppwardenConfigSchema = BaseNextJsConfigSchema
