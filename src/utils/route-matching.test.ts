@@ -25,6 +25,12 @@ describe("matchesSegmentBoundaryPath", () => {
     expect(matchesSegmentBoundaryPath("/api", "/api/*")).toBe(true)
     expect(matchesSegmentBoundaryPath("/api/users", "/api/*")).toBe(true)
   })
+
+  it("matches all subpaths when pattern is the root", () => {
+    expect(matchesSegmentBoundaryPath("/", "/")).toBe(true)
+    expect(matchesSegmentBoundaryPath("/foo", "/")).toBe(true)
+    expect(matchesSegmentBoundaryPath("/foo/bar", "/")).toBe(true)
+  })
 })
 
 describe("matchesAnyPath", () => {

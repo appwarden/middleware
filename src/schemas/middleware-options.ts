@@ -38,7 +38,13 @@ export const PathPatternsSchema = z.array(PathPatternSchema)
 
 export const LockPageSlugSchema = ValidLockPageSlugSchema.default(
   "/maintenance",
-).transform((val) => (val.startsWith("/") ? val : `/${val}`))
+).transform((val) =>
+  val && val.length > 0
+    ? val.startsWith("/")
+      ? val
+      : `/${val}`
+    : "/maintenance",
+)
 
 export const DebugSchema = BooleanSchema.default(false)
 
@@ -90,19 +96,19 @@ export const NextJsNonceFreeCSPDirectivesSchema =
   buildNonceFreeDirectivesSchema(AppwardenConfigErrorKey.NextJsNonceUnsupported)
 
 export const WebsiteMiddlewareConfigSchema = z.object({
-  lockPageSlug: LockPageSlugSchema.optional(),
+  lockPageSlug: LockPageSlugSchema,
   cspMode: CSPModeSchema.optional(),
   cspDirectives: ParsedCSPDirectivesSchema.optional(),
 })
 
 export const WebsiteMiddlewareConfigWithoutNonceSchema = z.object({
-  lockPageSlug: LockPageSlugSchema.optional(),
+  lockPageSlug: LockPageSlugSchema,
   cspMode: CSPModeSchema.optional(),
   cspDirectives: NonceFreeCSPDirectivesSchema.optional(),
 })
 
 export const WebsiteMiddlewareConfigNextJsSchema = z.object({
-  lockPageSlug: LockPageSlugSchema.optional(),
+  lockPageSlug: LockPageSlugSchema,
   cspMode: CSPModeSchema.optional(),
   cspDirectives: NextJsNonceFreeCSPDirectivesSchema.optional(),
 })
@@ -119,7 +125,10 @@ export const ApiResponseSchema = z.object({
 })
 
 export const ApiMiddlewareConfigSchema = z.object({
-  basePaths: PathPatternsSchema,
+  basePaths: PathPatternsSchema.min(
+    1,
+    "At least one API base path is required",
+  ),
   response: ApiResponseSchema.default({
     status: DEFAULT_API_LOCK_STATUS,
     body: DEFAULT_API_LOCK_BODY,
