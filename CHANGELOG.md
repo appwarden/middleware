@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.17.3](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.17.2...@appwarden/middleware@3.17.3) (2026-08-10)
+
+
+### Bug Fixes
+
+* update skills docs for new input configuration schema ([88fcb30](https://github.com/appwarden/middleware/commit/88fcb305af04390431ae04d50d876e032f250943))
+
 ## [3.17.2](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.17.1...@appwarden/middleware@3.17.2) (2026-08-10)
 
 
