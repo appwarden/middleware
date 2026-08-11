@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.17.4](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.17.3...@appwarden/middleware@3.17.4) (2026-08-11)
+
+
+### Bug Fixes
+
+* remove appwardenMiddleware field and fix link fallback sentinel ([1d096e1](https://github.com/appwarden/middleware/commit/1d096e15e704dd5fbfe3077435b3406a77ba79d2))
+* tighten appwarden-link output to current middleware schema ([f62d05f](https://github.com/appwarden/middleware/commit/f62d05f10c395f5d0eca587baf090547c0dc1359))
+
 ## [3.17.3](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.17.2...@appwarden/middleware@3.17.3) (2026-08-10)
 
 
