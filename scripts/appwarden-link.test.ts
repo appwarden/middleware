@@ -525,12 +525,7 @@ describe("appwarden-link.cjs", () => {
       wrapperPath,
       "global.fetch = async () => {\n" +
         "  const bodyText = JSON.stringify({\n" +
-        "    content: [{\n" +
-        '      url: "example.com",\n' +
-        "      options: {\n" +
-        '        website: { lockPageSlug: "/maintenance", cspMode: "invalid-mode" }\n' +
-        "      }\n" +
-        "    }]\n" +
+        '    website: { lockPageSlug: "/maintenance", cspMode: "invalid-mode" }\n' +
         "  });\n" +
         "  return {\n" +
         "    ok: true,\n" +
@@ -590,13 +585,8 @@ describe("appwarden-link.cjs", () => {
       wrapperPath,
       "global.fetch = async () => {\n" +
         "  const bodyText = JSON.stringify({\n" +
-        "    content: [{\n" +
-        '      url: "example.com",\n' +
-        "      options: {\n" +
-        '        website: { lockPageSlug: "/maintenance" },\n' +
-        '        appwardenApiHostname: "https://evil.com"\n' +
-        "      }\n" +
-        "    }]\n" +
+        '    website: { lockPageSlug: "/maintenance" },\n' +
+        '    appwardenApiHostname: "https://evil.com"\n' +
         "  });\n" +
         "  return {\n" +
         "    ok: true,\n" +
@@ -652,13 +642,8 @@ describe("appwarden-link.cjs", () => {
       wrapperPath,
       "global.fetch = async () => {\n" +
         "  const bodyText = JSON.stringify({\n" +
-        "    content: [{\n" +
-        '      url: "example.com",\n' +
-        "      options: {\n" +
-        '        website: { lockPageSlug: "/maintenance" },\n' +
-        '        appwardenApiHostname: "https://staging-api.appwarden.io"\n' +
-        "      }\n" +
-        "    }]\n" +
+        '    website: { lockPageSlug: "/maintenance" },\n' +
+        '    appwardenApiHostname: "https://staging-api.appwarden.io"\n' +
         "  });\n" +
         "  return {\n" +
         "    ok: true,\n" +
@@ -736,13 +721,8 @@ describe("appwarden-link.cjs", () => {
       wrapperPath,
       "global.fetch = async () => {\n" +
         "  const bodyText = JSON.stringify({\n" +
-        "    content: [{\n" +
-        '      url: "example.com",\n' +
-        "      options: {\n" +
-        '        website: { lockPageSlug: "/maintenance" },\n' +
-        '        appwardenApiHostname: "http://api.appwarden.io"\n' +
-        "      }\n" +
-        "    }]\n" +
+        '    website: { lockPageSlug: "/maintenance" },\n' +
+        '    appwardenApiHostname: "http://api.appwarden.io"\n' +
         "  });\n" +
         "  return {\n" +
         "    ok: true,\n" +
@@ -840,12 +820,7 @@ describe("appwarden-link.cjs", () => {
       wrapperPath,
       "global.fetch = async () => {\n" +
         "  const bodyText = JSON.stringify({\n" +
-        "    content: [{\n" +
-        '      url: "example.com",\n' +
-        "      options: {\n" +
-        '        website: { lockPageSlug: "https://evil.com" },\n' +
-        "      }\n" +
-        "    }]\n" +
+        '    website: { lockPageSlug: "https://evil.com" },\n' +
         "  });\n" +
         "  return {\n" +
         "    ok: true,\n" +
@@ -1017,7 +992,7 @@ describe("appwarden-link.cjs", () => {
     fs.rmSync(tmpDir, { recursive: true })
   })
 
-  it("should parse and write flat remote config", () => {
+  it("should parse and write remote config", () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "appwarden-test-"))
 
     fs.writeFileSync(
@@ -1030,26 +1005,21 @@ describe("appwarden-link.cjs", () => {
       wrapperPath,
       "global.fetch = async () => {\n" +
         "  const bodyText = JSON.stringify({\n" +
-        "    content: [{\n" +
-        '      url: "example.com",\n' +
-        "      options: {\n" +
-        '        debug: "true",\n' +
-        '        "bypass-paths": ["/health", "/api/webhooks/*"],\n' +
-        "        website: {\n" +
-        '          "lock-page-slug": "/maintenance",\n' +
-        '          "csp-mode": "report-only",\n' +
-        '          "csp-directives": { "default-src": ["\'self\'"] }\n' +
-        "        },\n" +
-        "        api: {\n" +
-        '          "base-paths": ["/api", "/internal"],\n' +
-        "          response: {\n" +
-        "            status: 503,\n" +
-        '            body: "{\\"error\\":\\"Service unavailable\\"}",\n' +
-        '            headers: [{ name: "content-type", value: "application/json" }]\n' +
-        "          }\n" +
-        "        }\n" +
+        '    debug: "true",\n' +
+        '    "bypass-paths": ["/health", "/api/webhooks/*"],\n' +
+        "    website: {\n" +
+        '      "lock-page-slug": "/maintenance",\n' +
+        '      "csp-mode": "report-only",\n' +
+        '      "csp-directives": { "default-src": ["\'self\'"] }\n' +
+        "    },\n" +
+        "    api: {\n" +
+        '      "base-paths": ["/api", "/internal"],\n' +
+        "      response: {\n" +
+        "        status: 503,\n" +
+        '        body: "{\\"error\\":\\"Service unavailable\\"}",\n' +
+        '        headers: [{ name: "content-type", value: "application/json" }]\n' +
         "      }\n" +
-        "    }]\n" +
+        "    }\n" +
         "  });\n" +
         "  const encoder = new TextEncoder();\n" +
         "  return {\n" +
@@ -1105,7 +1075,7 @@ describe("appwarden-link.cjs", () => {
     fs.rmSync(tmpDir, { recursive: true })
   })
 
-  it("should handle flat object fallback", () => {
+  it("should handle remote config", () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "appwarden-test-"))
 
     fs.writeFileSync(
@@ -1189,13 +1159,8 @@ describe("appwarden-link.cjs", () => {
       wrapperPath,
       "global.fetch = async () => {\n" +
         "  const bodyText = JSON.stringify({\n" +
-        "    content: [{\n" +
-        '      url: "example.com",\n' +
-        "      options: {\n" +
-        '        debug: "invalid",\n' +
-        '        website: { lockPageSlug: "/maintenance" }\n' +
-        "      }\n" +
-        "    }]\n" +
+        '    debug: "invalid",\n' +
+        '    website: { lockPageSlug: "/maintenance" }\n' +
         "  });\n" +
         "  return {\n" +
         "    ok: true,\n" +
@@ -1251,18 +1216,13 @@ describe("appwarden-link.cjs", () => {
       wrapperPath,
       "global.fetch = async () => {\n" +
         "  const bodyText = JSON.stringify({\n" +
-        "    content: [{\n" +
-        '      url: "example.com",\n' +
-        "      options: {\n" +
-        "        api: {\n" +
-        '          basePaths: ["/api"],\n' +
-        "          response: {\n" +
-        "            status: 503,\n" +
-        '            body: "\\"locked\\""\n' +
-        "          }\n" +
-        "        }\n" +
+        "    api: {\n" +
+        '      basePaths: ["/api"],\n' +
+        "      response: {\n" +
+        "        status: 503,\n" +
+        '        body: "\\"locked\\""\n' +
         "      }\n" +
-        "    }]\n" +
+        "    }\n" +
         "  });\n" +
         "  return {\n" +
         "    ok: true,\n" +
@@ -1304,7 +1264,7 @@ describe("appwarden-link.cjs", () => {
     fs.rmSync(tmpDir, { recursive: true })
   })
 
-  it("preserves top-level fields alongside flat route config", () => {
+  it("preserves top-level fields in remote config", () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "appwarden-test-"))
 
     fs.writeFileSync(
@@ -1319,14 +1279,9 @@ describe("appwarden-link.cjs", () => {
         "  const bodyText = JSON.stringify({\n" +
         '    debug: "true",\n' +
         '    appwardenApiHostname: "https://api.appwarden.io",\n' +
-        "    content: [{\n" +
-        '      url: "example.com",\n' +
-        "      options: {\n" +
-        "        website: {\n" +
-        '          lockPageSlug: "/maintenance"\n' +
-        "        }\n" +
-        "      }\n" +
-        "    }]\n" +
+        "    website: {\n" +
+        '      lockPageSlug: "/maintenance"\n' +
+        "    }\n" +
         "  });\n" +
         "  return {\n" +
         "    ok: true,\n" +
