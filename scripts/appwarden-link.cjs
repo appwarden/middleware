@@ -24,10 +24,9 @@ const ALLOWED_REMOTE_CONFIG_KEYS = [
   "debug",
   "contentSecurityPolicy",
   "appwardenApiHostname",
-  "bypass-paths",
+  "bypassPaths",
   "website",
   "api",
-  "appwardenMiddleware",
 ]
 
 const ALLOWED_API_HOSTNAMES = ["api.appwarden.io", "staging-api.appwarden.io"]
@@ -109,12 +108,7 @@ const MiddlewareOptionsSchema = z.object({
   api: ApiMiddlewareConfigSchema.optional(),
 })
 
-const ServiceMiddlewareSchema = z.object({
-  url: z.string(),
-  options: MiddlewareOptionsSchema,
-})
-
-const LegacyBuildOutputSchema = z.object({
+const BuildOutputSchema = MiddlewareOptionsSchema.extend({
   lockPageSlug: z
     .string()
     .refine(
@@ -123,8 +117,8 @@ const LegacyBuildOutputSchema = z.object({
       {
         message: "lockPageSlug must be a relative path",
       },
-    ),
-  debug: DebugBooleanSchema,
+    )
+    .optional(),
   appwardenApiHostname: z.string().optional(),
   contentSecurityPolicy: z
     .object({
@@ -135,23 +129,6 @@ const LegacyBuildOutputSchema = z.object({
     })
     .optional(),
 })
-
-const BuildOutputSchema = z.union([
-  LegacyBuildOutputSchema,
-  z.object({
-    appwardenMiddleware: z.array(ServiceMiddlewareSchema).min(1),
-    debug: DebugBooleanSchema,
-    appwardenApiHostname: z.string().optional(),
-    contentSecurityPolicy: z
-      .object({
-        mode: z.enum(["disabled", "enforced", "report-only"]),
-        directives: z.record(
-          z.union([z.string(), z.array(z.string()), z.boolean()]),
-        ),
-      })
-      .optional(),
-  }),
-])
 
 const CYAN = "\x1b[36m"
 const YELLOW = "\x1b[33m"
@@ -864,18 +841,11 @@ async function fetchRemoteConfig(apiToken, apiHostname, fqdn) {
         delete config.cspDirectives
       }
 
-      // If the API response uses the new route-based options wrapper,
-      // keep it in the new shape and wrap it in a middleware array.
+      // If the API response uses the route-based options wrapper,
+      // flatten it into the top-level middleware shape.
       // Preserve any global fields from the API response at the top level.
       if (config.website || config.api || config.bypassPaths) {
-        const result = {
-          appwardenMiddleware: [
-            {
-              url: matchedUrl,
-              options: config,
-            },
-          ],
-        }
+        const result = { ...config }
         for (const key of [
           "debug",
           "appwardenApiHostname",
@@ -907,29 +877,13 @@ function mergeConfigs(remote, localHeaders) {
     }
   }
   if (localHeaders) {
-    if (
-      Array.isArray(merged.appwardenMiddleware) &&
-      merged.appwardenMiddleware.length > 0
-    ) {
-      // Merge local CSP headers into the new route-based config shape.
-      // Only touch entries that already have a website config; API-only entries
-      // have no lock page to apply CSP to.
-      merged.appwardenMiddleware = merged.appwardenMiddleware.map((entry) => {
-        if (!entry.options.website) {
-          return entry
-        }
-        return {
-          ...entry,
-          options: {
-            ...entry.options,
-            website: {
-              ...entry.options.website,
-              cspMode: localHeaders.mode,
-              cspDirectives: localHeaders.directives,
-            },
-          },
-        }
-      })
+    if (merged.website) {
+      // Merge local CSP headers into the flat website config shape.
+      merged.website = {
+        ...merged.website,
+        cspMode: localHeaders.mode,
+        cspDirectives: localHeaders.directives,
+      }
     } else {
       merged.contentSecurityPolicy = localHeaders
     }
@@ -1029,11 +983,12 @@ async function main() {
   }
   const merged = mergeConfigs(remote, localHeaders)
   if (
-    !merged.appwardenMiddleware &&
-    !merged.lockPageSlug &&
-    merged.lockPageSlug !== ""
+    !merged.website &&
+    !merged.api &&
+    !merged.multidomainConfig &&
+    merged.lockPageSlug === undefined
   ) {
-    merged.lockPageSlug = ""
+    merged.lockPageSlug = "/maintenance"
   }
   const outDir = path.join(cwd, ".appwarden", "linked")
   const outPath = path.join(outDir, "middleware.json")
