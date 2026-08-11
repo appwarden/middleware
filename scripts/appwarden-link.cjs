@@ -20,9 +20,7 @@ const ALLOWED_FRAMEWORKS = [
   "vercel",
 ]
 const ALLOWED_REMOTE_CONFIG_KEYS = [
-  "lockPageSlug",
   "debug",
-  "contentSecurityPolicy",
   "appwardenApiHostname",
   "bypassPaths",
   "website",
@@ -109,25 +107,7 @@ const MiddlewareOptionsSchema = z.object({
 })
 
 const BuildOutputSchema = MiddlewareOptionsSchema.extend({
-  lockPageSlug: z
-    .string()
-    .refine(
-      (val) =>
-        !val.includes("://") && !val.startsWith("//") && !val.includes("\\"),
-      {
-        message: "lockPageSlug must be a relative path",
-      },
-    )
-    .optional(),
   appwardenApiHostname: z.string().optional(),
-  contentSecurityPolicy: z
-    .object({
-      mode: z.enum(["disabled", "enforced", "report-only"]),
-      directives: z.record(
-        z.union([z.string(), z.array(z.string()), z.boolean()]),
-      ),
-    })
-    .optional(),
 })
 
 const CYAN = "\x1b[36m"
@@ -725,7 +705,7 @@ function sanitizeRemoteConfig(data, depth = 0) {
           .filter(Boolean)
       }
     } else if (typeof val === "object") {
-      // Recursively sanitize nested objects (e.g. contentSecurityPolicy.directives)
+      // Recursively sanitize nested objects (e.g. website.cspDirectives)
       const nested = sanitizeRemoteConfig(val, depth + 1)
       if (nested) safe[key] = nested
     }
@@ -831,14 +811,12 @@ async function fetchRemoteConfig(apiToken, apiHostname, fqdn) {
 
     if (config) {
       config = normalizeRemoteConfigKeys(config)
-      // Normalize API-specific CSP keys into the middleware shape
-      if (config.cspMode || config.cspDirectives) {
-        config.contentSecurityPolicy = {
-          mode: config.cspMode || "report-only",
-          directives: kebabCaseDirectives(config.cspDirectives) || {},
-        }
-        delete config.cspMode
-        delete config.cspDirectives
+      // Normalize camelCase CSP directive keys inside website.cspDirectives
+      // into kebab-case names that the middleware runtime expects.
+      if (config.website && config.website.cspDirectives) {
+        config.website.cspDirectives = kebabCaseDirectives(
+          config.website.cspDirectives,
+        )
       }
 
       // If the API response uses the route-based options wrapper,
@@ -846,11 +824,7 @@ async function fetchRemoteConfig(apiToken, apiHostname, fqdn) {
       // Preserve any global fields from the API response at the top level.
       if (config.website || config.api || config.bypassPaths) {
         const result = { ...config }
-        for (const key of [
-          "debug",
-          "appwardenApiHostname",
-          "contentSecurityPolicy",
-        ]) {
+        for (const key of ["debug", "appwardenApiHostname"]) {
           if (data[key] !== undefined && data[key] !== null) {
             result[key] = data[key]
           }
@@ -878,15 +852,23 @@ function mergeConfigs(remote, localHeaders) {
   }
   if (localHeaders) {
     if (merged.website) {
-      // Merge local CSP headers into the flat website config shape.
+      // Merge local CSP headers into the existing website config.
       merged.website = {
         ...merged.website,
         cspMode: localHeaders.mode,
         cspDirectives: localHeaders.directives,
       }
-    } else {
-      merged.contentSecurityPolicy = localHeaders
+    } else if (!merged.api && !merged.multidomainConfig) {
+      // No website and no other route config: synthesize a website with the
+      // default lock page slug so the CSP has a lock page to apply to.
+      merged.website = {
+        lockPageSlug: "/maintenance",
+        cspMode: localHeaders.mode,
+        cspDirectives: localHeaders.directives,
+      }
     }
+    // For API-only or multidomain-only configs, local CSP headers are ignored
+    // because there is no website/lock page to attach them to.
   }
   return merged
 }
@@ -982,13 +964,8 @@ async function main() {
     print("Fetched remote Appwarden configuration.")
   }
   const merged = mergeConfigs(remote, localHeaders)
-  if (
-    !merged.website &&
-    !merged.api &&
-    !merged.multidomainConfig &&
-    merged.lockPageSlug === undefined
-  ) {
-    merged.lockPageSlug = "/maintenance"
+  if (!merged.website && !merged.api && !merged.multidomainConfig) {
+    merged.website = { lockPageSlug: "/maintenance" }
   }
   const outDir = path.join(cwd, ".appwarden", "linked")
   const outPath = path.join(outDir, "middleware.json")

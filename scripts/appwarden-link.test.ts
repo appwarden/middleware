@@ -21,7 +21,7 @@ describe("appwarden-link.cjs", () => {
     expect(fs.existsSync(configPath)).toBe(true)
 
     const config = JSON.parse(fs.readFileSync(configPath, "utf-8"))
-    expect(config.lockPageSlug).toBe("/maintenance")
+    expect(config.website.lockPageSlug).toBe("/maintenance")
 
     fs.rmSync(tmpDir, { recursive: true })
   })
@@ -129,15 +129,12 @@ describe("appwarden-link.cjs", () => {
 
     const configPath = path.join(tmpDir, configDir, configName)
     const config = JSON.parse(fs.readFileSync(configPath, "utf-8"))
-    expect(config.contentSecurityPolicy).toBeDefined()
-    expect(config.contentSecurityPolicy.mode).toBe("enforced")
-    expect(config.contentSecurityPolicy.directives).toBeDefined()
-    expect(config.contentSecurityPolicy.directives["default-src"]).toContain(
-      "'self'",
-    )
-    expect(config.contentSecurityPolicy.directives["script-src"]).toContain(
-      "{{nonce}}",
-    )
+    expect(config.website).toBeDefined()
+    expect(config.website.lockPageSlug).toBe("/maintenance")
+    expect(config.website.cspMode).toBe("enforced")
+    expect(config.website.cspDirectives).toBeDefined()
+    expect(config.website.cspDirectives["default-src"]).toContain("'self'")
+    expect(config.website.cspDirectives["script-src"]).toContain("{{nonce}}")
 
     fs.rmSync(tmpDir, { recursive: true })
   })
@@ -176,7 +173,8 @@ describe("appwarden-link.cjs", () => {
 
     const configPath = path.join(tmpDir, configDir, configName)
     const config = JSON.parse(fs.readFileSync(configPath, "utf-8"))
-    expect(config.contentSecurityPolicy.directives["script-src"]).toEqual([
+    expect(config.website.lockPageSlug).toBe("/maintenance")
+    expect(config.website.cspDirectives["script-src"]).toEqual([
       "'nonce-abc def'",
       "'self'",
     ])
@@ -205,14 +203,11 @@ describe("appwarden-link.cjs", () => {
 
     const configPath = path.join(tmpDir, configDir, configName)
     const config = JSON.parse(fs.readFileSync(configPath, "utf-8"))
-    expect(config.contentSecurityPolicy).toBeDefined()
-    expect(config.contentSecurityPolicy.mode).toBe("enforced")
-    expect(config.contentSecurityPolicy.directives["default-src"]).toContain(
-      "'self'",
-    )
-    expect(config.contentSecurityPolicy.directives["script-src"]).toContain(
-      "{{nonce}}",
-    )
+    expect(config.website).toBeDefined()
+    expect(config.website.lockPageSlug).toBe("/maintenance")
+    expect(config.website.cspMode).toBe("enforced")
+    expect(config.website.cspDirectives["default-src"]).toContain("'self'")
+    expect(config.website.cspDirectives["script-src"]).toContain("{{nonce}}")
 
     fs.rmSync(tmpDir, { recursive: true })
   })
@@ -238,10 +233,9 @@ describe("appwarden-link.cjs", () => {
 
     const configPath = path.join(tmpDir, configDir, configName)
     const config = JSON.parse(fs.readFileSync(configPath, "utf-8"))
-    expect(config.contentSecurityPolicy.mode).toBe("enforced")
-    expect(config.contentSecurityPolicy.directives["default-src"]).toEqual([
-      "'self'",
-    ])
+    expect(config.website.lockPageSlug).toBe("/maintenance")
+    expect(config.website.cspMode).toBe("enforced")
+    expect(config.website.cspDirectives["default-src"]).toEqual(["'self'"])
 
     fs.rmSync(tmpDir, { recursive: true })
   })
@@ -267,10 +261,9 @@ describe("appwarden-link.cjs", () => {
 
     const configPath = path.join(tmpDir, configDir, configName)
     const config = JSON.parse(fs.readFileSync(configPath, "utf-8"))
-    expect(config.contentSecurityPolicy.mode).toBe("report-only")
-    expect(config.contentSecurityPolicy.directives["default-src"]).toEqual([
-      "'self'",
-    ])
+    expect(config.website.lockPageSlug).toBe("/maintenance")
+    expect(config.website.cspMode).toBe("report-only")
+    expect(config.website.cspDirectives["default-src"]).toEqual(["'self'"])
 
     fs.rmSync(tmpDir, { recursive: true })
   })
@@ -296,15 +289,14 @@ describe("appwarden-link.cjs", () => {
 
     const configPath = path.join(tmpDir, configDir, configName)
     const config = JSON.parse(fs.readFileSync(configPath, "utf-8"))
-    expect(config.contentSecurityPolicy.mode).toBe("enforced")
-    expect(config.contentSecurityPolicy.directives["default-src"]).toEqual([
-      "'self'",
-    ])
+    expect(config.website.lockPageSlug).toBe("/maintenance")
+    expect(config.website.cspMode).toBe("enforced")
+    expect(config.website.cspDirectives["default-src"]).toEqual(["'self'"])
 
     fs.rmSync(tmpDir, { recursive: true })
   })
 
-  it("should not add contentSecurityPolicy when _headers has no CSP", () => {
+  it("should not add website CSP when _headers has no CSP", () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "appwarden-test-"))
 
     fs.writeFileSync(
@@ -325,7 +317,9 @@ describe("appwarden-link.cjs", () => {
 
     const configPath = path.join(tmpDir, configDir, configName)
     const config = JSON.parse(fs.readFileSync(configPath, "utf-8"))
-    expect(config.contentSecurityPolicy).toBeUndefined()
+    expect(config.website.lockPageSlug).toBe("/maintenance")
+    expect(config.website.cspMode).toBeUndefined()
+    expect(config.website.cspDirectives).toBeUndefined()
 
     fs.rmSync(tmpDir, { recursive: true })
   })
@@ -362,14 +356,11 @@ describe("appwarden-link.cjs", () => {
 
     const configPath = path.join(tmpDir, configDir, configName)
     const config = JSON.parse(fs.readFileSync(configPath, "utf-8"))
-    expect(config.contentSecurityPolicy).toBeDefined()
-    expect(config.contentSecurityPolicy.mode).toBe("enforced")
-    expect(config.contentSecurityPolicy.directives["default-src"]).toContain(
-      "'self'",
-    )
-    expect(config.contentSecurityPolicy.directives["style-src"]).toContain(
-      "'self'",
-    )
+    expect(config.website).toBeDefined()
+    expect(config.website.lockPageSlug).toBe("/maintenance")
+    expect(config.website.cspMode).toBe("enforced")
+    expect(config.website.cspDirectives["default-src"]).toContain("'self'")
+    expect(config.website.cspDirectives["style-src"]).toContain("'self'")
 
     fs.rmSync(tmpDir, { recursive: true })
   })
@@ -406,10 +397,9 @@ describe("appwarden-link.cjs", () => {
 
     const configPath = path.join(tmpDir, configDir, configName)
     const config = JSON.parse(fs.readFileSync(configPath, "utf-8"))
-    expect(config.contentSecurityPolicy.mode).toBe("report-only")
-    expect(config.contentSecurityPolicy.directives["default-src"]).toEqual([
-      "'self'",
-    ])
+    expect(config.website.lockPageSlug).toBe("/maintenance")
+    expect(config.website.cspMode).toBe("report-only")
+    expect(config.website.cspDirectives["default-src"]).toEqual(["'self'"])
 
     fs.rmSync(tmpDir, { recursive: true })
   })
@@ -443,10 +433,9 @@ describe("appwarden-link.cjs", () => {
 
     const configPath = path.join(tmpDir, configDir, configName)
     const config = JSON.parse(fs.readFileSync(configPath, "utf-8"))
-    expect(config.contentSecurityPolicy.mode).toBe("enforced")
-    expect(config.contentSecurityPolicy.directives["default-src"]).toEqual([
-      "'self'",
-    ])
+    expect(config.website.lockPageSlug).toBe("/maintenance")
+    expect(config.website.cspMode).toBe("enforced")
+    expect(config.website.cspDirectives["default-src"]).toEqual(["'self'"])
 
     fs.rmSync(tmpDir, { recursive: true })
   })
@@ -515,7 +504,9 @@ describe("appwarden-link.cjs", () => {
     const configPath = path.join(tmpDir, configDir, configName)
     const config = JSON.parse(fs.readFileSync(configPath, "utf-8"))
     // Oversized file is skipped, so no CSP is extracted
-    expect(config.contentSecurityPolicy).toBeUndefined()
+    expect(config.website.lockPageSlug).toBe("/maintenance")
+    expect(config.website.cspMode).toBeUndefined()
+    expect(config.website.cspDirectives).toBeUndefined()
 
     fs.rmSync(tmpDir, { recursive: true })
   })
@@ -537,11 +528,7 @@ describe("appwarden-link.cjs", () => {
         "    content: [{\n" +
         '      url: "example.com",\n' +
         "      options: {\n" +
-        '        lockPageSlug: "/maintenance",\n' +
-        "        contentSecurityPolicy: {\n" +
-        '          mode: "invalid-mode",\n' +
-        '          directives: { "default-src": ["\'self\'"] }\n' +
-        "        }\n" +
+        '        website: { lockPageSlug: "/maintenance", cspMode: "invalid-mode" }\n' +
         "      }\n" +
         "    }]\n" +
         "  });\n" +
@@ -606,7 +593,7 @@ describe("appwarden-link.cjs", () => {
         "    content: [{\n" +
         '      url: "example.com",\n' +
         "      options: {\n" +
-        '        lockPageSlug: "/maintenance",\n' +
+        '        website: { lockPageSlug: "/maintenance" },\n' +
         '        appwardenApiHostname: "https://evil.com"\n' +
         "      }\n" +
         "    }]\n" +
@@ -668,7 +655,7 @@ describe("appwarden-link.cjs", () => {
         "    content: [{\n" +
         '      url: "example.com",\n' +
         "      options: {\n" +
-        '        lockPageSlug: "/maintenance",\n' +
+        '        website: { lockPageSlug: "/maintenance" },\n' +
         '        appwardenApiHostname: "https://staging-api.appwarden.io"\n' +
         "      }\n" +
         "    }]\n" +
@@ -752,7 +739,7 @@ describe("appwarden-link.cjs", () => {
         "    content: [{\n" +
         '      url: "example.com",\n' +
         "      options: {\n" +
-        '        lockPageSlug: "/maintenance",\n' +
+        '        website: { lockPageSlug: "/maintenance" },\n' +
         '        appwardenApiHostname: "http://api.appwarden.io"\n' +
         "      }\n" +
         "    }]\n" +
@@ -832,11 +819,10 @@ describe("appwarden-link.cjs", () => {
 
     const configPath = path.join(tmpDir, configDir, configName)
     const config = JSON.parse(fs.readFileSync(configPath, "utf-8"))
-    expect(config.contentSecurityPolicy).toBeDefined()
-    expect(config.contentSecurityPolicy.mode).toBe("enforced")
-    expect(
-      config.contentSecurityPolicy.directives["upgrade-insecure-requests"],
-    ).toBe(true)
+    expect(config.website).toBeDefined()
+    expect(config.website.lockPageSlug).toBe("/maintenance")
+    expect(config.website.cspMode).toBe("enforced")
+    expect(config.website.cspDirectives["upgrade-insecure-requests"]).toBe(true)
 
     fs.rmSync(tmpDir, { recursive: true })
   })
@@ -857,7 +843,7 @@ describe("appwarden-link.cjs", () => {
         "    content: [{\n" +
         '      url: "example.com",\n' +
         "      options: {\n" +
-        '        lockPageSlug: "https://evil.com",\n' +
+        '        website: { lockPageSlug: "https://evil.com" },\n' +
         "      }\n" +
         "    }]\n" +
         "  });\n" +
@@ -923,13 +909,10 @@ describe("appwarden-link.cjs", () => {
 
     const configPath = path.join(tmpDir, configDir, configName)
     const config = JSON.parse(fs.readFileSync(configPath, "utf-8"))
-    expect(config.contentSecurityPolicy).toBeDefined()
-    expect(config.contentSecurityPolicy.directives["default-src"]).toContain(
-      "'self'",
-    )
-    expect(
-      config.contentSecurityPolicy.directives["default-src"],
-    ).not.toContain("'none'")
+    expect(config.website).toBeDefined()
+    expect(config.website.lockPageSlug).toBe("/maintenance")
+    expect(config.website.cspDirectives["default-src"]).toContain("'self'")
+    expect(config.website.cspDirectives["default-src"]).not.toContain("'none'")
 
     fs.rmSync(tmpDir, { recursive: true })
   })
@@ -977,13 +960,10 @@ describe("appwarden-link.cjs", () => {
 
     const configPath = path.join(tmpDir, configDir, configName)
     const config = JSON.parse(fs.readFileSync(configPath, "utf-8"))
-    expect(config.contentSecurityPolicy).toBeDefined()
-    expect(config.contentSecurityPolicy.directives["default-src"]).toContain(
-      "'self'",
-    )
-    expect(
-      config.contentSecurityPolicy.directives["default-src"],
-    ).not.toContain("'none'")
+    expect(config.website).toBeDefined()
+    expect(config.website.lockPageSlug).toBe("/maintenance")
+    expect(config.website.cspDirectives["default-src"]).toContain("'self'")
+    expect(config.website.cspDirectives["default-src"]).not.toContain("'none'")
 
     fs.rmSync(tmpDir, { recursive: true })
   })
@@ -1029,13 +1009,10 @@ describe("appwarden-link.cjs", () => {
 
     const configPath = path.join(tmpDir, configDir, configName)
     const config = JSON.parse(fs.readFileSync(configPath, "utf-8"))
-    expect(config.contentSecurityPolicy).toBeDefined()
-    expect(config.contentSecurityPolicy.directives["default-src"]).toContain(
-      "'self'",
-    )
-    expect(
-      config.contentSecurityPolicy.directives["default-src"],
-    ).not.toContain("'none'")
+    expect(config.website).toBeDefined()
+    expect(config.website.lockPageSlug).toBe("/maintenance")
+    expect(config.website.cspDirectives["default-src"]).toContain("'self'")
+    expect(config.website.cspDirectives["default-src"]).not.toContain("'none'")
 
     fs.rmSync(tmpDir, { recursive: true })
   })
@@ -1216,7 +1193,7 @@ describe("appwarden-link.cjs", () => {
         '      url: "example.com",\n' +
         "      options: {\n" +
         '        debug: "invalid",\n' +
-        '        lockPageSlug: "/maintenance"\n' +
+        '        website: { lockPageSlug: "/maintenance" }\n' +
         "      }\n" +
         "    }]\n" +
         "  });\n" +
