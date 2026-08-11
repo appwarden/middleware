@@ -66,21 +66,10 @@ export const MiddlewareOptionsSchema = z.object({
 
 export type MiddlewareOptions = z.infer<typeof MiddlewareOptionsSchema>
 
-export const ServiceMiddlewareSchema = z.object({
-  url: z.string(),
-  options: MiddlewareOptionsSchema,
-})
-
-export type ServiceMiddleware = z.infer<typeof ServiceMiddlewareSchema>
-
-export const AppwardenMiddlewareArraySchema = z.array(ServiceMiddlewareSchema)
-
-export type AppwardenMiddlewareConfig = z.infer<typeof ServiceMiddlewareSchema>
-
 /**
  * Resolved middleware configuration for a single request hostname.
- * This is the internal shape used by the middleware after looking up
- * the route-based config or synthesizing it from legacy fields.
+ * This is the internal shape used by the middleware after applying
+ * per-domain overrides or synthesizing it from legacy fields.
  */
 export interface ResolvedMiddlewareConfig {
   debug: boolean

@@ -21,7 +21,7 @@ describe("appwarden-link.cjs", () => {
     expect(fs.existsSync(configPath)).toBe(true)
 
     const config = JSON.parse(fs.readFileSync(configPath, "utf-8"))
-    expect(config.lockPageSlug).toBe("")
+    expect(config.lockPageSlug).toBe("/maintenance")
 
     fs.rmSync(tmpDir, { recursive: true })
   })
@@ -1040,7 +1040,7 @@ describe("appwarden-link.cjs", () => {
     fs.rmSync(tmpDir, { recursive: true })
   })
 
-  it("should parse and write new route-based remote config", () => {
+  it("should parse and write flat remote config", () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "appwarden-test-"))
 
     fs.writeFileSync(
@@ -1112,37 +1112,23 @@ describe("appwarden-link.cjs", () => {
     const configPath = path.join(tmpDir, configDir, configName)
     const config = JSON.parse(fs.readFileSync(configPath, "utf-8"))
 
-    expect(config.appwardenMiddleware).toHaveLength(1)
-    expect(config.appwardenMiddleware[0].url).toBe("example.com")
-    expect(config.appwardenMiddleware[0].options.debug).toBe(true)
-    expect(config.appwardenMiddleware[0].options.bypassPaths).toEqual([
-      "/health",
-      "/api/webhooks/*",
-    ])
-    expect(config.appwardenMiddleware[0].options.website.lockPageSlug).toBe(
-      "/maintenance",
-    )
-    expect(config.appwardenMiddleware[0].options.website.cspMode).toBe(
-      "report-only",
-    )
-    expect(config.appwardenMiddleware[0].options.website.cspDirectives).toEqual(
-      {
-        "default-src": ["'self'"],
-      },
-    )
-    expect(config.appwardenMiddleware[0].options.api.basePaths).toEqual([
-      "/api",
-      "/internal",
-    ])
-    expect(config.appwardenMiddleware[0].options.api.response.status).toBe(503)
-    expect(config.appwardenMiddleware[0].options.api.response.headers).toEqual([
+    expect(config.debug).toBe(true)
+    expect(config.bypassPaths).toEqual(["/health", "/api/webhooks/*"])
+    expect(config.website.lockPageSlug).toBe("/maintenance")
+    expect(config.website.cspMode).toBe("report-only")
+    expect(config.website.cspDirectives).toEqual({
+      "default-src": ["'self'"],
+    })
+    expect(config.api.basePaths).toEqual(["/api", "/internal"])
+    expect(config.api.response.status).toBe(503)
+    expect(config.api.response.headers).toEqual([
       { name: "content-type", value: "application/json" },
     ])
 
     fs.rmSync(tmpDir, { recursive: true })
   })
 
-  it("should handle flat object fallback with route-based config", () => {
+  it("should handle flat object fallback", () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "appwarden-test-"))
 
     fs.writeFileSync(
@@ -1205,18 +1191,10 @@ describe("appwarden-link.cjs", () => {
     const configPath = path.join(tmpDir, configDir, configName)
     const config = JSON.parse(fs.readFileSync(configPath, "utf-8"))
 
-    expect(config.appwardenMiddleware).toHaveLength(1)
-    expect(config.appwardenMiddleware[0].url).toBe("example.com")
-    expect(config.appwardenMiddleware[0].options.debug).toBe(false)
-    expect(config.appwardenMiddleware[0].options.bypassPaths).toEqual([
-      "/health",
-    ])
-    expect(config.appwardenMiddleware[0].options.website.lockPageSlug).toBe(
-      "/maintenance",
-    )
-    expect(config.appwardenMiddleware[0].options.api.basePaths).toEqual([
-      "/api",
-    ])
+    expect(config.debug).toBe(false)
+    expect(config.bypassPaths).toEqual(["/health"])
+    expect(config.website.lockPageSlug).toBe("/maintenance")
+    expect(config.api.basePaths).toEqual(["/api"])
 
     fs.rmSync(tmpDir, { recursive: true })
   })
@@ -1343,17 +1321,13 @@ describe("appwarden-link.cjs", () => {
     const configPath = path.join(tmpDir, configDir, configName)
     const config = JSON.parse(fs.readFileSync(configPath, "utf-8"))
 
-    expect(config.appwardenMiddleware).toHaveLength(1)
-    expect(config.appwardenMiddleware[0].url).toBe("example.com")
-    expect(config.appwardenMiddleware[0].options.website).toBeUndefined()
-    expect(config.appwardenMiddleware[0].options.api.basePaths).toEqual([
-      "/api",
-    ])
+    expect(config.website).toBeUndefined()
+    expect(config.api.basePaths).toEqual(["/api"])
 
     fs.rmSync(tmpDir, { recursive: true })
   })
 
-  it("preserves top-level fields alongside route-based appwardenMiddleware", () => {
+  it("preserves top-level fields alongside flat route config", () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "appwarden-test-"))
 
     fs.writeFileSync(
@@ -1411,7 +1385,6 @@ describe("appwarden-link.cjs", () => {
     const configPath = path.join(tmpDir, configDir, configName)
     const config = JSON.parse(fs.readFileSync(configPath, "utf-8"))
 
-    expect(config.appwardenMiddleware).toHaveLength(1)
     expect(config.debug).toBe(true)
     expect(config.appwardenApiHostname).toBe("https://api.appwarden.io")
 
