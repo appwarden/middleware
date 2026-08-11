@@ -43,7 +43,7 @@ npm install @appwarden/middleware
 
 ### New configuration format
 
-The Cloudflare adapters use the nested `middleware.options` configuration. Runtime call-site values can override or extend the generated `middleware.json`:
+The Cloudflare adapters use the flat `middleware.json` configuration. Runtime call-site values can override or extend the generated `middleware.json`:
 
 ```typescript
 getAppwardenConfiguration(appwardenConfig, {

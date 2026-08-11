@@ -653,13 +653,6 @@ function sanitizeRemoteConfig(data, depth = 0) {
     warn("Remote config nested too deeply. Truncating.")
     return null
   }
-  if (Array.isArray(data) && data.length === 0) {
-    warn(
-      "No Appwarden configuration was found for this domain. Are you sure the configuration exists and is committed to the domain configuration repository?",
-    )
-    return Object.create(null)
-  }
-
   if (!data || typeof data !== "object" || Array.isArray(data)) {
     warn("Remote config response was not a valid object. Ignoring.")
     return null
@@ -773,64 +766,19 @@ async function fetchRemoteConfig(apiToken, apiHostname, fqdn) {
 
     const data = JSON.parse(text)
 
-    // The API returns { content: [{ url, options }] } — extract the config object
-    let config = null
-    let matchedUrl = null
-    if (data && Array.isArray(data.content)) {
-      const entry = data.content.find(
-        (item) =>
-          item.url === fqdn ||
-          item.url === `www.${fqdn}` ||
-          fqdn === `www.${item.url}`,
-      )
-      matchedUrl = entry?.url ?? null
-      config = entry?.options ?? null
-      if (
-        config === null &&
-        entry &&
-        Array.isArray(entry.middleware) &&
-        entry.middleware.length === 0
-      ) {
-        config = []
-      }
-    } else if (data && Array.isArray(data)) {
-      // Fallback: API returned ServiceMiddlewareType[] directly
-      const entry = data.find(
-        (item) =>
-          item.url === fqdn ||
-          item.url === `www.${fqdn}` ||
-          fqdn === `www.${item.url}`,
-      )
-      matchedUrl = entry?.url ?? null
-      config = entry?.options ?? null
-    } else if (data && typeof data === "object" && !Array.isArray(data)) {
-      // Fallback: API returned a flat object directly
-      config = data
-      matchedUrl = fqdn
+    // The API returns a flat middleware configuration object.
+    if (!data || typeof data !== "object" || Array.isArray(data)) {
+      warn("Remote config response was not a valid flat object. Ignoring.")
+      return null
     }
 
-    if (config) {
-      config = normalizeRemoteConfigKeys(config)
-      // Normalize camelCase CSP directive keys inside website.cspDirectives
-      // into kebab-case names that the middleware runtime expects.
-      if (config.website && config.website.cspDirectives) {
-        config.website.cspDirectives = kebabCaseDirectives(
-          config.website.cspDirectives,
-        )
-      }
-
-      // If the API response uses the route-based options wrapper,
-      // flatten it into the top-level middleware shape.
-      // Preserve any global fields from the API response at the top level.
-      if (config.website || config.api || config.bypassPaths) {
-        const result = { ...config }
-        for (const key of ["debug", "appwardenApiHostname"]) {
-          if (data[key] !== undefined && data[key] !== null) {
-            result[key] = data[key]
-          }
-        }
-        return sanitizeRemoteConfig(result)
-      }
+    let config = normalizeRemoteConfigKeys(data)
+    // Normalize camelCase CSP directive keys inside website.cspDirectives
+    // into kebab-case names that the middleware runtime expects.
+    if (config.website && config.website.cspDirectives) {
+      config.website.cspDirectives = kebabCaseDirectives(
+        config.website.cspDirectives,
+      )
     }
 
     return sanitizeRemoteConfig(config)
