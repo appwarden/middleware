@@ -1146,6 +1146,41 @@ describe("appwarden-link.cjs", () => {
     fs.rmSync(tmpDir, { recursive: true })
   })
 
+  it("should handle a non-Error thrown by fetch without crashing", () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "appwarden-test-"))
+
+    fs.writeFileSync(
+      path.join(tmpDir, "package.json"),
+      JSON.stringify({ dependencies: { next: "^14" } }),
+    )
+
+    const wrapperPath = path.join(tmpDir, "mock-fetch-wrapper.cjs")
+    fs.writeFileSync(
+      wrapperPath,
+      "global.fetch = async () => {\n" +
+        "  throw 'network error';\n" +
+        "};\n" +
+        'process.env.APPWARDEN_API_TOKEN = "test-token";\n' +
+        'process.env.APPWARDEN_FQDN = "example.com";\n' +
+        'require("' +
+        scriptPath +
+        '");\n',
+    )
+
+    execSync(`node "${wrapperPath}"`, {
+      cwd: tmpDir,
+      encoding: "utf-8",
+      env: { ...process.env, APPWARDEN_SKIP_POSTBUILD: undefined },
+    })
+
+    const configPath = path.join(tmpDir, configDir, configName)
+    const config = JSON.parse(fs.readFileSync(configPath, "utf-8"))
+
+    expect(config.website.lockPageSlug).toBe("/maintenance")
+
+    fs.rmSync(tmpDir, { recursive: true })
+  })
+
   it("should reject invalid debug string values", () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "appwarden-test-"))
 
