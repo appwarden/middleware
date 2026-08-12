@@ -4,7 +4,7 @@
 [![GitHub](https://img.shields.io/badge/GitHub-appwarden%2Fmiddleware-181717?logo=github&logoColor=white)](https://github.com/appwarden/middleware)
 [![npm version](https://img.shields.io/npm/v/@appwarden/middleware.svg)](https://www.npmjs.com/package/@appwarden/middleware)
 [![npm provenance](https://img.shields.io/badge/npm-provenance-green)](https://docs.npmjs.com/generating-provenance-statements)
-![Test Coverage](https://img.shields.io/badge/coverage-91.86%25-brightgreen)
+![Test Coverage](https://img.shields.io/badge/coverage-92.9%25-brightgreen)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 ## Core Features
@@ -31,45 +31,11 @@ Nonce-based CSP requires HTML rewriting and is only available on Cloudflare. Nex
 
 ## Configuration
 
-The following options are shared across the Cloudflare and Vercel middleware bundles.
+The following options are shared across the Cloudflare and Vercel middleware bundles. You must
+provide at least one of `website`, `api`, or `multidomainConfig` (Cloudflare universal only) so
+Appwarden knows which requests to protect.
 
-### `lockPageSlug`
-
-The path or route (for example, `/maintenance`) to redirect users to when the domain is quarantined.
-This should be a working page on your site, such as a maintenance or status page, that
-explains why the website is temporarily unavailable.
-
-### `contentSecurityPolicy` (optional)
-
-Controls the [Content Security Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP) headers that Appwarden adds. This configuration is optional—if not provided, no CSP header will be applied.
-
-When provided, both `mode` and `directives` are required:
-
-- `mode` controls how the CSP is applied:
-  - `"disabled"` – no CSP header is sent.
-  - `"report-only"` – sends the `Content-Security-Policy-Report-Only` header so violations are
-    reported (for example in the browser console) but not blocked.
-  - `"enforced"` – sends the `Content-Security-Policy` header so violations are actively blocked.
-
-  When developing or iterating on your CSP, we recommend starting with `"report-only"` so you can
-  identify and fix violations before switching to `"enforced"`.
-
-- `directives` is an object whose keys are CSP directive names and whose values are
-  arrays of allowed sources. For example:
-
-  ```ts
-  contentSecurityPolicy: {
-    mode: "enforced",
-    directives: {
-      "script-src": ["'self'", "{{nonce}}"],
-      "style-src": ["'self'", "{{nonce}}"],
-    },
-  }
-  ```
-
-To add a nonce to a directive (See [Feature Compatibility](#feature-compatibility)), include the `"{{nonce}}"` placeholder in the list of sources.
-
-### `appwardenApiToken`
+### `appwardenApiToken` (required)
 
 The Appwarden API token used to authenticate requests to the Appwarden API. See the
 [API token management guide](https://appwarden.io/docs/guides/api-token-management) for details on creating and
@@ -78,6 +44,84 @@ managing your token.
 Treat this token as a secret (similar to a password): do not commit it to source control and store
 it in environment variables or secret management where possible. Appwarden stores API tokens using
 AES-GCM encryption and does not display them after creation.
+
+### `debug` (optional)
+
+Defaults to `false`. Set to `true` (or the string `"true"`) during initial setup to log lock checks
+and configuration issues. Disable in production once the integration is stable.
+
+### `appwardenApiHostname` (optional)
+
+Reserved for internal testing. Leave unset to use the production Appwarden API.
+
+### `bypassPaths` (optional)
+
+An array of path patterns that should always pass through without a lock check. Patterns match
+exact paths and subpaths at segment boundaries. A trailing `/*` is optional.
+
+```ts
+bypassPaths: ["/health", "/api/health"]
+```
+
+### `website` (optional)
+
+Configure website quarantine and CSP.
+
+- `lockPageSlug` – relative path to redirect to when the site is locked. Defaults to `/maintenance`.
+- `cspMode` – optional CSP mode: `"disabled"`, `"report-only"`, or `"enforced"`. When omitted, no CSP
+  header is applied.
+- `cspDirectives` – optional CSP directives object, or a JSON string. For example:
+
+  ```ts
+  website: {
+    lockPageSlug: "/maintenance",
+    cspMode: "enforced",
+    cspDirectives: {
+      "script-src": ["'self'", "{{nonce}}"],
+      "style-src": ["'self'", "{{nonce}}"],
+    },
+  }
+  ```
+
+To add a nonce to a directive (see [Feature Compatibility](#feature-compatibility)), include the
+`"{{nonce}}"` placeholder in the list of sources.
+
+### `api` (optional)
+
+Configure API quarantine.
+
+- `basePaths` – array of path patterns to treat as API routes. Defaults to `["/"]`.
+- `response` – optional response to return when an API route is locked:
+  - `status` – defaults to `503`
+  - `body` – defaults to `{"error":"Service unavailable"}`
+  - `headers` – optional array of `{ name, value }`
+
+```ts
+api: {
+  basePaths: ["/api"],
+  response: {
+    status: 503,
+    body: '{"error":"Service unavailable"}',
+    headers: [{ name: "Content-Type", value: "application/json" }],
+  },
+}
+```
+
+### `multidomainConfig` (Cloudflare universal only, optional)
+
+Per-hostname overrides. Each key is a hostname and each value can override `website`, `api`,
+`bypassPaths`, and `debug`. Domain-specific values take precedence over top-level values.
+
+```ts
+multidomainConfig: {
+  "app.example.com": {
+    website: { lockPageSlug: "/maintenance-app" },
+  },
+  "api.example.com": {
+    api: { basePaths: ["/api"] },
+  },
+}
+```
 
 ### `cacheUrl` (Vercel only)
 
@@ -112,12 +156,16 @@ import { createAppwardenMiddleware } from "@appwarden/middleware/cloudflare"
 
 const appwardenHandler = createAppwardenMiddleware((cloudflare) => ({
   debug: cloudflare.env.DEBUG,
-  lockPageSlug: cloudflare.env.APPWARDEN_LOCK_PAGE_SLUG,
   appwardenApiToken: cloudflare.env.APPWARDEN_API_TOKEN,
-  contentSecurityPolicy: {
-    mode: cloudflare.env.CSP_MODE,
-    directives: cloudflare.env.CSP_DIRECTIVES,
+  website: {
+    lockPageSlug: cloudflare.env.APPWARDEN_LOCK_PAGE_SLUG,
+    cspMode: cloudflare.env.CSP_MODE,
+    cspDirectives: cloudflare.env.CSP_DIRECTIVES,
   },
+  api: {
+    basePaths: ["/api"],
+  },
+  bypassPaths: ["/health"],
 }))
 
 export default {
@@ -245,23 +293,35 @@ To use Appwarden as Vercel Edge Middleware, use the `@appwarden/middleware/verce
 
 ```ts
 // middleware.ts (Next.js app on Vercel)
-import { createAppwardenMiddleware } from "@appwarden/middleware/vercel"
+import {
+  createAppwardenMiddleware,
+  getAppwardenConfiguration,
+} from "@appwarden/middleware/vercel"
 
-const appwardenMiddleware = createAppwardenMiddleware({
-  // Edge Config or Upstash KV URL
-  cacheUrl: process.env.APPWARDEN_CACHE_URL!,
-  // Required when using Vercel Edge Config
-  vercelApiToken: process.env.APPWARDEN_VERCEL_API_TOKEN!,
-  appwardenApiToken: process.env.APPWARDEN_API_TOKEN!,
-  lockPageSlug: "/maintenance",
-  contentSecurityPolicy: {
-    // See Configuration > contentSecurityPolicy section for details
-    mode: "report-only",
-    directives: {
-      "default-src": ["'self'"],
+const appwardenMiddleware = createAppwardenMiddleware(
+  getAppwardenConfiguration(
+    {},
+    {
+      // Edge Config or Upstash KV URL
+      cacheUrl: process.env.APPWARDEN_CACHE_URL!,
+      // Required when using Vercel Edge Config
+      vercelApiToken: process.env.APPWARDEN_VERCEL_API_TOKEN!,
+      appwardenApiToken: process.env.APPWARDEN_API_TOKEN!,
+      debug: true,
+      website: {
+        lockPageSlug: "/maintenance",
+        cspMode: "report-only",
+        cspDirectives: {
+          "default-src": ["'self'"],
+        },
+      },
+      api: {
+        basePaths: ["/api"],
+      },
+      bypassPaths: ["/health"],
     },
-  },
-})
+  ),
+)
 
 export default appwardenMiddleware
 ```

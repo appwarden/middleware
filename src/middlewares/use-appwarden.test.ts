@@ -486,4 +486,126 @@ describe("useAppwarden", () => {
       expect(mockNext).toHaveBeenCalled()
     })
   })
+
+  describe("middleware action control flow", () => {
+    it("should bypass lock check and still call next() when action is bypass", async () => {
+      vi.mocked(resolveMiddlewareAction).mockReturnValue("bypass")
+
+      const middleware = useAppwarden(mockInput)
+      await middleware(mockContext, mockNext)
+
+      expect(checkLockStatus).not.toHaveBeenCalled()
+      expect(mockNext).toHaveBeenCalledTimes(1)
+    })
+
+    it("should return configured API lock response and not call next() when API path is locked", async () => {
+      vi.mocked(resolveMiddlewareAction).mockReturnValue("api")
+      vi.mocked(checkLockStatus).mockResolvedValue({
+        isLocked: true,
+        isTestLock: false,
+      })
+
+      const inputWithApi: CloudflareConfigType = {
+        ...mockInput,
+        api: {
+          basePaths: ["/api"],
+          response: {
+            status: 503,
+            body: '{"error":"Service unavailable"}',
+            headers: [{ name: "X-Custom-Header", value: "locked" }],
+          },
+        },
+      }
+
+      const middleware = useAppwarden(inputWithApi)
+      await middleware(mockContext, mockNext)
+
+      expect(checkLockStatus).toHaveBeenCalledWith(
+        expect.objectContaining({
+          request: mockContext.request,
+          lockPageSlug: mockInput.website?.lockPageSlug,
+        }),
+      )
+      expect(mockContext.response).toBeInstanceOf(Response)
+      expect(mockContext.response!.status).toBe(503)
+      expect(await mockContext.response!.text()).toBe(
+        '{"error":"Service unavailable"}',
+      )
+      expect(mockContext.response!.headers.get("X-Custom-Header")).toBe(
+        "locked",
+      )
+      expect(mockNext).not.toHaveBeenCalled()
+    })
+
+    it("should call next() when API path is unlocked", async () => {
+      vi.mocked(resolveMiddlewareAction).mockReturnValue("api")
+      vi.mocked(checkLockStatus).mockResolvedValue({
+        isLocked: false,
+        isTestLock: false,
+      })
+
+      const inputWithApi: CloudflareConfigType = {
+        ...mockInput,
+        api: {
+          basePaths: ["/api"],
+        } as any,
+      }
+
+      const middleware = useAppwarden(inputWithApi)
+      await middleware(mockContext, mockNext)
+
+      expect(checkLockStatus).toHaveBeenCalled()
+      expect(mockNext).toHaveBeenCalledTimes(1)
+    })
+
+    it("should use default API lock response when api.response is not configured", async () => {
+      vi.mocked(resolveMiddlewareAction).mockReturnValue("api")
+      vi.mocked(checkLockStatus).mockResolvedValue({
+        isLocked: true,
+        isTestLock: false,
+      })
+
+      const inputWithApi: CloudflareConfigType = {
+        ...mockInput,
+        api: {
+          basePaths: ["/api"],
+        } as any,
+      }
+
+      const middleware = useAppwarden(inputWithApi)
+      await middleware(mockContext, mockNext)
+
+      expect(mockContext.response).toBeInstanceOf(Response)
+      expect(mockContext.response!.status).toBe(503)
+      expect(await mockContext.response!.text()).toBe(
+        '{"error":"Service unavailable"}',
+      )
+      expect(mockNext).not.toHaveBeenCalled()
+    })
+
+    it("should wrap context.waitUntil for API lock checks", async () => {
+      vi.mocked(resolveMiddlewareAction).mockReturnValue("api")
+      vi.mocked(checkLockStatus).mockResolvedValue({
+        isLocked: false,
+        isTestLock: false,
+      })
+
+      const inputWithApi: CloudflareConfigType = {
+        ...mockInput,
+        api: {
+          basePaths: ["/api"],
+        } as any,
+      }
+
+      const middleware = useAppwarden(inputWithApi)
+      await middleware(mockContext, mockNext)
+
+      const callArgs = vi.mocked(checkLockStatus).mock.calls[0][0]
+      const waitUntilFn = callArgs.waitUntil
+      const testPromise = Promise.resolve()
+      waitUntilFn(testPromise)
+
+      expect(mockContext.waitUntil).toHaveBeenCalledWith(testPromise)
+    })
+  })
 })
