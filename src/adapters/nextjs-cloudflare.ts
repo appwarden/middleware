@@ -4,7 +4,6 @@ import {
   type NextFetchEvent,
   type NextRequest,
 } from "next/server"
-import { ZodError } from "zod"
 import { HEARTBEAT_SERVICES } from "../constants"
 import type {
   NextJsCloudflareConfig,
@@ -14,10 +13,11 @@ import { NextJsCloudflareConfigSchema } from "../schemas/nextjs-cloudflare"
 import {
   createHeartbeatConfigError,
   debug,
+  getConfigEvaluationHeartbeatErrors,
+  getHeartbeatPublicId,
   handleHeartbeatRequest,
   isHeartbeatRequest,
   isHTMLRequest,
-  parseApiToken,
   printMessage,
   sanitizeConfigErrors,
   TEMPORARY_REDIRECT_STATUS,
@@ -79,11 +79,7 @@ const createNextJsHeartbeatResponse = (
     const configErrors = validationResult.success
       ? []
       : sanitizeConfigErrors(validationResult.error)
-    const rawToken = (rawConfig as { appwardenApiToken?: string })
-      .appwardenApiToken
-    const publicId = validationResult.success
-      ? (parseApiToken(validationResult.data.appwardenApiToken)?.publicId ?? "")
-      : (parseApiToken(rawToken ?? "")?.publicId ?? "")
+    const publicId = getHeartbeatPublicId(validationResult, rawConfig)
 
     return toNextResponse(
       handleHeartbeatRequest(
@@ -99,15 +95,7 @@ const createNextJsHeartbeatResponse = (
         request,
         HEARTBEAT_SERVICES.CLOUDFLARE_NEXTJS,
         "",
-        error instanceof ZodError
-          ? sanitizeConfigErrors(error)
-          : [
-              createHeartbeatConfigError(
-                ["config"],
-                "custom",
-                "Appwarden config evaluation failed",
-              ),
-            ],
+        getConfigEvaluationHeartbeatErrors(error),
       ),
     )
   }

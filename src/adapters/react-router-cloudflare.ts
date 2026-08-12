@@ -1,5 +1,4 @@
 import { waitUntil } from "cloudflare:workers"
-import { ZodError } from "zod"
 import { HEARTBEAT_SERVICES } from "../constants"
 import type { ReactRouterCloudflareConfig } from "../schemas/react-router-cloudflare"
 import {
@@ -7,12 +6,12 @@ import {
   ReactRouterCloudflareConfigSchema,
 } from "../schemas/react-router-cloudflare"
 import {
-  createHeartbeatConfigError,
   createRedirect,
   debug,
+  getConfigEvaluationHeartbeatErrors,
+  getHeartbeatPublicId,
   handleHeartbeatRequest,
   isHeartbeatRequest,
-  parseApiToken,
   printMessage,
   sanitizeConfigErrors,
 } from "../utils"
@@ -33,25 +32,6 @@ export function getAppwardenConfiguration(
   )
 }
 
-const createConfigEvaluationHeartbeatResponse = (
-  request: Request,
-  publicId: string,
-  configErrors = [
-    createHeartbeatConfigError(
-      ["config"],
-      "custom",
-      "Appwarden config evaluation failed",
-    ),
-  ],
-): Response => {
-  return handleHeartbeatRequest(
-    request,
-    HEARTBEAT_SERVICES.CLOUDFLARE_REACT_ROUTER,
-    publicId,
-    configErrors,
-  )
-}
-
 const handleReactRouterHeartbeatRequest = (
   request: Request,
   configFn: ReactRouterConfigFn,
@@ -63,11 +43,7 @@ const handleReactRouterHeartbeatRequest = (
     const configErrors = validationResult.success
       ? []
       : sanitizeConfigErrors(validationResult.error)
-    const rawToken = (rawConfig as { appwardenApiToken?: string })
-      .appwardenApiToken
-    const publicId = validationResult.success
-      ? (parseApiToken(validationResult.data.appwardenApiToken)?.publicId ?? "")
-      : (parseApiToken(rawToken ?? "")?.publicId ?? "")
+    const publicId = getHeartbeatPublicId(validationResult, rawConfig)
 
     return handleHeartbeatRequest(
       request,
@@ -76,10 +52,11 @@ const handleReactRouterHeartbeatRequest = (
       configErrors,
     )
   } catch (error) {
-    return createConfigEvaluationHeartbeatResponse(
+    return handleHeartbeatRequest(
       request,
+      HEARTBEAT_SERVICES.CLOUDFLARE_REACT_ROUTER,
       "",
-      error instanceof ZodError ? sanitizeConfigErrors(error) : undefined,
+      getConfigEvaluationHeartbeatErrors(error),
     )
   }
 }

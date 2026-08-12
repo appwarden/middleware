@@ -1,6 +1,5 @@
 import type { APIContext } from "astro"
 import { env as cloudflareEnv, waitUntil } from "cloudflare:workers"
-import { ZodError } from "zod"
 import { HEARTBEAT_SERVICES } from "../constants"
 import type {
   AstroCloudflareConfig,
@@ -11,9 +10,10 @@ import {
   createHeartbeatConfigError,
   createRedirect,
   debug,
+  getConfigEvaluationHeartbeatErrors,
+  getHeartbeatPublicId,
   handleHeartbeatRequest,
   isHeartbeatRequest,
-  parseApiToken,
   printMessage,
   sanitizeConfigErrors,
   TEMPORARY_REDIRECT_STATUS,
@@ -67,11 +67,7 @@ const createAstroHeartbeatResponse = (
     const configErrors = validationResult.success
       ? []
       : sanitizeConfigErrors(validationResult.error)
-    const rawToken = (rawConfig as { appwardenApiToken?: string })
-      .appwardenApiToken
-    const publicId = validationResult.success
-      ? (parseApiToken(validationResult.data.appwardenApiToken)?.publicId ?? "")
-      : (parseApiToken(rawToken ?? "")?.publicId ?? "")
+    const publicId = getHeartbeatPublicId(validationResult, rawConfig)
 
     return handleHeartbeatRequest(
       request,
@@ -84,15 +80,7 @@ const createAstroHeartbeatResponse = (
       request,
       HEARTBEAT_SERVICES.CLOUDFLARE_ASTRO,
       "",
-      error instanceof ZodError
-        ? sanitizeConfigErrors(error)
-        : [
-            createHeartbeatConfigError(
-              ["config"],
-              "custom",
-              "Appwarden config evaluation failed",
-            ),
-          ],
+      getConfigEvaluationHeartbeatErrors(error),
     )
   }
 }

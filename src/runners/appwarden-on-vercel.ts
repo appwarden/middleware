@@ -14,13 +14,13 @@ import { AppwardenConfigSchema, VercelAppwardenConfig } from "../schemas/vercel"
 import {
   buildLockPageUrl,
   debug,
+  getHeartbeatPublicId,
   handleHeartbeatRequest,
   isCacheUrl,
   isHeartbeatRequest,
   isHTMLRequest,
   isOnLockPage,
   MemoryCache,
-  parseApiToken,
   printMessage,
   sanitizeConfigErrors,
   TEMPORARY_REDIRECT_STATUS,
@@ -69,18 +69,10 @@ export function createAppwardenMiddleware(
     // This must work even when the site is locked
     if (isHeartbeatRequest(request, requestUrl)) {
       const validationResult = AppwardenConfigSchema.safeParse(config)
-
-      // Return heartbeat response with config errors if validation failed
       const configErrors = validationResult.success
         ? []
         : sanitizeConfigErrors(validationResult.error)
-
-      const rawToken = (config as { appwardenApiToken?: string })
-        .appwardenApiToken
-      const publicId = validationResult.success
-        ? (parseApiToken(validationResult.data.appwardenApiToken)?.publicId ??
-          "")
-        : (parseApiToken(rawToken ?? "")?.publicId ?? "")
+      const publicId = getHeartbeatPublicId(validationResult, config)
 
       const response = handleHeartbeatRequest(
         request,
