@@ -772,7 +772,7 @@ async function fetchRemoteConfig(apiToken, apiHostname, fqdn) {
       return null
     }
 
-    let config = normalizeRemoteConfigKeys(data)
+    const config = normalizeRemoteConfigKeys(data)
     // Normalize camelCase CSP directive keys inside website.cspDirectives
     // into kebab-case names that the middleware runtime expects.
     if (config.website && config.website.cspDirectives) {
