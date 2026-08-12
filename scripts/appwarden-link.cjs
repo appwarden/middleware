@@ -783,8 +783,11 @@ async function fetchRemoteConfig(apiToken, apiHostname, fqdn) {
 
     return sanitizeRemoteConfig(config)
   } catch (err) {
-    if (err.message.startsWith("Authentication failed")) throw err
-    warn(`fetch error: ${href} ${err.message}`)
+    const message = err instanceof Error ? err.message : String(err)
+    if (message.startsWith("Authentication failed")) {
+      throw err instanceof Error ? err : new Error(message)
+    }
+    warn(`fetch error: ${href} ${message}`)
     return null
   } finally {
     clearTimeout(timeout)
@@ -905,7 +908,8 @@ async function main() {
   try {
     remote = await fetchRemoteConfig(apiToken, apiHostname, fqdn)
   } catch (err) {
-    warn(err.message)
+    const message = err instanceof Error ? err.message : String(err)
+    warn(message)
     process.exit(1)
   }
   if (remote) {
