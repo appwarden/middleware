@@ -8,7 +8,7 @@ import {
   ConfigFnInputSchema,
   UseAppwardenInputSchema,
 } from "../schemas"
-import { Bindings, MiddlewareContext } from "../types"
+import { Bindings, MiddlewareContext, RequestContext } from "../types"
 import {
   createHeartbeatConfigError,
   debug,
@@ -24,6 +24,30 @@ import { parseMergedConfig } from "../utils/get-appwarden-configuration"
 const RefinedUseAppwardenInputSchema = appwardenConfigRefinement(
   UseAppwardenInputSchema,
 )
+
+/**
+ * Best-effort publicId extraction from the raw config function result.
+ * Used when schema validation of the config failed, so the heartbeat can
+ * still be correlated with the site. Never throws.
+ */
+const getRawConfigPublicId = (
+  inputFn: CloudflareConfigFnType,
+  requestContext: RequestContext,
+): string => {
+  try {
+    const rawConfig =
+      typeof inputFn === "function" ? inputFn(requestContext) : undefined
+    const rawToken =
+      rawConfig !== null && typeof rawConfig === "object"
+        ? (rawConfig as { appwardenApiToken?: unknown }).appwardenApiToken
+        : undefined
+    return typeof rawToken === "string"
+      ? (parseApiToken(rawToken)?.publicId ?? "")
+      : ""
+  } catch {
+    return ""
+  }
+}
 
 export function getAppwardenConfiguration(
   generatedConfig: Record<string, unknown>,
@@ -79,8 +103,11 @@ export const appwardenOnCloudflare =
         }
       }
 
-      const publicId =
-        parseApiToken(resolvedConfig?.appwardenApiToken ?? "")?.publicId ?? ""
+      // Fall back to the raw config result so a valid token still surfaces
+      // its publicId when other config fields fail validation
+      const publicId = resolvedConfig
+        ? (parseApiToken(resolvedConfig.appwardenApiToken)?.publicId ?? "")
+        : getRawConfigPublicId(inputFn, requestContext)
 
       return handleHeartbeatRequest(
         request,

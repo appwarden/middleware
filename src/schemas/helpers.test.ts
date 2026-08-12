@@ -165,6 +165,14 @@ describe("AppwardenApiTokenSchema", () => {
     expect(AppwardenApiTokenSchema.parse(VALID_TOKEN)).toBe(VALID_TOKEN)
   })
 
+  it("should trim a whitespace-padded token and return the trimmed value", () => {
+    const result = AppwardenApiTokenSchema.safeParse(`  ${VALID_TOKEN}\n`)
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data).toBe(VALID_TOKEN)
+    }
+  })
+
   it("should expose the parsed publicId", () => {
     const parsed = AppwardenApiTokenSchema.parse(VALID_TOKEN)
     expect(parsed.split("_")[1]).toBe(PUBLIC_ID)

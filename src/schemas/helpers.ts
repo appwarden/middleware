@@ -23,13 +23,22 @@ export const BooleanSchema = BoolOrStringSchema.refine(
   return false
 })
 
-/** Schema for the Appwarden API token - validates the dual-token format */
+/**
+ * Schema for the Appwarden API token - validates the dual-token format.
+ * String values are trimmed during preprocessing so the validated data matches
+ * what was validated (secrets managers often add a trailing newline).
+ */
 export const AppwardenApiTokenSchema = z
   .preprocess(
-    (val) => (val === undefined || val === null ? "" : val),
+    (val) =>
+      val === undefined || val === null
+        ? ""
+        : typeof val === "string"
+          ? val.trim()
+          : val,
     z.string(),
   )
-  .refine((val) => val.trim().length > 0, {
+  .refine((val) => val.length > 0, {
     message:
       AppwardenConfigErrorMessages[
         AppwardenConfigErrorKey.AppwardenApiTokenMissing

@@ -29,9 +29,11 @@ export function parseApiToken(
     SECRET_LENGTH,
   } = API_TOKEN_CONFIG
 
-  if (!token.startsWith(PREFIX)) return undefined
+  const trimmedToken = token.trim()
 
-  const withoutPrefix = token.slice(PREFIX.length)
+  if (!trimmedToken.startsWith(PREFIX)) return undefined
+
+  const withoutPrefix = trimmedToken.slice(PREFIX.length)
   const firstSeparatorIndex = withoutPrefix.indexOf(SEPARATOR)
 
   if (firstSeparatorIndex === -1 || firstSeparatorIndex === 0) return undefined

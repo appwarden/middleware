@@ -16,6 +16,13 @@ describe("parseApiToken", () => {
     })
   })
 
+  it("should trim surrounding whitespace before parsing", () => {
+    expect(parseApiToken(`  ${VALID_TOKEN}\n`)).toEqual({
+      publicId: VALID_PUBLIC_ID,
+      secret: VALID_SECRET,
+    })
+  })
+
   it("should return undefined for a legacy base64 token", () => {
     expect(parseApiToken("dGVzdC1zZWNyZXQ6b3JnSWQ=")).toBeUndefined()
   })

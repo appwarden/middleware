@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { ZodError } from "zod"
+import { z, ZodError } from "zod"
 import {
   HEARTBEAT_CONFIG_ERROR_MAX_COUNT,
   HEARTBEAT_CONFIG_ERROR_MAX_PATH_DEPTH,
@@ -12,6 +12,7 @@ import {
   createHeartbeatConfigError,
   createHeartbeatResponse,
   createHeartbeatResponseBody,
+  getHeartbeatPublicId,
   handleHeartbeatRequest,
   isHeartbeatRequest,
   sanitizeConfigErrors,
@@ -280,6 +281,36 @@ describe("heartbeat utilities", () => {
           publicId: PUBLIC_ID,
         }).success,
       ).toBe(true)
+    })
+  })
+
+  describe("getHeartbeatPublicId", () => {
+    const schema = z.object({ appwardenApiToken: z.string() })
+    const token = `aw_${PUBLIC_ID}_${"s".repeat(43)}`
+
+    it("should return the publicId from validated data on success", () => {
+      const result = schema.safeParse({ appwardenApiToken: token })
+      expect(getHeartbeatPublicId(result, undefined)).toBe(PUBLIC_ID)
+    })
+
+    it("should fall back to the raw config token when validation fails", () => {
+      const result = schema.safeParse({ appwardenApiToken: 123 })
+      expect(getHeartbeatPublicId(result, { appwardenApiToken: token })).toBe(
+        PUBLIC_ID,
+      )
+    })
+
+    it("should return an empty string when rawConfig is null or not an object", () => {
+      const result = schema.safeParse({ appwardenApiToken: 123 })
+      expect(getHeartbeatPublicId(result, null)).toBe("")
+      expect(getHeartbeatPublicId(result, undefined)).toBe("")
+      expect(getHeartbeatPublicId(result, "nope")).toBe("")
+    })
+
+    it("should return an empty string when the raw token is not a string", () => {
+      const result = schema.safeParse({ appwardenApiToken: 123 })
+      expect(getHeartbeatPublicId(result, { appwardenApiToken: 123 })).toBe("")
+      expect(getHeartbeatPublicId(result, {})).toBe("")
     })
   })
 
