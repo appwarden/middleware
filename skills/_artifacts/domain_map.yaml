@@ -115,22 +115,6 @@ skills:
         source: "src/schemas/use-appwarden.ts BooleanSchema default false"
         priority: "MEDIUM"
         status: "active"
-      - mistake: "Using a legacy API token format"
-        mechanism: "The middleware validates the dual-token format aw_<publicId>_<secret>; legacy sk_... tokens fail schema validation and are not accepted."
-        wrong_pattern: |
-          createAppwardenMiddleware({
-            appwardenApiToken: "sk_test_...",
-            website: { lockPageSlug: "/maintenance" },
-          })
-        correct_pattern: |
-          createAppwardenMiddleware({
-            appwardenApiToken: env.APPWARDEN_API_TOKEN,
-            website: { lockPageSlug: "/maintenance" },
-          })
-          // The env value must be the aw_... dual-token copied from the dashboard
-        source: "src/utils/parse-api-token.ts and src/schemas/helpers.ts AppwardenApiTokenSchema"
-        priority: "HIGH"
-        status: "active"
   - name: "Onboard your Appwarden organization"
     slug: "onboard-your-appwarden-organization"
     domain: "operations-testing"
@@ -469,16 +453,6 @@ skills:
         source: "src/schemas/use-appwarden.ts and src/schemas/middleware-options.ts"
         priority: "CRITICAL"
         status: "active"
-      - mistake: "Using an API token in the wrong format"
-        mechanism: "The middleware validates the dual-token format aw_<publicId>_<secret>. Legacy sk_... tokens fail schema validation."
-        wrong_pattern: |
-          appwardenApiToken: "sk_test_..."
-        correct_pattern: |
-          appwardenApiToken: cloudflare.env.APPWARDEN_API_TOKEN
-          // Value must be the aw_... dual-token copied from the dashboard
-        source: "src/utils/parse-api-token.ts and src/schemas/helpers.ts AppwardenApiTokenSchema"
-        priority: "HIGH"
-        status: "active"
   - name: "Wire Appwarden into Vercel Edge Middleware"
     slug: "wire-appwarden-into-vercel-edge-middleware"
     domain: "middleware-integration"
@@ -624,16 +598,6 @@ skills:
         source: "https://upstash.com/docs/workflow/troubleshooting/vercel Preview Deployment Protection"
         priority: "MEDIUM"
         status: "active"
-      - mistake: "Using an API token in the wrong format"
-        mechanism: "The middleware validates the dual-token format aw_<publicId>_<secret>. Legacy sk_... tokens fail schema validation."
-        wrong_pattern: |
-          appwardenApiToken: "sk_test_..."
-        correct_pattern: |
-          appwardenApiToken: process.env.APPWARDEN_API_TOKEN
-          // Value must be the aw_... dual-token copied from the dashboard
-        source: "src/utils/parse-api-token.ts and src/schemas/helpers.ts AppwardenApiTokenSchema"
-        priority: "HIGH"
-        status: "active"
       - mistake: "Providing an invalid bypassPaths or api.basePaths pattern"
         mechanism: "bypassPaths and api.basePaths must be valid absolute paths starting with / and use segment-boundary matching. /api matches /api/users but not /api-docs."
         wrong_pattern: |
@@ -703,16 +667,6 @@ skills:
           // Delete the existing token in Settings > Security, then create a new one
         source: "api-token-management.mdx Overview"
         priority: "MEDIUM"
-        status: "active"
-      - mistake: "Using a legacy or malformed API token format"
-        mechanism: "The middleware validates the dual-token format aw_<publicId>_<secret>. Legacy sk_... tokens and malformed values fail schema validation and cannot check lock status."
-        wrong_pattern: |
-          const appwardenApiToken = "sk_test_..."
-        correct_pattern: |
-          const appwardenApiToken = process.env.APPWARDEN_API_TOKEN
-          // Value must be the aw_<publicId>_<secret> token copied from the dashboard
-        source: "src/utils/parse-api-token.ts and src/schemas/helpers.ts AppwardenApiTokenSchema"
-        priority: "HIGH"
         status: "active"
   - name: "Configure nonce-based CSP on Cloudflare"
     slug: "configure-nonce-csp-on-cloudflare"

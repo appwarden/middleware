@@ -14,8 +14,6 @@ sources:
   - "appwarden/middleware:src/runners/appwarden-on-cloudflare.ts"
   - "appwarden/middleware:src/schemas/middleware-options.ts"
   - "appwarden/middleware:src/schemas/use-appwarden.ts"
-  - "appwarden/middleware:src/schemas/helpers.ts"
-  - "appwarden/middleware:src/utils/parse-api-token.ts"
 ---
 
 # Appwarden Middleware — Standalone Cloudflare Workflow
@@ -300,24 +298,6 @@ export default createAppwardenMiddleware((cloudflare) =>
 Source: `src/schemas/use-appwarden.ts` and `src/schemas/middleware-options.ts`.
 
 The middleware requires at least one of `website`, `api`, or `multidomainConfig`. A config with only the API token and `debug` fails schema validation.
-
-### HIGH Using an API token in the wrong format
-
-Wrong:
-
-```typescript
-appwardenApiToken: "sk_test_..."
-```
-
-Correct:
-
-```typescript
-appwardenApiToken: cloudflare.env.APPWARDEN_API_TOKEN
-```
-
-Source: `src/utils/parse-api-token.ts` and `src/schemas/helpers.ts`.
-
-The token must be the dual-token `aw_<publicId>_<secret>` format copied from the dashboard. Legacy `sk_...` tokens fail schema validation.
 
 ## Next Steps
 

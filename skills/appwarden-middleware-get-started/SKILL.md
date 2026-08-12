@@ -12,8 +12,6 @@ sources:
   - "appwarden/middleware:src/index.ts"
   - "appwarden/middleware:src/schemas/use-appwarden.ts"
   - "appwarden/middleware:src/schemas/middleware-options.ts"
-  - "appwarden/middleware:src/schemas/helpers.ts"
-  - "appwarden/middleware:src/utils/parse-api-token.ts"
 ---
 
 # Appwarden Middleware — Get Started
@@ -321,40 +319,6 @@ export default createAppwardenMiddleware(
 ```
 
 Without `debug: true`, config validation failures and lock-status checks are silent, making first-time troubleshooting difficult. Disable debug only after the heartbeat is clean.
-
-### HIGH Using a legacy API token format
-
-Wrong:
-
-```typescript
-export default createAppwardenMiddleware({
-  appwardenApiToken: "sk_test_...",
-  website: {
-    lockPageSlug: "/maintenance",
-  },
-})
-```
-
-Correct:
-
-```typescript
-import {
-  createAppwardenMiddleware,
-  getAppwardenConfiguration,
-} from "@appwarden/middleware/cloudflare"
-import appwardenConfig from "../.appwarden/linked/middleware.json"
-
-export default createAppwardenMiddleware((cloudflare) =>
-  getAppwardenConfiguration(appwardenConfig, {
-    appwardenApiToken: cloudflare.env.APPWARDEN_API_TOKEN,
-    debug: true,
-  }),
-)
-```
-
-Source: `src/utils/parse-api-token.ts` and `src/schemas/helpers.ts`.
-
-The API token is a dual-token in the format `aw_<publicId>_<secret>`. Legacy `sk_...` tokens fail schema validation and are shown only once, so they must be copied from the dashboard and stored as a secret.
 
 ## Next Steps
 

@@ -15,8 +15,6 @@ sources:
   - "appwarden/middleware:src/runners/appwarden-on-vercel.ts"
   - "appwarden/middleware:src/schemas/vercel.ts"
   - "appwarden/middleware:src/schemas/middleware-options.ts"
-  - "appwarden/middleware:src/utils/parse-api-token.ts"
-  - "appwarden/middleware:src/schemas/helpers.ts"
   - "appwarden/middleware:src/utils/route-matching.ts"
 ---
 
@@ -280,24 +278,6 @@ The Vercel runner uses a single module-level `MemoryCache` with a fixed key. If 
 ### MEDIUM Enabling Vercel Deployment Protection without a bypass secret for automated verification
 
 When Deployment Protection is enabled, automated requests to preview deployments can be blocked. Add a Protection Bypass for Automation secret in Vercel project settings and pass it as `x-vercel-protection-bypass` where required.
-
-### HIGH Using an API token in the wrong format
-
-Wrong:
-
-```typescript
-appwardenApiToken: "sk_test_..."
-```
-
-Correct:
-
-```typescript
-appwardenApiToken: process.env.APPWARDEN_API_TOKEN
-```
-
-Source: `src/utils/parse-api-token.ts` and `src/schemas/helpers.ts`.
-
-The Appwarden API token is a dual-token in the format `aw_<publicId>_<secret>`. Legacy `sk_...` tokens fail schema validation and are shown only once in the dashboard.
 
 ### MEDIUM Providing an invalid bypassPaths or api.basePaths pattern
 

@@ -41,8 +41,6 @@ skills:
       - "appwarden/middleware:src/index.ts"
       - "appwarden/middleware:src/schemas/use-appwarden.ts"
       - "appwarden/middleware:src/schemas/middleware-options.ts"
-      - "appwarden/middleware:src/schemas/helpers.ts"
-      - "appwarden/middleware:src/utils/parse-api-token.ts"
     subsystems: []
     references: []
 
@@ -56,7 +54,6 @@ skills:
     sources:
       - "appwarden/appwarden-core-b:websites/appwarden-io/docs/src/content/docs/docs/guides/api-token-management.mdx"
       - "appwarden/middleware:src/schemas/helpers.ts"
-      - "appwarden/middleware:src/utils/parse-api-token.ts"
     subsystems: []
     references: []
 
@@ -129,7 +126,6 @@ skills:
       - "appwarden/middleware:src/runners/appwarden-on-cloudflare.ts"
       - "appwarden/middleware:src/schemas/middleware-options.ts"
       - "appwarden/middleware:src/schemas/use-appwarden.ts"
-      - "appwarden/middleware:src/utils/parse-api-token.ts"
     subsystems:
       - "standalone-cloudflare-worker"
       - "deploy-appwarden-github-actions"
@@ -150,8 +146,6 @@ skills:
       - "appwarden/middleware:src/runners/appwarden-on-vercel.ts"
       - "appwarden/middleware:src/schemas/vercel.ts"
       - "appwarden/middleware:src/schemas/middleware-options.ts"
-      - "appwarden/middleware:src/utils/parse-api-token.ts"
-      - "appwarden/middleware:src/schemas/helpers.ts"
       - "appwarden/middleware:src/utils/route-matching.ts"
     subsystems:
       - "vercel-edge-config"
