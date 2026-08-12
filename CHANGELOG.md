@@ -3,6 +3,15 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.17.7](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.17.6...@appwarden/middleware@3.17.7) (2026-08-12)
+
+
+### Bug Fixes
+
+* **skills:** align skill sources with cited troubleshooting files ([ef0f243](https://github.com/appwarden/middleware/commit/ef0f2431308c18c0fa39d7305416fb1fd45e394c))
+* **skills:** remove legacy api token references ([96684a7](https://github.com/appwarden/middleware/commit/96684a75c90119667b6dbd9c348049989830260a))
+* **skills:** resolve stale intent skill signals for middleware 3.17.4 ([12fb97c](https://github.com/appwarden/middleware/commit/12fb97c8eb97d479c4b90c1ddf5c8da4edaa540c))
+
 ## [3.17.6](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.17.5...@appwarden/middleware@3.17.6) (2026-08-12)
 
 
