@@ -14,6 +14,7 @@ sources:
   - "appwarden/middleware:src/runners/appwarden-on-cloudflare.ts"
   - "appwarden/middleware:src/schemas/middleware-options.ts"
   - "appwarden/middleware:src/schemas/use-appwarden.ts"
+  - "appwarden/middleware:src/schemas/helpers.ts"
   - "appwarden/middleware:src/utils/parse-api-token.ts"
 ---
 
