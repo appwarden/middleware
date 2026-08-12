@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.17.6](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.17.5...@appwarden/middleware@3.17.6) (2026-08-12)
+
+
+### Bug Fixes
+
+* **heartbeat:** harden publicId extraction and token trimming ([1d1fd92](https://github.com/appwarden/middleware/commit/1d1fd92e92d5a40f7f5bbae7d70442c0e71156bb))
+* **heartbeat:** trim publicId before schema validation ([033dece](https://github.com/appwarden/middleware/commit/033dece1f3afb393662551951d5131d3680fc535))
+
 ## [3.17.4](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.17.3...@appwarden/middleware@3.17.4) (2026-08-11)
 
 
