@@ -41,6 +41,7 @@ skills:
       - "appwarden/middleware:src/index.ts"
       - "appwarden/middleware:src/schemas/use-appwarden.ts"
       - "appwarden/middleware:src/schemas/middleware-options.ts"
+      - "appwarden/middleware:src/schemas/helpers.ts"
       - "appwarden/middleware:src/utils/parse-api-token.ts"
     subsystems: []
     references: []
@@ -101,6 +102,8 @@ skills:
       - "appwarden/middleware:src/adapters/"
       - "appwarden/middleware:src/bundles/cloudflare.ts"
       - "appwarden/middleware:src/schemas/middleware-options.ts"
+      - "appwarden/middleware:src/schemas/use-appwarden.ts"
+      - "appwarden/middleware:src/utils/route-matching.ts"
     subsystems:
       - "astro-cloudflare"
       - "react-router-cloudflare"
@@ -148,6 +151,8 @@ skills:
       - "appwarden/middleware:src/schemas/vercel.ts"
       - "appwarden/middleware:src/schemas/middleware-options.ts"
       - "appwarden/middleware:src/utils/parse-api-token.ts"
+      - "appwarden/middleware:src/schemas/helpers.ts"
+      - "appwarden/middleware:src/utils/route-matching.ts"
     subsystems:
       - "vercel-edge-config"
       - "upstash-kv"
