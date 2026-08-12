@@ -1,4 +1,4 @@
-import { ZodError, ZodIssue } from "zod"
+import { SafeParseReturnType, ZodError, ZodIssue } from "zod"
 import {
   APPWARDEN_HEARTBEAT_ROUTE,
   HEARTBEAT_CONFIG_ERROR_MAX_CODE_LENGTH,
@@ -21,6 +21,7 @@ import {
   AppwardenConfigErrorMessages,
 } from "../utils/errors"
 import { MIDDLEWARE_VERSION } from "../version"
+import { parseApiToken } from "./parse-api-token"
 
 const DEFAULT_HEARTBEAT_CONFIG_ERROR_CODE = "custom"
 const DEFAULT_HEARTBEAT_CONFIG_ERROR_MESSAGE =
@@ -385,6 +386,40 @@ export function sanitizeConfigErrors(
   }
 
   return errors
+}
+
+/**
+ * Extracts a publicId from a raw config object and its Zod validation result.
+ * Centralizes dual-token publicId parsing so each adapter does not repeat the
+ * same fallback logic.
+ */
+export function getHeartbeatPublicId<T extends { appwardenApiToken: string }>(
+  validationResult: SafeParseReturnType<unknown, T>,
+  rawConfig: unknown,
+): string {
+  const rawToken = (rawConfig as { appwardenApiToken?: string })
+    .appwardenApiToken
+  return validationResult.success
+    ? (parseApiToken(validationResult.data.appwardenApiToken)?.publicId ?? "")
+    : (parseApiToken(rawToken ?? "")?.publicId ?? "")
+}
+
+/**
+ * Converts a config-evaluation error into sanitized heartbeat configErrors.
+ * Used when a config function throws while building a heartbeat response.
+ */
+export function getConfigEvaluationHeartbeatErrors(
+  error: unknown,
+): HeartbeatConfigError[] {
+  return error instanceof ZodError
+    ? sanitizeConfigErrors(error)
+    : [
+        createHeartbeatConfigError(
+          ["config"],
+          "custom",
+          "Appwarden config evaluation failed",
+        ),
+      ]
 }
 
 /**

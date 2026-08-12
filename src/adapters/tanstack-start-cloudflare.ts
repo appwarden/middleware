@@ -1,5 +1,4 @@
 import { waitUntil } from "cloudflare:workers"
-import { ZodError } from "zod"
 import { HEARTBEAT_SERVICES } from "../constants"
 import type {
   TanStackStartCloudflareConfig,
@@ -7,12 +6,12 @@ import type {
 } from "../schemas/tanstack-start-cloudflare"
 import { TanStackStartCloudflareConfigSchema } from "../schemas/tanstack-start-cloudflare"
 import {
-  createHeartbeatConfigError,
   createRedirect,
   debug,
+  getConfigEvaluationHeartbeatErrors,
+  getHeartbeatPublicId,
   handleHeartbeatRequest,
   isHeartbeatRequest,
-  parseApiToken,
   printMessage,
   sanitizeConfigErrors,
 } from "../utils"
@@ -44,11 +43,7 @@ const createTanStackHeartbeatResponse = (
     const configErrors = validationResult.success
       ? []
       : sanitizeConfigErrors(validationResult.error)
-    const rawToken = (rawConfig as { appwardenApiToken?: string })
-      .appwardenApiToken
-    const publicId = validationResult.success
-      ? (parseApiToken(validationResult.data.appwardenApiToken)?.publicId ?? "")
-      : (parseApiToken(rawToken ?? "")?.publicId ?? "")
+    const publicId = getHeartbeatPublicId(validationResult, rawConfig)
 
     return handleHeartbeatRequest(
       request,
@@ -61,15 +56,7 @@ const createTanStackHeartbeatResponse = (
       request,
       HEARTBEAT_SERVICES.CLOUDFLARE_TANSTACK_START,
       "",
-      error instanceof ZodError
-        ? sanitizeConfigErrors(error)
-        : [
-            createHeartbeatConfigError(
-              ["config"],
-              "custom",
-              "Appwarden config evaluation failed",
-            ),
-          ],
+      getConfigEvaluationHeartbeatErrors(error),
     )
   }
 }
