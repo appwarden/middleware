@@ -1075,7 +1075,7 @@ describe("appwarden-link.cjs", () => {
     fs.rmSync(tmpDir, { recursive: true })
   })
 
-  it("should handle remote config", () => {
+  it("should coerce remote config debug string to boolean", () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "appwarden-test-"))
 
     fs.writeFileSync(
