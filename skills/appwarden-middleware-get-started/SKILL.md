@@ -5,12 +5,14 @@ description: >
 metadata:
   type: lifecycle
   library: "@appwarden/middleware"
-  library_version: "3.16.3"
+  library_version: "3.17.4"
 requires: []
 sources:
   - "appwarden/middleware:README.md"
   - "appwarden/middleware:src/index.ts"
   - "appwarden/middleware:src/schemas/use-appwarden.ts"
+  - "appwarden/middleware:src/schemas/middleware-options.ts"
+  - "appwarden/middleware:src/utils/parse-api-token.ts"
 ---
 
 # Appwarden Middleware — Get Started
@@ -125,6 +127,29 @@ export default createAppwardenMiddleware((cloudflare) =>
 
 `appwarden-link --fqdn=your.app` writes the generated configuration to `.appwarden/linked/middleware.json`. Keep this directory out of source control.
 
+### New middleware configuration shape
+
+At least one of `website`, `api`, or `multidomainConfig` (Cloudflare universal only) is required. `bypassPaths` are matched before `api.basePaths`, which are matched before `website`. Path patterns must start with `/` and use segment-boundary matching.
+
+```typescript
+getAppwardenConfiguration(appwardenConfig, {
+  appwardenApiToken: cloudflare.env.APPWARDEN_API_TOKEN,
+  bypassPaths: ["/health"],
+  api: {
+    basePaths: ["/api"],
+  },
+  website: {
+    lockPageSlug: "/maintenance",
+  },
+  debug: true,
+})
+```
+
+- `bypassPaths` pass through without a lock check.
+- `api` defines API-only base paths and an optional locked `response`.
+- `website` defines the lock page and CSP for HTML traffic.
+- `multidomainConfig` maps hostnames to per-hostname options for Cloudflare universal middleware.
+
 ### Minimal Vercel Edge Middleware
 
 ```typescript
@@ -140,6 +165,10 @@ export default createAppwardenMiddleware(
       appwardenApiToken: process.env.APPWARDEN_API_TOKEN,
       website: {
         lockPageSlug: "/maintenance",
+      },
+      bypassPaths: ["/health"],
+      api: {
+        basePaths: ["/api"],
       },
       cacheUrl: process.env.KV_URL,
       debug: true,
@@ -183,7 +212,7 @@ Wrong:
 
 ```typescript
 export default createAppwardenMiddleware({
-  appwardenApiToken: "sk_test_...",
+  appwardenApiToken: "aw_...",
   website: {
     lockPageSlug: "/maintenance",
   },
@@ -215,7 +244,7 @@ Wrong:
 
 ```json
 {
-  "vars": { "APPWARDEN_API_TOKEN": "sk_..." }
+  "vars": { "APPWARDEN_API_TOKEN": "aw_..." }
 }
 ```
 
@@ -291,6 +320,40 @@ export default createAppwardenMiddleware(
 ```
 
 Without `debug: true`, config validation failures and lock-status checks are silent, making first-time troubleshooting difficult. Disable debug only after the heartbeat is clean.
+
+### HIGH Using a legacy API token format
+
+Wrong:
+
+```typescript
+export default createAppwardenMiddleware({
+  appwardenApiToken: "sk_test_...",
+  website: {
+    lockPageSlug: "/maintenance",
+  },
+})
+```
+
+Correct:
+
+```typescript
+import {
+  createAppwardenMiddleware,
+  getAppwardenConfiguration,
+} from "@appwarden/middleware/cloudflare"
+import appwardenConfig from "../.appwarden/linked/middleware.json"
+
+export default createAppwardenMiddleware((cloudflare) =>
+  getAppwardenConfiguration(appwardenConfig, {
+    appwardenApiToken: cloudflare.env.APPWARDEN_API_TOKEN,
+    debug: true,
+  }),
+)
+```
+
+Source: `src/utils/parse-api-token.ts` and `src/schemas/helpers.ts`.
+
+The API token is a dual-token in the format `aw_<publicId>_<secret>`. Legacy `sk_...` tokens fail schema validation and are shown only once, so they must be copied from the dashboard and stored as a secret.
 
 ## Next Steps
 

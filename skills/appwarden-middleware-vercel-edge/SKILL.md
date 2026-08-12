@@ -5,7 +5,7 @@ description: >
 metadata:
   type: framework
   library: "@appwarden/middleware"
-  library_version: "3.16.3"
+  library_version: "3.17.4"
 requires:
   - "appwarden-middleware-get-started"
 sources:
@@ -14,6 +14,8 @@ sources:
   - "https://upstash.com/docs/workflow/troubleshooting/vercel"
   - "appwarden/middleware:src/runners/appwarden-on-vercel.ts"
   - "appwarden/middleware:src/schemas/vercel.ts"
+  - "appwarden/middleware:src/schemas/middleware-options.ts"
+  - "appwarden/middleware:src/utils/parse-api-token.ts"
 ---
 
 # Appwarden Middleware — Wire into Vercel Edge Middleware
@@ -50,6 +52,10 @@ export default createAppwardenMiddleware(
       appwardenApiToken: process.env.APPWARDEN_API_TOKEN,
       website: {
         lockPageSlug: "/maintenance",
+      },
+      bypassPaths: ["/health"],
+      api: {
+        basePaths: ["/api"],
       },
       cacheUrl: process.env.KV_URL,
       debug: true,
@@ -272,6 +278,48 @@ The Vercel runner uses a single module-level `MemoryCache` with a fixed key. If 
 ### MEDIUM Enabling Vercel Deployment Protection without a bypass secret for automated verification
 
 When Deployment Protection is enabled, automated requests to preview deployments can be blocked. Add a Protection Bypass for Automation secret in Vercel project settings and pass it as `x-vercel-protection-bypass` where required.
+
+### HIGH Using an API token in the wrong format
+
+Wrong:
+
+```typescript
+appwardenApiToken: "sk_test_..."
+```
+
+Correct:
+
+```typescript
+appwardenApiToken: process.env.APPWARDEN_API_TOKEN
+```
+
+Source: `src/utils/parse-api-token.ts` and `src/schemas/helpers.ts`.
+
+The Appwarden API token is a dual-token in the format `aw_<publicId>_<secret>`. Legacy `sk_...` tokens fail schema validation and are shown only once in the dashboard.
+
+### MEDIUM Providing an invalid bypassPaths or api.basePaths pattern
+
+Wrong:
+
+```typescript
+{
+  bypassPaths: ["health"],
+  api: { basePaths: ["api"] },
+}
+```
+
+Correct:
+
+```typescript
+{
+  bypassPaths: ["/health"],
+  api: { basePaths: ["/api"] },
+}
+```
+
+Source: `src/schemas/middleware-options.ts` and `src/utils/route-matching.ts`.
+
+Vercel uses the same path-pattern schema as Cloudflare: patterns must start with `/` and use segment-boundary matching. `/api` matches `/api/users` but not `/api-docs`.
 
 ## Next Steps
 

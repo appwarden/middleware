@@ -5,7 +5,7 @@ description: >
 metadata:
   type: core
   library: "@appwarden/middleware"
-  library_version: "3.16.3"
+  library_version: "3.17.4"
 sources:
   - "appwarden/middleware:src/schemas/helpers.ts"
   - "appwarden/middleware:README.md"
