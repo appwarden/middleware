@@ -326,6 +326,15 @@ describe("heartbeat utilities", () => {
       expect(HeartbeatResponseBodySchema.safeParse(body).success).toBe(true)
     })
 
+    it("should trim a whitespace-only publicId when config errors are present", () => {
+      const body = createHeartbeatResponseBody("cloudflare", "   ", [
+        createHeartbeatConfigError(["config"], "custom", "Invalid config"),
+      ])
+
+      expect(body.publicId).toBe("")
+      expect(HeartbeatResponseBodySchema.safeParse(body).success).toBe(true)
+    })
+
     it("should trim config errors to stay within the serialized byte budget", () => {
       const oversizedConfigErrors = getOversizedConfigErrors()
 
