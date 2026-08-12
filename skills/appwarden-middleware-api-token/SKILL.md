@@ -9,7 +9,6 @@ metadata:
 sources:
   - "appwarden/appwarden-core-b:websites/appwarden-io/docs/src/content/docs/docs/guides/api-token-management.mdx"
   - "appwarden/middleware:src/schemas/helpers.ts"
-  - "appwarden/middleware:src/utils/parse-api-token.ts"
 ---
 
 # Appwarden Middleware — Manage API Token in Dashboard
@@ -138,25 +137,6 @@ Correct:
 ```
 
 Each Appwarden organization can have only one active API token at a time. Create a new token only after deleting the current one.
-
-### HIGH Using a legacy or malformed API token format
-
-Wrong:
-
-```typescript
-const appwardenApiToken = "sk_test_..."
-```
-
-Correct:
-
-```typescript
-// Use the token copied from the dashboard (aw_... format)
-const appwardenApiToken = process.env.APPWARDEN_API_TOKEN
-```
-
-Source: `src/utils/parse-api-token.ts` and `src/schemas/helpers.ts`.
-
-The middleware validates the dual-token format `aw_<publicId>_<secret>`. Legacy `sk_...` tokens fail schema validation and will not check lock status.
 
 ## Next Steps
 
