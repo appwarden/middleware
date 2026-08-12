@@ -20,7 +20,8 @@ describe("nextjs-cloudflare bundle", () => {
       const middleware = createAppwardenMiddleware((_runtime) => ({
         debug: true,
         website: { lockPageSlug: "/maintenance" },
-        appwardenApiToken: "test-token",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       }))
 
       expect(typeof middleware).toBe("function")
@@ -30,7 +31,8 @@ describe("nextjs-cloudflare bundle", () => {
       const middleware = createAppwardenMiddleware((_runtime) => ({
         debug: true,
         website: { lockPageSlug: "/maintenance" },
-        appwardenApiToken: "test-token",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       }))
 
       // Middleware should accept 2 parameters (request, event)
@@ -43,7 +45,8 @@ describe("nextjs-cloudflare bundle", () => {
       // Type check - this will fail at compile time if the type is not exported
       const config: NextJsCloudflareAppwardenConfig = {
         website: { lockPageSlug: "/maintenance" },
-        appwardenApiToken: "test-token",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
         debug: true,
       }
       expect(config.website?.lockPageSlug).toBe("/maintenance")
@@ -53,7 +56,8 @@ describe("nextjs-cloudflare bundle", () => {
       // Type check - this will fail at compile time if the type is not exported
       const config: NextJsCloudflareConfig = {
         website: { lockPageSlug: "/maintenance" },
-        appwardenApiToken: "test-token",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
         debug: true,
       }
       expect(config.website?.lockPageSlug).toBe("/maintenance")
@@ -63,7 +67,8 @@ describe("nextjs-cloudflare bundle", () => {
       // Type check - this will fail at compile time if the type is not exported
       const config: NextJsCloudflareConfigInput = {
         website: { lockPageSlug: "/maintenance" },
-        appwardenApiToken: "test-token",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
         debug: "true", // Input type accepts string
       }
       expect(config.website?.lockPageSlug).toBe("/maintenance")
@@ -75,7 +80,8 @@ describe("nextjs-cloudflare bundle", () => {
         _runtime: NextJsCloudflareRuntime,
       ) => ({
         website: { lockPageSlug: "/maintenance" },
-        appwardenApiToken: "test-token",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       })
       expect(typeof configFn).toBe("function")
     })
@@ -100,13 +106,16 @@ describe("nextjs-cloudflare bundle", () => {
         {},
         {
           website: { lockPageSlug: "/maintenance" },
-          appwardenApiToken: "test-token",
+          appwardenApiToken:
+            "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
           debug: true,
         },
       )
 
       expect(config.website?.lockPageSlug).toBe("/maintenance")
-      expect(config.appwardenApiToken).toBe("test-token")
+      expect(config.appwardenApiToken).toBe(
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
+      )
       expect(config.debug).toBe(true)
     })
 

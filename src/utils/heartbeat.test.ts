@@ -17,6 +17,8 @@ import {
   sanitizeConfigErrors,
 } from "./heartbeat"
 
+const PUBLIC_ID = "1234567890123456789012"
+
 const getSerializedJsonByteLength = (value: unknown) =>
   new TextEncoder().encode(JSON.stringify(value)).length
 
@@ -275,6 +277,7 @@ describe("heartbeat utilities", () => {
           service: "cloudflare",
           version: "1.0.0",
           configErrors: [result],
+          publicId: PUBLIC_ID,
         }).success,
       ).toBe(true)
     })
@@ -282,7 +285,7 @@ describe("heartbeat utilities", () => {
 
   describe("createHeartbeatResponseBody", () => {
     it("should always return a schema-valid heartbeat response body", () => {
-      const body = createHeartbeatResponseBody("cloudflare")
+      const body = createHeartbeatResponseBody("cloudflare", PUBLIC_ID)
 
       expect(HeartbeatResponseBodySchema.safeParse(body).success).toBe(true)
       expect(body).toMatchObject({
@@ -292,6 +295,7 @@ describe("heartbeat utilities", () => {
         contractVersion: HEARTBEAT_CONTRACT_VERSION,
         service: "cloudflare",
         configErrors: [],
+        publicId: PUBLIC_ID,
       })
       expect(body.version).toBeDefined()
     })
@@ -306,7 +310,11 @@ describe("heartbeat utilities", () => {
         },
       ]
 
-      const body = createHeartbeatResponseBody("cloudflare-astro", configErrors)
+      const body = createHeartbeatResponseBody(
+        "cloudflare-astro",
+        PUBLIC_ID,
+        configErrors,
+      )
 
       expect(body.configErrors).toEqual([
         {
@@ -327,6 +335,7 @@ describe("heartbeat utilities", () => {
 
       const body = createHeartbeatResponseBody(
         "cloudflare-astro",
+        PUBLIC_ID,
         oversizedConfigErrors,
       )
 
@@ -339,7 +348,7 @@ describe("heartbeat utilities", () => {
 
   describe("createHeartbeatResponse", () => {
     it("should create a Response with correct headers", () => {
-      const response = createHeartbeatResponse("cloudflare-nextjs")
+      const response = createHeartbeatResponse("cloudflare-nextjs", PUBLIC_ID)
       expect(response.status).toBe(200)
       expect(response.headers.get("content-type")).toBe("application/json")
       expect(response.headers.get("cache-control")).toBe("no-store")
@@ -354,7 +363,7 @@ describe("heartbeat utilities", () => {
     })
 
     it("should include valid JSON body", async () => {
-      const response = createHeartbeatResponse("vercel")
+      const response = createHeartbeatResponse("vercel", PUBLIC_ID)
       const body = HeartbeatResponseBodySchema.parse(await response.json())
 
       expect(body).toMatchObject({
@@ -414,7 +423,12 @@ describe("heartbeat utilities", () => {
       const request = new Request("https://example.com/_appwarden/heartbeat", {
         method: "GET",
       })
-      const response = handleHeartbeatRequest(request, "cloudflare", [])
+      const response = handleHeartbeatRequest(
+        request,
+        "cloudflare",
+        PUBLIC_ID,
+        [],
+      )
       expect(response.status).toBe(200)
     })
   })

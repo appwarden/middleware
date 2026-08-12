@@ -28,6 +28,8 @@ const getValidConfigError = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 })
 
+const PUBLIC_ID = "1234567890123456789012"
+
 const getValidResponse = (overrides: Record<string, unknown> = {}) => ({
   app: "appwarden",
   kind: "heartbeat",
@@ -36,6 +38,7 @@ const getValidResponse = (overrides: Record<string, unknown> = {}) => ({
   service: "cloudflare",
   version: "1.0.0",
   configErrors: [],
+  publicId: PUBLIC_ID,
   ...overrides,
 })
 
@@ -120,6 +123,17 @@ describe("heartbeat types", () => {
       ).toBe(true)
     })
 
+    it("should allow an empty publicId when there are config errors", () => {
+      expect(
+        HeartbeatResponseBodySchema.safeParse(
+          getValidResponse({
+            publicId: "",
+            configErrors: [getValidConfigError()],
+          }),
+        ).success,
+      ).toBe(true)
+    })
+
     it.each([
       ["wrong app value", getValidResponse({ app: "wrong" })],
       ["wrong kind value", getValidResponse({ kind: "wrong" })],
@@ -145,6 +159,22 @@ describe("heartbeat types", () => {
         }),
       ],
       ["unknown top-level body keys", { ...getValidResponse(), extra: true }],
+      [
+        "empty publicId with no config errors",
+        getValidResponse({ publicId: "" }),
+      ],
+      [
+        "short publicId",
+        getValidResponse({ publicId: "123456789012345678901" }),
+      ],
+      [
+        "long publicId",
+        getValidResponse({ publicId: "12345678901234567890123" }),
+      ],
+      [
+        "non-alphanumeric publicId",
+        getValidResponse({ publicId: "123456789012345678901!" }),
+      ],
     ])("should reject %s", (_, invalidResponse) => {
       expect(
         HeartbeatResponseBodySchema.safeParse(invalidResponse).success,

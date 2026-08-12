@@ -154,7 +154,8 @@ describe("createAppwardenMiddleware", () => {
     // Mock valid config
     mockConfig = {
       cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       vercelApiToken: "vercel-token",
       debug: false,
       website: { lockPageSlug: "/maintenance" },
@@ -500,7 +501,8 @@ describe("createAppwardenMiddleware", () => {
   it("should use upstash provider when cacheUrl is upstash URL", async () => {
     const upstashConfig = {
       cacheUrl: "rediss://:password@hostname.upstash.io:6379",
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       debug: false,
       website: { lockPageSlug: "/maintenance" },
     }
@@ -569,7 +571,8 @@ describe("createAppwardenMiddleware", () => {
   it("should work with minimal configuration", async () => {
     const minimalConfig = {
       cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       debug: false,
       website: { lockPageSlug: "/maintenance" },
     }

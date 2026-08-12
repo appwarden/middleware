@@ -20,6 +20,7 @@ import {
   isHTMLRequest,
   isOnLockPage,
   MemoryCache,
+  parseApiToken,
   printMessage,
   sanitizeConfigErrors,
   TEMPORARY_REDIRECT_STATUS,
@@ -74,9 +75,17 @@ export function createAppwardenMiddleware(
         ? []
         : sanitizeConfigErrors(validationResult.error)
 
+      const rawToken = (config as { appwardenApiToken?: string })
+        .appwardenApiToken
+      const publicId = validationResult.success
+        ? (parseApiToken(validationResult.data.appwardenApiToken)?.publicId ??
+          "")
+        : (parseApiToken(rawToken ?? "")?.publicId ?? "")
+
       const response = handleHeartbeatRequest(
         request,
         HEARTBEAT_SERVICES.VERCEL,
+        publicId,
         configErrors,
       )
       return toNextResponse(response)

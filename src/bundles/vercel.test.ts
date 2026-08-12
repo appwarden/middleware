@@ -17,7 +17,8 @@ describe("vercel bundle", () => {
     it("should return a middleware function when called with config", () => {
       const config = {
         website: { lockPageSlug: "/maintenance" },
-        appwardenApiToken: "test-token",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
         cacheUrl: validUpstashUrl,
       }
 
@@ -28,7 +29,8 @@ describe("vercel bundle", () => {
     it("should create middleware that accepts request parameter", () => {
       const config = {
         website: { lockPageSlug: "/maintenance" },
-        appwardenApiToken: "test-token",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
         cacheUrl: validUpstashUrl,
       }
 
@@ -58,13 +60,16 @@ describe("vercel bundle", () => {
         {},
         {
           website: { lockPageSlug: "/maintenance" },
-          appwardenApiToken: "test-token",
+          appwardenApiToken:
+            "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
           cacheUrl: validUpstashUrl,
         },
       )
 
       expect(config.website?.lockPageSlug).toBe("/maintenance")
-      expect(config.appwardenApiToken).toBe("test-token")
+      expect(config.appwardenApiToken).toBe(
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
+      )
     })
 
     it("should throw when required fields are missing", () => {

@@ -391,11 +391,13 @@ export function sanitizeConfigErrors(
  * Creates a heartbeat response body.
  *
  * @param service - The service identifier for this adapter
+ * @param publicId - The public ID from the resolved API token
  * @param configErrors - Optional config validation errors
  * @returns The heartbeat response body
  */
 export function createHeartbeatResponseBody(
   service: HeartbeatService,
+  publicId: string,
   configErrors: HeartbeatConfigError[] = [],
 ): HeartbeatResponseBody {
   const normalizedConfigErrors = normalizeHeartbeatConfigErrors(configErrors)
@@ -407,6 +409,7 @@ export function createHeartbeatResponseBody(
     service,
     version: MIDDLEWARE_VERSION,
     configErrors: normalizedConfigErrors,
+    publicId,
   }
 
   while (
@@ -433,15 +436,17 @@ function createHeartbeatConstructionFailureResponse(): Response {
  * Creates a complete heartbeat Response object with proper headers.
  *
  * @param service - The service identifier for this adapter
+ * @param publicId - The public ID from the resolved API token
  * @param configErrors - Optional config validation errors
  * @returns A Response object with the heartbeat contract
  */
 export function createHeartbeatResponse(
   service: HeartbeatService,
+  publicId: string,
   configErrors: HeartbeatConfigError[] = [],
 ): Response {
   try {
-    const body = createHeartbeatResponseBody(service, configErrors)
+    const body = createHeartbeatResponseBody(service, publicId, configErrors)
 
     return new Response(JSON.stringify(body), {
       status: 200,
@@ -487,13 +492,15 @@ export function isHeartbeatRequest(request: Request, url: URL): boolean {
  *
  * @param request - The incoming request
  * @param service - The service identifier for this adapter
+ * @param publicId - The public ID from the resolved API token
  * @param configErrors - Optional config validation errors
  * @returns A Response object
  */
 export function handleHeartbeatRequest(
   request: Request,
   service: HeartbeatService,
+  publicId: string,
   configErrors: HeartbeatConfigError[] = [],
 ): Response {
-  return createHeartbeatResponse(service, configErrors)
+  return createHeartbeatResponse(service, publicId, configErrors)
 }

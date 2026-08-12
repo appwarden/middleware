@@ -12,6 +12,7 @@ import {
   debug,
   handleHeartbeatRequest,
   isHeartbeatRequest,
+  parseApiToken,
   printMessage,
   sanitizeConfigErrors,
 } from "../utils"
@@ -37,20 +38,29 @@ const createTanStackHeartbeatResponse = (
   configFn: TanStackStartConfigFn,
 ): Response => {
   try {
+    const rawConfig = configFn()
     const validationResult =
-      TanStackStartCloudflareConfigSchema.safeParse(configFn())
+      TanStackStartCloudflareConfigSchema.safeParse(rawConfig)
+    const configErrors = validationResult.success
+      ? []
+      : sanitizeConfigErrors(validationResult.error)
+    const rawToken = (rawConfig as { appwardenApiToken?: string })
+      .appwardenApiToken
+    const publicId = validationResult.success
+      ? (parseApiToken(validationResult.data.appwardenApiToken)?.publicId ?? "")
+      : (parseApiToken(rawToken ?? "")?.publicId ?? "")
 
     return handleHeartbeatRequest(
       request,
       HEARTBEAT_SERVICES.CLOUDFLARE_TANSTACK_START,
-      validationResult.success
-        ? []
-        : sanitizeConfigErrors(validationResult.error),
+      publicId,
+      configErrors,
     )
   } catch (error) {
     return handleHeartbeatRequest(
       request,
       HEARTBEAT_SERVICES.CLOUDFLARE_TANSTACK_START,
+      "",
       error instanceof ZodError
         ? sanitizeConfigErrors(error)
         : [

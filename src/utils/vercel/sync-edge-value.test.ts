@@ -57,7 +57,8 @@ describe("syncEdgeValue", () => {
     // Setup mock context
     mockContext = {
       requestUrl: new URL("https://example.com"),
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       vercelApiToken: "vercel-token",
       cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
       debug: vi.fn(),
@@ -95,7 +96,8 @@ describe("syncEdgeValue", () => {
           cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
           fqdn: "example.com",
           vercelApiToken: "vercel-token",
-          appwardenApiToken: "test-token",
+          appwardenApiToken:
+            "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
         }),
         signal: expect.any(AbortSignal),
       },

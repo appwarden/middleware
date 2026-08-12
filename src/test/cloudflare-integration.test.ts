@@ -111,7 +111,8 @@ describe("Cloudflare Cache Integration (Real Workers Runtime)", () => {
 
     const result = await checkLockStatus({
       request: new Request("https://example.com/page"),
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       appwardenApiHostname: "https://staging-api.appwarden.io",
       lockPageSlug: "/maintenance",
       waitUntil: ctx.waitUntil.bind(ctx),
@@ -157,7 +158,8 @@ describe("Cloudflare Cache Integration (Real Workers Runtime)", () => {
 
     const result = await checkLockStatus({
       request: new Request("https://example.com/page"),
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       appwardenApiHostname: "https://staging-api.appwarden.io",
       lockPageSlug: "/maintenance",
       waitUntil: (promise) => {
@@ -209,7 +211,8 @@ describe("Cloudflare Cache Integration (Real Workers Runtime)", () => {
 
     const result = await checkLockStatus({
       request: new Request("https://example.com/page"),
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       appwardenApiHostname: "https://staging-api.appwarden.io",
       lockPageSlug: "/maintenance",
       waitUntil: (promise) => {
@@ -255,7 +258,8 @@ describe("Cloudflare Cache Integration (Real Workers Runtime)", () => {
 
     const result = await checkLockStatus({
       request: new Request("https://example.com/page"),
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       appwardenApiHostname: "https://staging-api.appwarden.io",
       lockPageSlug: "/maintenance",
       waitUntil: (promise) => {
@@ -307,7 +311,8 @@ describe("Cloudflare Cache Integration (Real Workers Runtime)", () => {
 
     const result = await checkLockStatus({
       request: new Request("https://example.com/page"),
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       appwardenApiHostname: "https://staging-api.appwarden.io",
       lockPageSlug: "/maintenance",
       waitUntil: (promise) => {

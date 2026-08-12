@@ -5,7 +5,8 @@ describe("BaseNextJsConfigSchema", () => {
   it("should validate a valid config", () => {
     const validConfig = {
       cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
-      appwardenApiToken: "token123",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       vercelApiToken: "vercel-token",
       website: {
         lockPageSlug: "maintenance",
@@ -27,7 +28,8 @@ describe("BaseNextJsConfigSchema", () => {
   it("should transform lockPageSlug to have a leading slash", () => {
     const config = {
       cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
-      appwardenApiToken: "token123",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       website: {
         lockPageSlug: "maintenance",
       },
@@ -43,7 +45,8 @@ describe("BaseNextJsConfigSchema", () => {
   it("should not add an extra slash if lockPageSlug already has one", () => {
     const config = {
       cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
-      appwardenApiToken: "token123",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       website: {
         lockPageSlug: "/maintenance",
       },
@@ -59,7 +62,8 @@ describe("BaseNextJsConfigSchema", () => {
   it("should default lockPageSlug when omitted", () => {
     const config = {
       cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
-      appwardenApiToken: "token123",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       website: {},
     }
 
@@ -73,7 +77,8 @@ describe("BaseNextJsConfigSchema", () => {
   it("should default an empty lockPageSlug to /maintenance", () => {
     const config = {
       cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
-      appwardenApiToken: "token123",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       website: {
         lockPageSlug: "",
       },
@@ -89,7 +94,8 @@ describe("BaseNextJsConfigSchema", () => {
   it("should reject an empty api.basePaths array", () => {
     const config = {
       cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
-      appwardenApiToken: "token123",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       api: {
         basePaths: [],
       },
@@ -105,7 +111,8 @@ describe("BaseNextJsConfigSchema", () => {
   it("should make vercelApiToken optional", () => {
     const config = {
       cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
-      appwardenApiToken: "token123",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       website: {
         lockPageSlug: "maintenance",
       },
@@ -118,7 +125,8 @@ describe("BaseNextJsConfigSchema", () => {
   it("should retain a valid appwardenApiHostname", () => {
     const config = {
       cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
-      appwardenApiToken: "token123",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       appwardenApiHostname: "https://api.appwarden.io",
       website: {
         lockPageSlug: "maintenance",
@@ -155,7 +163,8 @@ describe("BaseNextJsConfigSchema", () => {
     (hostname: string, message: string) => {
       const config = {
         cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
-        appwardenApiToken: "token123",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
         appwardenApiHostname: hostname,
         website: {
           lockPageSlug: "maintenance",
@@ -175,7 +184,8 @@ describe("BaseNextJsConfigSchema", () => {
 
   it("should require cacheUrl", () => {
     const config = {
-      appwardenApiToken: "token123",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       website: {
         lockPageSlug: "maintenance",
       },
@@ -208,7 +218,8 @@ describe("BaseNextJsConfigSchema", () => {
     (lockPageSlug: string) => {
       const config = {
         cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
-        appwardenApiToken: "token123",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
         website: {
           lockPageSlug,
         },
@@ -231,7 +242,8 @@ describe("AppwardenConfigSchema", () => {
     it("should accept valid Edge Config URL", () => {
       const config = {
         cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
-        appwardenApiToken: "token123",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
         vercelApiToken: "vercel-token",
         website: {
           lockPageSlug: "maintenance",
@@ -245,7 +257,8 @@ describe("AppwardenConfigSchema", () => {
     it("should accept valid Upstash URL", () => {
       const config = {
         cacheUrl: "redis://:password@funky-roughy-44527.upstash.io:6379",
-        appwardenApiToken: "token123",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
         website: {
           lockPageSlug: "maintenance",
         },
@@ -258,7 +271,8 @@ describe("AppwardenConfigSchema", () => {
     it("should reject unrecognized cache URL", () => {
       const config = {
         cacheUrl: "https://example.com/cache",
-        appwardenApiToken: "token123",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
         vercelApiToken: "vercel-token",
         website: {
           lockPageSlug: "maintenance",
@@ -276,7 +290,8 @@ describe("AppwardenConfigSchema", () => {
     it("should reject invalid Edge Config URL format", () => {
       const config = {
         cacheUrl: "https://edge-config.vercel.com/config_123?token=abc",
-        appwardenApiToken: "token123",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
         vercelApiToken: "vercel-token",
         website: {
           lockPageSlug: "maintenance",
@@ -294,7 +309,8 @@ describe("AppwardenConfigSchema", () => {
     it("should reject invalid Upstash URL format", () => {
       const config = {
         cacheUrl: "https://funky-roughy-44527.upstash.io:6379",
-        appwardenApiToken: "token123",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
         website: {
           lockPageSlug: "maintenance",
         },
@@ -313,7 +329,8 @@ describe("AppwardenConfigSchema", () => {
     it("should require vercelApiToken when using Edge Config", () => {
       const config = {
         cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
-        appwardenApiToken: "token123",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
         website: {
           lockPageSlug: "maintenance",
         },
@@ -333,7 +350,8 @@ describe("AppwardenConfigSchema", () => {
     it("should not require vercelApiToken when using Upstash", () => {
       const config = {
         cacheUrl: "redis://:password@funky-roughy-44527.upstash.io:6379",
-        appwardenApiToken: "token123",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
         website: {
           lockPageSlug: "maintenance",
         },
@@ -395,7 +413,8 @@ describe("AppwardenConfigSchema", () => {
       const config = {
         cacheUrl:
           "https://edge-config.vercel.com/ecfg_yaa9pmoquhmf29cnfott3jhbsfdz?token=5010d9a6-04e1-4219-a8b7-f8ecfd3e10d6",
-        appwardenApiToken: "appwarden-token-123",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
         vercelApiToken: "vercel-token-456",
         website: {
           lockPageSlug: "/maintenance",
@@ -416,7 +435,8 @@ describe("AppwardenConfigSchema", () => {
       const config = {
         cacheUrl:
           "rediss://:Aa3vAAIjcDFkNWIzYTlkODVhMWY0ZjliOGQzMmUyNmMxZWUxMzcxOXAxMA@funky-roughy-44527.upstash.io:6379",
-        appwardenApiToken: "appwarden-token-123",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
         website: {
           lockPageSlug: "maintenance",
         },

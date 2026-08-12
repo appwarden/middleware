@@ -12,6 +12,7 @@ import {
   debug,
   handleHeartbeatRequest,
   isHeartbeatRequest,
+  parseApiToken,
   printMessage,
   sanitizeConfigErrors,
 } from "../utils"
@@ -34,6 +35,7 @@ export function getAppwardenConfiguration(
 
 const createConfigEvaluationHeartbeatResponse = (
   request: Request,
+  publicId: string,
   configErrors = [
     createHeartbeatConfigError(
       ["config"],
@@ -45,6 +47,7 @@ const createConfigEvaluationHeartbeatResponse = (
   return handleHeartbeatRequest(
     request,
     HEARTBEAT_SERVICES.CLOUDFLARE_REACT_ROUTER,
+    publicId,
     configErrors,
   )
 }
@@ -54,19 +57,28 @@ const handleReactRouterHeartbeatRequest = (
   configFn: ReactRouterConfigFn,
 ): Response => {
   try {
+    const rawConfig = configFn()
     const validationResult =
-      ReactRouterCloudflareConfigSchema.safeParse(configFn())
+      ReactRouterCloudflareConfigSchema.safeParse(rawConfig)
+    const configErrors = validationResult.success
+      ? []
+      : sanitizeConfigErrors(validationResult.error)
+    const rawToken = (rawConfig as { appwardenApiToken?: string })
+      .appwardenApiToken
+    const publicId = validationResult.success
+      ? (parseApiToken(validationResult.data.appwardenApiToken)?.publicId ?? "")
+      : (parseApiToken(rawToken ?? "")?.publicId ?? "")
 
     return handleHeartbeatRequest(
       request,
       HEARTBEAT_SERVICES.CLOUDFLARE_REACT_ROUTER,
-      validationResult.success
-        ? []
-        : sanitizeConfigErrors(validationResult.error),
+      publicId,
+      configErrors,
     )
   } catch (error) {
     return createConfigEvaluationHeartbeatResponse(
       request,
+      "",
       error instanceof ZodError ? sanitizeConfigErrors(error) : undefined,
     )
   }

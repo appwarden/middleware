@@ -13,6 +13,7 @@ import {
   debug,
   handleHeartbeatRequest,
   isHeartbeatRequest,
+  parseApiToken,
   printMessage,
   sanitizeConfigErrors,
   TEMPORARY_REDIRECT_STATUS,
@@ -49,6 +50,7 @@ const createAstroHeartbeatResponse = (
     return handleHeartbeatRequest(
       request,
       HEARTBEAT_SERVICES.CLOUDFLARE_ASTRO,
+      "",
       [
         createHeartbeatConfigError(
           ["runtime"],
@@ -60,21 +62,28 @@ const createAstroHeartbeatResponse = (
   }
 
   try {
-    const validationResult = AstroCloudflareConfigSchema.safeParse(
-      configFn(runtime),
-    )
+    const rawConfig = configFn(runtime)
+    const validationResult = AstroCloudflareConfigSchema.safeParse(rawConfig)
+    const configErrors = validationResult.success
+      ? []
+      : sanitizeConfigErrors(validationResult.error)
+    const rawToken = (rawConfig as { appwardenApiToken?: string })
+      .appwardenApiToken
+    const publicId = validationResult.success
+      ? (parseApiToken(validationResult.data.appwardenApiToken)?.publicId ?? "")
+      : (parseApiToken(rawToken ?? "")?.publicId ?? "")
 
     return handleHeartbeatRequest(
       request,
       HEARTBEAT_SERVICES.CLOUDFLARE_ASTRO,
-      validationResult.success
-        ? []
-        : sanitizeConfigErrors(validationResult.error),
+      publicId,
+      configErrors,
     )
   } catch (error) {
     return handleHeartbeatRequest(
       request,
       HEARTBEAT_SERVICES.CLOUDFLARE_ASTRO,
+      "",
       error instanceof ZodError
         ? sanitizeConfigErrors(error)
         : [

@@ -14,6 +14,7 @@ import {
   debug,
   handleHeartbeatRequest,
   isHeartbeatRequest,
+  parseApiToken,
   sanitizeConfigErrors,
   usePipeline,
 } from "../utils"
@@ -54,13 +55,15 @@ export const appwardenOnCloudflare =
     // This must work even when the site is locked
     if (isHeartbeatRequest(request, requestUrl)) {
       // Return heartbeat response with config errors if validation failed
+      let resolvedConfig:
+        ReturnType<typeof RefinedUseAppwardenInputSchema.parse> | undefined
       let configErrors = parsedInput.success
         ? []
         : sanitizeConfigErrors(parsedInput.error)
 
       if (parsedInput.success) {
         try {
-          parsedInput.data(requestContext)
+          resolvedConfig = parsedInput.data(requestContext)
         } catch (error) {
           if (error instanceof ZodError) {
             configErrors = sanitizeConfigErrors(error)
@@ -76,9 +79,13 @@ export const appwardenOnCloudflare =
         }
       }
 
+      const publicId =
+        parseApiToken(resolvedConfig?.appwardenApiToken ?? "")?.publicId ?? ""
+
       return handleHeartbeatRequest(
         request,
         HEARTBEAT_SERVICES.CLOUDFLARE,
+        publicId,
         configErrors,
       )
     }

@@ -48,7 +48,8 @@ describe("handleVercelRequest", () => {
       event: {} as NextFetchEvent,
       provider: "edge-config",
       cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       vercelApiToken: "vercel-token",
       memoryCache: mockMemoryCache,
       waitUntil: vi.fn(),

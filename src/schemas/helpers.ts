@@ -3,6 +3,7 @@ import {
   AppwardenConfigErrorKey,
   AppwardenConfigErrorMessages,
 } from "../utils/errors"
+import { parseApiToken } from "../utils/parse-api-token"
 
 export const BoolOrStringSchema = z.union([z.string(), z.boolean()]).optional()
 
@@ -22,7 +23,7 @@ export const BooleanSchema = BoolOrStringSchema.refine(
   return false
 })
 
-/** Schema for the Appwarden API token - validates it's a non-empty string */
+/** Schema for the Appwarden API token - validates the dual-token format */
 export const AppwardenApiTokenSchema = z
   .preprocess(
     (val) => (val === undefined || val === null ? "" : val),
@@ -35,6 +36,15 @@ export const AppwardenApiTokenSchema = z
       ],
     params: {
       appwardenErrorKey: AppwardenConfigErrorKey.AppwardenApiTokenMissing,
+    },
+  })
+  .refine((val) => parseApiToken(val.trim()) !== undefined, {
+    message:
+      AppwardenConfigErrorMessages[
+        AppwardenConfigErrorKey.AppwardenApiTokenBadFormat
+      ],
+    params: {
+      appwardenErrorKey: AppwardenConfigErrorKey.AppwardenApiTokenBadFormat,
     },
   })
 
