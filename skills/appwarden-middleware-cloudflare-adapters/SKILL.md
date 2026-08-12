@@ -13,6 +13,8 @@ sources:
   - "appwarden/middleware:src/adapters/"
   - "appwarden/middleware:src/bundles/cloudflare.ts"
   - "appwarden/middleware:src/schemas/middleware-options.ts"
+  - "appwarden/middleware:src/schemas/use-appwarden.ts"
+  - "appwarden/middleware:src/utils/route-matching.ts"
 ---
 
 # Appwarden Middleware — Wire into Cloudflare Adapters
