@@ -17,6 +17,7 @@ import {
   handleHeartbeatRequest,
   isHeartbeatRequest,
   isHTMLRequest,
+  parseApiToken,
   printMessage,
   sanitizeConfigErrors,
   TEMPORARY_REDIRECT_STATUS,
@@ -57,28 +58,39 @@ const createNextJsHeartbeatResponse = (
     runtime = getCloudflareContext()
   } catch {
     return toNextResponse(
-      handleHeartbeatRequest(request, HEARTBEAT_SERVICES.CLOUDFLARE_NEXTJS, [
-        createHeartbeatConfigError(
-          ["context"],
-          "custom",
-          "Cloudflare context unavailable",
-        ),
-      ]),
+      handleHeartbeatRequest(
+        request,
+        HEARTBEAT_SERVICES.CLOUDFLARE_NEXTJS,
+        "",
+        [
+          createHeartbeatConfigError(
+            ["context"],
+            "custom",
+            "Cloudflare context unavailable",
+          ),
+        ],
+      ),
     )
   }
 
   try {
-    const validationResult = NextJsCloudflareConfigSchema.safeParse(
-      configFn(runtime),
-    )
+    const rawConfig = configFn(runtime)
+    const validationResult = NextJsCloudflareConfigSchema.safeParse(rawConfig)
+    const configErrors = validationResult.success
+      ? []
+      : sanitizeConfigErrors(validationResult.error)
+    const rawToken = (rawConfig as { appwardenApiToken?: string })
+      .appwardenApiToken
+    const publicId = validationResult.success
+      ? (parseApiToken(validationResult.data.appwardenApiToken)?.publicId ?? "")
+      : (parseApiToken(rawToken ?? "")?.publicId ?? "")
 
     return toNextResponse(
       handleHeartbeatRequest(
         request,
         HEARTBEAT_SERVICES.CLOUDFLARE_NEXTJS,
-        validationResult.success
-          ? []
-          : sanitizeConfigErrors(validationResult.error),
+        publicId,
+        configErrors,
       ),
     )
   } catch (error) {
@@ -86,6 +98,7 @@ const createNextJsHeartbeatResponse = (
       handleHeartbeatRequest(
         request,
         HEARTBEAT_SERVICES.CLOUDFLARE_NEXTJS,
+        "",
         error instanceof ZodError
           ? sanitizeConfigErrors(error)
           : [

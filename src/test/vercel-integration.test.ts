@@ -39,7 +39,8 @@ describe("Vercel Integration Tests", () => {
   const TEST_CONFIG = {
     cacheUrl:
       "https://edge-config.vercel.com/ecfg_fake1234567890abcdefghijklmnop?token=FAKE_TOKEN_12345",
-    appwardenApiToken: "FAKE_APPWARDEN_TOKEN_12345",
+    appwardenApiToken:
+      "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     vercelApiToken: "FAKE_VERCEL_TOKEN_12345",
     website: {
       lockPageSlug: "/maintenance",

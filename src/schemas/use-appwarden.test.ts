@@ -18,7 +18,8 @@ describe("UseAppwardenInputSchema", () => {
           "default-src": ["'self'"],
         },
       },
-      appwardenApiToken: "token123",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }
 
     const result = UseAppwardenInputSchema.safeParse(validInput)
@@ -32,7 +33,8 @@ describe("UseAppwardenInputSchema", () => {
     const validInput = {
       debug: "true",
       website: { lockPageSlug: "/maintenance" },
-      appwardenApiToken: "token123",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }
 
     const result = UseAppwardenInputSchema.safeParse(validInput)
@@ -40,14 +42,17 @@ describe("UseAppwardenInputSchema", () => {
     if (result.success) {
       expect(result.data.debug).toBe(true) // Should be transformed to boolean
       expect(result.data.website?.lockPageSlug).toBe("/maintenance")
-      expect(result.data.appwardenApiToken).toBe("token123")
+      expect(result.data.appwardenApiToken).toBe(
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
+      )
     }
   })
 
   it("should retain a valid appwardenApiHostname", () => {
     const validInput = {
       website: { lockPageSlug: "/maintenance" },
-      appwardenApiToken: "token123",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       appwardenApiHostname: "https://api.appwarden.io",
     }
 
@@ -63,7 +68,8 @@ describe("UseAppwardenInputSchema", () => {
   it("should accept staging api hostname", () => {
     const validInput = {
       website: { lockPageSlug: "/maintenance" },
-      appwardenApiToken: "token123",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       appwardenApiHostname: "https://staging-api.appwarden.io",
     }
 
@@ -79,7 +85,8 @@ describe("UseAppwardenInputSchema", () => {
   it("should reject an untrusted appwardenApiHostname", () => {
     const invalidInput = {
       website: { lockPageSlug: "/maintenance" },
-      appwardenApiToken: "token123",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       appwardenApiHostname: "https://api.custom.appwarden.io",
     }
 
@@ -90,7 +97,8 @@ describe("UseAppwardenInputSchema", () => {
   it("should default debug to false when not provided", () => {
     const validInput = {
       website: { lockPageSlug: "/maintenance" },
-      appwardenApiToken: "token123",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }
 
     const result = UseAppwardenInputSchema.safeParse(validInput)
@@ -98,14 +106,17 @@ describe("UseAppwardenInputSchema", () => {
     if (result.success) {
       expect(result.data.debug).toBe(false)
       expect(result.data.website?.lockPageSlug).toBe("/maintenance")
-      expect(result.data.appwardenApiToken).toBe("token123")
+      expect(result.data.appwardenApiToken).toBe(
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
+      )
     }
   })
 
   it("should allow website to be optional in base schema", () => {
     const validInput = {
       debug: true,
-      appwardenApiToken: "token123",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }
 
     // Base schema allows optional website
@@ -116,7 +127,8 @@ describe("UseAppwardenInputSchema", () => {
   it("should accept multidomainConfig instead of website", () => {
     const validInput = {
       debug: true,
-      appwardenApiToken: "token123",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       multidomainConfig: {
         "example.com": { website: { lockPageSlug: "/maintenance-example" } },
         "other.com": { website: { lockPageSlug: "/maintenance-other" } },
@@ -141,7 +153,8 @@ describe("UseAppwardenInputSchema", () => {
           "default-src": ["'self'"],
         },
       },
-      appwardenApiToken: "token123",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }
 
     const result = UseAppwardenInputSchema.safeParse(validInput)
@@ -157,7 +170,8 @@ describe("UseAppwardenInputSchema", () => {
   it("should require either lockPageSlug or multidomainConfig when using refinement", () => {
     const invalidInput = {
       debug: true,
-      appwardenApiToken: "token123",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }
 
     const RefinedSchema = appwardenConfigRefinement(UseAppwardenInputSchema)
@@ -169,7 +183,8 @@ describe("UseAppwardenInputSchema", () => {
     const validInput = {
       debug: true,
       website: { lockPageSlug: "/maintenance" },
-      appwardenApiToken: "token123",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }
 
     const RefinedSchema = appwardenConfigRefinement(UseAppwardenInputSchema)
@@ -180,7 +195,8 @@ describe("UseAppwardenInputSchema", () => {
   it("should pass refinement when multidomainConfig is provided", () => {
     const validInput = {
       debug: true,
-      appwardenApiToken: "token123",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       multidomainConfig: {
         "example.com": { website: { lockPageSlug: "/maintenance" } },
       },
@@ -228,7 +244,8 @@ describe("UseAppwardenInputSchema", () => {
   ])("should reject invalid appwardenApiHostname: %s", (hostname, message) => {
     const invalidInput = {
       website: { lockPageSlug: "/maintenance" },
-      appwardenApiToken: "token123",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       appwardenApiHostname: hostname,
     }
 
@@ -253,7 +270,8 @@ describe("UseAppwardenInputSchema", () => {
     for (const invalid of invalidInputs) {
       const input = {
         debug: true,
-        appwardenApiToken: "token123",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
         ...invalid,
       }
       const result = UseAppwardenInputSchema.safeParse(input)
@@ -270,7 +288,8 @@ describe("UseAppwardenInputSchema", () => {
   it("should reject invalid multidomainConfig lockPageSlug values", () => {
     const invalidInput = {
       debug: true,
-      appwardenApiToken: "token123",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       multidomainConfig: {
         "example.com": { website: { lockPageSlug: "//evil.com" } },
       },

@@ -6,7 +6,8 @@ describe("ConfigFnInputSchema", () => {
     // Create a valid function that returns a valid config
     const validFn = (context: any) => ({
       debug: true,
-      appwardenApiToken: "token123",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       multidomainConfig: {
         "example.com": {
           website: {
@@ -34,7 +35,8 @@ describe("ConfigFnInputSchema", () => {
     // Create a valid function without middleware
     const validFn = (context: any) => ({
       debug: true,
-      appwardenApiToken: "token123",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       website: {
         lockPageSlug: "/maintenance",
       },

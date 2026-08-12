@@ -17,7 +17,8 @@ describe("react-router-cloudflare bundle", () => {
       const middleware = createAppwardenMiddleware(() => ({
         debug: true,
         website: { lockPageSlug: "/maintenance" },
-        appwardenApiToken: "test-token",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       }))
 
       expect(typeof middleware).toBe("function")
@@ -27,7 +28,8 @@ describe("react-router-cloudflare bundle", () => {
       const middleware = createAppwardenMiddleware(() => ({
         debug: true,
         website: { lockPageSlug: "/maintenance" },
-        appwardenApiToken: "test-token",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       }))
 
       // Middleware should accept 2 parameters (args, next)
@@ -40,7 +42,8 @@ describe("react-router-cloudflare bundle", () => {
       // Type check - this will fail at compile time if the type is not exported
       const configFn: ReactRouterConfigFn = () => ({
         website: { lockPageSlug: "/maintenance" },
-        appwardenApiToken: "test-token",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       })
       expect(typeof configFn).toBe("function")
     })
@@ -74,13 +77,16 @@ describe("react-router-cloudflare bundle", () => {
         {},
         {
           website: { lockPageSlug: "/maintenance" },
-          appwardenApiToken: "test-token",
+          appwardenApiToken:
+            "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
           debug: true,
         },
       )
 
       expect(config.website?.lockPageSlug).toBe("/maintenance")
-      expect(config.appwardenApiToken).toBe("test-token")
+      expect(config.appwardenApiToken).toBe(
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
+      )
       expect(config.debug).toBe(true)
     })
 
@@ -105,7 +111,8 @@ describe("react-router-cloudflare config type exports", () => {
     // Type check - this will fail at compile time if the type is not exported
     const config: ReactRouterCloudflareConfig = {
       website: { lockPageSlug: "/maintenance" },
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       debug: true,
     }
     expect(config.website?.lockPageSlug).toBe("/maintenance")
@@ -115,7 +122,8 @@ describe("react-router-cloudflare config type exports", () => {
     // Type check - this will fail at compile time if the type is not exported
     const config: ReactRouterAppwardenConfigInput = {
       website: { lockPageSlug: "/maintenance" },
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       debug: "true", // Input type accepts string
     }
     expect(config.website?.lockPageSlug).toBe("/maintenance")

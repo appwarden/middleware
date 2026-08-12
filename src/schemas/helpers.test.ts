@@ -156,9 +156,31 @@ describe("AppwardenApiHostnameSchema", () => {
   })
 })
 
+const VALID_TOKEN =
+  "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG"
+const PUBLIC_ID = "1234567890123456789012"
+
 describe("AppwardenApiTokenSchema", () => {
-  it("should accept a non-empty token", () => {
-    expect(AppwardenApiTokenSchema.parse("token123")).toBe("token123")
+  it("should accept a valid dual-token", () => {
+    expect(AppwardenApiTokenSchema.parse(VALID_TOKEN)).toBe(VALID_TOKEN)
+  })
+
+  it("should expose the parsed publicId", () => {
+    const parsed = AppwardenApiTokenSchema.parse(VALID_TOKEN)
+    expect(parsed.split("_")[1]).toBe(PUBLIC_ID)
+  })
+
+  it("should reject a legacy token with a clear message", () => {
+    const result = AppwardenApiTokenSchema.safeParse("dGVzdC1zZWNyZXQ6b3JnSWQ=")
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.issues[0].message).toContain(
+        "APPWARDEN_API_TOKEN is not a valid dual-token",
+      )
+      expect((result.error.issues[0] as any).params).toEqual({
+        appwardenErrorKey: "APPWARDEN_API_TOKEN_BAD_FORMAT",
+      })
+    }
   })
 
   it("should reject an empty token with a clear message", () => {

@@ -94,6 +94,13 @@ export const HeartbeatResponseBodySchema = z
     service: z.enum(HEARTBEAT_SERVICE_VALUES),
     version: z.string().min(1).max(HEARTBEAT_VERSION_MAX_LENGTH),
     configErrors: HeartbeatConfigErrorsSchema,
+    publicId: z.union([
+      z
+        .string()
+        .length(22)
+        .regex(/^[a-zA-Z0-9]+$/),
+      z.literal(""),
+    ]),
   })
   .strict()
   .superRefine((body, ctx) => {
@@ -104,6 +111,15 @@ export const HeartbeatResponseBodySchema = z
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: `Serialized heartbeat response body must be at most ${HEARTBEAT_RESPONSE_BODY_MAX_SERIALIZED_BYTES} bytes`,
+      })
+    }
+
+    if (body.configErrors.length === 0 && body.publicId.trim().length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          "Heartbeat response body must include a publicId when there are no config errors",
+        path: ["publicId"],
       })
     }
   })

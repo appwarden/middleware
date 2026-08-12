@@ -70,7 +70,8 @@ describe("syncEdgeValue", () => {
     mockContext = {
       provider: "cloudflare-cache",
       requestUrl: new URL("https://example.com"),
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       appwardenApiHostname: "https://staging-api.appwarden.io",
       keyName: "appwarden-lock",
       edgeCache: {
@@ -114,7 +115,8 @@ describe("syncEdgeValue", () => {
           service: "cloudflare",
           provider: "cloudflare-cache",
           fqdn: "example.com",
-          appwardenApiToken: "test-token",
+          appwardenApiToken:
+            "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
         }),
         signal: expect.any(AbortSignal),
       },

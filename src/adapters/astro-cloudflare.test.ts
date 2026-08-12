@@ -13,7 +13,8 @@ import {
 
 const { mockCloudflareEnv, mockCaches } = vi.hoisted(() => ({
   mockCloudflareEnv: {
-    APPWARDEN_API_TOKEN: "test-token",
+    APPWARDEN_API_TOKEN:
+      "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     APPWARDEN_LOCK_PAGE_SLUG: "/maintenance",
     APPWARDEN_API_HOSTNAME: "https://staging-api.appwarden.io",
     CSP_MODE: "report-only",
@@ -158,7 +159,8 @@ describe("createAppwardenMiddleware (Astro)", () => {
       website: { lockPageSlug: "/maintenance" },
       api: { basePaths: ["/api"] },
       bypassPaths: ["/health"],
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     const result = asResponse(
@@ -205,7 +207,8 @@ describe("createAppwardenMiddleware (Astro)", () => {
       website: { lockPageSlug: "/maintenance" },
       api: { basePaths: ["/api"] },
       bypassPaths: ["/health"],
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     const result = asResponse(
@@ -232,7 +235,8 @@ describe("createAppwardenMiddleware (Astro)", () => {
       website: { lockPageSlug: "maintenance" }, // No leading slash
       api: { basePaths: ["/api"] },
       bypassPaths: ["/health"],
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     const result = asResponse(
@@ -257,7 +261,8 @@ describe("createAppwardenMiddleware (Astro)", () => {
       website: { lockPageSlug: "/maintenance" },
       api: { basePaths: ["/api"] },
       bypassPaths: ["/health"],
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     await middleware(asAPIContext(mockContext), mockNext)
@@ -273,7 +278,8 @@ describe("createAppwardenMiddleware (Astro)", () => {
       website: { lockPageSlug: "/maintenance" },
       api: { basePaths: ["/api"] },
       bypassPaths: ["/health"],
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     await middleware(asAPIContext(mockContext), mockNext)
@@ -295,7 +301,8 @@ describe("createAppwardenMiddleware (Astro)", () => {
       website: { lockPageSlug: "/maintenance" },
       api: { basePaths: ["/api"] },
       bypassPaths: ["/health"],
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     const result = asResponse(
@@ -420,7 +427,8 @@ describe("createAppwardenMiddleware (Astro)", () => {
       website: { lockPageSlug: "/maintenance" },
       api: { basePaths: ["/api"] },
       bypassPaths: ["/health"],
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
     const middleware = createAppwardenMiddleware(configFn)
 
@@ -439,7 +447,8 @@ describe("createAppwardenMiddleware (Astro)", () => {
       website: { lockPageSlug: "/maintenance" },
       api: { basePaths: ["/api"] },
       bypassPaths: ["/health"],
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       appwardenApiHostname: "https://api.appwarden.io",
       debug: true,
     }))
@@ -449,7 +458,8 @@ describe("createAppwardenMiddleware (Astro)", () => {
     expect(resolveAdapterAction).toHaveBeenCalledWith(
       mockContext.request,
       expect.objectContaining({
-        appwardenApiToken: "test-token",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
         appwardenApiHostname: "https://api.appwarden.io",
         debug: true,
         website: expect.objectContaining({ lockPageSlug: "/maintenance" }),
@@ -465,7 +475,8 @@ describe("createAppwardenMiddleware (Astro)", () => {
       website: { lockPageSlug: "/maintenance" },
       api: { basePaths: ["/api"] },
       bypassPaths: ["/health"],
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     await middleware(asAPIContext(mockContext), mockNext)
@@ -482,7 +493,8 @@ describe("createAppwardenMiddleware (Astro)", () => {
       website: { lockPageSlug: "/maintenance" },
       api: { basePaths: ["/api"] },
       bypassPaths: ["/health"],
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     })
 
     const middleware = createAppwardenMiddleware(configFn)
@@ -498,7 +510,8 @@ describe("createAppwardenMiddleware (Astro)", () => {
       website: { lockPageSlug: "/maintenance" },
       api: { basePaths: ["/api"] },
       bypassPaths: ["/health"],
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     const result = asResponse(
@@ -532,7 +545,8 @@ describe("createAppwardenMiddleware (Astro)", () => {
       },
       api: { basePaths: ["/api"] },
       bypassPaths: ["/health"],
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     const result = asResponse(
@@ -556,7 +570,8 @@ describe("createAppwardenMiddleware (Astro)", () => {
       website: { lockPageSlug: "/maintenance" },
       api: { basePaths: ["/api"] },
       bypassPaths: ["/health"],
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     const result = asResponse(
@@ -577,7 +592,8 @@ describe("createAppwardenMiddleware (Astro)", () => {
       website: { lockPageSlug: "/maintenance" },
       api: { basePaths: ["/api"] },
       bypassPaths: ["/health"],
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     await expect(middleware(asAPIContext(mockContext), mockNext)).rejects.toBe(
@@ -600,7 +616,8 @@ describe("createAppwardenMiddleware (Astro)", () => {
       website: { lockPageSlug: "/maintenance" },
       api: { basePaths: ["/api"] },
       bypassPaths: ["/health"],
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     const result = asResponse(
@@ -623,7 +640,8 @@ describe("createAppwardenMiddleware (Astro)", () => {
       website: { lockPageSlug: "/maintenance" },
       api: { basePaths: ["/api"] },
       bypassPaths: ["/health"],
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     const result = asResponse(
@@ -645,7 +663,8 @@ describe("createAppwardenMiddleware (Astro)", () => {
       website: { lockPageSlug: "/maintenance" },
       api: { basePaths: ["/api"] },
       bypassPaths: ["/health"],
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     const result = asResponse(
@@ -678,7 +697,8 @@ describe("createAppwardenMiddleware (Astro)", () => {
       },
       api: { basePaths: ["/api"] },
       bypassPaths: ["/health"],
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     const response = asResponse(
@@ -698,7 +718,8 @@ describe("createAppwardenMiddleware (Astro)", () => {
       website: { lockPageSlug: "maintenance" }, // No leading slash
       api: { basePaths: ["/api"] },
       bypassPaths: ["/health"],
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     const result = asResponse(

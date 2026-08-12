@@ -73,7 +73,8 @@ describe("appwardenOnCloudflare", () => {
       APPWARDEN_LOCK_PAGE_SLUG: "/maintenance",
       CSP_MODE: "report-only",
       CSP_DIRECTIVES: "{}",
-      APPWARDEN_API_TOKEN: "test-token",
+      APPWARDEN_API_TOKEN:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }
     mockCtx = {
       passThroughOnException: vi.fn(),
@@ -83,7 +84,8 @@ describe("appwardenOnCloudflare", () => {
     // Mock valid input function
     mockInputFn = vi.fn((_context) => ({
       debug: true,
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       website: {
         lockPageSlug: "/maintenance",
       },
@@ -290,7 +292,8 @@ describe("appwardenOnCloudflare", () => {
   it("should include CSP middleware when multidomainConfig has CSP for the request hostname", async () => {
     mockInputFn.mockReturnValueOnce({
       debug: true,
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       multidomainConfig: {
         "example.com": {
           website: {
@@ -318,7 +321,8 @@ describe("appwardenOnCloudflare", () => {
 
     mockInputFn.mockReturnValueOnce({
       debug: true,
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       multidomainConfig: {
         "example.com": {
           website: {
@@ -342,7 +346,8 @@ describe("appwardenOnCloudflare", () => {
   it("should not include CSP middleware when multidomainConfig entry for hostname lacks CSP config", async () => {
     mockInputFn.mockReturnValueOnce({
       debug: true,
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       multidomainConfig: {
         "example.com": {
           website: {
@@ -363,7 +368,8 @@ describe("appwardenOnCloudflare", () => {
   it("should include CSP middleware when top-level website CSP is configured", async () => {
     mockInputFn.mockReturnValueOnce({
       debug: true,
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       website: {
         lockPageSlug: "/maintenance",
         cspMode: "report-only",
@@ -396,7 +402,8 @@ describe("appwardenOnCloudflare", () => {
 
     mockInputFn.mockReturnValueOnce({
       debug: true,
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       website: {
         lockPageSlug: "/maintenance",
         ...topLevelCsp,
@@ -425,7 +432,8 @@ describe("appwardenOnCloudflare", () => {
     it("should use domain-specific debug:true when configured in multidomainConfig", async () => {
       mockInputFn.mockReturnValueOnce({
         debug: false, // Global debug is false
-        appwardenApiToken: "test-token",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
         multidomainConfig: {
           "example.com": {
             website: {
@@ -457,7 +465,8 @@ describe("appwardenOnCloudflare", () => {
     it("should use domain-specific debug:false when configured in multidomainConfig", async () => {
       mockInputFn.mockReturnValueOnce({
         debug: true, // Global debug is true
-        appwardenApiToken: "test-token",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
         multidomainConfig: {
           "example.com": {
             website: {
@@ -489,7 +498,8 @@ describe("appwardenOnCloudflare", () => {
     it("should fall back to global debug when domain has no debug config", async () => {
       mockInputFn.mockReturnValueOnce({
         debug: true, // Global debug is true
-        appwardenApiToken: "test-token",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
         multidomainConfig: {
           "example.com": {
             website: {
@@ -526,7 +536,8 @@ describe("appwardenOnCloudflare", () => {
 
       mockInputFn.mockReturnValueOnce({
         debug: true, // Global debug is true
-        appwardenApiToken: "test-token",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
         multidomainConfig: {
           "example.com": {
             website: {
@@ -558,7 +569,8 @@ describe("appwardenOnCloudflare", () => {
     it("should default to false when no debug config at all", async () => {
       mockInputFn.mockReturnValueOnce({
         // No debug at global level
-        appwardenApiToken: "test-token",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
         website: {
           lockPageSlug: "/maintenance",
         },
@@ -583,7 +595,8 @@ describe("appwardenOnCloudflare", () => {
     it("should accept string 'true' for domain debug and pass it to debug", async () => {
       mockInputFn.mockReturnValueOnce({
         debug: false,
-        appwardenApiToken: "test-token",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
         multidomainConfig: {
           "example.com": {
             website: {
@@ -615,7 +628,8 @@ describe("appwardenOnCloudflare", () => {
     it("should accept string 'false' for domain debug and pass it to debug", async () => {
       mockInputFn.mockReturnValueOnce({
         debug: true,
-        appwardenApiToken: "test-token",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
         multidomainConfig: {
           "example.com": {
             website: {

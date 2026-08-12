@@ -103,7 +103,8 @@ describe("createAppwardenMiddleware (OpenNext Cloudflare)", () => {
 
     mockRuntime = {
       env: {
-        APPWARDEN_API_TOKEN: "test-token",
+        APPWARDEN_API_TOKEN:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
         APPWARDEN_LOCK_PAGE_SLUG: "/maintenance",
       } as unknown as CloudflareEnv,
       ctx: {
@@ -133,7 +134,8 @@ describe("createAppwardenMiddleware (OpenNext Cloudflare)", () => {
       website: { lockPageSlug: "/maintenance" },
       api: { basePaths: ["/api"] },
       bypassPaths: ["/health"],
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     const result = await middleware(mockRequest as any)
@@ -174,7 +176,8 @@ describe("createAppwardenMiddleware (OpenNext Cloudflare)", () => {
       website: { lockPageSlug: "/maintenance" },
       api: { basePaths: ["/api"] },
       bypassPaths: ["/health"],
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     const result = await middleware(mockRequest as any)
@@ -194,7 +197,8 @@ describe("createAppwardenMiddleware (OpenNext Cloudflare)", () => {
       website: { lockPageSlug: "maintenance" }, // No leading slash
       api: { basePaths: ["/api"] },
       bypassPaths: ["/health"],
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     const result = await middleware(mockRequest as any)
@@ -211,7 +215,8 @@ describe("createAppwardenMiddleware (OpenNext Cloudflare)", () => {
       website: { lockPageSlug: "/maintenance" },
       api: { basePaths: ["/api"] },
       bypassPaths: ["/health"],
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     const result = await middleware(mockRequest as any)
@@ -225,7 +230,8 @@ describe("createAppwardenMiddleware (OpenNext Cloudflare)", () => {
       website: { lockPageSlug: "/maintenance" },
       api: { basePaths: ["/api"] },
       bypassPaths: ["/health"],
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       appwardenApiHostname: "https://api.appwarden.io",
       debug: true,
     }))
@@ -235,7 +241,8 @@ describe("createAppwardenMiddleware (OpenNext Cloudflare)", () => {
     expect(resolveAdapterAction).toHaveBeenCalledWith(
       mockRequest,
       expect.objectContaining({
-        appwardenApiToken: "test-token",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
         appwardenApiHostname: "https://api.appwarden.io",
         debug: true,
         website: expect.objectContaining({ lockPageSlug: "/maintenance" }),
@@ -251,7 +258,8 @@ describe("createAppwardenMiddleware (OpenNext Cloudflare)", () => {
       website: { lockPageSlug: "/maintenance" },
       api: { basePaths: ["/api"] },
       bypassPaths: ["/health"],
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     await middleware(mockRequest as any)
@@ -271,7 +279,8 @@ describe("createAppwardenMiddleware (OpenNext Cloudflare)", () => {
       website: { lockPageSlug: "/maintenance" },
       api: { basePaths: ["/api"] },
       bypassPaths: ["/health"],
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     })
 
     const middleware = createAppwardenMiddleware(configFn)
@@ -287,7 +296,8 @@ describe("createAppwardenMiddleware (OpenNext Cloudflare)", () => {
       website: { lockPageSlug: "/maintenance" },
       api: { basePaths: ["/api"] },
       bypassPaths: ["/health"],
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     const result = await middleware(mockRequest as any)
@@ -308,7 +318,8 @@ describe("createAppwardenMiddleware (OpenNext Cloudflare)", () => {
       website: { lockPageSlug: "/maintenance" },
       api: { basePaths: ["/api"] },
       bypassPaths: ["/health"],
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     const result = await middleware(mockRequest as any)
@@ -326,7 +337,8 @@ describe("createAppwardenMiddleware (OpenNext Cloudflare)", () => {
       website: { lockPageSlug: "/maintenance" },
       api: { basePaths: ["/api"] },
       bypassPaths: ["/health"],
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     const result = await middleware(mockRequest as any)
@@ -344,7 +356,8 @@ describe("createAppwardenMiddleware (OpenNext Cloudflare)", () => {
       website: { lockPageSlug: "/maintenance" },
       api: { basePaths: ["/api"] },
       bypassPaths: ["/health"],
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     const result = await middleware(mockRequest as any)
@@ -367,7 +380,8 @@ describe("createAppwardenMiddleware (OpenNext Cloudflare)", () => {
       website: { lockPageSlug: "/maintenance" },
       api: { basePaths: ["/api"] },
       bypassPaths: ["/health"],
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     const result = await middleware(mockRequest as any)
@@ -459,6 +473,12 @@ describe("createAppwardenMiddleware (OpenNext Cloudflare)", () => {
         message:
           "APPWARDEN_API_TOKEN is missing or empty. Learn more at https://appwarden.com/docs/guides/api-token-management.",
       },
+      {
+        path: ["appwardenApiToken"],
+        code: "custom",
+        message:
+          "APPWARDEN_API_TOKEN is not a valid dual-token (expected format: aw_<publicId>_<secret>).",
+      },
     ])
   })
 
@@ -477,7 +497,8 @@ describe("createAppwardenMiddleware (OpenNext Cloudflare)", () => {
       },
       api: { basePaths: ["/api"] },
       bypassPaths: ["/health"],
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     const result = await middleware(mockRequest as any)
@@ -532,7 +553,8 @@ describe("createAppwardenMiddleware (OpenNext Cloudflare)", () => {
       website: { lockPageSlug: "/maintenance" },
       api: { basePaths: ["/api"] },
       bypassPaths: ["/health"],
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
     const middleware = createAppwardenMiddleware(configFn)
 
@@ -554,7 +576,8 @@ describe("createAppwardenMiddleware (OpenNext Cloudflare)", () => {
       website: { lockPageSlug: "/maintenance" },
       api: { basePaths: ["/api"] },
       bypassPaths: ["/health"],
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     const result = await middleware(mockRequest as any)
@@ -572,7 +595,8 @@ describe("createAppwardenMiddleware (OpenNext Cloudflare)", () => {
       website: { lockPageSlug: "maintenance" }, // No leading slash
       api: { basePaths: ["/api"] },
       bypassPaths: ["/health"],
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     const result = await middleware(mockRequest as any)

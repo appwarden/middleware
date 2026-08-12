@@ -15,7 +15,8 @@ describe("cloudflare bundle", () => {
     it("should return a fetch handler when called with config function", () => {
       const configFn = (_context: RequestContext) => ({
         debug: true,
-        appwardenApiToken: "test-token",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
         website: {
           lockPageSlug: "/maintenance",
         },
@@ -28,7 +29,8 @@ describe("cloudflare bundle", () => {
     it("should create handler that accepts Request, env, and ctx", () => {
       const configFn = (_context: RequestContext) => ({
         debug: true,
-        appwardenApiToken: "test-token",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
         website: {
           lockPageSlug: "/maintenance",
         },
@@ -89,7 +91,8 @@ describe("cloudflare bundle", () => {
       const config = getAppwardenConfiguration(
         {},
         {
-          appwardenApiToken: "test-token",
+          appwardenApiToken:
+            "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
           debug: true,
           website: {
             lockPageSlug: "/maintenance",
@@ -98,7 +101,9 @@ describe("cloudflare bundle", () => {
       )
 
       expect(config.website?.lockPageSlug).toBe("/maintenance")
-      expect(config.appwardenApiToken).toBe("test-token")
+      expect(config.appwardenApiToken).toBe(
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
+      )
       expect(config.debug).toBe(true)
     })
 
@@ -113,7 +118,8 @@ describe("cloudflare bundle", () => {
     it("should throw when lockPageSlug and multidomainConfig are both missing", () => {
       expect(() =>
         getAppwardenConfiguration({}, {
-          appwardenApiToken: "test-token",
+          appwardenApiToken:
+            "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
         } as any),
       ).toThrow()
     })

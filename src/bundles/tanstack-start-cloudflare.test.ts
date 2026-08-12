@@ -20,7 +20,8 @@ describe("tanstack-start-cloudflare bundle", () => {
       const configFn: TanStackStartConfigFn = () => ({
         debug: true,
         website: { lockPageSlug: "/maintenance" },
-        appwardenApiToken: "test-token",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       })
 
       const middleware = createAppwardenMiddleware(configFn)
@@ -31,7 +32,8 @@ describe("tanstack-start-cloudflare bundle", () => {
       const configFn: TanStackStartConfigFn = () => ({
         debug: true,
         website: { lockPageSlug: "/maintenance" },
-        appwardenApiToken: "test-token",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       })
 
       const middleware = createAppwardenMiddleware(configFn)
@@ -45,7 +47,8 @@ describe("tanstack-start-cloudflare bundle", () => {
       // Type check - this will fail at compile time if the type is not exported
       const configFn: TanStackStartConfigFn = () => ({
         website: { lockPageSlug: "/maintenance" },
-        appwardenApiToken: "test-token",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       })
       expect(typeof configFn).toBe("function")
     })
@@ -84,7 +87,8 @@ describe("tanstack-start-cloudflare bundle", () => {
       // Type check - this will fail at compile time if the type is not exported
       const config: TanStackStartCloudflareConfig = {
         website: { lockPageSlug: "/maintenance" },
-        appwardenApiToken: "test-token",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
         debug: true,
       }
       expect(config.website?.lockPageSlug).toBe("/maintenance")
@@ -94,7 +98,8 @@ describe("tanstack-start-cloudflare bundle", () => {
       // Type check - this will fail at compile time if the type is not exported
       const config: TanStackStartCloudflareConfigInput = {
         website: { lockPageSlug: "/maintenance" },
-        appwardenApiToken: "test-token",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
         debug: "true", // Input type accepts string
       }
       expect(config.website?.lockPageSlug).toBe("/maintenance")
@@ -111,13 +116,16 @@ describe("tanstack-start-cloudflare bundle", () => {
         {},
         {
           website: { lockPageSlug: "/maintenance" },
-          appwardenApiToken: "test-token",
+          appwardenApiToken:
+            "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
           debug: true,
         },
       )
 
       expect(config.website?.lockPageSlug).toBe("/maintenance")
-      expect(config.appwardenApiToken).toBe("test-token")
+      expect(config.appwardenApiToken).toBe(
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
+      )
       expect(config.debug).toBe(true)
     })
 

@@ -87,7 +87,8 @@ describe("useAppwarden", () => {
     mockInput = {
       debug: false,
       website: { lockPageSlug: "/maintenance" },
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       appwardenApiHostname: "https://api.appwarden.io",
     }
 
@@ -281,7 +282,8 @@ describe("useAppwarden", () => {
     it("should use lockPageSlug from multidomainConfig when hostname matches", async () => {
       const inputWithMultidomain: CloudflareConfigType = {
         debug: false,
-        appwardenApiToken: "test-token",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
         appwardenApiHostname: "https://api.appwarden.io",
         multidomainConfig: {
           "example.com": { website: { lockPageSlug: "/maintenance-example" } },
@@ -305,7 +307,8 @@ describe("useAppwarden", () => {
     it("should use lockPageSlug from different domain in multidomainConfig", async () => {
       const inputWithMultidomain: CloudflareConfigType = {
         debug: false,
-        appwardenApiToken: "test-token",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
         appwardenApiHostname: "https://api.appwarden.io",
         multidomainConfig: {
           "example.com": { website: { lockPageSlug: "/maintenance-example" } },
@@ -329,7 +332,8 @@ describe("useAppwarden", () => {
     it("should skip lock check for unconfigured domains when using multidomainConfig", async () => {
       const inputWithMultidomain: CloudflareConfigType = {
         debug: false,
-        appwardenApiToken: "test-token",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
         appwardenApiHostname: "https://api.appwarden.io",
         multidomainConfig: {
           "example.com": { website: { lockPageSlug: "/maintenance-example" } },
@@ -357,7 +361,8 @@ describe("useAppwarden", () => {
       const inputWithRootOnly: CloudflareConfigType = {
         debug: false,
         website: { lockPageSlug: "/root-maintenance" },
-        appwardenApiToken: "test-token",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
         appwardenApiHostname: "https://api.appwarden.io",
       }
 
@@ -378,7 +383,8 @@ describe("useAppwarden", () => {
       const inputWithBoth: CloudflareConfigType = {
         debug: false,
         website: { lockPageSlug: "/root-maintenance" },
-        appwardenApiToken: "test-token",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
         appwardenApiHostname: "https://api.appwarden.io",
         multidomainConfig: {
           "example.com": {
@@ -404,7 +410,8 @@ describe("useAppwarden", () => {
       const inputWithBoth: CloudflareConfigType = {
         debug: false,
         website: { lockPageSlug: "/root-maintenance" },
-        appwardenApiToken: "test-token",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
         appwardenApiHostname: "https://api.appwarden.io",
         multidomainConfig: {
           "example.com": {

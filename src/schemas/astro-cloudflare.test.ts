@@ -4,7 +4,8 @@ import { AstroCloudflareConfigSchema } from "./astro-cloudflare"
 describe("AstroCloudflareConfigSchema", () => {
   it("should validate a valid config with all fields", () => {
     const validConfig = {
-      appwardenApiToken: "token123",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       appwardenApiHostname: "https://api.appwarden.io",
       debug: true,
       website: {
@@ -25,7 +26,8 @@ describe("AstroCloudflareConfigSchema", () => {
 
   it("should validate a minimal valid config", () => {
     const minimalConfig = {
-      appwardenApiToken: "token123",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       website: {
         lockPageSlug: "/maintenance",
       },
@@ -34,7 +36,9 @@ describe("AstroCloudflareConfigSchema", () => {
     const result = AstroCloudflareConfigSchema.safeParse(minimalConfig)
     expect(result.success).toBe(true)
     if (result.success) {
-      expect(result.data.appwardenApiToken).toBe("token123")
+      expect(result.data.appwardenApiToken).toBe(
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
+      )
       expect(result.data.website?.lockPageSlug).toBe("/maintenance")
       expect(result.data.debug).toBe(false) // Default value
     }
@@ -42,7 +46,8 @@ describe("AstroCloudflareConfigSchema", () => {
 
   it("should accept string debug value and transform to boolean", () => {
     const config = {
-      appwardenApiToken: "token123",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       debug: "true",
       website: {
         lockPageSlug: "/maintenance",
@@ -58,7 +63,8 @@ describe("AstroCloudflareConfigSchema", () => {
 
   it("should validate a config with api instead of website", () => {
     const config = {
-      appwardenApiToken: "token123",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       api: {
         basePaths: ["/api"],
         response: {
@@ -79,7 +85,8 @@ describe("AstroCloudflareConfigSchema", () => {
     "should reject invalid website.lockPageSlug: %s",
     (lockPageSlug: string) => {
       const invalidConfig = {
-        appwardenApiToken: "token123",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
         website: {
           lockPageSlug,
         },
@@ -136,7 +143,8 @@ describe("AstroCloudflareConfigSchema", () => {
     "should reject invalid appwardenApiHostname: %s",
     (hostname: string, message: string) => {
       const invalidConfig = {
-        appwardenApiToken: "token123",
+        appwardenApiToken:
+          "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
         appwardenApiHostname: hostname,
         website: {
           lockPageSlug: "/maintenance",
@@ -156,7 +164,8 @@ describe("AstroCloudflareConfigSchema", () => {
 
   it("should reject invalid debug value", () => {
     const invalidConfig = {
-      appwardenApiToken: "token123",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       debug: "not-a-boolean",
       website: {
         lockPageSlug: "/maintenance",

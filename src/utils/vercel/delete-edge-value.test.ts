@@ -79,7 +79,8 @@ describe("deleteEdgeValue", () => {
       provider: "edge-config",
       cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
       vercelApiToken: "test-token",
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     })
 
     // Call the function
@@ -125,7 +126,8 @@ describe("deleteEdgeValue", () => {
       provider: "edge-config",
       cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
       vercelApiToken: "test-token",
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     })
 
     // Call the function
@@ -145,7 +147,8 @@ describe("deleteEdgeValue", () => {
       provider: "edge-config",
       cacheUrl: "https://invalid-url.com",
       vercelApiToken: "test-token",
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     })
 
     // Call the function
@@ -178,7 +181,8 @@ describe("deleteEdgeValue", () => {
       provider: "upstash",
       cacheUrl: "redis://:password@funky-roughy-44527.upstash.io:6379",
       vercelApiToken: "test-token",
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     })
 
     // Call the function
@@ -211,7 +215,8 @@ describe("deleteEdgeValue", () => {
       provider: "edge-config",
       cacheUrl: "https://edge-config.vercel.com/ecfg_123?token=abc",
       vercelApiToken: "test-token",
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     })
 
     // Call the function

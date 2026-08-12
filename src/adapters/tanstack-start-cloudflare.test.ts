@@ -12,7 +12,8 @@ import {
 // Mock cloudflare:workers env and waitUntil so we can assert they're used
 vi.mock("cloudflare:workers", () => ({
   env: {
-    APPWARDEN_API_TOKEN: "test-token",
+    APPWARDEN_API_TOKEN:
+      "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     APPWARDEN_LOCK_PAGE_SLUG: "/maintenance",
   } as unknown as CloudflareEnv,
   waitUntil: vi.fn(),
@@ -125,7 +126,8 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
       website: {
         lockPageSlug: "/maintenance",
       },
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     const result = await middleware(mockArgs)
@@ -173,7 +175,8 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
       website: {
         lockPageSlug: "/maintenance",
       },
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     const response = await getThrownResponse(middleware(mockArgs))
@@ -202,7 +205,7 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
     const body = (await response.json()) as HeartbeatResponseBody
 
     expect(response.status).toBe(200)
-    expect(body.configErrors).toHaveLength(1)
+    expect(body.configErrors).toHaveLength(2)
     expect(body.configErrors[0]).toMatchObject({
       path: expect.any(Array),
       code: expect.any(String),
@@ -309,7 +312,8 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
       website: {
         lockPageSlug: "/maintenance",
       },
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
     const middleware = createAppwardenMiddleware(configFn)
 
@@ -334,7 +338,8 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
       website: {
         lockPageSlug: "/maintenance",
       },
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     await expect(middleware(mockArgs)).rejects.toBeInstanceOf(Response)
@@ -365,7 +370,8 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
           "script-src": ["'self'", "{{nonce}}"],
         },
       },
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     try {
@@ -394,7 +400,8 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
       website: {
         lockPageSlug: "maintenance", // No leading slash
       },
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     try {
@@ -417,7 +424,8 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
       website: {
         lockPageSlug: "/maintenance",
       },
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     await middleware(mockArgs)
@@ -431,7 +439,8 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
       website: {
         lockPageSlug: "/maintenance",
       },
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       appwardenApiHostname: "https://api.appwarden.io",
       debug: true,
     }))
@@ -440,7 +449,8 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
 
     expect(checkLockStatus).toHaveBeenCalledWith({
       request: mockArgs.request,
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       appwardenApiHostname: "https://api.appwarden.io",
       debug: true,
       lockPageSlug: "/maintenance",
@@ -455,7 +465,8 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
       website: {
         lockPageSlug: "/maintenance",
       },
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     await middleware(mockArgs)
@@ -472,7 +483,8 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
       website: {
         lockPageSlug: "/maintenance",
       },
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     })
 
     const middleware = createAppwardenMiddleware(configFn)
@@ -488,7 +500,8 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
       website: {
         lockPageSlug: "/maintenance",
       },
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     const result = await middleware(mockArgs)
@@ -528,7 +541,8 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
           "script-src": ["'self'", "{{nonce}}"],
         },
       },
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     const result = await middleware(mockArgs)
@@ -557,7 +571,8 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
           "script-src": ["'self'", "{{nonce}}"],
         },
       },
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     await expect(middleware(mockArgs)).rejects.toMatchObject({
@@ -589,7 +604,8 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
       website: {
         lockPageSlug: "/maintenance",
       },
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     await expect(middleware(mockArgs)).rejects.toBe(redirectResponse)
@@ -605,7 +621,8 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
       website: {
         lockPageSlug: "/maintenance",
       },
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     try {
@@ -626,7 +643,8 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
       website: {
         lockPageSlug: "/maintenance",
       },
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     try {
@@ -655,7 +673,8 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
       website: {
         lockPageSlug: "/maintenance",
       },
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     const result = await middleware(mockArgs)
@@ -692,7 +711,8 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
           "script-src": ["'self'", "{{nonce}}"],
         },
       },
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     const result = await middleware(mockArgs)
@@ -717,7 +737,8 @@ describe("createAppwardenMiddleware (TanStack Start)", () => {
       website: {
         lockPageSlug: "maintenance", // No leading slash
       },
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
     }))
 
     const result = await middleware(mockArgs)

@@ -7,6 +7,7 @@ export enum SchemaErrorKey {
 
 export enum AppwardenConfigErrorKey {
   AppwardenApiTokenMissing = "APPWARDEN_API_TOKEN_MISSING",
+  AppwardenApiTokenBadFormat = "APPWARDEN_API_TOKEN_BAD_FORMAT",
   NextJsNonceUnsupported = "NEXTJS_NONCE_UNSUPPORTED",
   VercelNonceUnsupported = "VERCEL_NONCE_UNSUPPORTED",
   AppwardenApiHostnameInvalidUrl = "APPWARDEN_API_HOSTNAME_INVALID_URL",
@@ -30,6 +31,8 @@ export const AppwardenConfigErrorMessages: Record<
 > = {
   [AppwardenConfigErrorKey.AppwardenApiTokenMissing]:
     "APPWARDEN_API_TOKEN is missing or empty. Learn more at https://appwarden.com/docs/guides/api-token-management.",
+  [AppwardenConfigErrorKey.AppwardenApiTokenBadFormat]:
+    "APPWARDEN_API_TOKEN is not a valid dual-token (expected format: aw_<publicId>_<secret>).",
   [AppwardenConfigErrorKey.NextJsNonceUnsupported]:
     "Nonce-based CSP is not supported in the Next.js Cloudflare adapter. Remove '{{nonce}}' placeholders from your CSP directives, as this adapter does not inject nonces into HTML.",
   [AppwardenConfigErrorKey.VercelNonceUnsupported]:

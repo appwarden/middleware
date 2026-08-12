@@ -63,7 +63,8 @@ describe("checkLockStatus", () => {
 
     mockConfig = {
       request: new Request("https://example.com/page"),
-      appwardenApiToken: "test-token",
+      appwardenApiToken:
+        "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
       lockPageSlug: "/maintenance",
       waitUntil: mockWaitUntil as any,
     }
