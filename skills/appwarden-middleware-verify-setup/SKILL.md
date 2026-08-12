@@ -5,7 +5,7 @@ description: >
 metadata:
   type: lifecycle
   library: "@appwarden/middleware"
-  library_version: "3.16.3"
+  library_version: "3.17.4"
 sources:
   - "appwarden/appwarden-core-b:websites/appwarden-io/docs/src/content/docs/docs/getting-started/verify-setup.mdx"
   - "appwarden/middleware:examples/bug-reports-nextjs-cloudflare.md"

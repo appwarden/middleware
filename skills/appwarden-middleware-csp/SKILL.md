@@ -5,7 +5,7 @@ description: >
 metadata:
   type: core
   library: "@appwarden/middleware"
-  library_version: "3.16.3"
+  library_version: "3.17.4"
 sources:
   - "appwarden/appwarden-core-b:websites/appwarden-io/docs/src/content/docs/docs/guides/managing-content-security-policy.mdx"
   - "appwarden/middleware:src/schemas/use-content-security-policy.ts"

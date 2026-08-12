@@ -5,13 +5,14 @@ description: >
 metadata:
   type: framework
   library: "@appwarden/middleware"
-  library_version: "3.16.3"
+  library_version: "3.17.4"
 requires:
   - "appwarden-middleware-get-started"
 sources:
   - "appwarden/appwarden-core-b:websites/appwarden-io/docs/src/content/docs/docs/guides/cloudflare-middleware-integration.mdx"
   - "appwarden/middleware:src/adapters/"
   - "appwarden/middleware:src/bundles/cloudflare.ts"
+  - "appwarden/middleware:src/schemas/middleware-options.ts"
 ---
 
 # Appwarden Middleware — Wire into Cloudflare Adapters
@@ -325,6 +326,55 @@ React Router ignores middleware exports unless `future.v8_middleware: true` is s
 ### MEDIUM Serving the lock page without the configured CSP headers
 
 Both the Vercel runner and the Next.js Cloudflare adapter short-circuit with `NextResponse.next()` when the request is already on the lock page, bypassing CSP header injection. Apply CSP at the framework/page level for the lock page, or accept that the lock page may not receive middleware CSP headers.
+
+### HIGH Using an invalid path pattern
+
+Wrong:
+
+```typescript
+getAppwardenConfiguration(appwardenConfig, {
+  bypassPaths: ["health"],
+})
+```
+
+Correct:
+
+```typescript
+getAppwardenConfiguration(appwardenConfig, {
+  bypassPaths: ["/health"],
+})
+```
+
+Source: `src/utils/route-matching.ts`.
+
+Path patterns must start with `/`. Segment-boundary matching means `/api` matches `/api/users` but not `/api-docs`. Use `/*` to match a whole subtree, such as `/api/*` for `/api/v1/users`.
+
+### MEDIUM Using multidomainConfig in a framework adapter
+
+Wrong:
+
+```typescript
+getAppwardenConfiguration(appwardenConfig, {
+  appwardenApiToken: context.cloudflare.env.APPWARDEN_API_TOKEN,
+  website: { lockPageSlug: "/maintenance" },
+  multidomainConfig: {
+    "api.example.com": { api: { basePaths: ["/api"] } },
+  },
+})
+```
+
+Correct:
+
+```typescript
+getAppwardenConfiguration(appwardenConfig, {
+  appwardenApiToken: context.cloudflare.env.APPWARDEN_API_TOKEN,
+  website: { lockPageSlug: "/maintenance" },
+})
+```
+
+Source: `src/schemas/use-appwarden.ts`.
+
+`multidomainConfig` is only supported by the standalone Cloudflare universal workflow. Framework adapters should use top-level `website`, `api`, and `bypassPaths` only.
 
 ## Next Steps
 
