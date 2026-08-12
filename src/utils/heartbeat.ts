@@ -397,11 +397,18 @@ export function getHeartbeatPublicId<T extends { appwardenApiToken: string }>(
   validationResult: SafeParseReturnType<unknown, T>,
   rawConfig: unknown,
 ): string {
-  const rawToken = (rawConfig as { appwardenApiToken?: string })
-    .appwardenApiToken
-  return validationResult.success
-    ? (parseApiToken(validationResult.data.appwardenApiToken)?.publicId ?? "")
-    : (parseApiToken(rawToken ?? "")?.publicId ?? "")
+  const rawToken =
+    rawConfig !== null && typeof rawConfig === "object"
+      ? (rawConfig as { appwardenApiToken?: unknown }).appwardenApiToken
+      : undefined
+  if (validationResult.success) {
+    return (
+      parseApiToken(validationResult.data.appwardenApiToken)?.publicId ?? ""
+    )
+  }
+  return typeof rawToken === "string"
+    ? (parseApiToken(rawToken)?.publicId ?? "")
+    : ""
 }
 
 /**
