@@ -16,6 +16,8 @@ sources:
   - "appwarden/middleware:src/schemas/vercel.ts"
   - "appwarden/middleware:src/schemas/middleware-options.ts"
   - "appwarden/middleware:src/utils/parse-api-token.ts"
+  - "appwarden/middleware:src/schemas/helpers.ts"
+  - "appwarden/middleware:src/utils/route-matching.ts"
 ---
 
 # Appwarden Middleware — Wire into Vercel Edge Middleware
