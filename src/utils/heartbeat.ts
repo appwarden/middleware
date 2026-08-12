@@ -409,7 +409,7 @@ export function createHeartbeatResponseBody(
     service,
     version: MIDDLEWARE_VERSION,
     configErrors: normalizedConfigErrors,
-    publicId,
+    publicId: publicId.trim(),
   }
 
   while (
