@@ -12,6 +12,7 @@ sources:
   - "appwarden/middleware:src/index.ts"
   - "appwarden/middleware:src/schemas/use-appwarden.ts"
   - "appwarden/middleware:src/schemas/middleware-options.ts"
+  - "appwarden/middleware:src/schemas/helpers.ts"
   - "appwarden/middleware:src/utils/parse-api-token.ts"
 ---
 
