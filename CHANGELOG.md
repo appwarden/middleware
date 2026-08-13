@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.17.8](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.17.7...@appwarden/middleware@3.17.8) (2026-08-13)
+
+
+### Bug Fixes
+
+* **heartbeat:** revert heartbeat contract version to 1 ([b57a66e](https://github.com/appwarden/middleware/commit/b57a66e3b764269205addde3af846fc7e007b4a0))
+
 ## [3.17.7](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.17.6...@appwarden/middleware@3.17.7) (2026-08-12)
 
 
