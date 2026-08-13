@@ -18,7 +18,7 @@ describe("index exports", () => {
   })
 
   it("should export heartbeat contract version constant", () => {
-    expect(indexExports.HEARTBEAT_CONTRACT_VERSION).toBe(2)
+    expect(indexExports.HEARTBEAT_CONTRACT_VERSION).toBe(1)
   })
 
   it("should export heartbeat version max length constant", () => {

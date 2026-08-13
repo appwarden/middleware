@@ -10,7 +10,7 @@ export const APPWARDEN_TEST_ROUTE = "/_appwarden/test"
 
 export const APPWARDEN_HEARTBEAT_ROUTE = "/_appwarden/heartbeat"
 
-export const HEARTBEAT_CONTRACT_VERSION = 2 as const
+export const HEARTBEAT_CONTRACT_VERSION = 1 as const
 
 export const HEARTBEAT_VERSION_MAX_LENGTH = 128
 
