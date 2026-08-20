@@ -121,11 +121,11 @@
   },
   "devDependencies": {
     "@amanda-mitchell/semantic-release-npm-multiple": "^3.17.0",
-    "@astrojs/cloudflare": "^14.2.1",
+    "@astrojs/cloudflare": "^14.2.2",
     "@cloudflare/vitest-pool-workers": "^0.21.2",
-    "@commitlint/cli": "^21.2.1",
-    "@commitlint/config-conventional": "^21.2.0",
-    "@cyclonedx/cdxgen": "^12.8.3",
+    "@commitlint/cli": "^21.2.2",
+    "@commitlint/config-conventional": "^21.2.2",
+    "@cyclonedx/cdxgen": "^12.8.4",
     "@opennextjs/cloudflare": "^1.20.2",
     "@playwright/test": "^1.62.1",
     "@semantic-release/changelog": "^7.0.0",
@@ -138,12 +138,12 @@
     "@types/node": "^26.2.0",
     "@vercel/functions": "^3.9.3",
     "@vitest/coverage-istanbul": "^4.1.10",
-    "astro": "^7.2.1",
+    "astro": "^7.2.3",
     "cheerio": "^1.2.0",
     "dotenv": "^17.4.2",
     "husky": "^9.1.7",
     "lint-staged": "^17.3.0",
-    "next": "^16.2.11",
+    "next": "^16.3.1",
     "postcss": "^8.5.18",
     "prettier": "^3.9.6",
     "prettier-plugin-organize-imports": "^4.3.0",
@@ -152,7 +152,7 @@
     "typescript": "^5.9.3",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.10",
-    "wrangler": "^4.121.0"
+    "wrangler": "^4.124.0"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,json,md,yml,yaml}": [
