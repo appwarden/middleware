@@ -122,7 +122,7 @@
   "devDependencies": {
     "@amanda-mitchell/semantic-release-npm-multiple": "^3.17.0",
     "@astrojs/cloudflare": "^14.2.1",
-    "@cloudflare/vitest-pool-workers": "^0.21.2",
+    "@cloudflare/vitest-pool-workers": "^0.22.0",
     "@commitlint/cli": "^21.2.1",
     "@commitlint/config-conventional": "^21.2.0",
     "@cyclonedx/cdxgen": "^12.8.3",
@@ -137,7 +137,7 @@
     "@tanstack/start": "^1.120.20",
     "@types/node": "^26.2.0",
     "@vercel/functions": "^3.9.3",
-    "@vitest/coverage-istanbul": "^4.1.10",
+    "@vitest/coverage-istanbul": "^4.1.11",
     "astro": "^7.2.1",
     "cheerio": "^1.2.0",
     "dotenv": "^17.4.2",
@@ -151,7 +151,7 @@
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
     "vite-tsconfig-paths": "^6.1.1",
-    "vitest": "^4.1.10",
+    "vitest": "^4.1.11",
     "wrangler": "^4.121.0"
   },
   "lint-staged": {
