@@ -54,3 +54,13 @@ overrides:
   "postcss@<8.5.18": ">=8.5.18"
   "sharp@<0.35.5": ">=0.35.5"
   "ws@<8.21.0": ">=8.21.0"
+
+# Advisories with no published fix yet. Both are dev-only transitive dependencies
+# that are not shipped in the published package. Remove an entry once upstream
+# publishes a patched release (node-forge >=1.4.1, braces >=3.0.4).
+auditConfig:
+  ignoreGhsas:
+    # node-forge (via @vinxi/listhen / listhen -> nitropack); latest published is 1.4.0
+    - GHSA-86w9-cpqp-85rv
+    # braces (via micromatch / chokidar@3); latest published is 3.0.3
+    - GHSA-vfj7-8cjw-p6xm
