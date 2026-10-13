@@ -347,7 +347,7 @@ After installing `@appwarden/middleware`, configure your agent to use the skills
 npx @tanstack/intent@latest install
 ```
 
-For edit-time skill suggestions in Claude Code or Codex:
+Optionally, install agent hooks so edits are gated until a skill is loaded (Claude Code and Codex):
 
 ```bash
 npx @tanstack/intent@latest hooks install
