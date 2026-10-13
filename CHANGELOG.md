@@ -3,6 +3,8 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.17.9](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.17.8...@appwarden/middleware@3.17.9) (2026-10-13)
+
 ## [3.17.8](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.17.7...@appwarden/middleware@3.17.8) (2026-08-13)
 
 
