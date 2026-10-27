@@ -12,6 +12,10 @@ This directory contains end-to-end tests for the Appwarden middleware.
 
 2. **Environment Variables**: The tests require the following environment variable:
    - `APPWARDEN_API_TOKEN`: API token for accessing the Appwarden staging API
+   - `EDGE_CONFIG` or `KV_URL` (optional): cache URL for the Vercel test websites. The
+     staging API requires a `cacheUrl` when `service` is `vercel`, so
+     `appwarden.online` and `edge-config.appwarden.online` are skipped unless one of
+     these is set.
 
 ## Running Tests
 
