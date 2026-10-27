@@ -326,9 +326,25 @@ async function expectApiLocked(
 ): Promise<void> {
   console.log("   🚧 Verifying API routes are locked...")
 
-  const helloResponse = await request.get(`${website.url}/api/hello`, {
+  // The API lock can lag the lock-page redirect while the new lock value
+  // propagates across edge locations, so poll before asserting.
+  const maxAttempts = 5
+  let helloResponse = await request.get(`${website.url}/api/hello`, {
     headers: { accept: "application/json" },
   })
+  for (let attempt = 1; attempt < maxAttempts; attempt++) {
+    if (helloResponse.status() === website.apiLockResponse.status) {
+      break
+    }
+    console.log(
+      `      ⚠️  API still open, waiting additional ${RETRY_DELAY_MS / 1000}s...`,
+    )
+    await wait(RETRY_DELAY_MS)
+    helloResponse = await request.get(`${website.url}/api/hello`, {
+      headers: { accept: "application/json" },
+    })
+  }
+
   await expectApiLockResponse(helloResponse, website)
   console.log("      ✅ GET /api/hello returns the API lock response")
 
@@ -417,7 +433,9 @@ async function expectApiDocsNotLockedAsApi(
   expect(response.status()).toBe(302)
   const location = response.headers()["location"]
   expect(location).toBeTruthy()
-  expect(new URL(location).pathname).toBe(website.lockPageSlug)
+  // The Location header may be relative (e.g. "/maintenance"), so resolve it
+  // against the requested URL before comparing the pathname.
+  expect(new URL(location, website.url).pathname).toBe(website.lockPageSlug)
   console.log("      ✅ /api-docs redirected to the lock page")
 }
 
