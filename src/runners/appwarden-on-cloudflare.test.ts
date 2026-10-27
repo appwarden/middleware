@@ -135,7 +135,7 @@ describe("appwardenOnCloudflare", () => {
     mockSafeParse.mockReturnValueOnce({
       success: false,
       error: new ZodError([]),
-    })
+    } as ReturnType<typeof ConfigFnInputSchema.safeParse>)
 
     // Type assertion to make TypeScript happy
     const handler = appwardenOnCloudflare(mockInputFn) as any
@@ -210,6 +210,39 @@ describe("appwardenOnCloudflare", () => {
     expect(mockPipelineExecute).not.toHaveBeenCalled()
     expect(result).toBeInstanceOf(Response)
     expect(await result.text()).toBe("Error logs")
+  })
+
+  it("should return error logs when the config function returns an invalid config", async () => {
+    // Zod 4 validates the config function's return value inside `z.function()`
+    // and throws its internal `$ZodError`. The runner must normalise it into a
+    // classic ZodError so the error logging path still handles it.
+    mockInputFn.mockImplementationOnce(() => ({ website: {} }))
+
+    const handler = appwardenOnCloudflare(mockInputFn) as any
+    const result = await handler(mockRequest, mockEnv, mockCtx)
+
+    expect(insertErrorLogs).toHaveBeenCalled()
+    expect(mockPipelineExecute).not.toHaveBeenCalled()
+    expect(result).toBeInstanceOf(Response)
+    expect(await result.text()).toBe("Error logs")
+  })
+
+  it("should report config errors when the config function returns an invalid config", async () => {
+    mockRequest = new Request("https://example.com/_appwarden/heartbeat")
+    mockInputFn.mockImplementationOnce(() => ({ website: {} }))
+
+    const handler = appwardenOnCloudflare(mockInputFn) as any
+    const result = await handler(mockRequest, mockEnv, mockCtx)
+    const body = (await result.json()) as HeartbeatResponseBody
+
+    expect(result.status).toBe(200)
+    expect(body.configErrors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          message: expect.stringContaining("APPWARDEN_API_TOKEN"),
+        }),
+      ]),
+    )
   })
 
   it("should run non-GET heartbeat requests through the normal pipeline", async () => {

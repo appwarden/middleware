@@ -21,6 +21,33 @@ import {
 import { insertErrorLogs } from "../utils/cloudflare"
 import { parseMergedConfig } from "../utils/get-appwarden-configuration"
 
+/**
+ * Zod 4's `z.function()` output validation throws its internal `$ZodError`,
+ * which is not an instance of the classic `ZodError` and has no `flatten()`.
+ * Re-wrap it so the surrounding `instanceof ZodError` handling and the error
+ * reporters keep working unchanged.
+ */
+const callConfigFunction = <T>(
+  configFn: (context: RequestContext) => T,
+  requestContext: RequestContext,
+): T => {
+  try {
+    return configFn(requestContext)
+  } catch (error) {
+    if (error instanceof ZodError) {
+      throw error
+    }
+
+    const issues = (error as { issues?: unknown }).issues
+
+    if (Array.isArray(issues)) {
+      throw new ZodError(issues)
+    }
+
+    throw error
+  }
+}
+
 const RefinedUseAppwardenInputSchema = appwardenConfigRefinement(
   UseAppwardenInputSchema,
 )
@@ -87,7 +114,7 @@ export const appwardenOnCloudflare =
 
       if (parsedInput.success) {
         try {
-          resolvedConfig = parsedInput.data(requestContext)
+          resolvedConfig = callConfigFunction(parsedInput.data, requestContext)
         } catch (error) {
           if (error instanceof ZodError) {
             configErrors = sanitizeConfigErrors(error)
@@ -130,7 +157,7 @@ export const appwardenOnCloudflare =
 
     let input
     try {
-      input = parsedInput.data(requestContext)
+      input = callConfigFunction(parsedInput.data, requestContext)
     } catch (error) {
       if (error instanceof ZodError) {
         // Create a temporary context for error logging (without debug since we don't have config yet)

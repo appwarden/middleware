@@ -245,7 +245,7 @@ describe("createAppwardenMiddleware", () => {
           message: "Invalid token",
         },
       ]),
-    })
+    } as ReturnType<typeof AppwardenConfigSchemaMock.safeParse>)
 
     const middleware = createAppwardenMiddleware(mockConfig)
     const result = await middleware(

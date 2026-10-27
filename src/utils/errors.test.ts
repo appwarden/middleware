@@ -97,33 +97,23 @@ describe("errors", () => {
       )
     })
 
-    it("should handle returnTypeError in ZodInvalidReturnTypeIssue", () => {
-      // Create a mock ZodError with a returnTypeError
-      const mockError = new ZodError([])
-
-      // Create a mock issue with returnTypeError
-      const mockIssue = {
-        code: "invalid_return_type",
-        expected: "object",
-        received: "undefined",
-        path: [],
-        message: "Invalid return type",
-        returnTypeError: {
-          flatten: () => ({
-            fieldErrors: {
-              appwardenApiToken: ["Required"],
-            },
-            formErrors: [],
-          }),
+    it("should extract keyed errors from config-function output issues", () => {
+      // Zod 4 flattens the issues produced by a config function's return value
+      // into `error.issues`, so keyed issues are picked up directly.
+      const error = new ZodError([
+        {
+          code: "custom",
+          path: ["appwardenApiToken"],
+          message: "Required",
+          params: {
+            appwardenErrorKey: "APPWARDEN_API_TOKEN_MISSING",
+          },
         },
-      }
+      ])
 
-      // Add the mock issue to the error
-      mockError.issues = [mockIssue as any]
+      const errors = getErrors(error)
 
-      const errors = getErrors(mockError)
-
-      // Should extract the appwardenApiToken error message from returnTypeError
+      // Should extract the appwardenApiToken error message
       expect(errors).toContain(
         "APPWARDEN_API_TOKEN is missing or empty. Learn more at https://appwarden.com/docs/guides/api-token-management.",
       )

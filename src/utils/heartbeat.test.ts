@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { z, ZodError } from "zod"
+import { z, ZodError, type ZodIssue } from "zod"
 import {
   HEARTBEAT_CONFIG_ERROR_MAX_COUNT,
   HEARTBEAT_CONFIG_ERROR_MAX_PATH_DEPTH,
@@ -49,9 +49,8 @@ describe("heartbeat utilities", () => {
         {
           code: "invalid_type",
           expected: "string",
-          received: "number",
           path: ["lockPageSlug"],
-          message: "Expected string, received number",
+          message: "Invalid input: expected string, received number",
         },
       ])
 
@@ -70,7 +69,6 @@ describe("heartbeat utilities", () => {
         (_, i) => ({
           code: "invalid_type" as const,
           expected: "string" as const,
-          received: "number" as const,
           path: [`field${i}`],
           message: `Error ${i}`,
         }),
@@ -119,13 +117,15 @@ describe("heartbeat utilities", () => {
 
     it("should return the Appwarden-controlled message for a missing appwardenApiToken", () => {
       const error = new ZodError([
+        // `received` no longer exists in Zod 4; the Zod 3 shape is kept here to
+        // cover the compatibility fallback for errors thrown by config functions.
         {
           code: "invalid_type",
           expected: "string",
           received: "undefined",
           path: ["appwardenApiToken"],
           message: "Required",
-        },
+        } as unknown as ZodIssue,
       ])
 
       const result = sanitizeConfigErrors(error)
@@ -146,7 +146,7 @@ describe("heartbeat utilities", () => {
           received: "number",
           path: ["appwardenApiToken"],
           message: "Expected string, received number",
-        },
+        } as unknown as ZodIssue,
       ])
 
       const result = sanitizeConfigErrors(error)
@@ -183,6 +183,8 @@ describe("heartbeat utilities", () => {
     it("should provide descriptive error for invalid_union with type mismatch", () => {
       // Simulate the error when a number is passed to a union of string literals
       const error = new ZodError([
+        // Zod 3 shaped union issue; kept to cover the compatibility fallbacks
+        // for errors thrown by user config functions.
         {
           code: "invalid_union",
           unionErrors: [
@@ -193,7 +195,7 @@ describe("heartbeat utilities", () => {
                 received: 2,
                 path: [],
                 message: 'Invalid literal value, expected "disabled"',
-              },
+              } as unknown as ZodIssue,
             ]),
             new ZodError([
               {
@@ -202,7 +204,7 @@ describe("heartbeat utilities", () => {
                 received: 2,
                 path: [],
                 message: 'Invalid literal value, expected "report-only"',
-              },
+              } as unknown as ZodIssue,
             ]),
             new ZodError([
               {
@@ -211,12 +213,12 @@ describe("heartbeat utilities", () => {
                 received: 2,
                 path: [],
                 message: 'Invalid literal value, expected "enforced"',
-              },
+              } as unknown as ZodIssue,
             ]),
           ],
           path: ["mode"],
           message: "Invalid input",
-        },
+        } as unknown as ZodIssue,
       ])
 
       const result = sanitizeConfigErrors(error)
