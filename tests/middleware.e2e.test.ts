@@ -24,6 +24,10 @@ import {
  *
  * Each website is tested in both "initially locked" and "initially unlocked" modes
  * based on its current quarantine status.
+ *
+ * The Vercel websites are driven through the staging API with `service: "vercel"`,
+ * which requires a `cacheUrl`. Set `EDGE_CONFIG` (or `KV_URL`) to run them;
+ * otherwise those suites are skipped.
  */
 
 // Run all middleware E2E tests in parallel across websites
@@ -42,13 +46,21 @@ const API_LOCK_RESPONSE = {
   },
 }
 
+// Vercel test websites need a cache URL: the staging API requires `cacheUrl`
+// when `service` is "vercel". Reuse the same env vars the middleware itself
+// uses, and skip those websites when neither is set.
+const VERCEL_CACHE_URL = process.env.EDGE_CONFIG || process.env.KV_URL
+
 // Test configuration
 const TEST_WEBSITES = [
   {
     hostname: "appwarden.cc",
     url: "https://appwarden.cc",
+    service: "cloudflare" as const,
     lockPageSlug: "/maintenance",
-    cspMode: "enforced" as const,
+    // Matches csp-mode: report-only in
+    // dev--appwarden-domain-configuration/.appwarden/domains/appwarden-cc.yml.
+    cspMode: "report-only" as const,
     cspDirectives: { "script-src": ["self", "{{nonce}}"] },
     bypassPaths: BYPASS_PATHS,
     apiBasePaths: API_BASE_PATHS,
@@ -57,6 +69,7 @@ const TEST_WEBSITES = [
   {
     hostname: "astro.appwarden.cc",
     url: "https://astro.appwarden.cc",
+    service: "cloudflare" as const,
     lockPageSlug: "/maintenance",
     cspMode: "report-only" as const,
     cspDirectives: { "script-src": ["self", "{{nonce}}"] },
@@ -67,6 +80,7 @@ const TEST_WEBSITES = [
   {
     hostname: "tanstack.appwarden.cc",
     url: "https://tanstack.appwarden.cc",
+    service: "cloudflare" as const,
     lockPageSlug: "/maintenance",
     cspMode: "report-only" as const,
     cspDirectives: { "script-src": ["self", "{{nonce}}"] },
@@ -77,6 +91,7 @@ const TEST_WEBSITES = [
   {
     hostname: "react-router.appwarden.cc",
     url: "https://react-router.appwarden.cc",
+    service: "cloudflare" as const,
     lockPageSlug: "/maintenance",
     cspMode: "report-only" as const,
     cspDirectives: { "script-src": ["self", "{{nonce}}"] },
@@ -87,6 +102,7 @@ const TEST_WEBSITES = [
   {
     hostname: "next-lowest-supported.appwarden.cc",
     url: "https://next-lowest-supported.appwarden.cc",
+    service: "cloudflare" as const,
     lockPageSlug: "/maintenance",
     cspMode: "report-only" as const,
     cspDirectives: { "script-src": ["'self'"] },
@@ -97,6 +113,8 @@ const TEST_WEBSITES = [
   {
     hostname: "appwarden.online",
     url: "https://appwarden.online",
+    service: "vercel" as const,
+    cacheUrl: VERCEL_CACHE_URL,
     lockPageSlug: "/maintenance",
     cspMode: "report-only" as const,
     cspDirectives: { "script-src": ["'self'"] },
@@ -107,6 +125,8 @@ const TEST_WEBSITES = [
   {
     hostname: "edge-config.appwarden.online",
     url: "https://edge-config.appwarden.online",
+    service: "vercel" as const,
+    cacheUrl: VERCEL_CACHE_URL,
     lockPageSlug: "/maintenance",
     cspMode: "report-only" as const,
     cspDirectives: { "script-src": ["'self'"] },
@@ -126,7 +146,8 @@ type TestWebsite = (typeof TEST_WEBSITES)[number]
 
 interface QuarantineStatusResponse {
   content?: {
-    locked: boolean
+    // The staging API reports the lock state as `isLocked` (0 or 1).
+    isLocked?: boolean | number
   }
   error?: {
     message: string
@@ -137,7 +158,7 @@ interface QuarantineStatusResponse {
  * Fetch the current quarantine status for a website
  */
 async function fetchQuarantineStatus(
-  hostname: string,
+  website: TestWebsite,
 ): Promise<{ locked: boolean }> {
   const apiToken = process.env.APPWARDEN_API_TOKEN
   if (!apiToken) {
@@ -150,8 +171,9 @@ async function fetchQuarantineStatus(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      fqdn: hostname,
-      service: "cloudflare",
+      fqdn: website.hostname,
+      service: website.service,
+      ...(website.service === "vercel" ? { cacheUrl: website.cacheUrl } : {}),
       appwardenApiToken: apiToken,
     }),
   })
@@ -169,7 +191,7 @@ async function fetchQuarantineStatus(
   }
 
   return {
-    locked: data.content?.locked ?? false,
+    locked: Boolean(data.content?.isLocked),
   }
 }
 
@@ -177,7 +199,7 @@ async function fetchQuarantineStatus(
  * Set the quarantine mode for a website
  */
 async function setQuarantineMode(
-  hostname: string,
+  website: TestWebsite,
   mode: QuarantineMode,
 ): Promise<void> {
   const apiToken = process.env.APPWARDEN_API_TOKEN
@@ -191,7 +213,9 @@ async function setQuarantineMode(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      fqdn: hostname,
+      fqdn: website.hostname,
+      service: website.service,
+      ...(website.service === "vercel" ? { cacheUrl: website.cacheUrl } : {}),
       mode,
       appwardenApiToken: apiToken,
     }),
@@ -200,8 +224,12 @@ async function setQuarantineMode(
   if (!response.ok) {
     const errorText = await response.text()
 
-    // Ignore "already locked/unlocked" errors (idempotent behavior)
-    if (response.status === 400 && errorText.includes("already")) {
+    // Ignore "already locked/unlocked" responses (idempotent behavior).
+    // The staging API returns 409 Conflict; 400 is kept for older deployments.
+    if (
+      (response.status === 400 || response.status === 409) &&
+      errorText.includes("already")
+    ) {
       return
     }
 
@@ -502,7 +530,7 @@ async function setQuarantineModeWithPropagation(
   website: TestWebsite,
   mode: QuarantineMode,
 ): Promise<void> {
-  await setQuarantineMode(website.hostname, mode)
+  await setQuarantineMode(website, mode)
   console.log(
     `      ⏳ Waiting ${PROPAGATION_DELAY_MS / 1000}s for propagation...`,
   )
@@ -514,13 +542,21 @@ for (const website of TEST_WEBSITES) {
   test.describe(`Middleware tests for ${website.hostname}`, () => {
     let initialLockState: boolean
     let testStartTime: number
+    let skipReason: string | undefined
 
     test.beforeAll(async () => {
+      // The staging API cannot resolve a Vercel domain without a cache URL.
+      if (website.service === "vercel" && !website.cacheUrl) {
+        skipReason = `set EDGE_CONFIG or KV_URL to drive ${website.hostname} through the staging API`
+        console.log(`\n⏭️  Skipping ${website.hostname}: ${skipReason}`)
+        test.skip()
+      }
+
       testStartTime = Date.now()
       console.log(
         `\n🔍 Fetching initial quarantine status for ${website.hostname}...`,
       )
-      const status = await fetchQuarantineStatus(website.hostname)
+      const status = await fetchQuarantineStatus(website)
       initialLockState = status.locked
       console.log(
         `   Initial state: ${initialLockState ? "LOCKED" : "UNLOCKED"}`,
@@ -528,6 +564,10 @@ for (const website of TEST_WEBSITES) {
     })
 
     test.afterAll(async ({ browser }) => {
+      if (skipReason) {
+        return
+      }
+
       // Restore original state
       console.log(
         `\n🔄 Restoring ${website.hostname} to initial state (${
