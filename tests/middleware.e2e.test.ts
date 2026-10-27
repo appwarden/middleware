@@ -575,7 +575,7 @@ for (const website of TEST_WEBSITES) {
         await expectLockStateWithOptionalRetry(page, website, true)
         console.log("      ✅ Lock page still displayed")
 
-        // Verify the api/bypass behaviour while locked
+        // Verify the api/bypass behavior while locked
         await expectApiLocked(request, website)
         await expectBypassOpen(request, website)
         await expectApiDocsNotLockedAsApi(request, website)
