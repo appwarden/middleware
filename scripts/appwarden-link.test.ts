@@ -1357,4 +1357,171 @@ describe("appwarden-link.cjs", () => {
 
     fs.rmSync(tmpDir, { recursive: true })
   })
+
+  it("should select the remote middleware configuration matching --fqdn", () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "appwarden-test-"))
+
+    fs.writeFileSync(
+      path.join(tmpDir, "package.json"),
+      JSON.stringify({ dependencies: { next: "^14" } }),
+    )
+
+    // The API returns one entry per domain: { content: [{ url, options }] }.
+    const payload = {
+      content: [
+        {
+          url: "other.example.com",
+          options: { "bypass-paths": ["/nope"] },
+        },
+        {
+          url: "example.com",
+          options: {
+            "bypass-paths": ["/health", "/api/health"],
+            website: {
+              "lock-page-slug": "/maintenance",
+              "csp-mode": "report-only",
+              "csp-directives": { "script-src": ["self", "{{nonce}}"] },
+            },
+            api: {
+              "base-paths": ["/api"],
+              response: {
+                status: 521,
+                body: '{"error":"Service unavailable","source":"appwarden"}',
+                headers: [
+                  { name: "content-type", value: "application/json" },
+                  { name: "x-appwarden-lock", value: "api" },
+                ],
+              },
+            },
+          },
+        },
+      ],
+    }
+
+    const wrapperPath = path.join(tmpDir, "mock-fetch-wrapper.cjs")
+    fs.writeFileSync(
+      wrapperPath,
+      [
+        "global.fetch = async () => {",
+        `  const bodyText = ${JSON.stringify(JSON.stringify(payload))};`,
+        "  return {",
+        "    ok: true,",
+        "    headers: { get: () => null },",
+        "    body: {",
+        "      getReader: () => {",
+        "        let done = false;",
+        "        return {",
+        "          read: async () => {",
+        "            if (done) return { done: true };",
+        "            done = true;",
+        "            return { done: false, value: new TextEncoder().encode(bodyText) };",
+        "          },",
+        "          cancel: async () => {},",
+        "        };",
+        "      },",
+        "    },",
+        "  };",
+        "};",
+        'process.env.APPWARDEN_API_TOKEN = "test-token";',
+        'process.env.APPWARDEN_FQDN = "example.com";',
+        `require(${JSON.stringify(scriptPath)});`,
+        "",
+      ].join("\n"),
+    )
+
+    execSync(`node "${wrapperPath}"`, {
+      cwd: tmpDir,
+      encoding: "utf-8",
+      env: { ...process.env, APPWARDEN_SKIP_POSTBUILD: undefined },
+    })
+
+    const configPath = path.join(tmpDir, configDir, configName)
+    const config = JSON.parse(fs.readFileSync(configPath, "utf-8"))
+
+    // The entry matching --fqdn is applied; the other domain's is not.
+    expect(config.bypassPaths).toEqual(["/health", "/api/health"])
+    expect(config.website.cspMode).toBe("report-only")
+    expect(config.website.cspDirectives["script-src"]).toEqual([
+      "self",
+      "{{nonce}}",
+    ])
+    expect(config.api.basePaths).toEqual(["/api"])
+    expect(config.api.response.status).toBe(521)
+
+    fs.rmSync(tmpDir, { recursive: true })
+  })
+
+  it("should ignore the remote config when no content entry matches --fqdn", () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "appwarden-test-"))
+
+    fs.writeFileSync(
+      path.join(tmpDir, "package.json"),
+      JSON.stringify({ dependencies: { next: "^14" } }),
+    )
+
+    const payload = {
+      content: [
+        {
+          url: "other.example.com",
+          options: {
+            website: {
+              "lock-page-slug": "/maintenance",
+              "csp-mode": "enforced",
+            },
+          },
+        },
+      ],
+    }
+
+    const wrapperPath = path.join(tmpDir, "mock-fetch-wrapper.cjs")
+    fs.writeFileSync(
+      wrapperPath,
+      [
+        "global.fetch = async () => {",
+        `  const bodyText = ${JSON.stringify(JSON.stringify(payload))};`,
+        "  return {",
+        "    ok: true,",
+        "    headers: { get: () => null },",
+        "    body: {",
+        "      getReader: () => {",
+        "        let done = false;",
+        "        return {",
+        "          read: async () => {",
+        "            if (done) return { done: true };",
+        "            done = true;",
+        "            return { done: false, value: new TextEncoder().encode(bodyText) };",
+        "          },",
+        "          cancel: async () => {},",
+        "        };",
+        "      },",
+        "    },",
+        "  };",
+        "};",
+        'process.env.APPWARDEN_API_TOKEN = "test-token";',
+        'process.env.APPWARDEN_FQDN = "example.com";',
+        `require(${JSON.stringify(scriptPath)});`,
+        "",
+      ].join("\n"),
+    )
+
+    // Redirect stderr so the warning is captured alongside stdout.
+    const output = execSync(`node "${wrapperPath}" 2>&1`, {
+      cwd: tmpDir,
+      encoding: "utf-8",
+      env: { ...process.env, APPWARDEN_SKIP_POSTBUILD: undefined },
+    })
+
+    expect(output).toContain(
+      "No remote middleware configuration found for example.com",
+    )
+
+    const configPath = path.join(tmpDir, configDir, configName)
+    const config = JSON.parse(fs.readFileSync(configPath, "utf-8"))
+
+    // Falls back to the synthesized website config, without the other domain's CSP.
+    expect(config.website.lockPageSlug).toBe("/maintenance")
+    expect(config.website.cspMode).toBeUndefined()
+
+    fs.rmSync(tmpDir, { recursive: true })
+  })
 })
