@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.17.10](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.17.9...@appwarden/middleware@3.17.10) (2026-10-27)
+
+
+### Bug Fixes
+
+* **deps:** resolve security advisories and upgrade zod to v4 ([71e8971](https://github.com/appwarden/middleware/commit/71e89718ecb3c8a43a656e6f5a6ff6093f25e12f))
+
 ## [3.17.8](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.17.7...@appwarden/middleware@3.17.8) (2026-08-13)
 
 
