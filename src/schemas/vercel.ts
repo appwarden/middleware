@@ -49,7 +49,7 @@ export const AppwardenConfigSchema = BaseNextJsConfigSchema
         },
         path: ["cacheUrl"],
       })
-      return false
+      return
     }
 
     // If it looks like an Upstash URL (by hostname), validate its strict format
@@ -68,10 +68,8 @@ export const AppwardenConfigSchema = BaseNextJsConfigSchema
         },
         path: ["cacheUrl"],
       })
-      return false
+      return
     }
-
-    return true
   })
   // Require vercelApiToken when using Edge Config
   .refine(

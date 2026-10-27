@@ -1,4 +1,4 @@
-import { ZodError, ZodInvalidReturnTypeIssue, ZodIssue } from "zod"
+import { ZodError, ZodIssue } from "zod"
 
 export enum SchemaErrorKey {
   DirectivesRequired = "DirectivesRequired",
@@ -111,34 +111,17 @@ export const getErrors = (error: ZodError) => {
       if (key) {
         matches.add(AppwardenConfigErrorMessages[key])
       }
-
-      // we need to parse returnTypeError because we have a .returns() in the schema that contains errors
-      // from schemas inside of middleware.before function
-      if (
-        "returnTypeError" in issue &&
-        issue.returnTypeError &&
-        Array.isArray(issue.returnTypeError.issues)
-      ) {
-        collectKeyedMessages(issue.returnTypeError.issues)
-      }
     }
   }
 
   collectKeyedMessages(error.issues)
 
-  // Legacy fallback for schemas that don't yet emit an explicit key.
-  const errors = [...Object.entries(error.flatten().fieldErrors)]
-
-  for (const issue of error.issues) {
-    errors.push(
-      ...Object.entries(
-        "returnTypeError" in issue
-          ? (issue as ZodInvalidReturnTypeIssue).returnTypeError.flatten()
-              .fieldErrors
-          : {},
-      ),
-    )
-  }
+  // Legacy fallback for schemas that don't yet emit an explicit key. Zod 4
+  // types `fieldErrors` against the parsed output (which is `unknown` here), so
+  // re-type it as the field-keyed message map indexed below.
+  const errors = Object.entries(
+    error.flatten().fieldErrors as Record<string, string[] | undefined>,
+  )
 
   for (const [field, maybeSchemaErrorKey] of errors) {
     let match: string | Record<string, string> | undefined = errorsMap[field]

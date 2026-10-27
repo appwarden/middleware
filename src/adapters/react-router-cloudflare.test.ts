@@ -1,6 +1,6 @@
 import { waitUntil } from "cloudflare:workers"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { ZodError } from "zod"
+import { ZodError, type ZodIssue } from "zod"
 import type { HeartbeatResponseBody } from "../types"
 import * as utils from "../utils"
 import { resolveAdapterAction } from "../utils/adapter-common"
@@ -269,10 +269,12 @@ describe("createAppwardenMiddleware", () => {
         {
           code: "invalid_type",
           expected: "string",
+          // `received` no longer exists in Zod 4; the Zod 3 shape is kept here to
+          // cover the compatibility fallback for errors thrown by config functions.
           received: "undefined",
           path: ["appwardenApiToken"],
           message: "Required",
-        },
+        } as unknown as ZodIssue,
       ])
     })
 

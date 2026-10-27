@@ -25,13 +25,24 @@ export const UseAppwardenInputSchema = AppwardenMiddlewareConfigSchema.extend({
 
 export type UseAppwardenInput = z.infer<typeof UseAppwardenInputSchema>
 
-export const appwardenConfigRefinement = <T extends z.ZodTypeAny>(schema: T) =>
+/**
+ * The config fields inspected by {@link appwardenConfigRefinement}. Declaring
+ * them explicitly keeps the refinement callback strongly typed in Zod 4, where
+ * `z.ZodTypeAny` infers `unknown` for the parsed value.
+ */
+export type AppwardenConfigRefinementData = {
+  website?: WebsiteMiddlewareConfigType
+  api?: ApiMiddlewareConfigType
+  multidomainConfig?: AppwardenMultidomainConfig
+}
+
+export const appwardenConfigRefinement = <
+  T extends z.ZodType<AppwardenConfigRefinementData>,
+>(
+  schema: T,
+) =>
   schema.refine(
-    (data: {
-      website?: WebsiteMiddlewareConfigType
-      api?: ApiMiddlewareConfigType
-      multidomainConfig?: AppwardenMultidomainConfig
-    }) => !!data.website || !!data.api || !!data.multidomainConfig,
+    (data) => !!data.website || !!data.api || !!data.multidomainConfig,
     {
       message:
         AppwardenConfigErrorMessages[

@@ -1,4 +1,4 @@
-import { SafeParseReturnType, ZodError, ZodIssue } from "zod"
+import { ZodError, ZodIssue, type ZodSafeParseResult } from "zod"
 import {
   APPWARDEN_HEARTBEAT_ROUTE,
   HEARTBEAT_CONFIG_ERROR_MAX_CODE_LENGTH,
@@ -31,6 +31,62 @@ const HEARTBEAT_CONSTRUCTION_FAILURE_BODY = JSON.stringify({
 })
 
 /**
+ * Zod issue codes are not a closed set for this module: it sanitizes issues
+ * produced by our own schemas as well as issues thrown by user config
+ * functions, which may come from either Zod 3 or Zod 4.
+ */
+const getIssueCode = (issue: ZodIssue): string => issue.code
+
+type ZodIssueContainer = { issues?: unknown }
+
+/**
+ * Zod 4 renamed the per-option errors of `invalid_union` from `unionErrors` to
+ * `errors`. Accept both so union issues render the same controlled message.
+ */
+const getUnionErrors = (issue: ZodIssue): unknown[] | undefined => {
+  const candidate =
+    (issue as { errors?: unknown }).errors ??
+    (issue as { unionErrors?: unknown }).unionErrors
+
+  return Array.isArray(candidate) && candidate.length > 0
+    ? candidate
+    : undefined
+}
+
+const getFirstIssue = (container: unknown): ZodIssue | undefined => {
+  // Zod 4 stores the per-option errors as arrays of issues, Zod 3 stored
+  // `ZodError` instances with an `issues` array.
+  if (Array.isArray(container)) {
+    return container.length > 0 ? (container[0] as ZodIssue) : undefined
+  }
+
+  const issues = (container as ZodIssueContainer | undefined)?.issues
+
+  return Array.isArray(issues) && issues.length > 0
+    ? (issues[0] as ZodIssue)
+    : undefined
+}
+
+/** Option mismatches are `invalid_literal` in Zod 3 and `invalid_value` in Zod 4. */
+const isLiteralIssue = (issue: ZodIssue): boolean => {
+  const code = getIssueCode(issue)
+
+  return code === "invalid_literal" || code === "invalid_value"
+}
+
+const getLiteralValues = (issue: ZodIssue): string[] => {
+  const values = (issue as { values?: unknown }).values
+
+  if (Array.isArray(values) && values.length > 0) {
+    return values.map(String)
+  }
+
+  const expected = (issue as { expected?: unknown }).expected
+
+  return expected === undefined ? [] : [String(expected)]
+}
+
+/**
  * Gets the expected type from a Zod issue.
  * For union errors, extracts all literal values and formats them as "value1 | value2 | value3".
  *
@@ -44,59 +100,50 @@ function getExpectedType(issue: ZodIssue): string | undefined {
   }
 
   // For invalid_union errors, extract all literal values from union errors
-  if (
-    issue.code === "invalid_union" &&
-    "unionErrors" in issue &&
-    Array.isArray(issue.unionErrors) &&
-    issue.unionErrors.length > 0
-  ) {
-    // Try to extract all literal values from the union
-    const literalValues: string[] = []
-    let allAreLiterals = true
+  if (issue.code !== "invalid_union") {
+    return undefined
+  }
 
-    for (const unionError of issue.unionErrors) {
-      if (
-        unionError &&
-        "issues" in unionError &&
-        Array.isArray(unionError.issues) &&
-        unionError.issues.length > 0
-      ) {
-        const firstIssue = unionError.issues[0]
-        if (firstIssue.code === "invalid_literal" && "expected" in firstIssue) {
-          literalValues.push(String(firstIssue.expected))
-        } else {
-          allAreLiterals = false
-          break
-        }
-      }
+  const unionErrors = getUnionErrors(issue)
+
+  if (!unionErrors) {
+    return undefined
+  }
+
+  // Try to extract all literal values from the union
+  const literalValues: string[] = []
+  let allAreLiterals = true
+
+  for (const unionError of unionErrors) {
+    const firstIssue = getFirstIssue(unionError)
+
+    if (firstIssue && isLiteralIssue(firstIssue)) {
+      literalValues.push(...getLiteralValues(firstIssue))
+    } else {
+      allAreLiterals = false
+      break
     }
+  }
 
-    // If all union members are literals, return them formatted
-    if (allAreLiterals && literalValues.length > 0) {
-      return literalValues.join(" | ")
+  // If all union members are literals, return them formatted
+  if (allAreLiterals && literalValues.length > 0) {
+    return literalValues.join(" | ")
+  }
+
+  // Otherwise, derive expected types from union member issues when available
+  const expectedTypes = new Set<string>()
+
+  for (const unionError of unionErrors) {
+    const firstIssue = getFirstIssue(unionError) as
+      { expected?: unknown } | undefined
+
+    if (typeof firstIssue?.expected === "string") {
+      expectedTypes.add(firstIssue.expected)
     }
+  }
 
-    // Otherwise, derive expected types from union member issues when available
-    const expectedTypes = new Set<string>()
-
-    for (const unionError of issue.unionErrors) {
-      if (
-        unionError &&
-        "issues" in unionError &&
-        Array.isArray(unionError.issues) &&
-        unionError.issues.length > 0
-      ) {
-        const firstIssue = unionError.issues[0] as any
-
-        if (typeof firstIssue.expected === "string") {
-          expectedTypes.add(firstIssue.expected)
-        }
-      }
-    }
-
-    if (expectedTypes.size > 0) {
-      return Array.from(expectedTypes).join(" | ")
-    }
+  if (expectedTypes.size > 0) {
+    return Array.from(expectedTypes).join(" | ")
   }
 
   return undefined
@@ -130,10 +177,16 @@ function getAppwardenControlledMessage(
   }
 
   const lastSegment = path.length > 0 ? path[path.length - 1] : undefined
+
+  // Zod 3 recorded the received value on invalid_type issues, Zod 4 dropped it.
+  // Read it defensively so "missing token" errors thrown by user config
+  // functions still map to the friendly message.
+  const received = (issue as { received?: unknown }).received
+
   if (
     lastSegment === "appwardenApiToken" &&
     issue.code === "invalid_type" &&
-    (issue.received === "undefined" || issue.received === "null")
+    (received === "undefined" || received === "null")
   ) {
     return AppwardenConfigErrorMessages[
       AppwardenConfigErrorKey.AppwardenApiTokenMissing
@@ -161,9 +214,11 @@ function createSanitizedMessage(
   }
 
   const fieldName = path.length > 0 ? path[path.length - 1] : "field"
-  const code = issue.code
+  const code = getIssueCode(issue)
 
-  // Map Zod error codes to controlled messages
+  // Map Zod error codes to controlled messages. Zod 4 codes (for example
+  // "invalid_value" and "invalid_format") are listed alongside the Zod 3 codes
+  // that can still arrive from user config functions.
   switch (code) {
     case "invalid_type": {
       const expectedType = getExpectedType(issue)
@@ -172,6 +227,8 @@ function createSanitizedMessage(
         : `Invalid type for ${fieldName}`
     }
     case "invalid_literal":
+    case "invalid_enum_value":
+    case "invalid_value":
       return `Invalid value for ${fieldName}`
     case "unrecognized_keys":
       return `Unrecognized keys in ${fieldName}`
@@ -181,8 +238,6 @@ function createSanitizedMessage(
         ? `Invalid type for ${fieldName}. Expected ${expectedType}`
         : `Invalid union value for ${fieldName}`
     }
-    case "invalid_enum_value":
-      return `Invalid enum value for ${fieldName}`
     case "invalid_arguments":
       return `Invalid arguments for ${fieldName}`
     case "invalid_return_type": {
@@ -194,6 +249,7 @@ function createSanitizedMessage(
     case "invalid_date":
       return `Invalid date for ${fieldName}`
     case "invalid_string":
+    case "invalid_format":
       return `Invalid string format for ${fieldName}`
     case "too_small":
       return `Value too small for ${fieldName}`
@@ -205,6 +261,10 @@ function createSanitizedMessage(
       return `Value not a multiple of required value for ${fieldName}`
     case "not_finite":
       return `Value must be finite for ${fieldName}`
+    case "invalid_key":
+      return `Invalid key in ${fieldName}`
+    case "invalid_element":
+      return `Invalid element in ${fieldName}`
     case "custom":
       return `Validation failed for ${fieldName}`
     default:
@@ -394,7 +454,7 @@ export function sanitizeConfigErrors(
  * same fallback logic.
  */
 export function getHeartbeatPublicId<T extends { appwardenApiToken: string }>(
-  validationResult: SafeParseReturnType<unknown, T>,
+  validationResult: ZodSafeParseResult<T>,
   rawConfig: unknown,
 ): string {
   const rawToken =
