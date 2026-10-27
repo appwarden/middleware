@@ -706,6 +706,64 @@ function sanitizeRemoteConfig(data, depth = 0) {
   return safe
 }
 
+/**
+ * Unwrap the API's `content` array and select the entry for `fqdn`.
+ *
+ * `GET /v1/appwarden/config` returns `{ content: [{ url, options }] }` with one
+ * entry per domain in the organization; the middleware configuration lives in
+ * the matching entry's `options`. A flat options object is still accepted so
+ * older deployments keep working.
+ */
+function unwrapRemoteConfig(data, fqdn) {
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    return data
+  }
+  if (!Object.prototype.hasOwnProperty.call(data, "content")) {
+    return data
+  }
+
+  const entries = data.content
+  if (!Array.isArray(entries)) {
+    warn("Remote config `content` was not an array. Ignoring.")
+    return null
+  }
+
+  const target = typeof fqdn === "string" ? fqdn.trim().toLowerCase() : ""
+  if (!target) {
+    warn("Remote config is keyed by fqdn; pass --fqdn to select an entry.")
+    return null
+  }
+
+  const matches = entries.filter(
+    (entry) =>
+      entry &&
+      typeof entry === "object" &&
+      !Array.isArray(entry) &&
+      typeof entry.url === "string" &&
+      entry.url.trim().toLowerCase() === target,
+  )
+
+  if (matches.length === 0) {
+    warn(`No remote middleware configuration found for ${fqdn}.`)
+    return null
+  }
+  if (matches.length > 1) {
+    warn(
+      `Multiple remote middleware configurations found for ${fqdn}; using the first.`,
+    )
+  }
+
+  const options = matches[0].options
+  if (!options || typeof options !== "object" || Array.isArray(options)) {
+    warn(
+      `Remote middleware configuration for ${fqdn} had no options. Ignoring.`,
+    )
+    return null
+  }
+
+  return options
+}
+
 async function fetchRemoteConfig(apiToken, apiHostname, fqdn) {
   if (!apiToken || !fqdn) return null
   if (
@@ -766,13 +824,15 @@ async function fetchRemoteConfig(apiToken, apiHostname, fqdn) {
 
     const data = JSON.parse(text)
 
-    // The API returns a flat middleware configuration object.
-    if (!data || typeof data !== "object" || Array.isArray(data)) {
+    // The API wraps the configuration in a `content` array keyed by domain.
+    const remote = unwrapRemoteConfig(data, fqdn)
+
+    if (!remote || typeof remote !== "object" || Array.isArray(remote)) {
       warn("Remote config response was not a valid flat object. Ignoring.")
       return null
     }
 
-    const config = normalizeRemoteConfigKeys(data)
+    const config = normalizeRemoteConfigKeys(remote)
     // Normalize camelCase CSP directive keys inside website.cspDirectives
     // into kebab-case names that the middleware runtime expects.
     if (config.website && config.website.cspDirectives) {
