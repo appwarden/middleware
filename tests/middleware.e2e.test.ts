@@ -1,17 +1,26 @@
-import { expect, test, type Page } from "@playwright/test"
+import {
+  type APIRequestContext,
+  type APIResponse,
+  expect,
+  type Page,
+  test,
+} from "@playwright/test"
 
 /**
  * Appwarden Middleware E2E Tests
  *
  * This test suite validates Appwarden middleware behavior across multiple test websites.
- * It tests the quarantine lock/unlock functionality and CSP header injection.
+ * It tests the quarantine lock/unlock functionality, CSP header injection, and the
+ * `bypassPaths` + `api.basePaths` routing feature.
  *
  * Test websites:
+ * - appwarden.cc
  * - astro.appwarden.cc
  * - tanstack.appwarden.cc
  * - react-router.appwarden.cc
- * - nextjs14.appwarden.cc
+ * - next-lowest-supported.appwarden.cc
  * - appwarden.online (vercel)
+ * - edge-config.appwarden.online (vercel)
  *
  * Each website is tested in both "initially locked" and "initially unlocked" modes
  * based on its current quarantine status.
@@ -19,6 +28,19 @@ import { expect, test, type Page } from "@playwright/test"
 
 // Run all middleware E2E tests in parallel across websites
 test.describe.configure({ mode: "parallel" })
+
+// API and bypass configuration every test website is deployed with (see
+// plans/ai-specs/test-website-api.md).
+const API_BASE_PATHS = ["/api"]
+const BYPASS_PATHS = ["/health", "/api/health"]
+const API_LOCK_RESPONSE = {
+  status: 521,
+  body: '{"error":"Service unavailable","source":"appwarden"}',
+  headers: {
+    "content-type": "application/json",
+    "x-appwarden-lock": "api",
+  },
+}
 
 // Test configuration
 const TEST_WEBSITES = [
@@ -28,6 +50,9 @@ const TEST_WEBSITES = [
     lockPageSlug: "/maintenance",
     cspMode: "enforced" as const,
     cspDirectives: { "script-src": ["self", "{{nonce}}"] },
+    bypassPaths: BYPASS_PATHS,
+    apiBasePaths: API_BASE_PATHS,
+    apiLockResponse: API_LOCK_RESPONSE,
   },
   {
     hostname: "astro.appwarden.cc",
@@ -35,6 +60,9 @@ const TEST_WEBSITES = [
     lockPageSlug: "/maintenance",
     cspMode: "report-only" as const,
     cspDirectives: { "script-src": ["self", "{{nonce}}"] },
+    bypassPaths: BYPASS_PATHS,
+    apiBasePaths: API_BASE_PATHS,
+    apiLockResponse: API_LOCK_RESPONSE,
   },
   {
     hostname: "tanstack.appwarden.cc",
@@ -42,6 +70,9 @@ const TEST_WEBSITES = [
     lockPageSlug: "/maintenance",
     cspMode: "report-only" as const,
     cspDirectives: { "script-src": ["self", "{{nonce}}"] },
+    bypassPaths: BYPASS_PATHS,
+    apiBasePaths: API_BASE_PATHS,
+    apiLockResponse: API_LOCK_RESPONSE,
   },
   {
     hostname: "react-router.appwarden.cc",
@@ -49,13 +80,19 @@ const TEST_WEBSITES = [
     lockPageSlug: "/maintenance",
     cspMode: "report-only" as const,
     cspDirectives: { "script-src": ["self", "{{nonce}}"] },
+    bypassPaths: BYPASS_PATHS,
+    apiBasePaths: API_BASE_PATHS,
+    apiLockResponse: API_LOCK_RESPONSE,
   },
   {
-    hostname: "nextjs14.appwarden.cc",
-    url: "https://nextjs14.appwarden.cc",
+    hostname: "next-lowest-supported.appwarden.cc",
+    url: "https://next-lowest-supported.appwarden.cc",
     lockPageSlug: "/maintenance",
     cspMode: "report-only" as const,
     cspDirectives: { "script-src": ["'self'"] },
+    bypassPaths: BYPASS_PATHS,
+    apiBasePaths: API_BASE_PATHS,
+    apiLockResponse: API_LOCK_RESPONSE,
   },
   {
     hostname: "appwarden.online",
@@ -63,6 +100,9 @@ const TEST_WEBSITES = [
     lockPageSlug: "/maintenance",
     cspMode: "report-only" as const,
     cspDirectives: { "script-src": ["'self'"] },
+    bypassPaths: BYPASS_PATHS,
+    apiBasePaths: API_BASE_PATHS,
+    apiLockResponse: API_LOCK_RESPONSE,
   },
   {
     hostname: "edge-config.appwarden.online",
@@ -70,6 +110,9 @@ const TEST_WEBSITES = [
     lockPageSlug: "/maintenance",
     cspMode: "report-only" as const,
     cspDirectives: { "script-src": ["'self'"] },
+    bypassPaths: BYPASS_PATHS,
+    apiBasePaths: API_BASE_PATHS,
+    apiLockResponse: API_LOCK_RESPONSE,
   },
 ]
 
@@ -227,6 +270,127 @@ function verifyCspHeader(
       }
     }
   }
+}
+
+/**
+ * Assert an API response matches the configured API lock response.
+ */
+async function expectApiLockResponse(
+  response: APIResponse,
+  website: TestWebsite,
+): Promise<void> {
+  const { status, body, headers } = website.apiLockResponse
+  const responseHeaders = response.headers()
+
+  expect(response.status()).toBe(status)
+  expect(await response.text()).toBe(body)
+  expect(responseHeaders["content-type"]).toContain(headers["content-type"])
+  expect(responseHeaders["x-appwarden-lock"]).toBe(headers["x-appwarden-lock"])
+}
+
+/**
+ * Expect every `api.basePaths` request to return the configured API lock
+ * response while the website is locked, for both GET and POST.
+ */
+async function expectApiLocked(
+  request: APIRequestContext,
+  website: TestWebsite,
+): Promise<void> {
+  console.log("   🚧 Verifying API routes are locked...")
+
+  const helloResponse = await request.get(`${website.url}/api/hello`, {
+    headers: { accept: "application/json" },
+  })
+  await expectApiLockResponse(helloResponse, website)
+  console.log("      ✅ GET /api/hello returns the API lock response")
+
+  const echoResponse = await request.post(`${website.url}/api/echo`, {
+    data: { ping: "pong" },
+  })
+  await expectApiLockResponse(echoResponse, website)
+  console.log("      ✅ POST /api/echo returns the API lock response")
+}
+
+/**
+ * Expect the thin API to reach the origin while the website is unlocked.
+ */
+async function expectApiUnlocked(
+  request: APIRequestContext,
+  website: TestWebsite,
+): Promise<void> {
+  console.log("   🚦 Verifying API routes are unlocked...")
+
+  const helloResponse = await request.get(`${website.url}/api/hello`, {
+    headers: { accept: "application/json" },
+  })
+  expect(helloResponse.status()).toBe(200)
+  expect(await helloResponse.json()).toEqual({ message: "Hello World" })
+  console.log("      ✅ GET /api/hello returns Hello World")
+
+  const helloWorldResponse = await request.get(
+    `${website.url}/api/hello/world`,
+    { headers: { accept: "application/json" } },
+  )
+  expect(helloWorldResponse.status()).toBe(200)
+  expect(await helloWorldResponse.json()).toEqual({ message: "Hello World" })
+  console.log("      ✅ GET /api/hello/world returns Hello World")
+
+  const echoPayload = { ping: "pong" }
+  const echoResponse = await request.post(`${website.url}/api/echo`, {
+    data: echoPayload,
+  })
+  expect(echoResponse.status()).toBe(200)
+  expect(await echoResponse.json()).toEqual(echoPayload)
+  console.log("      ✅ POST /api/echo echoes the request body")
+
+  const apiDocsResponse = await request.get(`${website.url}/api-docs`, {
+    headers: { accept: "application/json" },
+  })
+  expect(apiDocsResponse.status()).toBe(200)
+  expect(await apiDocsResponse.json()).toEqual({ message: "docs" })
+  console.log("      ✅ GET /api-docs returns docs")
+}
+
+/**
+ * Expect the configured bypass paths to reach the origin in any lock state,
+ * proving bypassPaths takes precedence over api.basePaths.
+ */
+async function expectBypassOpen(
+  request: APIRequestContext,
+  website: TestWebsite,
+): Promise<void> {
+  console.log("   🛟 Verifying bypass paths stay open...")
+
+  for (const bypassPath of website.bypassPaths) {
+    const response = await request.get(`${website.url}${bypassPath}`, {
+      headers: { accept: "application/json" },
+    })
+    expect(response.status()).toBe(200)
+    expect(await response.json()).toEqual({ status: "ok" })
+    console.log(`      ✅ GET ${bypassPath} bypasses the lock`)
+  }
+}
+
+/**
+ * Expect `/api-docs` to fall through to the website branch while locked: it is
+ * redirected to the lock page instead of matching the `/api` api base path.
+ */
+async function expectApiDocsNotLockedAsApi(
+  request: APIRequestContext,
+  website: TestWebsite,
+): Promise<void> {
+  console.log("   🧭 Verifying /api-docs is not treated as an api path...")
+
+  const response = await request.get(`${website.url}/api-docs`, {
+    headers: { accept: "text/html" },
+    maxRedirects: 0,
+  })
+
+  expect(response.status()).toBe(302)
+  const location = response.headers()["location"]
+  expect(location).toBeTruthy()
+  expect(new URL(location).pathname).toBe(website.lockPageSlug)
+  console.log("      ✅ /api-docs redirected to the lock page")
 }
 
 /**
@@ -393,6 +557,7 @@ for (const website of TEST_WEBSITES) {
 
     test("should handle lock/unlock transitions correctly", async ({
       page,
+      request,
     }) => {
       if (initialLockState) {
         // Initially locked mode
@@ -410,6 +575,11 @@ for (const website of TEST_WEBSITES) {
         await expectLockStateWithOptionalRetry(page, website, true)
         console.log("      ✅ Lock page still displayed")
 
+        // Verify the api/bypass behaviour while locked
+        await expectApiLocked(request, website)
+        await expectBypassOpen(request, website)
+        await expectApiDocsNotLockedAsApi(request, website)
+
         // Unlock the website
         console.log("   🔓 Unlocking website...")
         await setQuarantineModeWithPropagation(website, "unlock")
@@ -420,6 +590,10 @@ for (const website of TEST_WEBSITES) {
           retryMessage: `      ⚠️  Still locked, waiting additional ${RETRY_DELAY_MS / 1000}s...`,
         })
         console.log("      ✅ Real homepage displayed")
+
+        // Verify the api/bypass behaviour while unlocked
+        await expectApiUnlocked(request, website)
+        await expectBypassOpen(request, website)
 
         // Verify CSP header
         await verifyWebsiteCsp(page, website)
@@ -435,6 +609,10 @@ for (const website of TEST_WEBSITES) {
           retryMessage: `      ⚠️  Still locked, waiting additional ${RETRY_DELAY_MS / 1000}s...`,
         })
         console.log("      ✅ Real homepage displayed")
+
+        // Verify the api/bypass behaviour while unlocked
+        await expectApiUnlocked(request, website)
+        await expectBypassOpen(request, website)
 
         // Verify CSP header
         await verifyWebsiteCsp(page, website)
@@ -454,6 +632,11 @@ for (const website of TEST_WEBSITES) {
         console.log("   3️⃣  Third visit (expecting lock page)...")
         await expectLockStateWithOptionalRetry(page, website, true)
         console.log("      ✅ Lock page still displayed")
+
+        // Verify the api/bypass behaviour while locked
+        await expectApiLocked(request, website)
+        await expectBypassOpen(request, website)
+        await expectApiDocsNotLockedAsApi(request, website)
       }
     })
   })
