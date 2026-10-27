@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.17.11](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.17.10...@appwarden/middleware@3.17.11) (2026-10-27)
+
+
+### Bug Fixes
+
+* apply the remote middleware config from the appwarden-link API ([866889d](https://github.com/appwarden/middleware/commit/866889d32ec879ea3f5194a994f0ada784524da6))
+
 ## [3.17.10](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.17.9...@appwarden/middleware@3.17.10) (2026-10-27)
 
 
