@@ -107,6 +107,56 @@ const resolveLockStatus = async (
 }
 
 /**
+ * When a sync may next be attempted after one failed.
+ *
+ * A failed sync left nothing behind, so the next request re-fired it: with the API down,
+ * every request on the site became an API call, and on a locked site every request also
+ * blocked on the API's own 10 s timeout before it could serve. One deadline per isolate
+ * bounds the attempts to the middleware's own pull cadence — a single window — and needs no
+ * shared store, because `CACHE_EXPIRY_MS` already means exactly that everywhere else.
+ *
+ * Isolate-local is enough: the worst case is one attempt per window per isolate, which is
+ * what a healthy site does anyway.
+ */
+let retryAfter = 0
+
+/** How long a failed sync waits before the next attempt: one pull window. */
+const retryBackoffMs = () => {
+  // @ts-expect-error CACHE_EXPIRY_MS is injected at build time by tsup's `define`
+  return CACHE_EXPIRY_MS as number
+}
+
+/**
+ * Clears the retry deadline.
+ *
+ * The deadline is module state, so a test that drives a failure has to clear it before the
+ * next case, or every later case in the file would skip its own sync.
+ */
+export const resetSyncRetryDeadline = (): void => {
+  retryAfter = 0
+}
+
+/**
+ * Runs a sync and records the backoff when it fails.
+ *
+ * A successful sync clears the deadline, so recovery is immediate once the API answers
+ * again rather than waiting out a window that no longer applies.
+ */
+const syncAndRecordFailure = async (context: CloudflareProviderContext) => {
+  const result = await syncEdgeValue(context)
+
+  if (result.ok) {
+    retryAfter = 0
+    return
+  }
+
+  retryAfter = Date.now() + retryBackoffMs()
+  context.debug(
+    `Sync failed (${result.reason}) - not retrying for ${retryBackoffMs()}ms`,
+  )
+}
+
+/**
  * Checks if the site is currently locked.
  *
  * This is a framework-agnostic function that can be used by any adapter
@@ -136,15 +186,21 @@ export const checkLockStatus = async (
     context.debug("Lock value resolved from cache")
   }
 
-  // Sync the edge value if cache is expired or was deleted due to corruption
+  // Sync the edge value if cache is expired or was deleted due to corruption, unless a
+  // previous attempt failed and is still inside its backoff window. The last known value
+  // keeps being served either way — the deadline only stops the retry, not the answer.
   if (isExpired || wasDeleted) {
-    if (!lockValue || wasDeleted || lockValue.isLocked) {
+    if (Date.now() < retryAfter) {
+      context.debug(
+        "Skipping sync - a previous attempt failed inside its backoff window",
+      )
+    } else if (!lockValue || wasDeleted || lockValue.isLocked) {
       // Sync synchronously if no cache, cache was corrupted/deleted, or currently locked
       // to avoid rendering incorrect lock state
       context.debug(
         "No fresh cached lock status available - syncing with API synchronously",
       )
-      await syncEdgeValue(context)
+      await syncAndRecordFailure(context)
       // Re-check after sync
       ;({ isLocked, isTestLock } = await resolveLockStatus(context))
     } else {
@@ -152,7 +208,7 @@ export const checkLockStatus = async (
       context.debug(
         "Cached lock status expired but last known state unlocked - syncing with API in background",
       )
-      config.waitUntil(syncEdgeValue(context))
+      config.waitUntil(syncAndRecordFailure(context))
     }
   }
 

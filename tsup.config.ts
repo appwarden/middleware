@@ -44,6 +44,12 @@ export default defineConfig({
     "cloudflare/tanstack-start": "src/bundles/tanstack-start-cloudflare.ts",
     "cloudflare/nextjs": "src/bundles/nextjs-cloudflare.ts",
   },
+  // `CACHE_EXPIRY_MS` is the middleware's pull window, and the steady-state floor on how
+  // long a lock change takes to reach a site: the cached value is re-read once this window
+  // closes. It is not the whole bound — an *unaligned* sync (a missing or evicted cache
+  // entry) can add the API's own lock-cache TTL, `LOCK_VALUE_CACHE_EXPIRATION_SEC` in
+  // `@appwarden/shared`, on top of it, so keep this above that. The value is baked into the
+  // bundle by `define`, so changing it is a package release rather than a deploy.
   define: isProd
     ? {
         API_HOSTNAME: v("https://api.appwarden.io"),
