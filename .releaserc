@@ -29,6 +29,12 @@
       }
     ],
     [
+      "@semantic-release/exec",
+      {
+        "prepareCmd": "node scripts/build-release-artifacts.cjs ${nextRelease.version}"
+      }
+    ],
+    [
       "@amanda-mitchell/semantic-release-npm-multiple",
       {
         "registries": {
