@@ -8,7 +8,11 @@ import {
   store,
   syncEdgeValue,
 } from "../utils/cloudflare"
-import { CheckLockConfig, checkLockStatus } from "./check-lock-status"
+import {
+  CheckLockConfig,
+  checkLockStatus,
+  resetSyncRetryDeadline,
+} from "./check-lock-status"
 
 // Mock dependencies
 vi.mock("../utils/cloudflare", () => ({
@@ -58,6 +62,15 @@ describe("checkLockStatus", () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+
+    // The retry deadline is module state, so it outlives a case unless it is cleared here.
+    resetSyncRetryDeadline()
+    // `vitest.setup.ts` stubs this; a case that shortens it for a retry has to be undone,
+    // or the next case inherits the shortened window.
+    vi.stubGlobal("CACHE_EXPIRY_MS", 2_000)
+    // A sync succeeds unless a case says otherwise, so only the cases about failure record
+    // a deadline.
+    vi.mocked(syncEdgeValue).mockResolvedValue({ ok: true })
 
     mockWaitUntil = vi.fn()
 
@@ -258,6 +271,57 @@ describe("checkLockStatus", () => {
       await checkLockStatus(mockConfig)
 
       expect(store.json).toHaveBeenCalled()
+    })
+  })
+
+  describe("sync failure backoff", () => {
+    beforeEach(() => {
+      // No cached value, so a sync takes the synchronous path, and the API keeps failing.
+      vi.mocked(getLockValue).mockResolvedValue({ lockValue: undefined })
+      vi.mocked(MemoryCache.isExpired).mockReturnValue(true)
+      vi.mocked(syncEdgeValue).mockResolvedValue({
+        ok: false,
+        reason:
+          "GET https://api.appwarden.io failed: 500 Internal Server Error",
+      })
+    })
+
+    it("should sync once across many requests while the API keeps failing", async () => {
+      for (let i = 0; i < 5; i++) {
+        await checkLockStatus(mockConfig)
+      }
+
+      // One attempt per window, not one per request. One per request is what turned every
+      // request on a site into an API call, and on a locked site a 10 s wait on each.
+      expect(syncEdgeValue).toHaveBeenCalledTimes(1)
+    })
+
+    it("should retry once the window has passed", async () => {
+      vi.stubGlobal("CACHE_EXPIRY_MS", 1)
+
+      await checkLockStatus(mockConfig)
+      expect(syncEdgeValue).toHaveBeenCalledTimes(1)
+
+      await new Promise((resolve) => setTimeout(resolve, 10))
+
+      await checkLockStatus(mockConfig)
+      expect(syncEdgeValue).toHaveBeenCalledTimes(2)
+    })
+
+    it("should clear the deadline as soon as a sync succeeds", async () => {
+      vi.stubGlobal("CACHE_EXPIRY_MS", 1)
+
+      await checkLockStatus(mockConfig)
+      expect(syncEdgeValue).toHaveBeenCalledTimes(1)
+
+      vi.mocked(syncEdgeValue).mockResolvedValue({ ok: true })
+      await new Promise((resolve) => setTimeout(resolve, 10))
+      await checkLockStatus(mockConfig)
+      expect(syncEdgeValue).toHaveBeenCalledTimes(2)
+
+      // No wait this time: the failure is behind us, so the deadline no longer applies.
+      await checkLockStatus(mockConfig)
+      expect(syncEdgeValue).toHaveBeenCalledTimes(3)
     })
   })
 })

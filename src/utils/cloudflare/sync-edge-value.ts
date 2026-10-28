@@ -24,7 +24,26 @@ function resolveApiHostname(hostname: string | undefined): string {
   return parsed.data
 }
 
-export const syncEdgeValue = async (context: CloudflareProviderContext) => {
+/**
+ * Whether the edge cache was updated.
+ *
+ * `syncEdgeValue` used to return nothing and swallow its own failure, which left the caller
+ * unable to tell a successful sync from a failed one — so the next request re-fired it, and
+ * an API that is down turned every request on the site into an API call. `reason` is the
+ * same string that reaches the log, so a caller can record it without re-rendering it.
+ */
+export type SyncEdgeValueResult =
+  { readonly ok: true } | { readonly ok: false; readonly reason: string }
+
+/**
+ * Fetches the lock value and writes it to the edge cache.
+ *
+ * Never throws: the outcome is the return value, because a failure that leaves nothing
+ * behind is exactly what the caller has to be able to see.
+ */
+export const syncEdgeValue = async (
+  context: CloudflareProviderContext,
+): Promise<SyncEdgeValueResult> => {
   // Use runtime-configured hostname if provided and valid, otherwise fall back to default
   const apiHostname = resolveApiHostname(context.appwardenApiHostname)
   context.debug(`GET ${apiHostname}`)
@@ -85,22 +104,32 @@ export const syncEdgeValue = async (context: CloudflareProviderContext) => {
           ...parsedValue,
           lastCheck: Date.now(),
         })
+
+        return { ok: true }
       } catch (error) {
         throw new APIError(`Failed to parse check endpoint result - ${error}`)
       }
     }
+
+    // A 200 that is not JSON leaves nothing cached, so it is a failure for the caller's
+    // purposes even though the request itself succeeded. The old shape returned silently
+    // here, which read as success to anything watching the outcome.
+    const reason = `${apiHostname} answered ${response.status} without JSON`
+    console.error(printMessage(reason))
+
+    return { ok: false, reason }
   } catch (e) {
     const message = `GET ${apiHostname} failed`
+    const reason =
+      e instanceof APIError
+        ? e.message
+        : e instanceof Error
+          ? `${message}: ${e.message}`
+          : message
 
-    console.error(
-      printMessage(
-        e instanceof APIError
-          ? e.message
-          : e instanceof Error
-            ? `${message}: ${e.message}`
-            : message,
-      ),
-    )
+    console.error(printMessage(reason))
+
+    return { ok: false, reason }
   } finally {
     clearTimeout(timeout)
   }
