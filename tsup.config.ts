@@ -4,6 +4,9 @@ import { defineConfig } from "tsup"
 declare let process: {
   env: {
     NODE_ENV?: "production" | "test"
+    // Set by the release pipeline so the bundle reports the version being
+    // published rather than the one in package.json at build time.
+    APPWARDEN_BUILD_VERSION?: string
   }
 }
 
@@ -13,7 +16,11 @@ const isProd = process.env.NODE_ENV === "production"
 
 // Read package version from package.json
 const packageJson = JSON.parse(readFileSync("./package.json", "utf-8"))
-const packageVersion = packageJson.version
+// semantic-release determines the next version after the build has already run,
+// so the release pipeline passes it in explicitly. Otherwise the bundle would
+// report the previous version at runtime (see src/version.ts).
+const packageVersion =
+  process.env.APPWARDEN_BUILD_VERSION ?? packageJson.version
 
 export default defineConfig({
   format: ["esm"],
