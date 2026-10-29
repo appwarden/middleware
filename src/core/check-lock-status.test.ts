@@ -324,4 +324,108 @@ describe("checkLockStatus", () => {
       expect(syncEdgeValue).toHaveBeenCalledTimes(3)
     })
   })
+
+  describe("concurrent sync coalescing", () => {
+    type SyncResult = Awaited<ReturnType<typeof syncEdgeValue>>
+
+    /** A pull the case controls, so it can hold a sync open while other requests arrive. */
+    const createDeferred = () => {
+      let resolve!: (value: SyncResult) => void
+      const promise = new Promise<SyncResult>((res) => {
+        resolve = res
+      })
+      return { promise, resolve }
+    }
+
+    /** Lets every request reach the pull before the case asserts on how many were made. */
+    const flush = () => new Promise((resolve) => setTimeout(resolve, 0))
+
+    beforeEach(() => {
+      // No cached value, so a request takes the synchronous sync path.
+      vi.mocked(getLockValue).mockResolvedValue({ lockValue: undefined })
+      vi.mocked(MemoryCache.isExpired).mockReturnValue(true)
+    })
+
+    it("should run one sync for requests that arrive together", async () => {
+      const pull = createDeferred()
+      vi.mocked(syncEdgeValue).mockReturnValue(pull.promise)
+
+      const requests = Array.from({ length: 5 }, () =>
+        checkLockStatus(mockConfig),
+      )
+      await flush()
+
+      // Five requests, one pull. Without this each one is its own API call, which is what
+      // turns a burst of traffic on a cold cache into a burst of 429s.
+      expect(syncEdgeValue).toHaveBeenCalledTimes(1)
+
+      pull.resolve({ ok: true })
+      const results = await Promise.all(requests)
+
+      expect(syncEdgeValue).toHaveBeenCalledTimes(1)
+      expect(results).toEqual([
+        { isLocked: false, isTestLock: false },
+        { isLocked: false, isTestLock: false },
+        { isLocked: false, isTestLock: false },
+        { isLocked: false, isTestLock: false },
+        { isLocked: false, isTestLock: false },
+      ])
+    })
+
+    it("should share a pull between a background sync and a synchronous one", async () => {
+      const pull = createDeferred()
+      vi.mocked(syncEdgeValue).mockReturnValue(pull.promise)
+
+      // Expired but unlocked: the first request syncs in the background.
+      vi.mocked(getLockValue).mockResolvedValue({
+        lockValue: createLockValue({ isLocked: 0 }),
+        shouldDeleteEdgeValue: false,
+      })
+      await checkLockStatus(mockConfig)
+
+      expect(mockWaitUntil).toHaveBeenCalledTimes(1)
+      expect(syncEdgeValue).toHaveBeenCalledTimes(1)
+
+      // A second request arrives with no cache and waits on the same pull rather than
+      // starting one of its own.
+      vi.mocked(getLockValue).mockResolvedValue({ lockValue: undefined })
+      const second = checkLockStatus(mockConfig)
+      await flush()
+
+      expect(syncEdgeValue).toHaveBeenCalledTimes(1)
+
+      pull.resolve({ ok: true })
+      await second
+
+      expect(syncEdgeValue).toHaveBeenCalledTimes(1)
+    })
+
+    it("should start a new sync once the previous one has settled", async () => {
+      await checkLockStatus(mockConfig)
+      await checkLockStatus(mockConfig)
+
+      // The entry is cleared on settle, so a later request is not held behind a pull that
+      // already finished.
+      expect(syncEdgeValue).toHaveBeenCalledTimes(2)
+    })
+
+    it("should not share a sync across origins", async () => {
+      const pull = createDeferred()
+      vi.mocked(syncEdgeValue).mockReturnValue(pull.promise)
+
+      // One Worker serves many domains through `multidomainConfig`, so a single shared entry
+      // would let one domain's pull stand in for another domain's cache.
+      const first = checkLockStatus(mockConfig)
+      const other = checkLockStatus({
+        ...mockConfig,
+        request: new Request("https://other.example.net/page"),
+      })
+      await flush()
+
+      expect(syncEdgeValue).toHaveBeenCalledTimes(2)
+
+      pull.resolve({ ok: true })
+      await Promise.all([first, other])
+    })
+  })
 })
