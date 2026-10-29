@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.17.14](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.17.13...@appwarden/middleware@3.17.14) (2026-10-29)
+
+
+### Bug Fixes
+
+* share one sync between concurrent lock-status requests ([e933f77](https://github.com/appwarden/middleware/commit/e933f77bf9ce81c1ccc0a283b37c6c87320a22c2))
+
 ## [3.17.11](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.17.10...@appwarden/middleware@3.17.11) (2026-10-27)
 
 
