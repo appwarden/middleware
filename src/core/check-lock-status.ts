@@ -157,30 +157,14 @@ const syncAndRecordFailure = async (context: CloudflareProviderContext) => {
 }
 
 /**
- * The sync currently in flight per origin.
- *
- * Every request that found the cache stale used to fire its own pull, so a burst of traffic
- * against a cold or evicted cache became a burst of API calls — the middleware amplifying its
- * own load into the 429s the backoff above then has to absorb. A request that arrives while a
- * pull is already running awaits that one instead.
- *
- * Module scope is the only coordination the hot path can afford: a KV read or a Durable
- * Object round trip per eyeball request costs more than the pull it saves. So this is per
- * isolate and best-effort — it collapses the burst inside one isolate, not the herd across a
- * whole colo, and a fresh isolate still fires the first pull of its own.
- *
- * Keyed by origin because one Worker serves many domains through `multidomainConfig`, and the
- * lock cache itself is keyed on the request origin.
+ * The sync in flight per origin, so requests that arrive together share one pull rather than
+ * each firing their own. Per isolate and best-effort: the hot path cannot afford a shared
+ * store, and a fresh isolate still fires the first pull of its own. Keyed by origin because
+ * one Worker serves many domains through `multidomainConfig`.
  */
 const inFlightSyncs = new Map<string, Promise<void>>()
 
-/**
- * Runs one sync per origin at a time, joining the one already running.
- *
- * `syncAndRecordFailure` only writes the shared edge cache and the retry deadline, so a caller
- * that joins a running pull can await it and then re-read the cache, exactly as the caller
- * that started it does.
- */
+/** Runs one sync per origin at a time, joining the one already running. */
 const syncOncePerOrigin = (
   context: CloudflareProviderContext,
 ): Promise<void> => {
@@ -193,7 +177,7 @@ const syncOncePerOrigin = (
   }
 
   const promise = syncAndRecordFailure(context).finally(() => {
-    // Clear only this entry: a later pull must not be dropped from the map by an older one.
+    // Only clear our own entry.
     if (inFlightSyncs.get(key) === promise) {
       inFlightSyncs.delete(key)
     }
@@ -236,7 +220,6 @@ export const checkLockStatus = async (
   // Sync the edge value if cache is expired or was deleted due to corruption, unless a
   // previous attempt failed and is still inside its backoff window. The last known value
   // keeps being served either way — the deadline only stops the retry, not the answer.
-  // Requests that arrive together share one pull, whichever path they take.
   if (isExpired || wasDeleted) {
     if (Date.now() < retryAfter) {
       context.debug(

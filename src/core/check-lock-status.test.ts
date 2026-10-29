@@ -328,7 +328,7 @@ describe("checkLockStatus", () => {
   describe("concurrent sync coalescing", () => {
     type SyncResult = Awaited<ReturnType<typeof syncEdgeValue>>
 
-    /** A pull the case controls, so it can hold a sync open while other requests arrive. */
+    /** A pull the case controls, so a sync can be held open. */
     const createDeferred = () => {
       let resolve!: (value: SyncResult) => void
       const promise = new Promise<SyncResult>((res) => {
@@ -337,7 +337,7 @@ describe("checkLockStatus", () => {
       return { promise, resolve }
     }
 
-    /** Lets every request reach the pull before the case asserts on how many were made. */
+    /** Lets requests reach the pull before asserting on how many were made. */
     const flush = () => new Promise((resolve) => setTimeout(resolve, 0))
 
     beforeEach(() => {
@@ -355,8 +355,7 @@ describe("checkLockStatus", () => {
       )
       await flush()
 
-      // Five requests, one pull. Without this each one is its own API call, which is what
-      // turns a burst of traffic on a cold cache into a burst of 429s.
+      // Five requests, one pull.
       expect(syncEdgeValue).toHaveBeenCalledTimes(1)
 
       pull.resolve({ ok: true })
@@ -386,8 +385,7 @@ describe("checkLockStatus", () => {
       expect(mockWaitUntil).toHaveBeenCalledTimes(1)
       expect(syncEdgeValue).toHaveBeenCalledTimes(1)
 
-      // A second request arrives with no cache and waits on the same pull rather than
-      // starting one of its own.
+      // A second request arrives with no cache and waits on the same pull.
       vi.mocked(getLockValue).mockResolvedValue({ lockValue: undefined })
       const second = checkLockStatus(mockConfig)
       await flush()
@@ -404,8 +402,7 @@ describe("checkLockStatus", () => {
       await checkLockStatus(mockConfig)
       await checkLockStatus(mockConfig)
 
-      // The entry is cleared on settle, so a later request is not held behind a pull that
-      // already finished.
+      // The entry is cleared on settle, so a later request is not held behind it.
       expect(syncEdgeValue).toHaveBeenCalledTimes(2)
     })
 
@@ -413,8 +410,7 @@ describe("checkLockStatus", () => {
       const pull = createDeferred()
       vi.mocked(syncEdgeValue).mockReturnValue(pull.promise)
 
-      // One Worker serves many domains through `multidomainConfig`, so a single shared entry
-      // would let one domain's pull stand in for another domain's cache.
+      // A single shared entry would let one domain's pull stand in for another domain's cache.
       const first = checkLockStatus(mockConfig)
       const other = checkLockStatus({
         ...mockConfig,
