@@ -157,6 +157,37 @@ const syncAndRecordFailure = async (context: CloudflareProviderContext) => {
 }
 
 /**
+ * The sync in flight per origin, so requests that arrive together share one pull rather than
+ * each firing their own. Per isolate and best-effort: the hot path cannot afford a shared
+ * store, and a fresh isolate still fires the first pull of its own. Keyed by origin because
+ * one Worker serves many domains through `multidomainConfig`.
+ */
+const inFlightSyncs = new Map<string, Promise<void>>()
+
+/** Runs one sync per origin at a time, joining the one already running. */
+const syncOncePerOrigin = (
+  context: CloudflareProviderContext,
+): Promise<void> => {
+  const key = context.requestUrl.origin
+
+  const inFlight = inFlightSyncs.get(key)
+  if (inFlight) {
+    context.debug("Joining the sync already in flight for this origin")
+    return inFlight
+  }
+
+  const promise = syncAndRecordFailure(context).finally(() => {
+    // Only clear our own entry.
+    if (inFlightSyncs.get(key) === promise) {
+      inFlightSyncs.delete(key)
+    }
+  })
+
+  inFlightSyncs.set(key, promise)
+  return promise
+}
+
+/**
  * Checks if the site is currently locked.
  *
  * This is a framework-agnostic function that can be used by any adapter
@@ -200,7 +231,7 @@ export const checkLockStatus = async (
       context.debug(
         "No fresh cached lock status available - syncing with API synchronously",
       )
-      await syncAndRecordFailure(context)
+      await syncOncePerOrigin(context)
       // Re-check after sync
       ;({ isLocked, isTestLock } = await resolveLockStatus(context))
     } else {
@@ -208,7 +239,7 @@ export const checkLockStatus = async (
       context.debug(
         "Cached lock status expired but last known state unlocked - syncing with API in background",
       )
-      config.waitUntil(syncAndRecordFailure(context))
+      config.waitUntil(syncOncePerOrigin(context))
     }
   }
 

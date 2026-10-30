@@ -10,6 +10,13 @@ All notable changes to this project will be documented in this file. See
 
 * stop a failed sync re-firing on every request ([444d558](https://github.com/appwarden/middleware/commit/444d558ad68804ed1bb86aaa02d97e6b139c059e))
 
+## [3.17.12](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.17.11...@appwarden/middleware@3.17.12) (2026-10-28)
+
+
+### Bug Fixes
+
+* report the released version at runtime ([9b33496](https://github.com/appwarden/middleware/commit/9b334967584a219cc4bfeed0f2c6d05bc46ee9b2))
+
 ## [3.17.11](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.17.10...@appwarden/middleware@3.17.11) (2026-10-27)
 
 
