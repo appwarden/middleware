@@ -2,6 +2,20 @@ import { cloudflareTest } from "@cloudflare/vitest-pool-workers"
 import tsconfigPaths from "vite-tsconfig-paths"
 import { defaultExclude, defineConfig } from "vitest/config"
 
+/**
+ * Synthetic, non-secret API token for the test Worker. It only has to satisfy the
+ * dual-token shape (`aw_<22 alphanumeric>_<43 chars>`) that `parseApiToken` checks.
+ *
+ * `wrangler.jsonc` declares `APPWARDEN_API_TOKEN` under `secrets.required` rather
+ * than setting it in `vars`, so that `wrangler types` never writes a token-shaped
+ * literal into the committed `worker-configuration.d.ts`. That declaration also
+ * means Miniflare no longer picks the value up from a developer's `.env`, so the
+ * tests supply it here — which additionally makes the suite independent of local
+ * environment files, as CI has none.
+ */
+const TEST_APPWARDEN_API_TOKEN =
+  "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG"
+
 export default defineConfig({
   plugins: [
     // Preserve tsconfig path resolution for imports
@@ -10,6 +24,11 @@ export default defineConfig({
     cloudflareTest({
       wrangler: {
         configPath: "./wrangler.jsonc",
+      },
+      miniflare: {
+        bindings: {
+          APPWARDEN_API_TOKEN: TEST_APPWARDEN_API_TOKEN,
+        },
       },
     }),
   ],
