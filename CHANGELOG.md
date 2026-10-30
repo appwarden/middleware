@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.17.13](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.17.12...@appwarden/middleware@3.17.13) (2026-10-28)
+
+
+### Bug Fixes
+
+* stop a failed sync re-firing on every request ([444d558](https://github.com/appwarden/middleware/commit/444d558ad68804ed1bb86aaa02d97e6b139c059e))
+
 ## [3.17.12](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.17.11...@appwarden/middleware@3.17.12) (2026-10-28)
 
 
