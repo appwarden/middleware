@@ -5,10 +5,19 @@
   "compatibility_flags": ["nodejs_compat"],
   "vars": {
     "APPWARDEN_LOCK_PAGE_SLUG": "/maintenance",
-    "APPWARDEN_API_TOKEN": "aw_1234567890123456789012_abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG", // Non-secret synthetic token used only for Vitest tests
     "APPWARDEN_API_HOSTNAME": "https://staging-api.appwarden.io",
     "CSP_MODE": "report-only",
     "CSP_DIRECTIVES": "{ \"default-src\": [\"{{nonce}}\"] }",
     "DEBUG": true,
+  },
+  // Declared here rather than set in `vars` so `wrangler types` emits
+  // `APPWARDEN_API_TOKEN: string` instead of inlining the value into the committed
+  // `worker-configuration.d.ts`. A token-shaped literal in that file trips secret
+  // scanners and this repository is public. Declaring the name also stops
+  // `wrangler types` inferring bindings from whichever `.env` a developer happens to
+  // have, which is what made the generated file differ between machines and CI.
+  // The test value is supplied by `vitest.config.ts`.
+  "secrets": {
+    "required": ["APPWARDEN_API_TOKEN"],
   },
 }
