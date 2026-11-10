@@ -3,14 +3,12 @@ allowBuilds:
   esbuild: true
   sharp: true
   workerd: true
-# Tolerated advisories: no patched release exists for either package, and no
-# parent release drops them. Both are dev-only transitive dependencies that are
-# not shipped in the published package. Remove an entry once upstream publishes
-# a fix (node-forge >=1.4.1, braces >=3.0.4).
+# Tolerated advisories: no patched release exists for the package, and no parent
+# release drops it. It is a dev-only transitive dependency that is not shipped in
+# the published package. Remove the entry once upstream publishes a fix
+# (braces >=3.0.4).
 audit:
   ignore:
-    # node-forge (via @vinxi/listhen / listhen -> nitropack); latest published is 1.4.0
-    - GHSA-86w9-cpqp-85rv
     # braces (via micromatch / chokidar@3); latest published is 3.0.3
     - GHSA-vfj7-8cjw-p6xm
 minimumReleaseAgeExclude:
@@ -45,6 +43,7 @@ overrides:
   "minimatch@<10.2.1": ">=10.2.3"
   "next@<16.4.1": ">=16.4.1"
   "nitropack@<2.13.4": ">=2.13.4"
+  "node-forge@<1.4.1": ">=1.4.1"
   "npm@<=11.8.0": ">=11.9.0"
   "path-to-regexp@>=4.0.0 <6.3.0": ">=6.3.0"
   "picomatch@<4.0.4": ">=4.0.4"
