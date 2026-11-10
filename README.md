@@ -190,6 +190,19 @@ Framework adapters can also sync Appwarden-managed lock page and CSP settings in
 
 Values passed in `overrides` take precedence over the generated config.
 
+The step is fail-closed. If the Appwarden API refuses the request or cannot be reached, the
+build fails rather than shipping without its remote configuration, because that configuration
+carries `lockPageSlug`, the CSP mode and directives, and the api route config — losing it
+would silently drop the remote-managed settings. The failure message names the fix: an
+expired token is rotated, a token without the `read:domains` scope is granted it, a token
+that is not permitted to read the domain has its allowlist widened, and an organization
+without live billing restores it. An unset `APPWARDEN_API_TOKEN` is not a refusal: it still
+warns and writes local headers and defaults, as before.
+
+If a degraded build is preferable to a failed one during an Appwarden outage, opt in
+explicitly with `--allow-degraded` or `APPWARDEN_LINK_ALLOW_DEGRADED=1`, which restores the
+warn-and-continue behaviour.
+
 ##### Astro on Cloudflare
 
 ```ts

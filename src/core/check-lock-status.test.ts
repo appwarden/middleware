@@ -11,6 +11,8 @@ import {
 import {
   CheckLockConfig,
   checkLockStatus,
+  FATAL_SYNC_RETRY_BACKOFF_MS,
+  getSyncRetryDeadline,
   resetSyncRetryDeadline,
 } from "./check-lock-status"
 
@@ -283,7 +285,39 @@ describe("checkLockStatus", () => {
         ok: false,
         reason:
           "GET https://api.appwarden.io failed: 500 Internal Server Error",
+        kind: "retryable",
       })
+    })
+
+    it("should back off longer for a fatal refusal than for a retryable one", async () => {
+      vi.mocked(syncEdgeValue).mockResolvedValue({
+        ok: false,
+        reason: "The Appwarden API is temporarily unavailable (HTTP 503).",
+        kind: "retryable",
+      })
+
+      await checkLockStatus(mockConfig)
+      const retryableBackoff = getSyncRetryDeadline() - Date.now()
+
+      resetSyncRetryDeadline()
+
+      vi.mocked(syncEdgeValue).mockResolvedValue({
+        ok: false,
+        reason:
+          "This Appwarden API token cannot read domains. Grant it the read:domains scope at https://use.appwarden.io?to=settings/security.",
+        kind: "fatal",
+      })
+
+      await checkLockStatus(mockConfig)
+      const fatalBackoff = getSyncRetryDeadline() - Date.now()
+
+      // The retryable failure waits one pull window; the fatal one waits far longer.
+      expect(retryableBackoff).toBeGreaterThan(0)
+      expect(retryableBackoff).toBeLessThanOrEqual(2_000)
+      expect(fatalBackoff).toBeGreaterThan(2_000)
+      expect(fatalBackoff).toBeGreaterThanOrEqual(
+        FATAL_SYNC_RETRY_BACKOFF_MS - 1_000,
+      )
     })
 
     it("should sync once across many requests while the API keeps failing", async () => {

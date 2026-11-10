@@ -118,16 +118,27 @@ describe("syncEdgeValue", () => {
 
     global.fetch = vi.fn().mockResolvedValue(mockFetchResponse)
 
-    await syncEdgeValue(mockContext)
+    const result = await syncEdgeValue(mockContext)
 
     expect(consoleErrorSpy).toHaveBeenCalledWith(
-      expect.stringContaining("Failed to fetch from check endpoint - 422"),
+      "[@appwarden/middleware] The Appwarden API refused the request (HTTP 422).",
     )
+    expect(result).toEqual({
+      ok: false,
+      reason: "The Appwarden API refused the request (HTTP 422).",
+      kind: "fatal",
+    })
     expect(printMessage).toHaveBeenCalled()
   })
 
-  it("should log a domain verification message when the API returns 403", async () => {
-    // Mock 403 Forbidden response
+  it("should report success to its caller", async () => {
+    const result = await syncEdgeValue(mockContext)
+
+    expect(result).toEqual({ ok: true })
+  })
+
+  it("should log a domain verification message when the API returns an uncoded 403", async () => {
+    // Mock 403 Forbidden response with a non-JSON body (no error code)
     mockFetchResponse = new Response("Forbidden", {
       status: 403,
       statusText: "Forbidden",
@@ -136,7 +147,7 @@ describe("syncEdgeValue", () => {
 
     global.fetch = vi.fn().mockResolvedValue(mockFetchResponse)
 
-    await syncEdgeValue(mockContext)
+    const result = await syncEdgeValue(mockContext)
 
     expect(consoleLogSpy).toHaveBeenCalledWith(
       "[@appwarden/middleware] Verifying domain ownership... this will only take a few minutes.",
@@ -144,6 +155,89 @@ describe("syncEdgeValue", () => {
     expect(printMessage).toHaveBeenCalledWith(
       "Verifying domain ownership... this will only take a few minutes.",
     )
+    expect(result).toEqual({
+      ok: false,
+      reason:
+        "Verifying domain ownership... this will only take a few minutes.",
+      kind: "retryable",
+    })
+  })
+
+  it("should not print the verification line for 403 INSUFFICIENT_SCOPE", async () => {
+    mockFetchResponse = new Response(
+      JSON.stringify({ error: { code: "INSUFFICIENT_SCOPE" } }),
+      {
+        status: 403,
+        statusText: "Forbidden",
+        headers: { "content-type": "application/json" },
+      },
+    )
+
+    global.fetch = vi.fn().mockResolvedValue(mockFetchResponse)
+
+    const result = await syncEdgeValue(mockContext)
+
+    expect(consoleLogSpy).not.toHaveBeenCalledWith(
+      "[@appwarden/middleware] Verifying domain ownership... this will only take a few minutes.",
+    )
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      "[@appwarden/middleware] This Appwarden API token cannot read domains. Grant it the read:domains scope at https://use.appwarden.io?to=settings/security.",
+    )
+    expect(result).toEqual({
+      ok: false,
+      reason:
+        "This Appwarden API token cannot read domains. Grant it the read:domains scope at https://use.appwarden.io?to=settings/security.",
+      kind: "fatal",
+    })
+  })
+
+  it("should name the domain for 403 DOMAIN_NOT_PERMITTED", async () => {
+    mockFetchResponse = new Response(
+      JSON.stringify({ error: { code: "DOMAIN_NOT_PERMITTED" } }),
+      {
+        status: 403,
+        statusText: "Forbidden",
+        headers: { "content-type": "application/json" },
+      },
+    )
+
+    global.fetch = vi.fn().mockResolvedValue(mockFetchResponse)
+
+    const result = await syncEdgeValue(mockContext)
+
+    expect(consoleLogSpy).not.toHaveBeenCalledWith(
+      "[@appwarden/middleware] Verifying domain ownership... this will only take a few minutes.",
+    )
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      "[@appwarden/middleware] This Appwarden API token is not permitted to read this domain. Widen the token's domain allowlist at https://use.appwarden.io?to=settings/security.",
+    )
+    expect(result).toEqual({
+      ok: false,
+      reason:
+        "This Appwarden API token is not permitted to read this domain. Widen the token's domain allowlist at https://use.appwarden.io?to=settings/security.",
+      kind: "fatal",
+    })
+  })
+
+  it("should classify a non-JSON 503 by its status", async () => {
+    mockFetchResponse = new Response("<html>503</html>", {
+      status: 503,
+      statusText: "Service Unavailable",
+      headers: { "content-type": "text/html" },
+    })
+
+    global.fetch = vi.fn().mockResolvedValue(mockFetchResponse)
+
+    const result = await syncEdgeValue(mockContext)
+
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      "[@appwarden/middleware] The Appwarden API is temporarily unavailable (HTTP 503).",
+    )
+    expect(result).toEqual({
+      ok: false,
+      reason: "The Appwarden API is temporarily unavailable (HTTP 503).",
+      kind: "retryable",
+    })
   })
 
   it("should handle network errors", async () => {

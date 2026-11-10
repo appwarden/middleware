@@ -181,11 +181,16 @@ describe("syncEdgeValue", () => {
       headers: { "content-type": "application/json" },
     })
 
-    await syncEdgeValue(mockContext)
+    const result = await syncEdgeValue(mockContext)
 
     expect(consoleErrorSpy).toHaveBeenCalledWith(
-      `[@appwarden/middleware] GET ${mockContext.appwardenApiHostname} failed: 422 Unprocessable Entity`,
+      "[@appwarden/middleware] The Appwarden API refused the request (HTTP 422).",
     )
+    expect(result).toEqual({
+      ok: false,
+      reason: "The Appwarden API refused the request (HTTP 422).",
+      kind: "fatal",
+    })
     expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
   })
 
@@ -236,7 +241,7 @@ describe("syncEdgeValue", () => {
   })
 
   describe("HTTP Error Code Handling", () => {
-    it("should handle 401 Unauthorized (invalid API token)", async () => {
+    it("should handle 401 Unauthorized (uncoded: check the token)", async () => {
       mockFetchResponse = new Response(
         JSON.stringify({ error: "Unauthorized" }),
         {
@@ -246,30 +251,114 @@ describe("syncEdgeValue", () => {
         },
       )
 
-      await syncEdgeValue(mockContext)
+      const result = await syncEdgeValue(mockContext)
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        `[@appwarden/middleware] GET ${mockContext.appwardenApiHostname} failed: 401 Unauthorized`,
+        "[@appwarden/middleware] Authentication failed. Ensure your Appwarden API token is correct. Manage tokens at https://use.appwarden.io?to=settings/security.",
       )
+      expect(result).toEqual({
+        ok: false,
+        reason:
+          "Authentication failed. Ensure your Appwarden API token is correct. Manage tokens at https://use.appwarden.io?to=settings/security.",
+        kind: "fatal",
+      })
       expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
     })
 
-    it("should handle 403 Forbidden", async () => {
+    it("should tell an expired 401 to rotate, not to check", async () => {
+      mockFetchResponse = new Response(
+        JSON.stringify({ error: { code: "TOKEN_EXPIRED" } }),
+        {
+          status: 401,
+          statusText: "Unauthorized",
+          headers: { "content-type": "application/json" },
+        },
+      )
+
+      const result = await syncEdgeValue(mockContext)
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "[@appwarden/middleware] Your Appwarden API token has expired. Rotate it at https://use.appwarden.io?to=settings/security.",
+      )
+      expect(result).toEqual({
+        ok: false,
+        reason:
+          "Your Appwarden API token has expired. Rotate it at https://use.appwarden.io?to=settings/security.",
+        kind: "fatal",
+      })
+    })
+
+    it("should print the verification line for an uncoded 403", async () => {
       mockFetchResponse = new Response(JSON.stringify({ error: "Forbidden" }), {
         status: 403,
         statusText: "Forbidden",
         headers: { "content-type": "application/json" },
       })
 
-      await syncEdgeValue(mockContext)
+      const result = await syncEdgeValue(mockContext)
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        `[@appwarden/middleware] GET ${mockContext.appwardenApiHostname} failed: 403 Forbidden`,
-      )
       expect(consoleLogSpy).toHaveBeenCalledWith(
         "[@appwarden/middleware] Verifying domain ownership... this will only take a few minutes.",
       )
+      expect(result).toEqual({
+        ok: false,
+        reason:
+          "Verifying domain ownership... this will only take a few minutes.",
+        kind: "retryable",
+      })
       expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
+    })
+
+    it("should not print the verification line for 403 INSUFFICIENT_SCOPE", async () => {
+      mockFetchResponse = new Response(
+        JSON.stringify({ error: { code: "INSUFFICIENT_SCOPE" } }),
+        {
+          status: 403,
+          statusText: "Forbidden",
+          headers: { "content-type": "application/json" },
+        },
+      )
+
+      const result = await syncEdgeValue(mockContext)
+
+      expect(consoleLogSpy).not.toHaveBeenCalledWith(
+        "[@appwarden/middleware] Verifying domain ownership... this will only take a few minutes.",
+      )
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "[@appwarden/middleware] This Appwarden API token cannot read domains. Grant it the read:domains scope at https://use.appwarden.io?to=settings/security.",
+      )
+      expect(result).toEqual({
+        ok: false,
+        reason:
+          "This Appwarden API token cannot read domains. Grant it the read:domains scope at https://use.appwarden.io?to=settings/security.",
+        kind: "fatal",
+      })
+    })
+
+    it("should name the domain for 403 DOMAIN_NOT_PERMITTED", async () => {
+      mockFetchResponse = new Response(
+        JSON.stringify({ error: { code: "DOMAIN_NOT_PERMITTED" } }),
+        {
+          status: 403,
+          statusText: "Forbidden",
+          headers: { "content-type": "application/json" },
+        },
+      )
+
+      const result = await syncEdgeValue(mockContext)
+
+      expect(consoleLogSpy).not.toHaveBeenCalledWith(
+        "[@appwarden/middleware] Verifying domain ownership... this will only take a few minutes.",
+      )
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "[@appwarden/middleware] This Appwarden API token is not permitted to read this domain. Widen the token's domain allowlist at https://use.appwarden.io?to=settings/security.",
+      )
+      expect(result).toEqual({
+        ok: false,
+        reason:
+          "This Appwarden API token is not permitted to read this domain. Widen the token's domain allowlist at https://use.appwarden.io?to=settings/security.",
+        kind: "fatal",
+      })
     })
 
     it("should handle 429 Rate Limiting", async () => {
@@ -282,11 +371,16 @@ describe("syncEdgeValue", () => {
         },
       )
 
-      await syncEdgeValue(mockContext)
+      const result = await syncEdgeValue(mockContext)
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        `[@appwarden/middleware] GET ${mockContext.appwardenApiHostname} failed: 429 Too Many Requests`,
+        "[@appwarden/middleware] The Appwarden API rate-limited the request (HTTP 429).",
       )
+      expect(result).toEqual({
+        ok: false,
+        reason: "The Appwarden API rate-limited the request (HTTP 429).",
+        kind: "retryable",
+      })
       expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
     })
 
@@ -300,29 +394,36 @@ describe("syncEdgeValue", () => {
         },
       )
 
-      await syncEdgeValue(mockContext)
+      const result = await syncEdgeValue(mockContext)
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        `[@appwarden/middleware] GET ${mockContext.appwardenApiHostname} failed: 500 Internal Server Error`,
+        "[@appwarden/middleware] The Appwarden API is temporarily unavailable (HTTP 500).",
       )
+      expect(result).toEqual({
+        ok: false,
+        reason: "The Appwarden API is temporarily unavailable (HTTP 500).",
+        kind: "retryable",
+      })
       expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
     })
 
-    it("should handle 502 Bad Gateway", async () => {
-      mockFetchResponse = new Response(
-        JSON.stringify({ error: "Bad Gateway" }),
-        {
-          status: 502,
-          statusText: "Bad Gateway",
-          headers: { "content-type": "application/json" },
-        },
-      )
+    it("should classify a non-JSON 502 by its status", async () => {
+      mockFetchResponse = new Response("<html>Bad Gateway</html>", {
+        status: 502,
+        statusText: "Bad Gateway",
+        headers: { "content-type": "text/html" },
+      })
 
-      await syncEdgeValue(mockContext)
+      const result = await syncEdgeValue(mockContext)
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        `[@appwarden/middleware] GET ${mockContext.appwardenApiHostname} failed: 502 Bad Gateway`,
+        "[@appwarden/middleware] The Appwarden API is temporarily unavailable (HTTP 502).",
       )
+      expect(result).toEqual({
+        ok: false,
+        reason: "The Appwarden API is temporarily unavailable (HTTP 502).",
+        kind: "retryable",
+      })
       expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
     })
 
@@ -336,11 +437,16 @@ describe("syncEdgeValue", () => {
         },
       )
 
-      await syncEdgeValue(mockContext)
+      const result = await syncEdgeValue(mockContext)
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        `[@appwarden/middleware] GET ${mockContext.appwardenApiHostname} failed: 503 Service Unavailable`,
+        "[@appwarden/middleware] The Appwarden API is temporarily unavailable (HTTP 503).",
       )
+      expect(result).toEqual({
+        ok: false,
+        reason: "The Appwarden API is temporarily unavailable (HTTP 503).",
+        kind: "retryable",
+      })
       expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
     })
 
@@ -354,11 +460,16 @@ describe("syncEdgeValue", () => {
         },
       )
 
-      await syncEdgeValue(mockContext)
+      const result = await syncEdgeValue(mockContext)
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        `[@appwarden/middleware] GET ${mockContext.appwardenApiHostname} failed: 504 Gateway Timeout`,
+        "[@appwarden/middleware] The Appwarden API is temporarily unavailable (HTTP 504).",
       )
+      expect(result).toEqual({
+        ok: false,
+        reason: "The Appwarden API is temporarily unavailable (HTTP 504).",
+        kind: "retryable",
+      })
       expect(mockContext.edgeCache.updateValue).not.toHaveBeenCalled()
     })
 
