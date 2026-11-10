@@ -209,6 +209,8 @@ APPWARDEN_LINK_ALLOW_DEGRADED=1 appwarden-link --fqdn=your.app
 
 Degraded mode warns and continues with local headers and defaults. It does not apply the remote configuration.
 
+A `503` (the API's store is momentarily unavailable) or a `429` (rate limited) is retried up to three times with exponential backoff before the build fails, so a transient stall does not break a build on its own. Every other refusal needs a config change and is not retried.
+
 ## Next Steps
 
 After storing the token, wire it into the middleware: see `appwarden-middleware-get-started`.

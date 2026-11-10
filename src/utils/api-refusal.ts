@@ -69,7 +69,10 @@ export const classifyApiRefusal = (
       return fatal(DOMAIN_NOT_PERMITTED_MESSAGE)
     }
     // No code: an unverified domain, not a token fault. It resolves on its own.
-    return retryable(VERIFY_DOMAIN_MESSAGE)
+    if (!code) return retryable(VERIFY_DOMAIN_MESSAGE)
+    // A code we do not recognise is still a token fault: only the uncoded 403 is the
+    // transient unverified-domain state.
+    return fatal(`The Appwarden API refused the request (HTTP ${status}).`)
   }
   if (status === 429) {
     return retryable(
