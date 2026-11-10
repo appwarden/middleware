@@ -3,7 +3,7 @@ import * as fs from "fs"
 import * as os from "os"
 import * as path from "path"
 import { describe, expect, it } from "vitest"
-import { apiRefusalCases } from "../src/utils/api-refusal.cases"
+import { apiRefusalCases } from "../src/test/api-refusal.cases"
 
 describe("appwarden-link.cjs", () => {
   const scriptPath = path.resolve(__dirname, "appwarden-link.cjs")
@@ -1533,14 +1533,29 @@ describe("appwarden-link.cjs", () => {
   })
 
   describe("API refusals", () => {
+    /** The statuses the CLI retries; every other refusal ends the build on the first attempt. */
+    const RETRYABLE_STATUSES = [503, 429]
+    const MAX_ATTEMPTS = 3
+
+    type MockResponse =
+      | { ok: true; body: unknown }
+      | {
+          ok: false
+          status: number
+          statusText?: string
+          code?: string
+          retryAfter?: string
+        }
+
     /**
-     * Runs the CLI with a fetch that always refuses, and reports how many times it was
-     * called, so a case can also pin that the CLI does not retry.
+     * Runs the CLI against a scripted sequence of fetch responses and reports how many
+     * times fetch was called, so a case can pin the retry behaviour too.
      */
-    const runWithRefusal = (
+    const runCli = (
       tmpDir: string,
-      refusal: { status: number; statusText?: string; code?: string },
+      responses: MockResponse[],
       extraEnv: Record<string, string | undefined> = {},
+      argv: string[] = [],
     ) => {
       fs.writeFileSync(
         path.join(tmpDir, "package.json"),
@@ -1549,29 +1564,53 @@ describe("appwarden-link.cjs", () => {
 
       const wrapperPath = path.join(tmpDir, "mock-fetch-wrapper.cjs")
       const counterPath = path.join(tmpDir, "fetch-count.txt")
-      const bodyLine =
-        refusal.code === undefined
-          ? "      throw new Error('not json');"
-          : `      return { error: { code: ${JSON.stringify(refusal.code)} } };`
 
       fs.writeFileSync(
         wrapperPath,
         [
           'const fs = require("fs");',
           `const counterPath = ${JSON.stringify(counterPath)};`,
+          `const responses = ${JSON.stringify(responses)};`,
+          "let i = 0;",
           "global.fetch = async () => {",
           '  fs.appendFileSync(counterPath, "x");',
+          "  const r = responses[Math.min(i, responses.length - 1)];",
+          "  i++;",
+          "  if (r.ok) {",
+          "    const bodyText = JSON.stringify(r.body);",
+          "    return {",
+          "      ok: true,",
+          "      status: 200,",
+          '      headers: { get: (n) => (n === "content-type" ? "application/json" : null) },',
+          "      body: {",
+          "        getReader: () => {",
+          "          let done = false;",
+          "          return {",
+          "            read: async () => {",
+          "              if (done) return { done: true };",
+          "              done = true;",
+          "              return { done: false, value: new TextEncoder().encode(bodyText) };",
+          "            },",
+          "            cancel: async () => {},",
+          "          };",
+          "        },",
+          "      },",
+          "    };",
+          "  }",
           "  return {",
           "    ok: false,",
-          `    status: ${refusal.status},`,
-          `    statusText: ${JSON.stringify(refusal.statusText ?? "")},`,
+          "    status: r.status,",
+          "    statusText: r.statusText || '',",
+          '    headers: { get: (n) => (n === "retry-after" ? (r.retryAfter ?? null) : null) },',
           "    json: async () => {",
-          bodyLine,
+          "      if (r.code === undefined) throw new Error('not json');",
+          "      return { error: { code: r.code } };",
           "    },",
           "  };",
           "};",
-          'process.env.APPWARDEN_API_TOKEN = "[redacted]]";',
+          'process.env.APPWARDEN_API_TOKEN = "test-token";',
           'process.env.APPWARDEN_FQDN = "example.com";',
+          ...argv.map((a) => `process.argv.push(${JSON.stringify(a)});`),
           `require(${JSON.stringify(scriptPath)});`,
           "",
         ].join("\n"),
@@ -1602,40 +1641,98 @@ describe("appwarden-link.cjs", () => {
       return { status, output, calls }
     }
 
+    const successResponse: MockResponse = {
+      ok: true,
+      body: { website: { lockPageSlug: "/maintenance" } },
+    }
+
     // Criterion 12: the same case list drives this file and src/utils/api-refusal.test.ts.
     it.each(apiRefusalCases)(
       "fails the build for HTTP $status (code $code) with the classified message",
       ({ status, code, message }) => {
         const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "appwarden-test-"))
 
-        const result = runWithRefusal(tmpDir, {
-          status,
-          statusText: "Refused",
-          code,
-        })
+        const result = runCli(tmpDir, [
+          { ok: false, status, statusText: "Refused", code },
+        ])
 
         expect(result.status).not.toBe(0)
         expect(result.output).toContain(message)
-        // No retry loop: one attempt, then the build ends.
-        expect(result.calls).toBe(1)
+        // Only 503 and 429 are retried; every other refusal ends the build on the first try.
+        expect(result.calls).toBe(
+          RETRYABLE_STATUSES.includes(status) ? MAX_ATTEMPTS : 1,
+        )
 
         fs.rmSync(tmpDir, { recursive: true })
       },
     )
 
-    it("does not retry a 503 and reports the transient stall", () => {
+    it("retries a 503 and links once the API recovers", () => {
       const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "appwarden-test-"))
 
-      const result = runWithRefusal(tmpDir, {
-        status: 503,
-        statusText: "Service Unavailable",
-      })
+      const result = runCli(tmpDir, [
+        { ok: false, status: 503, statusText: "Service Unavailable" },
+        successResponse,
+      ])
 
-      expect(result.calls).toBe(1)
+      expect(result.status).toBe(0)
+      expect(result.calls).toBe(2)
+      expect(result.output).toContain("retrying in 250ms")
+
+      const configPath = path.join(tmpDir, configDir, configName)
+      const config = JSON.parse(fs.readFileSync(configPath, "utf-8"))
+      expect(config.website.lockPageSlug).toBe("/maintenance")
+
+      fs.rmSync(tmpDir, { recursive: true })
+    })
+
+    it("gives up after three attempts on a persistent 503", () => {
+      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "appwarden-test-"))
+
+      const result = runCli(tmpDir, [
+        { ok: false, status: 503, statusText: "Service Unavailable" },
+      ])
+
+      expect(result.calls).toBe(MAX_ATTEMPTS)
       expect(result.status).not.toBe(0)
       expect(result.output).toContain(
         "The Appwarden API is temporarily unavailable (HTTP 503).",
       )
+      expect(result.output).toContain(`Gave up after ${MAX_ATTEMPTS} attempts.`)
+
+      fs.rmSync(tmpDir, { recursive: true })
+    })
+
+    it("retries a 429 and honours Retry-After", () => {
+      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "appwarden-test-"))
+
+      const result = runCli(tmpDir, [
+        {
+          ok: false,
+          status: 429,
+          statusText: "Too Many Requests",
+          retryAfter: "0",
+        },
+        successResponse,
+      ])
+
+      expect(result.status).toBe(0)
+      expect(result.calls).toBe(2)
+      // Retry-After: 0 is honoured instead of the 250 ms exponential default.
+      expect(result.output).toContain("retrying in 0ms")
+
+      fs.rmSync(tmpDir, { recursive: true })
+    })
+
+    it("does not retry a 500", () => {
+      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "appwarden-test-"))
+
+      const result = runCli(tmpDir, [
+        { ok: false, status: 500, statusText: "Internal Server Error" },
+      ])
+
+      expect(result.calls).toBe(1)
+      expect(result.status).not.toBe(0)
 
       fs.rmSync(tmpDir, { recursive: true })
     })
@@ -1643,9 +1740,9 @@ describe("appwarden-link.cjs", () => {
     it("warns and continues when APPWARDEN_LINK_ALLOW_DEGRADED=1", () => {
       const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "appwarden-test-"))
 
-      const result = runWithRefusal(
+      const result = runCli(
         tmpDir,
-        { status: 403, code: "INSUFFICIENT_SCOPE" },
+        [{ ok: false, status: 403, code: "INSUFFICIENT_SCOPE" }],
         { APPWARDEN_LINK_ALLOW_DEGRADED: "1" },
       )
 
@@ -1662,37 +1759,24 @@ describe("appwarden-link.cjs", () => {
     it("warns and continues when --allow-degraded is passed", () => {
       const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "appwarden-test-"))
 
-      const wrapperPath = path.join(tmpDir, "mock-fetch-wrapper.cjs")
-      fs.writeFileSync(
-        wrapperPath,
+      const result = runCli(
+        tmpDir,
         [
-          "global.fetch = async () => ({",
-          "  ok: false,",
-          "  status: 402,",
-          '  statusText: "Payment Required",',
-          '  json: async () => ({ error: { code: "SUBSCRIPTION_REQUIRED" } }),',
-          "});",
-          'process.env.APPWARDEN_API_TOKEN = "[redacted]]";',
-          'process.env.APPWARDEN_FQDN = "example.com";',
-          "process.argv.push('--allow-degraded');",
-          `require(${JSON.stringify(scriptPath)});`,
-          "",
-        ].join("\n"),
+          {
+            ok: false,
+            status: 402,
+            statusText: "Payment Required",
+            code: "SUBSCRIPTION_REQUIRED",
+          },
+        ],
+        {},
+        ["--allow-degraded"],
       )
 
-      const output = execSync(`node "${wrapperPath}" 2>&1`, {
-        cwd: tmpDir,
-        encoding: "utf-8",
-        env: {
-          ...process.env,
-          APPWARDEN_SKIP_POSTBUILD: undefined,
-          APPWARDEN_LINK_ALLOW_DEGRADED: undefined,
-        },
-      })
-
-      expect(output).toContain("Degraded mode enabled")
-      expect(output).toContain("subscription is not active")
-      expect(output).toContain("allow-degraded")
+      expect(result.status).toBe(0)
+      expect(result.output).toContain("Degraded mode enabled")
+      expect(result.output).toContain("subscription is not active")
+      expect(result.output).toContain("allow-degraded")
 
       fs.rmSync(tmpDir, { recursive: true })
     })

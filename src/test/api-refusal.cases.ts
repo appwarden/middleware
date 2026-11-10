@@ -1,4 +1,4 @@
-import type { ApiRefusalKind } from "./api-refusal"
+import type { ApiRefusalKind } from "../utils/api-refusal"
 
 export interface ApiRefusalCase {
   readonly status: number
@@ -61,6 +61,14 @@ export const apiRefusalCases: readonly ApiRefusalCase[] = [
     kind: "fatal",
     message:
       "This Appwarden API token is not permitted to read this domain. Widen the token's domain allowlist at https://use.appwarden.io?to=settings/security.",
+  },
+  {
+    // A 403 carrying a code we do not recognise is still a token fault. Only the uncoded
+    // 403 is the transient unverified-domain state.
+    status: 403,
+    code: "UNKNOWN",
+    kind: "fatal",
+    message: "The Appwarden API refused the request (HTTP 403).",
   },
   {
     status: 403,

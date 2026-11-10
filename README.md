@@ -199,6 +199,11 @@ that is not permitted to read the domain has its allowlist widened, and an organ
 without live billing restores it. An unset `APPWARDEN_API_TOKEN` is not a refusal: it still
 warns and writes local headers and defaults, as before.
 
+A transient refusal — a `503` (the API's store is momentarily unavailable) or a `429` (rate
+limited) — is retried up to three times with exponential backoff, honouring `Retry-After`
+when the API sends it, before the build fails. Every other refusal needs a config change, so
+it is not retried.
+
 If a degraded build is preferable to a failed one during an Appwarden outage, opt in
 explicitly with `--allow-degraded` or `APPWARDEN_LINK_ALLOW_DEGRADED=1`, which restores the
 warn-and-continue behaviour.

@@ -139,56 +139,96 @@ const VERIFY_DOMAIN_MESSAGE =
   "Verifying domain ownership... this will only take a few minutes."
 
 /**
- * Classifies an Appwarden API refusal so the build can name the fix.
+ * How many times a transient refusal is attempted, and how long to wait between attempts.
  *
- * Mirrors `classifyApiRefusal` in src/utils/api-refusal.ts. The two are separate
- * implementations — this is a standalone CommonJS file that cannot import from src/ — and a
- * shared case list in both test files keeps them from drifting apart.
+ * The 10 s abort is per attempt, so the worst case is three attempts plus the backoff
+ * (about 30.8 s).
  */
-function classifyApiRefusal(status, code) {
-  const fatal = (message) => ({ retryable: false, message })
-  const retryable = (message) => ({ retryable: true, message })
+const MAX_FETCH_ATTEMPTS = 3
+const RETRY_BASE_DELAY_MS = 250
+/** A ceiling on a server-supplied `Retry-After`, so a bad header cannot stall a build. */
+const MAX_RETRY_DELAY_MS = 30_000
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
+/** Parses a `Retry-After` header (delay-seconds or HTTP-date) into ms, or null. */
+function parseRetryAfter(value) {
+  if (!value) return null
+  const seconds = Number(value)
+  if (Number.isFinite(seconds) && seconds >= 0) {
+    return Math.min(seconds * 1000, MAX_RETRY_DELAY_MS)
+  }
+  const date = Date.parse(value)
+  if (!Number.isNaN(date)) {
+    return Math.min(Math.max(0, date - Date.now()), MAX_RETRY_DELAY_MS)
+  }
+  return null
+}
+
+/**
+ * The wait before attempt `attempt + 1`: the server's `Retry-After` when it sends one,
+ * otherwise exponential backoff (250 ms, 500 ms).
+ */
+function retryDelayMs(attempt, retryAfterHeader) {
+  const fromHeader = parseRetryAfter(retryAfterHeader)
+  if (fromHeader !== null) return fromHeader
+  return RETRY_BASE_DELAY_MS * 2 ** (attempt - 1)
+}
+
+/**
+ * The message for an Appwarden API refusal, so the build can name the fix.
+ *
+ * Mirrors the messages in src/utils/api-refusal.ts. The two are separate implementations —
+ * this is a standalone CommonJS file that cannot import from src/ — and a shared case list
+ * in both test files keeps them from drifting apart.
+ */
+function refusalMessage(status, code) {
   if (status === 401) {
-    return fatal(
-      code === "TOKEN_EXPIRED"
-        ? "Your Appwarden API token has expired. Rotate it at https://use.appwarden.io?to=settings/security."
-        : "Authentication failed. Ensure your Appwarden API token is correct. Manage tokens at https://use.appwarden.io?to=settings/security.",
-    )
+    return code === "TOKEN_EXPIRED"
+      ? "Your Appwarden API token has expired. Rotate it at https://use.appwarden.io?to=settings/security."
+      : "Authentication failed. Ensure your Appwarden API token is correct. Manage tokens at https://use.appwarden.io?to=settings/security."
   }
   if (status === 402 && code === "SUBSCRIPTION_REQUIRED") {
-    return fatal(
-      "Your Appwarden organization's subscription is not active. Check billing at https://use.appwarden.io?to=settings/billing.",
-    )
+    return "Your Appwarden organization's subscription is not active. Check billing at https://use.appwarden.io?to=settings/billing."
   }
   if (status === 403) {
     if (code === "INSUFFICIENT_SCOPE") {
-      return fatal(
-        "This Appwarden API token cannot read domains. Grant it the read:domains scope at https://use.appwarden.io?to=settings/security.",
-      )
+      return "This Appwarden API token cannot read domains. Grant it the read:domains scope at https://use.appwarden.io?to=settings/security."
     }
     if (code === "DOMAIN_REQUIRED") {
-      return fatal("The request did not name a domain. Pass an fqdn.")
+      return "The request did not name a domain. Pass an fqdn."
     }
     if (code === "DOMAIN_NOT_PERMITTED") {
-      return fatal(
-        "This Appwarden API token is not permitted to read this domain. Widen the token's domain allowlist at https://use.appwarden.io?to=settings/security.",
-      )
+      return "This Appwarden API token is not permitted to read this domain. Widen the token's domain allowlist at https://use.appwarden.io?to=settings/security."
     }
     // No code: an unverified domain, not a token fault. It resolves on its own.
-    return retryable(VERIFY_DOMAIN_MESSAGE)
+    if (!code) return VERIFY_DOMAIN_MESSAGE
+    // A code we do not recognise is still a token fault: only the uncoded 403 is the
+    // transient unverified-domain state.
+    return `The Appwarden API refused the request (HTTP ${status}).`
   }
   if (status === 429) {
-    return retryable(
-      `The Appwarden API rate-limited the request (HTTP ${status}).`,
-    )
+    return `The Appwarden API rate-limited the request (HTTP ${status}).`
   }
   if (status >= 500) {
-    return retryable(
-      `The Appwarden API is temporarily unavailable (HTTP ${status}).`,
-    )
+    return `The Appwarden API is temporarily unavailable (HTTP ${status}).`
   }
-  return fatal(`The Appwarden API refused the request (HTTP ${status}).`)
+  return `The Appwarden API refused the request (HTTP ${status}).`
+}
+
+/**
+ * Classifies an Appwarden API refusal.
+ *
+ * `retryable` is the CLI's own scope: only a 503 (the API's store is momentarily
+ * unavailable) and a 429 (rate limited) are expected to clear on their own, so only those
+ * are retried. Every other refusal needs a config change, so retrying it would only delay
+ * the failure.
+ */
+function classifyApiRefusal(status, code) {
+  return {
+    retryable: status === 503 || status === 429,
+    message: refusalMessage(status, code),
+  }
 }
 
 function parseArgs() {
@@ -850,17 +890,25 @@ async function fetchRemoteConfig(apiToken, apiHostname, fqdn) {
 
   const url = new URL("/v1/appwarden/config", apiHostname)
   url.searchParams.set("fqdn", fqdn)
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 10_000)
   const href = url.toString()
-  try {
-    let res
+
+  // Fetch, retrying a transient refusal (503 or 429) with exponential backoff. The 10 s
+  // abort is per attempt, so a stalled attempt costs one timeout rather than the whole
+  // budget.
+  let attempt = 0
+  let res
+  let timeout
+  while (true) {
+    attempt++
+    const controller = new AbortController()
+    timeout = setTimeout(() => controller.abort(), 10_000)
     try {
       res = await fetch(href, {
         headers: { Authorization: apiToken },
         signal: controller.signal,
       })
     } catch (err) {
+      clearTimeout(timeout)
       // A network failure or the 10 s abort. It is fatal to the build: a build that ships
       // without its remote config is a deploy that is silently unprotected.
       const message = err instanceof Error ? err.message : String(err)
@@ -869,16 +917,33 @@ async function fetchRemoteConfig(apiToken, apiHostname, fqdn) {
       )
     }
 
-    if (!res.ok) {
-      // Classify on the body's code first, status second. The error body is small, so a
-      // plain res.json() with a catch is enough; a non-JSON refusal (a Cloudflare HTML
-      // page) must classify as its status rather than throw inside the classifier.
-      const body = await res.json().catch(() => null)
-      const code = body && body.error ? body.error.code : undefined
-      const refusal = classifyApiRefusal(res.status, code)
-      throw new ApiRefusalError(refusal.message)
+    if (res.ok) break
+
+    // Classify on the body's code first, status second. The error body is small, so a
+    // plain res.json() with a catch is enough; a non-JSON refusal (a Cloudflare HTML page)
+    // must classify as its status rather than throw inside the classifier.
+    const body = await res.json().catch(() => null)
+    const code = body && body.error ? body.error.code : undefined
+    const refusal = classifyApiRefusal(res.status, code)
+
+    if (refusal.retryable && attempt < MAX_FETCH_ATTEMPTS) {
+      clearTimeout(timeout)
+      const delay = retryDelayMs(attempt, res.headers.get("retry-after"))
+      warn(
+        `Appwarden API returned ${res.status} ${res.statusText}; retrying in ${delay}ms (attempt ${attempt} of ${MAX_FETCH_ATTEMPTS}).`,
+      )
+      await sleep(delay)
+      continue
     }
 
+    clearTimeout(timeout)
+    const suffix = refusal.retryable
+      ? ` Gave up after ${MAX_FETCH_ATTEMPTS} attempts.`
+      : ""
+    throw new ApiRefusalError(`${refusal.message}${suffix}`)
+  }
+
+  try {
     const contentLength = res.headers.get("content-length")
     if (
       contentLength &&
@@ -927,7 +992,6 @@ async function fetchRemoteConfig(apiToken, apiHostname, fqdn) {
 
     return sanitizeRemoteConfig(config)
   } catch (err) {
-    if (err instanceof ApiRefusalError) throw err
     // A 200 whose body could not be read or parsed is not a refusal; keep degrading, as
     // the documented "no entry for this fqdn" path does.
     const message = err instanceof Error ? err.message : String(err)

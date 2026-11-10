@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
+import { apiRefusalCases } from "../test/api-refusal.cases"
 import { classifyApiRefusal, readRefusalCode } from "./api-refusal"
-import { apiRefusalCases } from "./api-refusal.cases"
 
 describe("classifyApiRefusal", () => {
   it.each(apiRefusalCases)(
