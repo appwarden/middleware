@@ -121,6 +121,76 @@ const makeDebug =
     if (enabled) console.log(`${CYAN}[appwarden]`, ...args)
   }
 
+/**
+ * A refusal from the Appwarden API, or a failure to reach it.
+ *
+ * Carries the classified message rather than the status line, so `main`'s catch can end
+ * the build with the fix the operator has to make.
+ */
+class ApiRefusalError extends Error {
+  constructor(message) {
+    super(message)
+    this.name = "ApiRefusalError"
+  }
+}
+
+/** Printed for a 403 the API left uncoded: an unverified domain that resolves on its own. */
+const VERIFY_DOMAIN_MESSAGE =
+  "Verifying domain ownership... this will only take a few minutes."
+
+/**
+ * Classifies an Appwarden API refusal so the build can name the fix.
+ *
+ * Mirrors `classifyApiRefusal` in src/utils/api-refusal.ts. The two are separate
+ * implementations — this is a standalone CommonJS file that cannot import from src/ — and a
+ * shared case list in both test files keeps them from drifting apart.
+ */
+function classifyApiRefusal(status, code) {
+  const fatal = (message) => ({ retryable: false, message })
+  const retryable = (message) => ({ retryable: true, message })
+
+  if (status === 401) {
+    return fatal(
+      code === "TOKEN_EXPIRED"
+        ? "Your Appwarden API token has expired. Rotate it at https://use.appwarden.io?to=settings/security."
+        : "Authentication failed. Ensure your Appwarden API token is correct. Manage tokens at https://use.appwarden.io?to=settings/security.",
+    )
+  }
+  if (status === 402 && code === "SUBSCRIPTION_REQUIRED") {
+    return fatal(
+      "Your Appwarden organization's subscription is not active. Check billing at https://use.appwarden.io?to=settings/billing.",
+    )
+  }
+  if (status === 403) {
+    if (code === "INSUFFICIENT_SCOPE") {
+      return fatal(
+        "This Appwarden API token cannot read domains. Grant it the read:domains scope at https://use.appwarden.io?to=settings/security.",
+      )
+    }
+    if (code === "DOMAIN_REQUIRED") {
+      return fatal("The request did not name a domain. Pass an fqdn.")
+    }
+    if (code === "DOMAIN_NOT_PERMITTED") {
+      return fatal(
+        "This Appwarden API token is not permitted to read this domain. Widen the token's domain allowlist at https://use.appwarden.io?to=settings/security.",
+      )
+    }
+    // No code: an unverified domain, not a token fault. It resolves on its own.
+    return retryable(VERIFY_DOMAIN_MESSAGE)
+  }
+  if (status === 429) {
+    return retryable(
+      `The Appwarden API rate-limited the request (HTTP ${status}).`,
+    )
+  }
+  if (status >= 500) {
+    return retryable(
+      `The Appwarden API is temporarily unavailable (HTTP ${status}).`,
+    )
+  }
+  return fatal(`The Appwarden API refused the request (HTTP ${status}).`)
+}
+
 function parseArgs() {
   const args = process.argv.slice(2)
   const result = {
@@ -129,6 +199,7 @@ function parseArgs() {
     cwd: process.cwd(),
     fqdn: null,
     debug: false,
+    allowDegraded: false,
   }
   for (const arg of args) {
     const frameworkMatch = arg.match(/^--framework=(.+)$/)
@@ -142,6 +213,7 @@ function parseArgs() {
     }
     if (arg === "--staging") result.staging = true
     if (arg === "--debug") result.debug = true
+    if (arg === "--allow-degraded") result.allowDegraded = true
 
     const cwdMatch = arg.match(/^--cwd=(.+)$/)
     if (cwdMatch) {
@@ -782,19 +854,31 @@ async function fetchRemoteConfig(apiToken, apiHostname, fqdn) {
   const timeout = setTimeout(() => controller.abort(), 10_000)
   const href = url.toString()
   try {
-    const res = await fetch(href, {
-      headers: { Authorization: apiToken },
-      signal: controller.signal,
-    })
-    if (!res.ok) {
-      if (res.status === 401) {
-        throw new Error(
-          "Authentication failed. Ensure your Appwarden API token is correct. Manage tokens at https://use.appwarden.io?to=settings/security",
-        )
-      }
-      warn(`fetch failed: ${href} ${res.status} ${res.statusText}`)
-      return null
+    let res
+    try {
+      res = await fetch(href, {
+        headers: { Authorization: apiToken },
+        signal: controller.signal,
+      })
+    } catch (err) {
+      // A network failure or the 10 s abort. It is fatal to the build: a build that ships
+      // without its remote config is a deploy that is silently unprotected.
+      const message = err instanceof Error ? err.message : String(err)
+      throw new ApiRefusalError(
+        `Failed to reach the Appwarden API at ${href}: ${message}`,
+      )
     }
+
+    if (!res.ok) {
+      // Classify on the body's code first, status second. The error body is small, so a
+      // plain res.json() with a catch is enough; a non-JSON refusal (a Cloudflare HTML
+      // page) must classify as its status rather than throw inside the classifier.
+      const body = await res.json().catch(() => null)
+      const code = body && body.error ? body.error.code : undefined
+      const refusal = classifyApiRefusal(res.status, code)
+      throw new ApiRefusalError(refusal.message)
+    }
+
     const contentLength = res.headers.get("content-length")
     if (
       contentLength &&
@@ -843,10 +927,10 @@ async function fetchRemoteConfig(apiToken, apiHostname, fqdn) {
 
     return sanitizeRemoteConfig(config)
   } catch (err) {
+    if (err instanceof ApiRefusalError) throw err
+    // A 200 whose body could not be read or parsed is not a refusal; keep degrading, as
+    // the documented "no entry for this fqdn" path does.
     const message = err instanceof Error ? err.message : String(err)
-    if (message.startsWith("Authentication failed")) {
-      throw err instanceof Error ? err : new Error(message)
-    }
     warn(`fetch error: ${href} ${message}`)
     return null
   } finally {
@@ -952,8 +1036,18 @@ async function main() {
     ? "https://staging-api.appwarden.io"
     : "https://api.appwarden.io"
   const fqdn = args.fqdn || process.env.APPWARDEN_FQDN || null
+  const allowDegraded =
+    args.allowDegraded ||
+    ["1", "true"].includes(
+      (process.env.APPWARDEN_LINK_ALLOW_DEGRADED || "").toLowerCase(),
+    )
   if (args.staging) {
     print("Using staging API")
+  }
+  if (allowDegraded) {
+    print(
+      "Degraded mode enabled: a refused or unreachable Appwarden API will not fail the build.",
+    )
   }
   if (apiToken) {
     print(`Using provided Appwarden API token`)
@@ -969,8 +1063,14 @@ async function main() {
     remote = await fetchRemoteConfig(apiToken, apiHostname, fqdn)
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
-    warn(message)
-    process.exit(1)
+    if (allowDegraded) {
+      warn(
+        `${message} Continuing without the remote Appwarden configuration (allow-degraded).`,
+      )
+    } else {
+      warn(message)
+      process.exit(1)
+    }
   }
   if (remote) {
     print("Fetched remote Appwarden configuration.")

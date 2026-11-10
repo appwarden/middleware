@@ -138,6 +138,77 @@ Correct:
 
 Each Appwarden organization can have only one active API token at a time. Create a new token only after deleting the current one.
 
+### HIGH Reading a refusal as a token that needs checking when it needs rotating
+
+The Appwarden API answers an expired token with `401` and `error.code: "TOKEN_EXPIRED"`, and a missing, malformed, or unknown token with an uncoded `401`. The two have different fixes.
+
+Wrong:
+
+```text
+// 401 TOKEN_EXPIRED: re-copy the same token into every environment
+```
+
+Correct:
+
+```text
+// 401 TOKEN_EXPIRED: rotate the token in Settings > Security, then update every environment
+```
+
+An expired token is simply old; checking it against the dashboard confirms nothing. Rotate it.
+
+### HIGH Reading a scope or domain refusal as "wait a few minutes"
+
+A `403` with `error.code: "INSUFFICIENT_SCOPE"` means the token does not carry `read:domains` at all, so it can never read any domain. A `403` with `error.code: "DOMAIN_NOT_PERMITTED"` means the token's domain allowlist does not include this domain. Neither resolves by waiting — only a change in the dashboard does. Only an uncoded `403` is the unverified-domain state that resolves on its own ("Verifying domain ownership... this will only take a few minutes.").
+
+Wrong:
+
+```text
+// 403 INSUFFICIENT_SCOPE: wait and retry the request
+```
+
+Correct:
+
+```text
+// 403 INSUFFICIENT_SCOPE: grant the token the read:domains scope at Settings > Security
+// 403 DOMAIN_NOT_PERMITTED: add this domain to the token's allowlist at Settings > Security
+```
+
+### HIGH Treating a subscription refusal as a token problem
+
+A `402` with `error.code: "SUBSCRIPTION_REQUIRED"` means the organization's billing is not live. The token is fine.
+
+Wrong:
+
+```text
+// 402 SUBSCRIPTION_REQUIRED: recreate the API token
+```
+
+Correct:
+
+```text
+// 402 SUBSCRIPTION_REQUIRED: restore the organization's subscription at Settings > Billing
+```
+
+### MEDIUM Expecting the build to continue after a refusal
+
+`appwarden-link` is fail-closed: a refused or unreachable Appwarden API ends the build rather than shipping without its remote configuration, because that configuration carries `lockPageSlug`, the CSP mode and directives, and the api route config. If a build must continue during an Appwarden outage, opt in to a degraded build explicitly.
+
+Wrong:
+
+```text
+// A refused build silently continues and ships without its remote config
+```
+
+Correct:
+
+```text
+# Only when a degraded build is preferable to a failed one:
+APPWARDEN_LINK_ALLOW_DEGRADED=1 appwarden-link --fqdn=your.app
+# or: appwarden-link --fqdn=your.app --allow-degraded
+```
+
+Degraded mode warns and continues with local headers and defaults. It does not apply the remote configuration.
+
 ## Next Steps
 
 After storing the token, wire it into the middleware: see `appwarden-middleware-get-started`.

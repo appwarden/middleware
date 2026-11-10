@@ -3,6 +3,7 @@ import * as fs from "fs"
 import * as os from "os"
 import * as path from "path"
 import { describe, expect, it } from "vitest"
+import { apiRefusalCases } from "../src/utils/api-refusal.cases"
 
 describe("appwarden-link.cjs", () => {
   const scriptPath = path.resolve(__dirname, "appwarden-link.cjs")
@@ -1146,7 +1147,7 @@ describe("appwarden-link.cjs", () => {
     fs.rmSync(tmpDir, { recursive: true })
   })
 
-  it("should handle a non-Error thrown by fetch without crashing", () => {
+  it("should fail the build on a non-Error thrown by fetch without crashing", () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "appwarden-test-"))
 
     fs.writeFileSync(
@@ -1167,16 +1168,22 @@ describe("appwarden-link.cjs", () => {
         '");\n',
     )
 
-    execSync(`node "${wrapperPath}"`, {
-      cwd: tmpDir,
-      encoding: "utf-8",
-      env: { ...process.env, APPWARDEN_SKIP_POSTBUILD: undefined },
-    })
+    let threw = false
+    let stderr = ""
+    try {
+      execSync(`node "${wrapperPath}"`, {
+        cwd: tmpDir,
+        encoding: "utf-8",
+        env: { ...process.env, APPWARDEN_SKIP_POSTBUILD: undefined },
+      })
+    } catch (e: any) {
+      threw = true
+      stderr = e.stderr || ""
+    }
 
-    const configPath = path.join(tmpDir, configDir, configName)
-    const config = JSON.parse(fs.readFileSync(configPath, "utf-8"))
-
-    expect(config.website.lockPageSlug).toBe("/maintenance")
+    // A network failure is now fatal to the build, and the message names the failure.
+    expect(threw).toBe(true)
+    expect(stderr).toContain("Failed to reach the Appwarden API")
 
     fs.rmSync(tmpDir, { recursive: true })
   })
@@ -1523,5 +1530,171 @@ describe("appwarden-link.cjs", () => {
     expect(config.website.cspMode).toBeUndefined()
 
     fs.rmSync(tmpDir, { recursive: true })
+  })
+
+  describe("API refusals", () => {
+    /**
+     * Runs the CLI with a fetch that always refuses, and reports how many times it was
+     * called, so a case can also pin that the CLI does not retry.
+     */
+    const runWithRefusal = (
+      tmpDir: string,
+      refusal: { status: number; statusText?: string; code?: string },
+      extraEnv: Record<string, string | undefined> = {},
+    ) => {
+      fs.writeFileSync(
+        path.join(tmpDir, "package.json"),
+        JSON.stringify({ dependencies: { next: "^14" } }),
+      )
+
+      const wrapperPath = path.join(tmpDir, "mock-fetch-wrapper.cjs")
+      const counterPath = path.join(tmpDir, "fetch-count.txt")
+      const bodyLine =
+        refusal.code === undefined
+          ? "      throw new Error('not json');"
+          : `      return { error: { code: ${JSON.stringify(refusal.code)} } };`
+
+      fs.writeFileSync(
+        wrapperPath,
+        [
+          'const fs = require("fs");',
+          `const counterPath = ${JSON.stringify(counterPath)};`,
+          "global.fetch = async () => {",
+          '  fs.appendFileSync(counterPath, "x");',
+          "  return {",
+          "    ok: false,",
+          `    status: ${refusal.status},`,
+          `    statusText: ${JSON.stringify(refusal.statusText ?? "")},`,
+          "    json: async () => {",
+          bodyLine,
+          "    },",
+          "  };",
+          "};",
+          'process.env.APPWARDEN_API_TOKEN = "[redacted]]";',
+          'process.env.APPWARDEN_FQDN = "example.com";',
+          `require(${JSON.stringify(scriptPath)});`,
+          "",
+        ].join("\n"),
+      )
+
+      let status = 0
+      let output = ""
+      try {
+        output = execSync(`node "${wrapperPath}" 2>&1`, {
+          cwd: tmpDir,
+          encoding: "utf-8",
+          env: {
+            ...process.env,
+            APPWARDEN_SKIP_POSTBUILD: undefined,
+            APPWARDEN_LINK_ALLOW_DEGRADED: undefined,
+            ...extraEnv,
+          },
+        })
+      } catch (e: any) {
+        status = e.status ?? 1
+        output = `${e.stdout ?? ""}${e.stderr ?? ""}`
+      }
+
+      const calls = fs.existsSync(counterPath)
+        ? fs.readFileSync(counterPath, "utf-8").length
+        : 0
+
+      return { status, output, calls }
+    }
+
+    // Criterion 12: the same case list drives this file and src/utils/api-refusal.test.ts.
+    it.each(apiRefusalCases)(
+      "fails the build for HTTP $status (code $code) with the classified message",
+      ({ status, code, message }) => {
+        const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "appwarden-test-"))
+
+        const result = runWithRefusal(tmpDir, {
+          status,
+          statusText: "Refused",
+          code,
+        })
+
+        expect(result.status).not.toBe(0)
+        expect(result.output).toContain(message)
+        // No retry loop: one attempt, then the build ends.
+        expect(result.calls).toBe(1)
+
+        fs.rmSync(tmpDir, { recursive: true })
+      },
+    )
+
+    it("does not retry a 503 and reports the transient stall", () => {
+      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "appwarden-test-"))
+
+      const result = runWithRefusal(tmpDir, {
+        status: 503,
+        statusText: "Service Unavailable",
+      })
+
+      expect(result.calls).toBe(1)
+      expect(result.status).not.toBe(0)
+      expect(result.output).toContain(
+        "The Appwarden API is temporarily unavailable (HTTP 503).",
+      )
+
+      fs.rmSync(tmpDir, { recursive: true })
+    })
+
+    it("warns and continues when APPWARDEN_LINK_ALLOW_DEGRADED=1", () => {
+      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "appwarden-test-"))
+
+      const result = runWithRefusal(
+        tmpDir,
+        { status: 403, code: "INSUFFICIENT_SCOPE" },
+        { APPWARDEN_LINK_ALLOW_DEGRADED: "1" },
+      )
+
+      expect(result.status).toBe(0)
+      expect(result.output).toContain("cannot read domains")
+      expect(result.output).toContain("allow-degraded")
+
+      const configPath = path.join(tmpDir, configDir, configName)
+      expect(fs.existsSync(configPath)).toBe(true)
+
+      fs.rmSync(tmpDir, { recursive: true })
+    })
+
+    it("warns and continues when --allow-degraded is passed", () => {
+      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "appwarden-test-"))
+
+      const wrapperPath = path.join(tmpDir, "mock-fetch-wrapper.cjs")
+      fs.writeFileSync(
+        wrapperPath,
+        [
+          "global.fetch = async () => ({",
+          "  ok: false,",
+          "  status: 402,",
+          '  statusText: "Payment Required",',
+          '  json: async () => ({ error: { code: "SUBSCRIPTION_REQUIRED" } }),',
+          "});",
+          'process.env.APPWARDEN_API_TOKEN = "[redacted]]";',
+          'process.env.APPWARDEN_FQDN = "example.com";',
+          "process.argv.push('--allow-degraded');",
+          `require(${JSON.stringify(scriptPath)});`,
+          "",
+        ].join("\n"),
+      )
+
+      const output = execSync(`node "${wrapperPath}" 2>&1`, {
+        cwd: tmpDir,
+        encoding: "utf-8",
+        env: {
+          ...process.env,
+          APPWARDEN_SKIP_POSTBUILD: undefined,
+          APPWARDEN_LINK_ALLOW_DEGRADED: undefined,
+        },
+      })
+
+      expect(output).toContain("Degraded mode enabled")
+      expect(output).toContain("subscription is not active")
+      expect(output).toContain("allow-degraded")
+
+      fs.rmSync(tmpDir, { recursive: true })
+    })
   })
 })

@@ -2,6 +2,7 @@ import { APPWARDEN_CACHE_KEY, APPWARDEN_TEST_ROUTE } from "../constants"
 import { LockValueType } from "../schemas"
 import { CloudflareProviderContext } from "../types"
 import { debug, MemoryCache } from "../utils"
+import type { ApiRefusalKind } from "../utils/api-refusal"
 import {
   deleteEdgeValue,
   getLockValue,
@@ -120,8 +121,19 @@ const resolveLockStatus = async (
  */
 let retryAfter = 0
 
-/** How long a failed sync waits before the next attempt: one pull window. */
-const retryBackoffMs = () => {
+/**
+ * How long a fatal refusal waits before the next attempt.
+ *
+ * A retryable failure (a 5xx, a rate limit, an unverified domain, a network stall) is worth
+ * re-attempting on the next request, so it waits one pull window. A fatal refusal (a token
+ * that cannot read this domain) only a config change can fix, so it waits much longer:
+ * re-fetching it every window, forever, is log noise and wasted work on every isolate.
+ */
+export const FATAL_SYNC_RETRY_BACKOFF_MS = 5 * 60 * 1000
+
+/** How long a failed sync waits before the next attempt, by the failure's kind. */
+const retryBackoffMs = (kind: ApiRefusalKind) => {
+  if (kind === "fatal") return FATAL_SYNC_RETRY_BACKOFF_MS
   // @ts-expect-error CACHE_EXPIRY_MS is injected at build time by tsup's `define`
   return CACHE_EXPIRY_MS as number
 }
@@ -137,6 +149,14 @@ export const resetSyncRetryDeadline = (): void => {
 }
 
 /**
+ * The next time a failed sync may be re-attempted.
+ *
+ * Exposed so a test can assert the duration a failure recorded, which is otherwise invisible
+ * until it elapses.
+ */
+export const getSyncRetryDeadline = (): number => retryAfter
+
+/**
  * Runs a sync and records the backoff when it fails.
  *
  * A successful sync clears the deadline, so recovery is immediate once the API answers
@@ -150,9 +170,10 @@ const syncAndRecordFailure = async (context: CloudflareProviderContext) => {
     return
   }
 
-  retryAfter = Date.now() + retryBackoffMs()
+  const backoff = retryBackoffMs(result.kind)
+  retryAfter = Date.now() + backoff
   context.debug(
-    `Sync failed (${result.reason}) - not retrying for ${retryBackoffMs()}ms`,
+    `Sync failed (${result.reason}) - not retrying for ${backoff}ms`,
   )
 }
 

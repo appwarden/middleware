@@ -5,12 +5,20 @@ import {
   LockValueType,
 } from "../../schemas"
 import { CloudflareProviderContext } from "../../types/cloudflare"
+import {
+  ApiRefusalKind,
+  classifyApiRefusal,
+  readRefusalCode,
+} from "../api-refusal"
 import { printMessage } from "../print-message"
 
 class APIError extends Error {
-  constructor(message: string) {
+  readonly kind: ApiRefusalKind
+
+  constructor(message: string, kind: ApiRefusalKind = "retryable") {
     super(message)
     this.name = "APIError"
+    this.kind = kind
   }
 }
 
@@ -30,10 +38,17 @@ function resolveApiHostname(hostname: string | undefined): string {
  * `syncEdgeValue` used to return nothing and swallow its own failure, which left the caller
  * unable to tell a successful sync from a failed one — so the next request re-fired it, and
  * an API that is down turned every request on the site into an API call. `reason` is the
- * same string that reaches the log, so a caller can record it without re-rendering it.
+ * same string that reaches the log, so a caller can record it without re-rendering it, and
+ * `kind` says whether the next pull window should retry (a transient fault) or back off for
+ * much longer (a refusal only a config change can fix).
  */
 export type SyncEdgeValueResult =
-  { readonly ok: true } | { readonly ok: false; readonly reason: string }
+  | { readonly ok: true }
+  | {
+      readonly ok: false
+      readonly reason: string
+      readonly kind: ApiRefusalKind
+    }
 
 /**
  * Fetches the lock value and writes it to the edge cache.
@@ -68,17 +83,20 @@ export const syncEdgeValue = async (
       signal: controller.signal,
     })
 
-    // If the check endpoint returns 403, log a domain verification message
-    if (response.status === 403) {
-      console.log(
-        printMessage(
-          "Verifying domain ownership... this will only take a few minutes.",
-        ),
-      )
-    }
-
     if (response.status !== 200) {
-      throw new Error(`${response.status} ${response.statusText}`)
+      // Classify on the body's code first, status second: a 403 alone cannot separate an
+      // unverified domain from a token that can never read this one.
+      const code = await readRefusalCode(response)
+      const refusal = classifyApiRefusal(response.status, code)
+
+      if (response.status === 403 && !code) {
+        // An uncoded 403 is the unverified-domain state, not a token fault. Say so once,
+        // and let the gate retry it on the next pull window.
+        console.log(printMessage(refusal.message))
+        return { ok: false, reason: refusal.message, kind: refusal.kind }
+      }
+
+      throw new APIError(refusal.message, refusal.kind)
     }
     if (response.headers.get("content-type")?.includes("application/json")) {
       const result = await response.json<{
@@ -117,7 +135,7 @@ export const syncEdgeValue = async (
     const reason = `${apiHostname} answered ${response.status} without JSON`
     console.error(printMessage(reason))
 
-    return { ok: false, reason }
+    return { ok: false, reason, kind: "retryable" }
   } catch (e) {
     const message = `GET ${apiHostname} failed`
     const reason =
@@ -126,10 +144,13 @@ export const syncEdgeValue = async (
         : e instanceof Error
           ? `${message}: ${e.message}`
           : message
+    // A refusal that only a config change can fix is fatal; everything else (a network
+    // stall, a 200 with an unparseable body) is worth retrying on the next request.
+    const kind: ApiRefusalKind = e instanceof APIError ? e.kind : "retryable"
 
     console.error(printMessage(reason))
 
-    return { ok: false, reason }
+    return { ok: false, reason, kind }
   } finally {
     clearTimeout(timeout)
   }
