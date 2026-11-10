@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.17.15](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.17.14...@appwarden/middleware@3.17.15) (2026-11-10)
+
+
+### Bug Fixes
+
+* **deps:** bump node-forge past the new advisories ([81f46c8](https://github.com/appwarden/middleware/commit/81f46c80af30db46b7cdace24628db6c57a87284))
+
 ## [3.17.12](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.17.11...@appwarden/middleware@3.17.12) (2026-10-28)
 
 
