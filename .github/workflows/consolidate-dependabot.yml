@@ -1,0 +1,512 @@
+name: Consolidate Dependabot PRs
+
+# Folds every open Dependabot PR into one branch and one pull request, then closes the
+# PRs whose commits made it in. Dependabot groups (`groups:` in `.github/dependabot.yml`)
+# are the usual answer, but a group only covers what a *future* run computes, and the ones
+# configured here are minor/patch only: it cannot reach PRs that are already open, a major
+# arrives on its own, and the npm and github-actions groups still leave two PRs. This is
+# the consolidation pass over whatever is open, across both ecosystems.
+#
+# Runnable by hand too — `workflow_dispatch` takes two optional inputs: `prs` restricts
+# the run to named PR numbers (empty means every open Dependabot PR), and `dry_run` merges
+# and reports without pushing, opening the PR, or closing anything. The scheduled run
+# passes neither and consolidates everything open.
+#
+# Deliberate behaviours, because each one is a way this could get it wrong:
+#
+#   * A PR that will not merge cleanly is **left open** and reported, never dropped. The two
+#     files every Dependabot PR rewrites are handled explicitly — `package.json` by a
+#     per-key three-way merge, `pnpm-lock.yaml` by regeneration — so a conflict that reaches
+#     that branch is a genuine disagreement about a file the workflow cannot resolve, and
+#     guessing which side to keep would silently discard a bump.
+#   * `pnpm-lock.yaml` is rebuilt from the merged manifests rather than merged, because a
+#     textually clean merge of it can still be a lockfile pnpm refuses.
+#   * Source PRs are closed **only after** the consolidated PR exists, so a failure on this
+#     run cannot lose a bump. Everything closed is recoverable from the consolidated branch,
+#     which is why the branch carries the previous batch forward rather than being rebuilt
+#     from `main` alone — see the merge step.
+#   * A PR that was already folded in last week and reopened shows up as "Already up to
+#     date", is counted as merged, and is closed again. Its content is in the branch.
+#
+# CI does not run on the pull request this workflow opens: GitHub does not start workflows
+# for events generated with the default `GITHUB_TOKEN`. Add a `DEPENDABOT_BATCH_TOKEN`
+# repository secret (a fine-grained PAT with `contents: write` and `pull-requests: write`)
+# and pushes to the branch will run Checks like any other PR. Without it the branch is
+# correct and reviewable, just unchecked until someone pushes to it.
+
+on:
+  schedule:
+    # Monday 18:00 UTC — after Dependabot's own weekly run (its default day is Monday, at a
+    # randomised time during the day), so the batch folds the PRs this week's run opened
+    # rather than only the ones left over from last week.
+    - cron: "0 18 * * 1"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Merge and report, but do not push the branch, open the PR, or close anything.
+        type: boolean
+        default: false
+      prs:
+        description: Comma-separated Dependabot PR numbers to consolidate (for example "1183,1190"). Leave empty for every open Dependabot PR.
+        type: string
+        default: ""
+
+# Least privilege for the job: push the branch, and read/close the source PRs.
+permissions:
+  contents: write
+  pull-requests: write
+
+# One consolidation at a time. Not cancelled in progress: a run that is halfway through the
+# merge loop holds the only copy of the merges it has done so far.
+concurrency:
+  group: consolidate-dependabot
+  cancel-in-progress: false
+
+env:
+  BASE_BRANCH: main
+  # Owned exclusively by this workflow, which is what makes the force-push safe: each run
+  # rebuilds the branch from `main` plus whatever is open now, rather than appending to a
+  # branch that has drifted.
+  CONSOLIDATED_BRANCH: automation/dependabot-batch
+  PR_TITLE: "chore(deps): consolidate this week's Dependabot updates"
+
+jobs:
+  consolidate:
+    name: Fold open Dependabot PRs into one
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout the base branch
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ env.BASE_BRANCH }}
+          # The merge loop needs a common ancestor for every Dependabot branch, so full
+          # history rather than the default single commit.
+          fetch-depth: 0
+          persist-credentials: true
+          token: ${{ secrets.DEPENDABOT_BATCH_TOKEN || secrets.GITHUB_TOKEN }}
+
+      # Only the lockfile-regeneration path needs a toolchain, and it needs the pnpm and Node
+      # `checks.yml` installs with, so a regenerated lockfile matches what Checks produces.
+      # Both come from the repo's own conventions: pnpm from the `packageManager` field, Node
+      # from the LTS line.
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6.1.0
+        with:
+          # Explicit rather than the action's default: nothing should be installed until the
+          # merged manifests are on disk.
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "lts/*"
+
+      - name: Collect the open Dependabot PRs
+        id: collect
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.DEPENDABOT_BATCH_TOKEN || secrets.GITHUB_TOKEN }}
+          # A manual run can name the PRs it wants; the scheduled run passes nothing. The
+          # value arrives as an env var rather than interpolated into this script, so a
+          # crafted input cannot become shell code.
+          REQUESTED_PRS: ${{ inputs.prs }}
+        run: |
+          set -euo pipefail
+
+          # `app/dependabot` is how `gh` spells the bot login, which is `dependabot[bot]`
+          # in the API.
+          gh pr list \
+            --state open \
+            --author app/dependabot \
+            --base "$BASE_BRANCH" \
+            --limit 100 \
+            --json number,title,headRefName,isDraft,url \
+            > /tmp/dependabot-prs.json
+
+          # Every token has to be a number: a typo must fail the run, not quietly
+          # consolidate a different set than the one asked for.
+          requested=""
+          for token in $(printf '%s' "$REQUESTED_PRS" | tr ',' ' '); do
+            case "$token" in
+              '' | *[!0-9]*)
+                echo "::error title=Invalid PR number::'$token' is not a PR number. Give a comma-separated list of numbers, or leave the input empty."
+                exit 1
+                ;;
+            esac
+            requested="$requested $token"
+          done
+
+          cp /tmp/dependabot-prs.json /tmp/selected.json
+          echo '[]' > /tmp/not-selected.json
+          wanted_json='[]'
+
+          if [ -n "$requested" ]; then
+            # shellcheck disable=SC2086
+            wanted_json=$(printf '%s\n' $requested | jq -R 'tonumber' | jq -s -c '.')
+            jq --argjson wanted "$wanted_json" \
+              '[.[] | select(.number as $n | $wanted | index($n) != null)]' \
+              /tmp/dependabot-prs.json > /tmp/selected.json
+            jq --argjson wanted "$wanted_json" \
+              '[.[] | select(.number as $n | ($wanted | index($n)) == null)]' \
+              /tmp/dependabot-prs.json > /tmp/not-selected.json
+
+            missing=$(jq -n --argjson wanted "$wanted_json" --slurpfile selected /tmp/selected.json \
+              '$wanted - ($selected[0] | map(.number))')
+            if [ "$(printf '%s' "$missing" | jq 'length')" -ne 0 ]; then
+              echo "::warning title=PRs not found::Not open Dependabot PRs against ${BASE_BRANCH}: $(printf '%s' "$missing" | jq -r 'join(", ")')"
+            fi
+          fi
+
+          # A draft is excluded: Dependabot does not open drafts, so a draft is a decision
+          # someone made about that PR, and folding it in would overturn it. Naming its
+          # number explicitly is the opposite decision, so a requested draft is included.
+          jq --argjson wanted "$wanted_json" \
+            '[.[] | select((.isDraft | not) or (.number as $n | $wanted | index($n) != null))]' \
+            /tmp/selected.json > /tmp/queue.json
+          jq --argjson wanted "$wanted_json" \
+            '[.[] | select(.isDraft and ((.number as $n | $wanted | index($n)) == null))]' \
+            /tmp/selected.json > /tmp/drafts.json
+
+          for list in queue drafts not-selected; do
+            jq -r '.[] | "\(.number)\t\(.title)"' "/tmp/${list}.json" > "/tmp/${list}.tsv"
+          done
+
+          count=$(wc -l < /tmp/queue.tsv | tr -d ' ')
+          echo "Found $count Dependabot PR(s) to consolidate, $(wc -l < /tmp/drafts.tsv | tr -d ' ') draft(s) skipped, $(wc -l < /tmp/not-selected.tsv | tr -d ' ') not selected."
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+
+      - name: Merge each PR into the consolidated branch
+        if: steps.collect.outputs.count != '0'
+        shell: bash
+        run: |
+          set -uo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git checkout -B "$CONSOLIDATED_BRANCH" "origin/$BASE_BRANCH"
+
+          # The branch is rebuilt from `main` on every run, so without this the batch PR that
+          # is still open from last week would be replaced by one holding only this week's
+          # PRs — and the updates it was the only record of were already closed at the
+          # source. Merging the previous tip keeps the branch append-only in content, which
+          # is what makes closing a source PR safe in the first place. A conflict here is
+          # fatal and happens before anything is pushed or closed.
+          if git fetch --no-tags origin \
+               "+refs/heads/${CONSOLIDATED_BRANCH}:refs/remotes/origin/${CONSOLIDATED_BRANCH}" 2>/dev/null; then
+            before=$(git rev-parse HEAD)
+            if ! git merge --no-ff -m "chore(deps): carry forward the previous consolidated batch" \
+                 "origin/${CONSOLIDATED_BRANCH}"; then
+              git merge --abort 2>/dev/null || true
+              echo "::error title=Carry-forward conflict::The previous consolidated batch conflicts with ${BASE_BRANCH}. Nothing was pushed and no PR was closed: resolve ${CONSOLIDATED_BRANCH} by hand, or delete it to drop those updates deliberately, then re-run."
+              exit 1
+            fi
+            [ "$(git rev-parse HEAD)" = "$before" ] || touch /tmp/carried-forward
+          fi
+          : > /tmp/included.tsv
+          # Seeded with everything the run deliberately did not take, so the report carries
+          # every PR it saw rather than only the ones it tried.
+          : > /tmp/skipped.tsv
+          while IFS=$'\t' read -r number title; do
+            printf '%s\t%s\t%s\n' "$number" "$title" "draft" >> /tmp/skipped.tsv
+          done < /tmp/drafts.tsv
+          while IFS=$'\t' read -r number title; do
+            printf '%s\t%s\t%s\n' "$number" "$title" "not selected for this manual run" >> /tmp/skipped.tsv
+          done < /tmp/not-selected.tsv
+
+          # Two Dependabot bumps three lines apart in one `package.json` conflict under git's
+          # line-based merge, and that is the common case rather than the exception: the
+          # dependency lines are alphabetical and every PR edits them in place. The correct
+          # unit for a JSON object is the key — each dependency is an independent decision —
+          # so `package.json` files get a three-way per-key merge driver.
+          #
+          # It is configured through `.git/info/attributes`, which is local to this checkout
+          # and never committed, so a developer's merge policy is untouched: this is a
+          # consolidation detail, not a repo-wide rule.
+          cat > "$RUNNER_TEMP/merge-package-json.mjs" <<'DRIVER'
+          import { readFileSync, writeFileSync } from "node:fs"
+
+          const [basePath, oursPath, theirsPath] = process.argv.slice(2)
+
+          const parse = (path) => {
+            try {
+              const raw = readFileSync(path, "utf8")
+              const indent = raw.match(/\n([ \t]+)"/)?.[1] ?? 2
+              return { value: JSON.parse(raw), indent, trailingNewline: raw.endsWith("\n") }
+            } catch {
+              return null
+            }
+          }
+
+          const base = parse(basePath)
+          const ours = parse(oursPath)
+          const theirs = parse(theirsPath)
+
+          // A side that is not valid JSON is not something to guess at: leave `ours` in place
+          // and exit non-zero so git reports a conflict for a human instead.
+          if (!ours || !theirs) process.exit(1)
+
+          const equal = (a, b) => JSON.stringify(a) === JSON.stringify(b)
+          const isObject = (value) => value !== null && typeof value === "object" && !Array.isArray(value)
+
+          // A missing key is `undefined`, which is how this merge spells a deletion.
+          function pick(baseValue, oursValue, theirsValue) {
+            if (equal(theirsValue, baseValue)) return oursValue
+            if (equal(oursValue, baseValue)) return theirsValue
+            if (equal(oursValue, theirsValue)) return oursValue
+            if (isObject(oursValue) && isObject(theirsValue)) {
+              return mergeObject(baseValue, oursValue, theirsValue)
+            }
+            // Both sides changed the same leaf, and Dependabot opens one PR per dependency,
+            // so this is a version choice rather than two edits to combine. The incoming PR
+            // is the one later in the queue, so it wins.
+            return theirsValue
+          }
+
+          function mergeObject(baseValue, oursValue, theirsValue) {
+            const baseObject = isObject(baseValue) ? baseValue : {}
+            const keys = [
+              ...Object.keys(oursValue),
+              ...Object.keys(theirsValue).filter((key) => !(key in oursValue)),
+            ]
+            const merged = {}
+            for (const key of keys) {
+              const value = pick(baseObject[key], oursValue[key], theirsValue[key])
+              if (value !== undefined) merged[key] = value
+            }
+            return merged
+          }
+
+          const merged = mergeObject(base?.value, ours.value, theirs.value)
+          const trailingNewline = ours.trailingNewline ? "\n" : ""
+          writeFileSync(oursPath, JSON.stringify(merged, null, ours.indent) + trailingNewline)
+          DRIVER
+
+          git config merge.jsonunion.name "package.json three-way key merge"
+          git config merge.jsonunion.driver "node $RUNNER_TEMP/merge-package-json.mjs %O %A %B"
+          printf '**/package.json merge=jsonunion\n' > .git/info/attributes
+
+          while IFS=$'\t' read -r number title; do
+            if ! git fetch --no-tags origin "pull/${number}/head:refs/remotes/origin/dependabot-pr-${number}"; then
+              printf '%s\t%s\t%s\n' "$number" "$title" "the head branch could not be fetched" >> /tmp/skipped.tsv
+              continue
+            fi
+
+            if git merge --no-ff -m "chore(deps): merge #${number} ${title}" \
+                 "origin/dependabot-pr-${number}" >/dev/null 2>&1; then
+              printf '%s\t%s\t%s\n' "$number" "$title" "merged" >> /tmp/included.tsv
+              continue
+            fi
+
+            conflicts=$(git diff --name-only --diff-filter=U | tr '\n' ' ')
+            if [ "${conflicts// /}" = "pnpm-lock.yaml" ]; then
+              # Keep the branch's lockfile for now — it is regenerated from the merged
+              # package.json files below — so the merge can complete and the next PR can
+              # be tried.
+              git checkout --ours -- pnpm-lock.yaml
+              git add pnpm-lock.yaml
+              git commit --no-edit >/dev/null
+              printf '%s\t%s\t%s\n' "$number" "$title" "merged, lockfile regenerated" >> /tmp/included.tsv
+            else
+              # Undo this PR's merge and leave the PR open: with no safe resolution for a
+              # hand-written conflict, including it would silently discard whichever bump
+              # it disagrees with. `reset` is the fallback for a merge that left no
+              # MERGE_HEAD to abort, which would otherwise strand the next iteration.
+              git merge --abort 2>/dev/null || git reset --hard HEAD
+              printf '%s\t%s\t%s\n' "$number" "$title" "conflicts in ${conflicts:-the branch}" >> /tmp/skipped.tsv
+            fi
+          done < /tmp/queue.tsv
+
+          echo "Merged: $(wc -l < /tmp/included.tsv | tr -d ' ')  Skipped: $(wc -l < /tmp/skipped.tsv | tr -d ' ')"
+
+      - name: Regenerate the lockfile
+        if: steps.collect.outputs.count != '0'
+        shell: bash
+        run: |
+          set -uo pipefail
+
+          if [ ! -s /tmp/included.tsv ]; then
+            echo "Nothing merged; nothing to regenerate."
+            exit 0
+          fi
+
+          # `pnpm-lock.yaml` is a function of the package.json files, not a document to merge:
+          # two textually compatible hunks can still leave a lockfile pnpm refuses, because
+          # every importer's snapshot has to agree with the whole tree. So the merged
+          # lockfile is discarded and rebuilt from the merged manifests.
+          git checkout "origin/$BASE_BRANCH" -- pnpm-lock.yaml
+
+          # Mirrors the npm config `checks.yml` installs with, so the regenerated lockfile
+          # matches what Checks produces. No registry auth line is needed: every dependency
+          # here resolves from the public npm registry.
+          cat > .npmrc <<NPMRC
+          audit=true
+          ignore-scripts=true
+          fund=false
+          NPMRC
+
+          if ! pnpm install --lockfile-only --ignore-scripts; then
+            # The consolidated PR still gets opened: a stale lockfile is a visible,
+            # mechanical fix for a human (`pnpm install`), while failing here would leave
+            # no PR and the source PRs unclosed for no gain. Restoring from HEAD puts back
+            # the lockfile the merges produced, so the branch is exactly what it would have
+            # been without this step rather than half-updated.
+            echo "::warning title=Lockfile regeneration failed::pnpm install --lockfile-only failed. The consolidated branch carries the pre-merge lockfile and must be fixed by hand."
+            git checkout HEAD -- pnpm-lock.yaml
+            exit 0
+          fi
+
+          git add pnpm-lock.yaml
+          if git diff --cached --quiet -- pnpm-lock.yaml; then
+            echo "Regenerated lockfile is identical to $BASE_BRANCH; nothing to commit."
+            exit 0
+          fi
+
+          git commit -m "chore(deps): regenerate pnpm-lock.yaml for the merged updates"
+
+      - name: Push the consolidated branch
+        id: push
+        if: steps.collect.outputs.count != '0'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ ! -s /tmp/included.tsv ]; then
+            echo "Nothing merged; no branch to push."
+            echo "pushed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if git diff --quiet "origin/$BASE_BRANCH...HEAD"; then
+            echo "The branch is identical to $BASE_BRANCH; no branch to push."
+            echo "pushed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            echo "Dry run: would push these commits to $CONSOLIDATED_BRANCH"
+            git log --oneline "origin/$BASE_BRANCH..HEAD"
+            echo "pushed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Force, because the workflow owns this branch and rebuilds it from `main` on every
+          # run. `--force-with-lease` needs a lease this job has not fetched.
+          git push --force origin "HEAD:refs/heads/$CONSOLIDATED_BRANCH"
+          echo "pushed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Open or update the consolidated pull request
+        id: pr
+        if: steps.push.outputs.pushed == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.DEPENDABOT_BATCH_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          {
+            echo "Every open Dependabot update folded into one branch, so the dependency bump"
+            echo "lands once instead of as one PR per package."
+            echo
+            if [ -f /tmp/carried-forward ]; then
+              echo "This branch also carries the previous consolidated batch, which has not merged"
+              echo "yet — its source PRs stay closed and recoverable from here."
+              echo
+            fi
+            echo "### Included"
+            echo
+            if [ -s /tmp/included.tsv ]; then
+              while IFS=$'\t' read -r number title note; do
+                echo "- #${number} ${title} — ${note}"
+              done < /tmp/included.tsv
+            else
+              echo "_none_"
+            fi
+            echo
+            if [ -s /tmp/skipped.tsv ]; then
+              echo "### Left open"
+              echo
+              echo "These PRs are unchanged and still open. A conflict here has to be resolved by"
+              echo "hand — usually by rebasing it once this PR has merged."
+              echo
+              while IFS=$'\t' read -r number title reason; do
+                echo "- #${number} ${title} — ${reason}"
+              done < /tmp/skipped.tsv
+              echo
+            fi
+            echo "_Rebuilt by \`.github/workflows/consolidate-dependabot.yml\` on $(date -u +%Y-%m-%d)._"
+          } > /tmp/pr-body.md
+
+          batch_pr=$(gh pr list \
+            --head "$CONSOLIDATED_BRANCH" \
+            --state open \
+            --json number \
+            --jq '.[0].number // empty')
+
+          if [ -n "$batch_pr" ]; then
+            # Last week's consolidated PR is still open: the force-push replaced its
+            # contents, so the body has to be regenerated to match.
+            gh pr edit "$batch_pr" --body-file /tmp/pr-body.md
+            echo "Updated #$batch_pr"
+          else
+            batch_pr=$(gh pr create \
+              --base "$BASE_BRANCH" \
+              --head "$CONSOLIDATED_BRANCH" \
+              --title "$PR_TITLE" \
+              --body-file /tmp/pr-body.md)
+            # `gh pr create` prints the URL; the number is what the close comments need.
+            batch_pr=$(gh pr view "$batch_pr" --json number --jq '.number')
+            echo "Opened #$batch_pr"
+          fi
+
+          echo "number=$batch_pr" >> "$GITHUB_OUTPUT"
+
+      - name: Close the source PRs
+        if: steps.pr.outputs.number != ''
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.DEPENDABOT_BATCH_TOKEN || secrets.GITHUB_TOKEN }}
+          BATCH_PR: ${{ steps.pr.outputs.number }}
+        run: |
+          set -uo pipefail
+
+          while IFS=$'\t' read -r number title note; do
+            message="Superseded by #${BATCH_PR}, which carries this update along with the rest of this week's Dependabot PRs. Reopen this PR (or rebase it) if #${BATCH_PR} is closed instead of merged."
+            if gh pr close "$number" --comment "$message"; then
+              echo "Closed #$number ($title)"
+            else
+              echo "::warning title=Could not close PR #${number}::gh pr close failed for #${number} (${title})."
+            fi
+          done < /tmp/included.tsv
+
+      - name: Summarise the run
+        if: always()
+        shell: bash
+        run: |
+          # The report survives a step that never ran, so a failed run still explains itself.
+          count() {
+            if [ -s "$1" ]; then wc -l < "$1" | tr -d ' '; else echo 0; fi
+          }
+
+          {
+            echo "## Consolidate Dependabot PRs"
+            echo
+            if [ -n "${PR_NUMBER:-}" ]; then
+              echo "- Consolidated PR: #${PR_NUMBER}"
+            else
+              echo "- Consolidated PR: none"
+            fi
+            echo "- Merged: $(count /tmp/included.tsv)"
+            echo "- Left open: $(count /tmp/skipped.tsv)"
+            if [ -s /tmp/skipped.tsv ]; then
+              echo
+              echo "| PR | Reason |"
+              echo "| --- | --- |"
+              while IFS=$'\t' read -r number title reason; do
+                echo "| #${number} ${title} | ${reason} |"
+              done < /tmp/skipped.tsv
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+        env:
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
