@@ -31,6 +31,10 @@ overrides:
   "fast-uri@<3.1.9": ">=3.1.9 <4.0.0"
   "fast-xml-parser@<5.7.0": ">=5.7.3"
   "flatted@<3.4.2": ">=3.4.2"
+  # glob 10.3.3 is pinned exactly by @node-minify/core (via @opennextjs/cloudflare) and sits
+  # inside GHSA-5j98-mcp5-4vw2, whose affected ranges are >=10.2.0 <10.5.0 and
+  # >=11.0.0 <11.1.0. 10.5.0 is the first patched release on the 10.x line.
+  "glob@>=10.2.0 <10.5.0": ">=10.5.0 <11"
   "h3@<1.15.6": ">=1.15.6"
   "h3@>=2.0.0-beta.0 <2.0.1-rc.18": ">=2.0.1-rc.22"
   "handlebars@<4.7.10": ">=4.7.10"
