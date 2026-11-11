@@ -53,7 +53,14 @@ export const deleteEdgeValue = async ({
       case "upstash": {
         const { hostname, password } = new URL(cacheUrl)
         const { Redis } = await import("@upstash/redis")
-        const redis = new Redis({ url: `https://${hostname}`, token: password })
+        // Pinned for the same reason as `get-lock-value.ts`: @upstash/redis 1.40.0 flipped
+        // the default from "base64" to false, so the wire format is a decision here rather
+        // than something an SDK bump can change.
+        const redis = new Redis({
+          url: `https://${hostname}`,
+          token: password,
+          responseEncoding: false,
+        })
         await redis.del(keyName)
         break
       }
