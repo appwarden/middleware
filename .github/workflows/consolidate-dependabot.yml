@@ -180,7 +180,7 @@ jobs:
         if: steps.collect.outputs.count != '0'
         shell: bash
         run: |
-          set -uo pipefail
+          set -euo pipefail
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
