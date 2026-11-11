@@ -253,4 +253,48 @@ describe("getLockValue", () => {
     )
     expect(printMessage).toHaveBeenCalled()
   })
+
+  it("should get lock value for upstash provider", async () => {
+    const mockLockValue: LockValueType = {
+      isLocked: 1,
+      isLockedTest: 0,
+      lastCheck: Date.now(),
+    }
+
+    // The real client returns the deserialized value, so the mock does too.
+    const mockGet = vi.fn().mockResolvedValue(mockLockValue)
+    const { Redis } = await import("@upstash/redis")
+    vi.mocked(Redis).mockImplementation(function (this: any) {
+      this.get = mockGet
+      return this
+    })
+
+    vi.mocked(LockValue.parse).mockReturnValue(mockLockValue)
+
+    const mockContext = createMockContext({
+      keyName: "appwarden-lock",
+      provider: "upstash",
+      cacheUrl: "redis://:secret@funky-roughy-44527.upstash.io:6379",
+    })
+
+    const result = await getLockValue(mockContext)
+
+    expect(result).toEqual({
+      lockValue: mockLockValue,
+      shouldDeleteEdgeValue: false,
+    })
+
+    // The response format is pinned, so an @upstash/redis default flip cannot change the
+    // shape of what this read path receives.
+    expect(Redis).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: "https://funky-roughy-44527.upstash.io",
+        responseEncoding: false,
+      }),
+    )
+
+    expect(mockGet).toHaveBeenCalledWith("appwarden-lock")
+    expect(LockValue.parse).toHaveBeenCalledWith(mockLockValue)
+    expect(consoleErrorSpy).not.toHaveBeenCalled()
+  })
 })

@@ -191,6 +191,7 @@ describe("deleteEdgeValue", () => {
     // Verify Redis was instantiated with correct parameters
     expect(Redis).toHaveBeenCalledWith({
       url: "https://funky-roughy-44527.upstash.io",
+      responseEncoding: false,
       token: "password",
     })
 
