@@ -29,9 +29,14 @@ export const getLockValue = async (
       case "upstash": {
         const { hostname, password } = new URL(context.cacheUrl)
         const { Redis } = await import("@upstash/redis")
+        // `responseEncoding` is pinned rather than inherited: @upstash/redis 1.40.0 flipped
+        // its default from "base64" to false, and this read path must not change shape
+        // silently on an SDK bump. false requests plain JSON, which the SDK now documents
+        // as the correct setting.
         const redis = new Redis({
           url: `https://${hostname}`,
           token: password,
+          responseEncoding: false,
         })
 
         const redisValue = await redis.get<LockValueType | null>(
