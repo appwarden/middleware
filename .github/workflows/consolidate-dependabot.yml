@@ -21,6 +21,14 @@ name: Consolidate Dependabot PRs
 #     guessing which side to keep would silently discard a bump.
 #   * `pnpm-lock.yaml` is rebuilt from the merged manifests rather than merged, because a
 #     textually clean merge of it can still be a lockfile pnpm refuses.
+#   * The branch stays a **linear** series of commits on top of `main`. The repository allows
+#     only "Rebase and merge" (`allow_merge_commit` and `allow_squash_merge` are off), and a
+#     branch carrying `--no-ff` merge commits cannot be rebased: the Dependabot commits
+#     underneath them patch a `pnpm-lock.yaml` that has since moved on `main`, so the replay
+#     conflicts. GitHub then refuses the merge with "This branch cannot be rebased due to
+#     conflicts" while still reporting `mergeable: clean`. Every step that would otherwise
+#     merge therefore **squashes**, which keeps one commit per source PR and one parent per
+#     commit.
 #   * Source PRs are closed **only after** the consolidated PR exists, so a failure on this
 #     run cannot lose a bump. Everything closed is recoverable from the consolidated branch,
 #     which is why the branch carries the previous batch forward rather than being rebuilt
@@ -190,17 +198,28 @@ jobs:
           # The branch is rebuilt from `main` on every run, so without this the batch PR that
           # is still open from last week would be replaced by one holding only this week's
           # PRs — and the updates it was the only record of were already closed at the
-          # source. Merging the previous tip keeps the branch append-only in content, which
-          # is what makes closing a source PR safe in the first place. A conflict here is
-          # fatal and happens before anything is pushed or closed.
+          # source. Carrying the previous tip forward keeps the branch append-only in
+          # content, which is what makes closing a source PR safe in the first place. A
+          # conflict here is fatal and happens before anything is pushed or closed.
+          #
+          # Squashed rather than merged: a `--no-ff` merge commit would put a merge in the
+          # branch, and this repository allows only "Rebase and merge", which cannot rebase
+          # one. `--squash` lands the same content as a single-parent commit, so the branch
+          # stays linear.
           if git fetch --no-tags origin \
                "+refs/heads/${CONSOLIDATED_BRANCH}:refs/remotes/origin/${CONSOLIDATED_BRANCH}" 2>/dev/null; then
             before=$(git rev-parse HEAD)
-            if ! git merge --no-ff -m "chore(deps): carry forward the previous consolidated batch" \
-                 "origin/${CONSOLIDATED_BRANCH}"; then
-              git merge --abort 2>/dev/null || true
+            if ! git merge --squash "origin/${CONSOLIDATED_BRANCH}"; then
+              git merge --abort 2>/dev/null || git reset --hard HEAD
               echo "::error title=Carry-forward conflict::The previous consolidated batch conflicts with ${BASE_BRANCH}. Nothing was pushed and no PR was closed: resolve ${CONSOLIDATED_BRANCH} by hand, or delete it to drop those updates deliberately, then re-run."
               exit 1
+            fi
+            # `--squash` stages the carried content without committing it, and "Already up to
+            # date" stages nothing — that is the previous batch already being in `main`.
+            if git diff --cached --quiet; then
+              :
+            else
+              git commit -m "chore(deps): carry forward the previous consolidated batch" >/dev/null
             fi
             [ "$(git rev-parse HEAD)" = "$before" ] || touch /tmp/carried-forward
           fi
@@ -293,9 +312,17 @@ jobs:
               continue
             fi
 
-            if git merge --no-ff -m "chore(deps): merge #${number} ${title}" \
-                 "origin/dependabot-pr-${number}" >/dev/null 2>&1; then
-              printf '%s\t%s\t%s\n' "$number" "$title" "merged" >> /tmp/included.tsv
+            # Squashed rather than merged, for the same reason as the carry-forward above:
+            # the branch has to stay linear to be mergeable under a rebase-only policy.
+            if git merge --squash "origin/dependabot-pr-${number}" >/dev/null 2>&1; then
+              # "Already up to date" stages nothing, which is the PR having been folded in
+              # on an earlier run and reopened: nothing to commit, and nothing new to report.
+              if git diff --cached --quiet; then
+                printf '%s\t%s\t%s\n' "$number" "$title" "already up to date" >> /tmp/included.tsv
+              else
+                git commit -m "chore(deps): merge #${number} ${title}" >/dev/null
+                printf '%s\t%s\t%s\n' "$number" "$title" "merged" >> /tmp/included.tsv
+              fi
               continue
             fi
 
@@ -306,13 +333,13 @@ jobs:
               # be tried.
               git checkout --ours -- pnpm-lock.yaml
               git add pnpm-lock.yaml
-              git commit --no-edit >/dev/null
+              git commit -m "chore(deps): merge #${number} ${title}" >/dev/null
               printf '%s\t%s\t%s\n' "$number" "$title" "merged, lockfile regenerated" >> /tmp/included.tsv
             else
               # Undo this PR's merge and leave the PR open: with no safe resolution for a
               # hand-written conflict, including it would silently discard whichever bump
-              # it disagrees with. `reset` is the fallback for a merge that left no
-              # MERGE_HEAD to abort, which would otherwise strand the next iteration.
+              # it disagrees with. `reset` is the fallback because a squashed merge leaves
+              # no MERGE_HEAD to abort, which would otherwise strand the next iteration.
               git merge --abort 2>/dev/null || git reset --hard HEAD
               printf '%s\t%s\t%s\n' "$number" "$title" "conflicts in ${conflicts:-the branch}" >> /tmp/skipped.tsv
             fi
@@ -376,6 +403,16 @@ jobs:
             echo "Nothing merged; no branch to push."
             echo "pushed=false" >> "$GITHUB_OUTPUT"
             exit 0
+          fi
+
+          # A merge commit anywhere in the branch makes it un-rebaseable, and under this
+          # repository's rebase-only policy an un-rebaseable branch can never be merged —
+          # GitHub still calls it `mergeable: clean` and only refuses at the merge itself.
+          # Every step above squashes, so this is a regression guard, not an expected state.
+          if [ -n "$(git rev-list --merges "origin/${BASE_BRANCH}..HEAD")" ]; then
+            echo "::error title=Non-linear branch::${CONSOLIDATED_BRANCH} carries a merge commit, which this repository cannot merge (rebase-only). Nothing was pushed and no PR was closed: rebuild ${CONSOLIDATED_BRANCH} as a linear series, then re-run."
+            echo "pushed=false" >> "$GITHUB_OUTPUT"
+            exit 1
           fi
 
           if git diff --quiet "origin/$BASE_BRANCH...HEAD"; then
