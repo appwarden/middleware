@@ -1,11 +1,11 @@
 ---
 name: appwarden-middleware-api-token
 description: >
-  Create, rotate, and revoke Appwarden API tokens in the dashboard at Settings > Security. Store the token as a secret in Cloudflare, Vercel, or GitHub Actions, and map it to the APPWARDEN_API_TOKEN environment variable used by @appwarden/middleware. Load this skill when a user needs an API token or is troubleshooting token-related errors.
+  Create, rotate, and revoke Appwarden API tokens in the dashboard at Settings > Security, and branch on the refusal codes the API returns. Store the token as a secret in Cloudflare, Vercel, or GitHub Actions, and map it to the APPWARDEN_API_TOKEN environment variable used by @appwarden/middleware. Load this skill when a user needs an API token or is troubleshooting token-related errors.
 metadata:
   type: core
   library: "@appwarden/middleware"
-  library_version: "3.17.4"
+  library_version: "3.17.15"
 sources:
   - "appwarden/appwarden-core-b:websites/appwarden-io/docs/src/content/docs/docs/guides/api-token-management.mdx"
   - "appwarden/middleware:src/schemas/helpers.ts"
@@ -60,10 +60,28 @@ env:
   APPWARDEN_API_TOKEN: ${{ secrets.APPWARDEN_API_TOKEN }}
 ```
 
+### Refusal codes
+
+Every API refusal carries a machine-readable `error.code`, so automation can branch on the cause instead of the message text.
+
+| Code                    | Status | Meaning                                                                                     |
+| ----------------------- | ------ | ------------------------------------------------------------------------------------------- |
+| `TOKEN_EXPIRED`         | `401`  | The token's expiry has passed. Replace it.                                                  |
+| `INSUFFICIENT_SCOPE`    | `403`  | The token lacks the permission the route requires, e.g. `read:domains`.                     |
+| `DOMAIN_REQUIRED`       | `403`  | The call named no domain and the token is restricted to a list, so the API cannot pick one. |
+| `DOMAIN_NOT_PERMITTED`  | `403`  | The call named a domain outside the token's selection.                                      |
+| `SUBSCRIPTION_REQUIRED` | `402`  | The organization has no live subscription. The token is fine.                               |
+
+The two domain codes are distinct on purpose: `DOMAIN_REQUIRED` is a gap in the request, and `DOMAIN_NOT_PERMITTED` means the credential does not reach that domain. Only the second needs a dashboard change.
+
+`DOMAIN_REQUIRED` is reachable only on `GET /v1/appwarden/config`, whose `?fqdn` is optional. `/v1/appwarden/mode` and `/v1/appwarden/status` require the domain in the request body, so omitting it there is a validation error (`422`), not a `403`.
+
+**View Domains** is forced on every token the dashboard creates and cannot be cleared, because the middleware polls `/v1/appwarden/status` with the token. A token minted through the API without `read:domains` is still valid, but it cannot call the status route itself — grant the scope if the token is meant to poll.
+
 ### Rotate or revoke a token
 
 1. Go to Settings > Security > API Token.
-2. Delete the existing token. Deleted tokens remain valid for 5 minutes to allow safe replacement.
+2. Delete the existing token. Deletion clears the cached entry the middleware service holds for that token, so it usually stops working at once — the old token only outlives the deletion while that cache entry does.
 3. Create a new token and copy it immediately.
 4. Update the secret in every environment that uses the old token.
 5. Verify the middleware heartbeat is clean after the swap.
@@ -158,7 +176,7 @@ An expired token is simply old; checking it against the dashboard confirms nothi
 
 ### HIGH Reading a scope or domain refusal as "wait a few minutes"
 
-A `403` with `error.code: "INSUFFICIENT_SCOPE"` means the token does not carry `read:domains` at all, so it can never read any domain. A `403` with `error.code: "DOMAIN_NOT_PERMITTED"` means the token's domain allowlist does not include this domain. Neither resolves by waiting — only a change in the dashboard does. Only an uncoded `403` is the unverified-domain state that resolves on its own ("Verifying domain ownership... this will only take a few minutes.").
+A `403` with `error.code: "INSUFFICIENT_SCOPE"` means the token does not carry `read:domains` at all, so it can never read any domain. A `403` with `error.code: "DOMAIN_NOT_PERMITTED"` means the token's domain allowlist does not include this domain, and a `403` with `error.code: "DOMAIN_REQUIRED"` means the call named no domain at all. None of them resolves by waiting — only a change in the dashboard or the request does. Only an uncoded `403` is the unverified-domain state that resolves on its own ("Verifying domain ownership... this will only take a few minutes.").
 
 Wrong:
 
@@ -170,12 +188,13 @@ Correct:
 
 ```text
 // 403 INSUFFICIENT_SCOPE: grant the token the read:domains scope at Settings > Security
+// 403 DOMAIN_REQUIRED: name the domain in the request (?fqdn= for /v1/appwarden/config)
 // 403 DOMAIN_NOT_PERMITTED: add this domain to the token's allowlist at Settings > Security
 ```
 
 ### HIGH Treating a subscription refusal as a token problem
 
-A `402` with `error.code: "SUBSCRIPTION_REQUIRED"` means the organization's billing is not live. The token is fine.
+A `402` with `error.code: "SUBSCRIPTION_REQUIRED"` means the organization's billing is not live. The token is fine. This refusal comes from every `/v1/appwarden/*` route, and while it lasts the deployed middleware stops enforcing lock and unlock.
 
 Wrong:
 
