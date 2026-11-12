@@ -1,17 +1,18 @@
 ---
 name: appwarden-middleware-get-started
 description: >
-  Install and minimally configure @appwarden/middleware for a Cloudflare or Vercel project. Covers package installation, creating an API token, wiring middleware with debug: true, verifying the heartbeat endpoint, and switching debug off after confirming the setup. Load this skill when a user is adding Appwarden to a new project for the first time.
+  Install and minimally configure @appwarden/middleware for a Cloudflare or Vercel project. Covers package installation, the live-subscription prerequisite, creating an API token, wiring middleware with debug: true, verifying the heartbeat endpoint, and switching debug off after confirming the setup. Load this skill when a user is adding Appwarden to a new project for the first time.
 metadata:
   type: lifecycle
   library: "@appwarden/middleware"
-  library_version: "3.17.4"
+  library_version: "3.17.15"
 requires: []
 sources:
   - "appwarden/middleware:README.md"
   - "appwarden/middleware:src/index.ts"
   - "appwarden/middleware:src/schemas/use-appwarden.ts"
   - "appwarden/middleware:src/schemas/middleware-options.ts"
+  - "appwarden/appwarden-core-b:websites/appwarden-io/docs/src/content/docs/docs/guides/billing-and-subscription.mdx"
 ---
 
 # Appwarden Middleware — Get Started
@@ -26,13 +27,15 @@ Install `@appwarden/middleware` and wire it into a Cloudflare Worker or Vercel E
 npm install @appwarden/middleware
 ```
 
-2. Create an API token in the Appwarden dashboard at `https://use.appwarden.io/?to=/settings/security` (Settings > Security). Copy it immediately — it is shown only once.
+2. Confirm the organization has a live subscription — a trial in progress counts. The middleware calls `/v1/appwarden/*`, and without a subscription those routes answer `402` with `error.code: "SUBSCRIPTION_REQUIRED"` and the middleware stops enforcing lock and unlock. An owner or admin starts the trial at `https://use.appwarden.io/?to=/settings/billing` (Settings > Billing); starting it needs **Administer Billing**.
 
-3. Store the token as a secret:
+3. Create an API token in the Appwarden dashboard at `https://use.appwarden.io/?to=/settings/security` (Settings > Security). Copy it immediately — it is shown only once.
+
+4. Store the token as a secret:
    - Cloudflare: `wrangler secret put APPWARDEN_API_TOKEN` (see https://developers.cloudflare.com/workers/configuration/secrets/)
    - Vercel: add `APPWARDEN_API_TOKEN` to Project Settings > Environment Variables
 
-4. Wire the middleware with `debug: true` during first setup.
+5. Wire the middleware with `debug: true` during first setup.
 
 ## How to Choose Cloudflare vs Vercel
 
@@ -281,6 +284,24 @@ getAppwardenConfiguration(appwardenConfig, {
 ```
 
 The `appwardenApiHostname` override is reserved for internal testing. Agents wiring adapter config should never provide it.
+
+### HIGH Assuming setup is broken when the site stops honouring quarantine
+
+Wrong:
+
+```text
+// The middleware deploys cleanly, the heartbeat is clean, but lock and unlock do nothing
+// Rotate the API token and re-check the schema
+```
+
+Correct:
+
+```text
+// Check Settings > Billing first: a cancelled or missing subscription makes
+// /v1/appwarden/* answer 402 SUBSCRIPTION_REQUIRED and the middleware stops enforcing
+```
+
+A `402` is a billing state, not a wiring fault. The status route refuses, so the middleware cannot refresh the lock state it enforces, and every other dashboard control that changes something is disabled too. Restoring the subscription clears it without a redeploy.
 
 ### MEDIUM Leaving debug disabled during initial setup
 
