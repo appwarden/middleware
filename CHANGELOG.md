@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file. See
 [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [3.17.16](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.17.15...@appwarden/middleware@3.17.16) (2026-11-12)
+
+
+### Bug Fixes
+
+* **deps:** override glob past GHSA-5j98-mcp5-4vw2 ([b1866b8](https://github.com/appwarden/middleware/commit/b1866b8762a69e88afe2c191331f92268fb84773))
+* **deps:** repair the upstash response encoding, node floor and vercel test ([0172127](https://github.com/appwarden/middleware/commit/01721270b6d3e4b8d2412769adbac693e9b7e150))
+
 ## [3.17.15](https://github.com/appwarden/middleware/compare/@appwarden/middleware@3.17.14...@appwarden/middleware@3.17.15) (2026-11-10)
 
 
