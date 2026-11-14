@@ -5,7 +5,7 @@ description: >
 metadata:
   type: framework
   library: "@appwarden/middleware"
-  library_version: "3.17.4"
+  library_version: "3.17.15"
 requires:
   - "appwarden-middleware-get-started"
 sources:

@@ -1,11 +1,11 @@
 ---
 name: appwarden-middleware-onboard-organization
 description: >
-  Onboard an organization to Appwarden: sign in via Discord, connect the Appwarden bot, configure Discord command permissions, create a domain configuration repository from the template, install the Appwarden GitHub App with least privilege, and select the repository in the dashboard. Load this skill when a user is setting up Appwarden for the first time; middleware can be installed before or during onboarding, but onboarding must be completed to finish installation because the API token is created in the dashboard.
+  Onboard an organization to Appwarden: clear the terms and trial gates, sign in via Discord, connect the Appwarden bot, configure Discord command permissions, create a domain configuration repository from the template, install the Appwarden GitHub App with least privilege, and select the repository in the dashboard. Load this skill when a user is setting up Appwarden for the first time; middleware can be installed before or during onboarding, but onboarding must be completed to finish installation because the API token is created in the dashboard.
 metadata:
   type: lifecycle
   library: "@appwarden/middleware"
-  library_version: "3.17.4"
+  library_version: "3.17.15"
 sources:
   - "appwarden/appwarden-core-b:websites/appwarden-io/docs/src/content/docs/docs/getting-started/organization-onboarding.mdx"
 ---
@@ -13,6 +13,20 @@ sources:
 # Appwarden Middleware — Onboard Your Organization
 
 Connect your Discord server, GitHub organization, and a domain configuration repository to Appwarden. You can install `@appwarden/middleware` before or during this onboarding flow, but you must complete onboarding before you can create a valid API token in the dashboard and finish the installation.
+
+## Gates before the dashboard opens
+
+A new organization meets two gates on the first sign-in, before any of the setup steps below. Both appear automatically and neither can be skipped.
+
+### Accept the Terms of Service
+
+Appwarden asks you to confirm that you have read and agree to the Terms of Service and Privacy Policy, and records the acceptance together with the version accepted. The screen reappears only when those documents change. Tick the agreement checkbox on the **Accept Terms of Service** page and click **Continue**; Appwarden returns you to whatever you were opening.
+
+### Start the trial
+
+Appwarden is a paid subscription with a 14-day free trial, and the rest of the dashboard stays closed until an owner or admin starts it. Everyone else sees **Waiting for an admin**, and the plan picker is unavailable to them. Viewing billing needs **View Billing**; starting the trial, opening the billing portal, and changing anything about the subscription need **Administer Billing**.
+
+A subscription in good standing — including one inside its trial — is also what makes the API usable. Without it, every `/v1/appwarden/*` route the middleware calls answers `402` with `error.code: "SUBSCRIPTION_REQUIRED"`, so the middleware on your site stops enforcing lock and unlock until billing is restored.
 
 ## Setup
 
@@ -66,6 +80,23 @@ Make the repository private and grant access only to the team that manages domai
 Return to `https://use.appwarden.io/?to=/`. In the organization onboarding flow, select the domain configuration repository from the list. The dashboard is not fully functional until this step is completed.
 
 ## Common Mistakes
+
+### HIGH Waiting on a closed dashboard because no owner or admin started the subscription
+
+Wrong:
+
+```text
+// The whole dashboard is read-only and the plan picker is disabled; treat it as a bug
+```
+
+Correct:
+
+```text
+// Ask an owner or admin to open Settings > Billing and click Start 14-day Trial
+// Non-admins see "Waiting for an admin" until checkout completes
+```
+
+The dashboard is gated on a live subscription, not on onboarding progress. Starting the trial needs **Administer Billing**, so a security engineer without that permission cannot clear the gate — and cannot create a working API token either, because the middleware's `/v1/appwarden/*` calls answer `402 SUBSCRIPTION_REQUIRED`.
 
 ### HIGH Installing the GitHub App directly from GitHub instead of through the Appwarden dashboard
 
@@ -149,7 +180,7 @@ The Appwarden dashboard does not know which repository to sync until it is expli
 
 ## Next Steps
 
-Onboarding can be completed before, during, or after installing `@appwarden/middleware`. To finish the installation, create an API token in the dashboard at `https://use.appwarden.io/?to=/settings/security` once onboarding is complete.
+Onboarding can be completed before, during, or after installing `@appwarden/middleware`. To finish the installation, create an API token in the dashboard at `https://use.appwarden.io/?to=/settings/security` once onboarding is complete and the subscription is live.
 
 See also: `appwarden-middleware-get-started` — install and configure middleware.
 See also: `appwarden-middleware-api-token` — create and manage API tokens.
