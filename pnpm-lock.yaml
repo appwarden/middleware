@@ -222,7 +222,7 @@ importers:
         version: 1.41.0
       '@vercel/edge-config':
         specifier: ^1.5.1
-        version: 1.5.1(next@16.4.6(@babel/core@7.29.7(supports-color@10.2.2))(@playwright/test@1.65.0)(@types/node@26.6.6)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))
+        version: 1.5.1(next@16.4.6(@babel/core@7.29.7(supports-color@10.2.2))(@playwright/test@1.65.1)(@types/node@26.6.6)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))
       acorn:
         specifier: ^8.19.0
         version: 8.19.0
@@ -250,10 +250,10 @@ importers:
         version: 12.9.1(supports-color@10.2.2)
       '@opennextjs/cloudflare':
         specifier: ^1.20.16
-        version: 1.20.16(diff@9.0.0)(next@16.4.6(@babel/core@7.29.7(supports-color@10.2.2))(@playwright/test@1.65.0)(@types/node@26.6.6)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(supports-color@10.2.2)(wrangler@4.160.0(@types/node@26.6.6))
+        version: 1.20.16(diff@9.0.0)(next@16.4.6(@babel/core@7.29.7(supports-color@10.2.2))(@playwright/test@1.65.1)(@types/node@26.6.6)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(supports-color@10.2.2)(wrangler@4.160.0(@types/node@26.6.6))
       '@playwright/test':
-        specifier: ^1.64.1
-        version: 1.65.0
+        specifier: ^1.65.1
+        version: 1.65.1
       '@semantic-release/changelog':
         specifier: ^7.0.0
         version: 7.0.0(semantic-release@26.0.1(supports-color@10.2.2))
@@ -301,16 +301,16 @@ importers:
         version: 17.6.0
       next:
         specifier: ^16.4.5
-        version: 16.4.6(@babel/core@7.29.7(supports-color@10.2.2))(@playwright/test@1.65.0)(@types/node@26.6.6)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        version: 16.4.6(@babel/core@7.29.7(supports-color@10.2.2))(@playwright/test@1.65.1)(@types/node@26.6.6)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       postcss:
         specifier: ^8.5.32
         version: 8.5.32
       prettier:
-        specifier: ^3.9.10
-        version: 3.9.10
+        specifier: ^3.10.1
+        version: 3.10.1
       prettier-plugin-organize-imports:
         specifier: ^4.3.0
-        version: 4.3.0(prettier@3.9.10)(typescript@5.9.3)
+        version: 4.3.0(prettier@3.10.1)(typescript@5.9.3)
       semantic-release:
         specifier: ^26.0.1
         version: 26.0.1(supports-color@10.2.2)
@@ -2146,8 +2146,8 @@ packages:
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
     engines: {node: '>=14'}
 
-  '@playwright/test@1.65.0':
-    resolution: {integrity: sha512-iGURLGuKDLakSEl7Pgfv8h7f+XLT+V861Wfhz0zlEl5nyFuKUopdkFBPKqTllTUp06aOwPuH8iuUEb3yp3MpbQ==}
+  '@playwright/test@1.65.1':
+    resolution: {integrity: sha512-y+NCIRm2LvY4slUVWvGh1nujJ8RF/hEisIsq2mtUPgdQC4L701bq5hZGMhrpeXjACvwvO9tj5dJqhvM6TP9lbw==}
     engines: {node: '>=20'}
     hasBin: true
 
@@ -5866,13 +5866,13 @@ packages:
   pkg-types@2.3.1:
     resolution: {integrity: sha512-y+ichcgc2LrADuhLNAx8DFjVfgz91pRxfZdI3UDhxHvcVEZsenLO+7XaU5vOp0u/7V/wZ+plyuQxtrDlZJ+yeg==}
 
-  playwright-core@1.65.0:
-    resolution: {integrity: sha512-vNSKgH6YqtN7cdT/L334zo0a+YwkrpicyrHJlWWPIm/Q+Nn2SWInil01oT0mbu96U4GgoRtCYQD9CzJQgju+lA==}
+  playwright-core@1.65.1:
+    resolution: {integrity: sha512-hqPpz7blSMPxWVdoeE1yiBSzXsKiVOd2k+kjCvmUywD2GPO2Dd9HfcWnq9NN0GHbNZDFgZ9JfBFr+X5/BLo0qw==}
     engines: {node: '>=20'}
     hasBin: true
 
-  playwright@1.65.0:
-    resolution: {integrity: sha512-F3AMWcR44qMBt4kq+6Kb6mX7bjGXshktKFOPULd7reED6ZJWevjbNRqysP7q+AATE9kdPEZBibex1BYsvpVoeA==}
+  playwright@1.65.1:
+    resolution: {integrity: sha512-vJ1FuoOrNwOKHUIVEvSt3jT1L+wjjDpwhwIstKtfvTh8XIG4FG4bIFuvNdMxi81LGfAhUgUZleVFaOLY4RIUUw==}
     engines: {node: '>=20'}
     hasBin: true
 
@@ -5916,8 +5916,8 @@ packages:
       vue-tsc:
         optional: true
 
-  prettier@3.9.10:
-    resolution: {integrity: sha512-skGHTH1Yb9QvaTC4hWnRTzEYtCpApF0UMBPz+t/0ZPzP8ihefo/btKd+QA7pUE0fEwA1SbS/NmhyEcstdXOIdA==}
+  prettier@3.10.1:
+    resolution: {integrity: sha512-70vp3ZUYoPlFbF9uiTdXHUUCGEIp7d4+6p+8DYbkm2jP7x/3i/paXVF6dopSI3zd/CEitrZN1rc4i85xWmmXlg==}
     engines: {node: '>=14'}
     hasBin: true
 
@@ -9276,7 +9276,7 @@ snapshots:
 
   '@oozcitak/util@8.3.8': {}
 
-  '@opennextjs/aws@4.1.15(diff@9.0.0)(next@16.4.6(@babel/core@7.29.7(supports-color@10.2.2))(@playwright/test@1.65.0)(@types/node@26.6.6)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(supports-color@10.2.2)':
+  '@opennextjs/aws@4.1.15(diff@9.0.0)(next@16.4.6(@babel/core@7.29.7(supports-color@10.2.2))(@playwright/test@1.65.1)(@types/node@26.6.6)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(supports-color@10.2.2)':
     dependencies:
       '@ast-grep/napi': 0.45.3
       '@aws-sdk/client-cloudfront': 3.984.0
@@ -9292,7 +9292,7 @@ snapshots:
       cookie: 1.1.1
       esbuild: 0.28.2
       express: 5.2.1(supports-color@10.2.2)
-      next: 16.4.6(@babel/core@7.29.7(supports-color@10.2.2))(@playwright/test@1.65.0)(@types/node@26.6.6)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      next: 16.4.6(@babel/core@7.29.7(supports-color@10.2.2))(@playwright/test@1.65.1)(@types/node@26.6.6)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       path-to-regexp: 6.3.0
       urlpattern-polyfill: 10.1.0
       yaml: 2.9.1
@@ -9301,17 +9301,17 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@opennextjs/cloudflare@1.20.16(diff@9.0.0)(next@16.4.6(@babel/core@7.29.7(supports-color@10.2.2))(@playwright/test@1.65.0)(@types/node@26.6.6)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(supports-color@10.2.2)(wrangler@4.160.0(@types/node@26.6.6))':
+  '@opennextjs/cloudflare@1.20.16(diff@9.0.0)(next@16.4.6(@babel/core@7.29.7(supports-color@10.2.2))(@playwright/test@1.65.1)(@types/node@26.6.6)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(supports-color@10.2.2)(wrangler@4.160.0(@types/node@26.6.6))':
     dependencies:
       '@ast-grep/napi': 0.45.3
       '@dotenvx/dotenvx': 2.38.2
-      '@opennextjs/aws': 4.1.15(diff@9.0.0)(next@16.4.6(@babel/core@7.29.7(supports-color@10.2.2))(@playwright/test@1.65.0)(@types/node@26.6.6)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(supports-color@10.2.2)
+      '@opennextjs/aws': 4.1.15(diff@9.0.0)(next@16.4.6(@babel/core@7.29.7(supports-color@10.2.2))(@playwright/test@1.65.1)(@types/node@26.6.6)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(supports-color@10.2.2)
       ci-info: 4.4.0
       cloudflare: 4.5.0
       comment-json: 4.6.2
       enquirer: 2.4.1
       glob: 13.0.6
-      next: 16.4.6(@babel/core@7.29.7(supports-color@10.2.2))(@playwright/test@1.65.0)(@types/node@26.6.6)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      next: 16.4.6(@babel/core@7.29.7(supports-color@10.2.2))(@playwright/test@1.65.1)(@types/node@26.6.6)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       ts-tqdm: 0.8.6
       wrangler: 4.160.0(@types/node@26.6.6)
       yargs: 18.2.0
@@ -9399,9 +9399,9 @@ snapshots:
   '@pkgjs/parseargs@0.11.0':
     optional: true
 
-  '@playwright/test@1.65.0':
+  '@playwright/test@1.65.1':
     dependencies:
-      playwright: 1.65.0
+      playwright: 1.65.1
 
   '@pnpm/config.env-replace@1.1.0': {}
 
@@ -10346,7 +10346,7 @@ snapshots:
       '@tanstack/router-core': 1.131.50
       '@tanstack/router-utils': 1.131.2(supports-color@10.2.2)
       '@tanstack/virtual-file-routes': 1.131.2
-      prettier: 3.9.10
+      prettier: 3.10.1
       recast: 0.23.11
       source-map: 0.7.6
       tsx: 4.22.4
@@ -10362,7 +10362,7 @@ snapshots:
       '@tanstack/virtual-file-routes': 1.162.0
       jiti: 2.7.0
       magic-string: 0.30.21
-      prettier: 3.9.10
+      prettier: 3.10.1
       zod: 4.6.7
     transitivePeerDependencies:
       - supports-color
@@ -10920,11 +10920,11 @@ snapshots:
     dependencies:
       execa: 5.1.1
 
-  '@vercel/edge-config@1.5.1(next@16.4.6(@babel/core@7.29.7(supports-color@10.2.2))(@playwright/test@1.65.0)(@types/node@26.6.6)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))':
+  '@vercel/edge-config@1.5.1(next@16.4.6(@babel/core@7.29.7(supports-color@10.2.2))(@playwright/test@1.65.1)(@types/node@26.6.6)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))':
     dependencies:
       '@vercel/global-config-fs': 0.1.0
     optionalDependencies:
-      next: 16.4.6(@babel/core@7.29.7(supports-color@10.2.2))(@playwright/test@1.65.0)(@types/node@26.6.6)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      next: 16.4.6(@babel/core@7.29.7(supports-color@10.2.2))(@playwright/test@1.65.1)(@types/node@26.6.6)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
 
   '@vercel/functions@3.11.1(@aws-sdk/credential-provider-web-identity@3.972.78)(ws@8.21.0)':
     dependencies:
@@ -13072,7 +13072,7 @@ snapshots:
 
   nerf-dart@1.0.0: {}
 
-  next@16.4.6(@babel/core@7.29.7(supports-color@10.2.2))(@playwright/test@1.65.0)(@types/node@26.6.6)(react-dom@19.2.7(react@19.2.7))(react@19.2.7):
+  next@16.4.6(@babel/core@7.29.7(supports-color@10.2.2))(@playwright/test@1.65.1)(@types/node@26.6.6)(react-dom@19.2.7(react@19.2.7))(react@19.2.7):
     dependencies:
       '@next/env': 16.4.6
       '@swc/helpers': 0.5.23
@@ -13091,7 +13091,7 @@ snapshots:
       '@next/swc-linux-x64-musl': 16.4.6
       '@next/swc-win32-arm64-msvc': 16.4.6
       '@next/swc-win32-x64-msvc': 16.4.6
-      '@playwright/test': 1.65.0
+      '@playwright/test': 1.65.1
       sharp: 0.35.5(@types/node@26.6.6)
     transitivePeerDependencies:
       - '@babel/core'
@@ -13503,11 +13503,11 @@ snapshots:
       exsolve: 1.0.8
       pathe: 2.0.3
 
-  playwright-core@1.65.0: {}
+  playwright-core@1.65.1: {}
 
-  playwright@1.65.0:
+  playwright@1.65.1:
     dependencies:
-      playwright-core: 1.65.0
+      playwright-core: 1.65.1
 
   postcss-load-config@6.0.1(jiti@2.7.0)(postcss@8.5.32)(tsx@4.22.4)(yaml@2.9.1):
     dependencies:
@@ -13532,12 +13532,12 @@ snapshots:
 
   powershell-utils@0.1.0: {}
 
-  prettier-plugin-organize-imports@4.3.0(prettier@3.9.10)(typescript@5.9.3):
+  prettier-plugin-organize-imports@4.3.0(prettier@3.10.1)(typescript@5.9.3):
     dependencies:
-      prettier: 3.9.10
+      prettier: 3.10.1
       typescript: 5.9.3
 
-  prettier@3.9.10: {}
+  prettier@3.10.1: {}
 
   pretty-bytes@7.1.0: {}
 
